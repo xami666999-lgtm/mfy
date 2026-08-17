@@ -16,6 +16,7 @@ import PlayerPage from './pages/PlayerPage'
 import Wizard from './pages/Wizard'
 import Guide from './pages/Guide'
 import ProviderBrowse from './pages/ProviderBrowse'
+import Franchise from './pages/Franchise'
 import Intro from './components/Intro'
 import Movies from './pages/Movies'
 import TvShows from './pages/TvShows'
@@ -116,6 +117,7 @@ export default function App() {
         {currentPage === 'player' && <PlayerPage />}
         {currentPage === 'guide' && <Guide />}
         {currentPage === 'provider' && <ProviderBrowse />}
+        {currentPage === 'franchise' && <Franchise />}
         {currentPage === 'movies' && <Movies />}
         {currentPage === 'tv' && <TvShows />}
         {currentPage === 'sports' && <Sports />}

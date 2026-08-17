@@ -387,6 +387,42 @@ export default function MetaDetails() {
                 )}
               </div>
             )}
+
+            {/* What to Watch — similar / recommendations */}
+            {(() => {
+              const similar = (detail.similar?.results || detail.recommendations?.results || []).filter(Boolean)
+              if (!similar.length) return null
+              return (
+                <div>
+                  <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">What to Watch</h3>
+                  <div className="flex gap-3 overflow-x-auto pb-2 scroll-row">
+                    {similar.slice(0, 12).map((s: any) => (
+                      <div
+                        key={s.id}
+                        className="flex-shrink-0 w-[110px] poster-card"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => {
+                          setSelectedMedia({ id: s.id, type: s.media_type === 'movie' ? 'movie' : 'tv' })
+                          setCurrentPage('detail')
+                        }}
+                        onKeyDown={(e) => e.key === 'Enter' && setSelectedMedia({ id: s.id, type: s.media_type === 'movie' ? 'movie' : 'tv' })}
+                      >
+                        {s.poster_path ? (
+                          <img src={`${POSTER_URL}${s.poster_path}`} alt={s.title || s.name} loading="lazy" />
+                        ) : (
+                          <div className="poster-fallback">{s.title || s.name}</div>
+                        )}
+                        <div className="poster-play"><Play size={18} fill="#fff" /></div>
+                        <div className="poster-overlay">
+                          <div className="poster-meta-title">{s.title || s.name}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         )}
 

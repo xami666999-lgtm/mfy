@@ -1,13 +1,33 @@
 import { useEffect, useState } from 'react'
-import { Trophy, Radio, ExternalLink, Loader2 } from 'lucide-react'
+import { Trophy, Radio, ExternalLink, Loader2, Activity, Flag, Volleyball, Target, Gauge, Swords, Medal, Siren, Dumbbell, Skull, Bike, Sparkles } from 'lucide-react'
 import { sportsApi, badgeUrl, posterUrl, type SportCategory, type SportMatch, type SportStream } from '../api/sports'
 import { useStore } from '../store'
 import { cn } from '../lib/utils'
 
+const SPORT_META: Record<string, { icon: any; color: string }> = {
+  football: { icon: Activity, color: '#22C55E' },
+  'american-football': { icon: Flag, color: '#F97316' },
+  basketball: { icon: Volleyball, color: '#F59E0B' },
+  hockey: { icon: Swords, color: '#3B82F6' },
+  baseball: { icon: Target, color: '#EF4444' },
+  'motor-sports': { icon: Gauge, color: '#A855F7' },
+  fight: { icon: Dumbbell, color: '#E11D48' },
+  tennis: { icon: Volleyball, color: '#84CC16' },
+  rugby: { icon: Skull, color: '#14B8A6' },
+  golf: { icon: Flag, color: '#10B981' },
+  billiards: { icon: Target, color: '#6366F1' },
+  afl: { icon: Medal, color: '#8B5CF6' },
+  darts: { icon: Target, color: '#F43F5E' },
+  cricket: { icon: Trophy, color: '#0EA5E9' },
+  other: { icon: Sparkles, color: '#94A3B8' },
+}
+
+const DEFAULT_SPORT = 'football'
+
 export default function Sports() {
   const { setCurrentStreamUrl, setCurrentPage } = useStore()
   const [sports, setSports] = useState<SportCategory[]>([])
-  const [sportId, setSportId] = useState('football')
+  const [sportId, setSportId] = useState(DEFAULT_SPORT)
   const [matches, setMatches] = useState<SportMatch[]>([])
   const [live, setLive] = useState<SportMatch[]>([])
   const [loading, setLoading] = useState(true)
@@ -93,8 +113,11 @@ export default function Sports() {
   return (
     <div className="p-6 md:p-8 page-fade-enter max-w-6xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-[#FF1493]/15 border border-[#FF1493]/25 flex items-center justify-center">
-          <Trophy className="w-5 h-5 text-[#FF1493]" />
+        <div className="w-12 h-12 rounded-2xl bg-[#FF1493]/15 border border-[#FF1493]/25 flex items-center justify-center overflow-hidden">
+          <div className="flex flex-col items-center leading-none py-2">
+            <Trophy className="w-5 h-5 text-[#FF1493]" />
+            <span className="text-[8px] font-black text-[#FF1493] mt-0.5 tracking-tight">MFY</span>
+          </div>
         </div>
         <div>
           <h2 className="text-lg font-semibold text-white tracking-tight">Sports</h2>
@@ -117,21 +140,33 @@ export default function Sports() {
       )}
 
       <div className="flex gap-2 overflow-x-auto pb-3 mb-4 scroll-row">
-        {sports.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            onClick={() => setSportId(s.id)}
-            className={cn(
-              'flex-shrink-0 h-8 px-3 rounded-full text-[11px] font-medium border transition-all',
-              sportId === s.id
-                ? 'bg-[#FF1493]/20 border-[#FF1493]/40 text-[#FF1493]'
-                : 'border-white/10 text-white/40 hover:text-white/70'
-            )}
-          >
-            {s.name}
-          </button>
-        ))}
+        {sports.map((s) => {
+          const meta = SPORT_META[s.id] || SPORT_META.other
+          const Icon = meta.icon
+          const active = sportId === s.id
+          return (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => setSportId(s.id)}
+              className={cn(
+                'flex-shrink-0 flex flex-col items-center justify-center gap-1 w-20 h-20 rounded-2xl border transition-all',
+                active
+                  ? 'bg-white/[0.06] border-white/25 scale-[1.02]'
+                  : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]'
+              )}
+              style={active ? { boxShadow: `0 0 24px ${meta.color}33` } : undefined}
+            >
+              <span
+                className="w-9 h-9 rounded-xl flex items-center justify-center"
+                style={{ background: `${meta.color}1f`, color: meta.color, border: `1px solid ${meta.color}40` }}
+              >
+                <Icon className="w-4.5 h-4.5" style={{ width: 18, height: 18 }} />
+              </span>
+              <span className="text-[9px] font-medium text-white/60 truncate max-w-[76px]">{s.name}</span>
+            </button>
+          )
+        })}
       </div>
 
       {loading ? (

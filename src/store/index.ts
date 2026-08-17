@@ -83,6 +83,9 @@ interface AppState {
   selectedProviderId: string | null
   setSelectedProviderId: (id: string | null) => void
 
+  selectedFranchiseId: string | null
+  setSelectedFranchiseId: (id: string | null) => void
+
   discoverFilter: 'movies' | 'shows' | 'anime'
   setDiscoverFilter: (filter: 'movies' | 'shows' | 'anime') => void
 
@@ -237,6 +240,9 @@ export const useStore = create<AppState>((set, get) => ({
 
   selectedProviderId: null,
   setSelectedProviderId: (id) => set({ selectedProviderId: id }),
+
+  selectedFranchiseId: null,
+  setSelectedFranchiseId: (id) => set({ selectedFranchiseId: id }),
 
   discoverFilter: 'movies',
   setDiscoverFilter: (filter) => set({ discoverFilter: filter }),

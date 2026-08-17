@@ -132,4 +132,4 @@ export interface StreamingService {
   color: string
 }
 
-export type Page = 'home' | 'discover' | 'search' | 'search-results' | 'library' | 'settings' | 'detail' | 'player' | 'wizard' | 'guide' | 'provider' | 'movies' | 'tv' | 'sports'
+export type Page = 'home' | 'discover' | 'search' | 'search-results' | 'library' | 'settings' | 'detail' | 'player' | 'wizard' | 'guide' | 'provider' | 'franchise' | 'movies' | 'tv' | 'sports'

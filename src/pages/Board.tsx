@@ -3,6 +3,7 @@ import { Play, Plus, Info, ChevronRight, ArrowRight, Check } from 'lucide-react'
 import { tmdb, POSTER_URL, BACKDROP_URL } from '../api/tmdb'
 import { anilist } from '../api/anilist'
 import { streamingServices } from '../api/streaming'
+import { franchises } from '../api/franchises'
 import { useStore } from '../store'
 import { cn } from '../lib/utils'
 import { SkeletonPoster, SkeletonHero } from '../components/Skeleton'
@@ -161,6 +162,8 @@ export default function Board() {
       <div className="board-content">
         <ProviderGrid />
 
+        <FranchiseGrid />
+
         {/* Top 10 */}
         {movies.length > 0 && (
           <section className="media-row">
@@ -295,6 +298,33 @@ function ProviderGrid() {
           >
             <span className="app-tile-inner">
               <img src={service.logo} alt={service.name} draggable={false} />
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function FranchiseGrid() {
+  const { setSelectedFranchiseId, setCurrentPage } = useStore()
+  return (
+    <section className="apps-section">
+      <div className="apps-section-label">Franchises</div>
+      <div className="apps-row">
+        {franchises.map((f) => (
+          <button
+            key={f.id}
+            className="app-tile app-tile-franchise"
+            type="button"
+            title={f.name}
+            onClick={() => {
+              setSelectedFranchiseId(f.id)
+              setCurrentPage('franchise')
+            }}
+          >
+            <span className="app-tile-inner" style={{ background: f.color }}>
+              <img src={f.logo} alt={f.name} draggable={false} />
             </span>
           </button>
         ))}

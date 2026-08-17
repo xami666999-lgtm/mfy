@@ -165,6 +165,12 @@ export const tmdb = {
       ttlMs: 24 * 60 * 60 * 1000,
     }),
 
+  getCollection: (collectionId: number) =>
+    tmdbFetch(`/collection/${collectionId}`, {}, {
+      cacheKey: `collection:${collectionId}`,
+      ttlMs: 24 * 60 * 60 * 1000,
+    }),
+
   /** Popular titles available on a given watch provider (TMDB provider id) */
   discoverByProvider: (mediaType: 'movie' | 'tv', providerId: number, page = 1) =>
     tmdbFetch(`/discover/${mediaType}`, {
