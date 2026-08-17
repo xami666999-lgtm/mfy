@@ -118,9 +118,13 @@ export async function resolveFromTorrentio(
   }
 
   try {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 20000)
     const res = await fetch(`${base}${path}`, {
       headers: { Accept: 'application/json' },
+      signal: controller.signal,
     })
+    clearTimeout(timer)
     if (!res.ok) return []
     const data = await res.json()
     const streams: any[] = data?.streams || []

@@ -32,7 +32,7 @@ export const franchises: Franchise[] = [
     name: 'Star Wars',
     tagline: 'A long time ago in a galaxy far, far away…',
     color: '#FFE81F',
-    logo: './logos/star-wars.png',
+    logo: './logos/star-wars.svg',
     keywords: [379196], // star wars
     collections: [10], // Star Wars Collection
   },
@@ -41,7 +41,7 @@ export const franchises: Franchise[] = [
     name: 'Harry Potter',
     tagline: 'The wizarding world',
     color: '#B3933F',
-    logo: './logos/harry-potter.png',
+    logo: './logos/harry-potter.svg',
     keywords: [377309], // harry potter
     collections: [1241], // Harry Potter Collection
   },
@@ -77,7 +77,7 @@ export const franchises: Franchise[] = [
     name: 'Mission Impossible',
     tagline: 'Your mission, should you choose to accept it…',
     color: '#8E2433',
-    logo: './logos/mission-impossible.svg',
+    logo: './logos/mission-impossible.png',
     keywords: [362720], // mission impossible
     collections: [87359], // Mission: Impossible Collection
   },

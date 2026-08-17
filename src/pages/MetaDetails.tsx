@@ -76,6 +76,9 @@ export default function MetaDetails() {
     setStreamError('')
     setResolving(true)
     setActiveTab('streams')
+    requestAnimationFrame(() => {
+      document.getElementById('mfy-detail-body')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
 
     try {
       const { resolveFromAiostreams, resolveFromTorrentio, getExternalIds } = await import('../api/streams')
