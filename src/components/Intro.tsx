@@ -28,7 +28,7 @@ export default function Intro({ onDone }: Props) {
     timers.push(
       window.setTimeout(() => onDone(), FONTS.length * 420 + 500 + 900)
     )
-    const safety = window.setTimeout(() => onDone(), 8000)
+    const safety = window.setTimeout(() => onDone(), 6000)
     timers.push(safety)
     return () => timers.forEach(clearTimeout)
   }, [onDone])
