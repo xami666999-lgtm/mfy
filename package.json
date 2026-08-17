@@ -80,7 +80,8 @@
       {
         "provider": "github",
         "owner": "xami666999-lgtm",
-        "repo": "mfy"
+        "repo": "mfy",
+        "releaseType": "release"
       }
     ]
   },
