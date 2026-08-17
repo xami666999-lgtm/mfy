@@ -1,0 +1,421 @@
+import { useEffect, useState } from 'react'
+import { ArrowLeft, Play, Star, Clock, Calendar, Heart, Plus, Share2 } from 'lucide-react'
+import { tmdb, POSTER_URL, BACKDROP_URL, PROFILE_URL, STILL_URL } from '../api/tmdb'
+import { fetchOmdbByImdbId } from '../api/omdb'
+import { useStore } from '../store'
+import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
+
+export default function MetaDetails() {
+  const { selectedMedia, setCurrentPage, setSelectedMedia, tmdbApiKey, setCurrentStreamUrl, addToWatchlist, removeFromWatchlist, isInWatchlist, addFavorite, removeFavorite, isFavorite, aiostreamsUrl, externalPlayer } = useStore()
+  const [detail, setDetail] = useState<any>(null)
+  const [seasonData, setSeasonData] = useState<any>(null)
+  const [activeSeason, setActiveSeason] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [showTrailer, setShowTrailer] = useState(false)
+  const [trailerKey, setTrailerKey] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'details' | 'streams'>('details')
+  const [streamOptions, setStreamOptions] = useState<any[]>([])
+  const [resolving, setResolving] = useState(false)
+  const [streamError, setStreamError] = useState('')
+  const [omdb, setOmdb] = useState<{ imdbRating: string | null; rottenTomatoes: string | null; imdbVotes: string | null } | null>(null)
+  const [imdbId, setImdbId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!selectedMedia) return
+    load()
+  }, [selectedMedia])
+
+  async function load() {
+    if (!selectedMedia) return
+    setLoading(true)
+    try {
+      if (selectedMedia.type === 'movie') {
+        const d = await tmdb.getMovieDetail(selectedMedia.id)
+        setDetail(d)
+        setTrailerKey(d?.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')?.key || null)
+      } else {
+        const d = await tmdb.getTVDetail(selectedMedia.id)
+        setDetail(d)
+        setTrailerKey(d?.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')?.key || null)
+        if (d?.seasons?.length) {
+          const sNum = d.seasons.find((s: any) => s.season_number > 0)?.season_number || 0
+          setActiveSeason(sNum)
+          const sd = await tmdb.getSeasonDetail(selectedMedia.id, sNum)
+          setSeasonData(sd)
+        }
+      }
+    } catch {}
+    try {
+      if (selectedMedia) {
+        const ext = await tmdb.getExternalIds(selectedMedia.type, selectedMedia.id)
+        const iid = ext?.imdb_id || null
+        setImdbId(iid)
+        if (iid) {
+          const ratings = await fetchOmdbByImdbId(iid)
+          setOmdb(ratings)
+        } else {
+          setOmdb(null)
+        }
+      }
+    } catch {
+      setOmdb(null)
+    }
+    setLoading(false)
+  }
+
+  async function changeSeason(num: number) {
+    if (!selectedMedia) return
+    setActiveSeason(num)
+    const d = await tmdb.getSeasonDetail(selectedMedia.id, num)
+    setSeasonData(d)
+  }
+
+
+  async function handlePlay() {
+    if (!selectedMedia || !detail) return
+    setStreamError('')
+    setResolving(true)
+    setActiveTab('streams')
+
+    try {
+      const { resolveFromAiostreams, getExternalIds } = await import('../api/streams')
+      let idForAddon = String(selectedMedia.id)
+      if (tmdbApiKey) {
+        const ext = await getExternalIds(selectedMedia.type, selectedMedia.id, tmdbApiKey)
+        if (ext?.imdb_id) idForAddon = ext.imdb_id
+      }
+
+      let streams: any[] = []
+      if (aiostreamsUrl) {
+        streams = await resolveFromAiostreams(
+          aiostreamsUrl,
+          selectedMedia.type,
+          idForAddon,
+          selectedMedia.season,
+          selectedMedia.episode
+        )
+      }
+      setStreamOptions(streams)
+
+      if (streams.length > 0) {
+        const best = streams[0]
+        setCurrentStreamUrl(best.url)
+        // External player option
+        if (externalPlayer && externalPlayer !== '') {
+          const api = (window as any).electronAPI
+          api?.openExternal?.(best.url)
+        } else {
+          setCurrentPage('player')
+        }
+      } else {
+        // Fallback: go to player so user can paste a URL
+        setCurrentStreamUrl(null)
+        setCurrentPage('player')
+        if (!aiostreamsUrl) {
+          setStreamError('No AIOStreams URL configured. Paste a stream URL in the player, or add one in Settings.')
+        } else {
+          setStreamError('No streams returned. You can still paste a URL in the player.')
+        }
+      }
+    } catch (e) {
+      setStreamError('Could not resolve streams.')
+      setCurrentPage('player')
+    }
+    setResolving(false)
+  }
+
+  function goBack() {
+    setSelectedMedia(null)
+    setCurrentPage('home')
+  }
+
+  if (loading) return (
+    <div className="h-full">
+      <div className="skeleton" style={{ height: 420, borderRadius: 0 }} />
+      <div className="p-8 space-y-3">
+        <div className="skeleton skeleton-text w-40" />
+        <div className="skeleton skeleton-text w-80" />
+        <div className="skeleton skeleton-text w-60" />
+      </div>
+    </div>
+  )
+  if (!detail) return null
+
+  const title = detail.title || detail.name || ''
+  const year = (detail.release_date || detail.first_air_date || '').slice(0, 4)
+  const runtime = detail.runtime || detail.episode_run_time?.[0] || 0
+
+  return (
+    <div className="page-fade-enter">
+      {/* Cinematic full-bleed hero */}
+      <div className="relative min-h-[min(72vh,640px)] h-[560px] max-h-[80vh]">
+        <div
+          className="absolute inset-0 bg-cover bg-center scale-105"
+          style={{
+            backgroundImage: detail.backdrop_path ? `url(${BACKDROP_URL}${detail.backdrop_path})` : undefined,
+            backgroundColor: '#0a0a10',
+          }}
+        />
+        {/* Soft vignette — readable text, keep face/scene visible */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `
+              linear-gradient(90deg, rgba(6,5,10,0.92) 0%, rgba(6,5,10,0.55) 38%, rgba(6,5,10,0.15) 62%, transparent 78%),
+              linear-gradient(0deg, rgba(6,5,10,1) 0%, rgba(6,5,10,0.75) 22%, rgba(6,5,10,0.2) 55%, transparent 72%),
+              linear-gradient(180deg, rgba(6,5,10,0.45) 0%, transparent 28%)
+            `,
+          }}
+        />
+
+        <div className="absolute top-4 left-4 z-20">
+          <button
+            type="button"
+            onClick={goBack}
+            className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-black/45 backdrop-blur-md text-xs text-white/70 hover:text-white border border-white/10 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Back
+          </button>
+        </div>
+
+        <div className="relative z-10 h-full flex items-end px-8 md:px-12 pb-10 md:pb-14">
+          <div className="max-w-xl">
+            {/* Title as logo-style wordmark */}
+            <h1
+              className="text-4xl md:text-5xl font-black text-white tracking-tight leading-[1.05] mb-3 drop-shadow-[0_4px_24px_rgba(0,0,0,0.65)]"
+              style={{ fontFamily: 'system-ui, Segoe UI, sans-serif' }}
+            >
+              {title}
+            </h1>
+
+            <div className="flex flex-wrap items-center gap-2 text-[12px] text-white/55 mb-3">
+              {detail.genres?.[0]?.name && <span>{detail.genres[0].name}</span>}
+              {detail.genres?.[0] && year && <span className="text-white/25">·</span>}
+              {year && <span>{year}</span>}
+              {selectedMedia?.type === 'tv' && detail.number_of_seasons != null && (
+                <>
+                  <span className="text-white/25">·</span>
+                  <span>{detail.number_of_seasons} Season{detail.number_of_seasons === 1 ? '' : 's'}</span>
+                </>
+              )}
+              {runtime > 0 && selectedMedia?.type === 'movie' && (
+                <>
+                  <span className="text-white/25">·</span>
+                  <span>{formatRuntime(runtime)}</span>
+                </>
+              )}
+            </div>
+
+            {/* Ratings row */}
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              {(omdb?.imdbRating || detail.vote_average > 0) && (
+                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-[#f5c518]/20 border border-[#f5c518]/40 text-[11px] font-bold text-[#f5c518] shadow-sm">
+                  IMDb {omdb?.imdbRating || Number(detail.vote_average).toFixed(1)}
+                </span>
+              )}
+              {omdb?.rottenTomatoes && (
+                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-[#fa320a]/15 border border-[#fa320a]/40 text-[11px] font-bold text-[#ff6b4a]">
+                  RT {omdb.rottenTomatoes}
+                </span>
+              )}
+              {imdbId && (
+                <button
+                  type="button"
+                  className="text-[10px] text-white/35 hover:text-white/70"
+                  onClick={() => (window as any).electronAPI?.openExternal?.(`https://www.imdb.com/title/${imdbId}/`)}
+                >
+                  {imdbId}
+                </button>
+              )}
+            </div>
+
+            {detail.overview && (
+              <p className="text-[13px] text-white/70 leading-relaxed line-clamp-4 max-w-lg mb-6 drop-shadow-sm">
+                {detail.overview}
+              </p>
+            )}
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={handlePlay}
+                disabled={resolving}
+                className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all disabled:opacity-60 shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
+              >
+                <Play className="w-4 h-4" fill="black" />
+                {resolving ? 'Finding…' : 'Play'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById('mfy-detail-body')
+                  el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  setActiveTab('details')
+                }}
+                className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-sm font-medium text-white/90 hover:bg-white/15 transition-all"
+              >
+                More Info
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!selectedMedia || !detail) return
+                  const item = {
+                    mediaId: selectedMedia.id,
+                    mediaType: selectedMedia.type,
+                    title,
+                    posterPath: detail.poster_path || null,
+                    addedAt: new Date().toISOString(),
+                  }
+                  if (isInWatchlist(selectedMedia.id, selectedMedia.type)) {
+                    removeFromWatchlist(selectedMedia.id, selectedMedia.type)
+                  } else {
+                    addToWatchlist(item)
+                  }
+                }}
+                className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/8 border border-white/12 text-sm text-white/70 hover:text-white transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                {selectedMedia && isInWatchlist(selectedMedia.id, selectedMedia.type) ? 'In List' : 'My List'}
+              </button>
+              {trailerKey && (
+                <button
+                  type="button"
+                  onClick={() => setShowTrailer(true)}
+                  className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/8 border border-white/12 text-sm text-white/70 hover:text-white transition-all"
+                >
+                  Trailer
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Compact poster strip under hero (optional identity) */}
+      <div id="mfy-detail-body" className="px-8 -mt-6 relative z-10 mb-2">
+        <div className="flex gap-4 items-end">
+          <div className="w-[110px] flex-shrink-0 rounded-xl overflow-hidden shadow-2xl border border-white/10 ring-1 ring-black/40">
+            {detail.poster_path ? (
+              <img src={`${POSTER_URL}${detail.poster_path}`} alt={title} className="w-full block" />
+            ) : (
+              <div className="aspect-[2/3] bg-white/[0.04]" />
+            )}
+          </div>
+          <div className="pb-1 flex flex-wrap gap-1.5">
+            {(detail.genres || []).slice(0, 6).map((g: any) => (
+              <span key={g.id} className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-white/[0.06] text-white/50 border border-white/[0.06]">
+                {g.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Trailer Modal */}
+      {showTrailer && trailerKey && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowTrailer(false)}>
+          <div className="w-[800px] aspect-video rounded-xl overflow-hidden border border-white/[0.1]" onClick={(e) => e.stopPropagation()}>
+            <iframe width="100%" height="100%" src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&rel=0`} frameBorder="0" allow="autoplay; encrypted-media" allowFullScreen />
+          </div>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div className="px-8 mt-6">
+        <div className="flex gap-4 border-b border-white/[0.05] mb-5">
+          {(['details', 'streams'] as const).map((t) => (
+            <button key={t} onClick={() => setActiveTab(t)} className={cn('pb-3 text-xs font-medium border-b-2 transition-all capitalize', activeTab === t ? 'text-white border-[#FF1493]' : 'text-white/30 border-transparent hover:text-white/50')}>
+              {t}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'details' && (
+          <div className="space-y-8 pb-12">
+            {/* Cast */}
+            {detail.credits?.cast?.length > 0 && (
+              <div>
+                <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Cast</h3>
+                <div className="flex gap-3 overflow-x-auto pb-2 scroll-row">
+                  {detail.credits.cast.slice(0, 12).map((p: any) => (
+                    <div key={p.id} className="flex-shrink-0 w-[80px] text-center">
+                      <div className="w-14 h-14 rounded-full mx-auto mb-1.5 overflow-hidden bg-white/[0.04] border border-white/[0.06]">
+                        {p.profile_path ? <img src={`${PROFILE_URL}${p.profile_path}`} alt={p.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-white/15 text-xs">{p.name[0]}</div>}
+                      </div>
+                      <p className="text-[10px] font-medium text-white/60 truncate">{p.name}</p>
+                      <p className="text-[9px] text-white/20 truncate">{p.character}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Seasons (TV) */}
+            {selectedMedia?.type === 'tv' && detail.seasons && (
+              <div>
+                <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Seasons</h3>
+                <div className="flex gap-1.5 mb-4 flex-wrap">
+                  {detail.seasons.filter((s: any) => s.season_number >= 0).map((s: any) => (
+                    <button key={s.id} onClick={() => changeSeason(s.season_number)} className={cn('px-3 py-1.5 rounded-md text-[11px] font-medium transition-all border', activeSeason === s.season_number ? 'bg-[#00E5FF]/10 text-[#00E5FF] border-[#00E5FF]/20' : 'bg-white/[0.03] text-white/30 border-transparent hover:text-white/50')}>
+                      {s.season_number === 0 ? 'Specials' : `Season ${s.season_number}`}
+                    </button>
+                  ))}
+                </div>
+                {seasonData?.episodes && (
+                  <div className="space-y-1.5">
+                    {seasonData.episodes.map((ep: any) => (
+                      <div key={ep.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.04] cursor-pointer transition-all group">
+                        <div className="w-28 h-16 rounded-md overflow-hidden flex-shrink-0 bg-white/[0.03]">
+                          {ep.still_path && <img src={`${STILL_URL}${ep.still_path}`} alt={ep.name} className="w-full h-full object-cover" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] text-[#00E5FF] font-medium">E{ep.episode_number}</p>
+                          <p className="text-xs text-white/70 truncate group-hover:text-white transition-colors">{ep.name}</p>
+                          <p className="text-[10px] text-white/20 line-clamp-1">{ep.overview}</p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {ep.vote_average > 0 && <span className={cn('text-[10px] font-semibold', getRatingColor(ep.vote_average))}>★ {ep.vote_average.toFixed(1)}</span>}
+                          {ep.runtime && <span className="text-[10px] text-white/15">{ep.runtime}m</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'streams' && (
+          <div className="pb-12 space-y-2">
+            {streamError && <div className="error-banner">{streamError}</div>}
+            {resolving && <p className="text-xs text-white/30 py-6 text-center">Looking for streams…</p>}
+            {!resolving && streamOptions.length === 0 && (
+              <p className="text-xs text-white/20 text-center py-12">
+                No streams yet. Configure AIOStreams in Settings, then press Play — or open the player and paste a stream URL.
+              </p>
+            )}
+            {streamOptions.map((s: any, i: number) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => {
+                  setCurrentStreamUrl(s.url)
+                  setCurrentPage('player')
+                }}
+                className="w-full flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] text-left transition-all"
+              >
+                <div className="min-w-0">
+                  <div className="text-xs font-medium text-white/80 truncate">{s.name || s.provider || 'Stream'}</div>
+                  <div className="text-[10px] text-white/30 truncate mt-0.5">{s.title || s.quality || s.url}</div>
+                </div>
+                <span className="text-[10px] text-[#FF1493] flex-shrink-0">{s.quality || s.type || 'Play'}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
