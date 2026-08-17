@@ -46,6 +46,7 @@
   "build": {
     "appId": "com.mfy.app",
     "productName": "MFY",
+    "npmRebuild": false,
     "directories": {
       "output": "release"
     },
@@ -57,12 +58,6 @@
       "target": [
         {
           "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "dir",
           "arch": [
             "x64"
           ]
