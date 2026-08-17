@@ -48,15 +48,27 @@ export async function removeTorrent(infoHash: string) {
   return a.remove(infoHash)
 }
 
-export async function pickBestFile(torrentId: string): Promise<{ streamUrl: string; name: string; infoHash: string } | null> {
-  const res = await addTorrent(torrentId)
+export async function pickBestFile(torrentId: string, fileIdx?: number): Promise<{ streamUrl: string; name: string; infoHash: string } | null> {
+  const magnet = withFileIdx(torrentId, fileIdx)
+  const res = await addTorrent(magnet)
   if (!res?.ok) return null
   const files: TorrentFileInfo[] = res.files || []
-  const video = files
-    .filter((f) => VIDEO_EXT.test(f.name))
-    .sort((a, b) => b.length - a.length)[0] || res.best || files[0]
+  const video =
+    res.best ||
+    files
+      .filter((f) => VIDEO_EXT.test(f.name))
+      .sort((a, b) => b.length - a.length)[0] ||
+    files[0]
   if (!video) return null
   return { streamUrl: video.streamUrl, name: video.name, infoHash: res.infoHash }
+}
+
+/** Embed the chosen file index into the magnet so the engine picks the right file */
+function withFileIdx(torrentId: string, fileIdx?: number): string {
+  if (typeof fileIdx !== 'number' || !Number.isInteger(fileIdx)) return torrentId
+  const s = torrentId.trim()
+  if (/^magnet:?/i.test(s)) return `${s}${s.includes('&fileIdx') ? '' : `&fileIdx=${fileIdx}`}`
+  return s
 }
 
 export function onTorrentProgress(cb: (t: TorrentInfo) => void) {

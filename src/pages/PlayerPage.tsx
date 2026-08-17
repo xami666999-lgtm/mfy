@@ -1,14 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   ArrowLeft, Play, Pause, SkipBack, SkipForward, Volume2, VolumeX,
-  Maximize, Minimize, Settings2, Subtitles, Link2, AlertCircle
+  Maximize, Minimize, Settings2, Subtitles, AlertCircle
 } from 'lucide-react'
 import { useStore } from '../store'
 import { cn } from '../lib/utils'
 import { isTorrentInput, pickBestFile, onTorrentProgress, formatBytes, formatSpeed } from '../api/torrent'
-
-const TEST_MP4 = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
-const TEST_HLS = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8'
 
 function isHls(url: string) { return /\.m3u8(?:$|\?)/i.test(url) }
 async function togglePip(video: HTMLVideoElement | null) {
@@ -273,17 +270,11 @@ export default function PlayerPage() {
         {!loaded && (
           <div className="player-empty" onClick={(e) => e.stopPropagation()}>
             <div className="player-empty-icon"><Play /></div>
-            <h2>Ready to play</h2>
-            <p>Paste an authorized MP4, HLS, DASH stream URL — or a magnet link / info hash to stream via WebTorrent.</p>
-            <div className="stream-input-row">
-              <Link2 />
-              <input value={streamUrl} onChange={(e) => setStreamUrl(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && loadStream(streamUrl)} placeholder="https://example.com/video.m3u8 or magnet:?xt=urn:btih:…" />
-              <button onClick={() => loadStream(streamUrl)} disabled={!streamUrl.trim()}>Load</button>
-            </div>
+            <h2>No source selected</h2>
+            <p>Pick a stream from the title's stream list to start watching.</p>
             <div className="test-links">
-              <button onClick={() => { setStreamUrl(TEST_MP4); loadStream(TEST_MP4) }}>Test MP4</button>
-              <button onClick={() => { setStreamUrl(TEST_HLS); loadStream(TEST_HLS) }}>Test HLS</button>
-              <button onClick={() => setCurrentPage('settings')}>Settings</button>
+              <button onClick={() => setCurrentPage('detail')}>Back to streams</button>
+              <button onClick={() => setCurrentPage('home')}>Home</button>
             </div>
           </div>
         )}

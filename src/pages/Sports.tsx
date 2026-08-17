@@ -18,7 +18,10 @@ export default function Sports() {
 
   useEffect(() => {
     sportsApi.getSports().then(setSports).catch(() => setSports([]))
-    sportsApi.getLive().then(setLive).catch(() => setLive([]))
+    sportsApi
+      .getLive()
+      .then((m) => setLive((Array.isArray(m) ? m : []).map((x) => ({ ...x, live: true }))))
+      .catch(() => setLive([]))
   }, [])
 
   useEffect(() => {
@@ -175,19 +178,32 @@ export default function Sports() {
                     key={`${s.id}-${s.streamNo}-${i}`}
                     type="button"
                     onClick={() => s.embedUrl && playEmbed(s.embedUrl)}
-                    className="w-full flex items-center justify-between gap-2 p-3 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.07] text-left"
+                    className="w-full flex items-center justify-between gap-2 p-3 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.07] hover:border-[#FF1493]/30 text-left transition-all"
                   >
-                    <div>
-                      <div className="text-xs text-white/80">
-                        {s.language || `Stream ${s.streamNo || i + 1}`}
-                        {s.hd ? ' · HD' : ''}
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="relative flex w-2 h-2 flex-shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-60" />
+                        <span className="relative inline-flex rounded-full w-2 h-2 bg-red-500" />
+                      </span>
+                      <div className="min-w-0">
+                        <div className="text-xs text-white/85">
+                          {s.language || `Stream ${s.streamNo || i + 1}`}
+                          {s.hd ? (
+                            <span className="ml-1.5 text-[9px] px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-400">HD</span>
+                          ) : null}
+                        </div>
+                        <div className="text-[10px] text-white/30">
+                          {s.viewers != null ? `${s.viewers} watching` : s.source}
+                        </div>
                       </div>
-                      <div className="text-[10px] text-white/30">{s.viewers != null ? `${s.viewers} watching` : s.source}</div>
                     </div>
-                    <ExternalLink className="w-3.5 h-3.5 text-[#FF1493]" />
+                    <span className="flex items-center gap-1 text-[10px] text-[#FF1493] flex-shrink-0">Watch <ExternalLink className="w-3 h-3" /></span>
                   </button>
                 ))}
               </div>
+            )}
+            {streams && streams.length === 0 && !streamError && (
+              <p className="text-[11px] text-white/25 text-center py-4">No live embeds available for this match right now.</p>
             )}
             <button
               type="button"
@@ -232,7 +248,18 @@ function MatchCard({
         </div>
       )}
       <div className="min-w-0 flex-1">
-        <div className="text-xs font-medium text-white/85 truncate">{match.title}</div>
+        <div className="flex items-center gap-2">
+          <div className="text-xs font-medium text-white/85 truncate">{match.title}</div>
+          {match.live && (
+            <span className="flex-shrink-0 flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded bg-red-500/15 text-red-400">
+              <span className="relative flex w-1.5 h-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-70" />
+                <span className="relative inline-flex rounded-full w-1.5 h-1.5 bg-red-500" />
+              </span>
+              LIVE
+            </span>
+          )}
+        </div>
         <div className="text-[10px] text-white/30 mt-0.5">
           {match.category}
           {match.date ? ` · ${formatDate(match.date)}` : ''}

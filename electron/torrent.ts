@@ -83,24 +83,36 @@ function startProgress(torrent: any) {
   })
 }
 
+function extractFileIdx(torrentId: string, fallback?: unknown): number | undefined {
+  const param = typeof fallback === 'number' ? fallback : undefined
+  if (typeof param === 'number' && Number.isInteger(param)) return param
+  const m = String(torrentId || '').match(/[?&]fileIdx=(\d+)/i)
+  return m ? Number(m[1]) : undefined
+}
+
 function registerHandlers() {
   if ((ipcMain as any)._mfyTorrentRegistered) return
   ;(ipcMain as any)._mfyTorrentRegistered = true
 
-  ipcMain.handle('torrent:add', async (_event, torrentId: unknown) => {
+  ipcMain.handle('torrent:add', async (_event, torrentId: unknown, fileIdx?: unknown) => {
     if (typeof torrentId !== 'string' || !torrentId.trim()) {
       return { ok: false, error: 'Invalid torrent ID.' }
     }
     const client = await getClient()
     try {
+      const cleanId = String(torrentId.trim()).replace(/[?&]fileIdx=\d+/i, '')
       const torrent = await new Promise<any>((resolve, reject) => {
-        const t = client.add(torrentId.trim(), (readyTorrent: any) => resolve(readyTorrent))
+        const t = client.add(cleanId, (readyTorrent: any) => resolve(readyTorrent))
         t.once?.('error', reject)
         client.once?.('error', reject)
       })
       await ensureServer()
       startProgress(torrent)
-      const best = bestVideo(torrent)
+      const allFiles = torrent.files || []
+      const wantedIdx = extractFileIdx(torrentId, fileIdx)
+      const wanted =
+        typeof wantedIdx === 'number' && allFiles[wantedIdx] ? allFiles[wantedIdx] : null
+      const best = wanted || bestVideo(torrent)
       const files = serializeFiles(torrent)
       return {
         ok: true,

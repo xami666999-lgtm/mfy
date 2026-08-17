@@ -3,6 +3,7 @@ import path from 'path'
 import Store from 'electron-store'
 import fs from 'fs'
 import { setupTorrentEngine } from './torrent'
+import { setupAdBlocker } from './adblock'
 
 // Auto-updater (only active in packaged builds)
 let autoUpdater: any = null
@@ -57,8 +58,22 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
   }
 
-  mainWindow.once('ready-to-show', () => {
+mainWindow.once('ready-to-show', () => {
     mainWindow?.show()
+  })
+
+  // Never allow popup windows (popunder/popup ads from embedded players)
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:/i.test(url)) {
+      shell.openExternal(url)
+    }
+    return { action: 'deny' }
+  })
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (url !== mainWindow?.webContents.getURL()) {
+      event.preventDefault()
+    }
   })
 
   mainWindow.on('close', (e) => {
@@ -153,6 +168,7 @@ app.whenReady().then(() => {
   createTray()
   setupAutoUpdater()
   setupTorrentEngine()
+  setupAdBlocker()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

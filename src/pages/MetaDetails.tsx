@@ -78,12 +78,15 @@ export default function MetaDetails() {
     setActiveTab('streams')
 
     try {
-      const { resolveFromAiostreams, getExternalIds } = await import('../api/streams')
+      const { resolveFromAiostreams, resolveFromTorrentio, getExternalIds } = await import('../api/streams')
       let idForAddon = String(selectedMedia.id)
       if (tmdbApiKey) {
         const ext = await getExternalIds(selectedMedia.type, selectedMedia.id, tmdbApiKey)
         if (ext?.imdb_id) idForAddon = ext.imdb_id
       }
+
+      const season = selectedMedia.season
+      const episode = selectedMedia.episode
 
       let streams: any[] = []
       if (aiostreamsUrl) {
@@ -91,31 +94,31 @@ export default function MetaDetails() {
           aiostreamsUrl,
           selectedMedia.type,
           idForAddon,
-          selectedMedia.season,
-          selectedMedia.episode
+          season,
+          episode
         )
       }
+
+      // Stremio addons (Torrentio) — torrent streams played via WebTorrent.
+      // These are always available without a manual URL.
+      const torrents = await resolveFromTorrentio(selectedMedia.type, idForAddon, {
+        season,
+        episode,
+      })
+      streams = [...streams, ...torrents]
+
       setStreamOptions(streams)
 
       if (streams.length > 0) {
-        const best = streams[0]
-        setCurrentStreamUrl(best.url)
-        // External player option
-        if (externalPlayer && externalPlayer !== '') {
-          const api = (window as any).electronAPI
-          api?.openExternal?.(best.url)
-        } else {
-          setCurrentPage('player')
-        }
+        setCurrentStreamUrl(null)
+        setStreamError('')
+        // Show the picker so the user chooses a source/quality
+        setActiveTab('streams')
       } else {
-        // Fallback: go to player so user can paste a URL
+        // Fallback: go to player so user can still play an authorized direct URL
         setCurrentStreamUrl(null)
         setCurrentPage('player')
-        if (!aiostreamsUrl) {
-          setStreamError('No AIOStreams URL configured. Paste a stream URL in the player, or add one in Settings.')
-        } else {
-          setStreamError('No streams returned. You can still paste a URL in the player.')
-        }
+        setStreamError(aiostreamsUrl ? 'No streams found. You can still play a direct URL in the player.' : 'No streams found. Configure AIOStreams in Settings for direct sources, or pick a torrent quality above.')
       }
     } catch (e) {
       setStreamError('Could not resolve streams.')
@@ -393,26 +396,61 @@ export default function MetaDetails() {
             {resolving && <p className="text-xs text-white/30 py-6 text-center">Looking for streams…</p>}
             {!resolving && streamOptions.length === 0 && (
               <p className="text-xs text-white/20 text-center py-12">
-                No streams yet. Configure AIOStreams in Settings, then press Play — or open the player and paste a stream URL.
+                No streams found. Try again in a moment.
               </p>
             )}
-            {streamOptions.map((s: any, i: number) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => {
-                  setCurrentStreamUrl(s.url)
-                  setCurrentPage('player')
-                }}
-                className="w-full flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] text-left transition-all"
-              >
-                <div className="min-w-0">
-                  <div className="text-xs font-medium text-white/80 truncate">{s.name || s.provider || 'Stream'}</div>
-                  <div className="text-[10px] text-white/30 truncate mt-0.5">{s.title || s.quality || s.url}</div>
-                </div>
-                <span className="text-[10px] text-[#FF1493] flex-shrink-0">{s.quality || s.type || 'Play'}</span>
-              </button>
-            ))}
+            {streamOptions.map((s: any, i: number) => {
+              const isTorrent = s?.infoHash || /^magnet:/i.test(s?.url || '')
+              const playLabel = s.quality || (isTorrent ? 'Torrent' : s.type || 'Play')
+              const meta = [
+                s.provider,
+                s.seeds ? `${s.seeds} seeds` : '',
+                s.size,
+              ].filter(Boolean).join(' · ')
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={async () => {
+                    if (isTorrent && s.url) {
+                      setResolving(true)
+                      try {
+                        const { pickBestFile } = await import('../api/torrent')
+                        const picked = await pickBestFile(s.url, s.fileIdx)
+                        if (picked?.streamUrl) {
+                          setCurrentStreamUrl(picked.streamUrl)
+                          setCurrentPage('player')
+                        } else {
+                          setStreamError('Could not start that torrent. Try another source.')
+                        }
+                      } catch {
+                        setStreamError('Could not start that torrent. Try another source.')
+                      } finally {
+                        setResolving(false)
+                      }
+                      return
+                    }
+                    setCurrentStreamUrl(s.url)
+                    if (externalPlayer && externalPlayer !== '' && !isTorrent) {
+                      ;(window as any).electronAPI?.openExternal?.(s.url)
+                    } else {
+                      setCurrentPage('player')
+                    }
+                  }}
+                  className="w-full flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] text-left transition-all"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs font-medium text-white/80 truncate">{s.name || s.provider || 'Stream'}</span>
+                      {s.quality && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#FF1493]/20 text-[#FF1493] flex-shrink-0">{s.quality}</span>}
+                      {isTorrent && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 flex-shrink-0">Torrent</span>}
+                    </div>
+                    {meta && <div className="text-[10px] text-white/30 truncate mt-0.5">{meta}</div>}
+                  </div>
+                  <span className="text-[10px] text-[#FF1493] flex-shrink-0">{playLabel}</span>
+                </button>
+              )
+            })}
           </div>
         )}
       </div>

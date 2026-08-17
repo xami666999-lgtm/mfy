@@ -23,6 +23,7 @@ export interface SportMatch {
   category: string
   date: number
   popular?: boolean
+  live?: boolean
   poster?: string
   teams?: { home?: MatchTeam; away?: MatchTeam }
   sources?: MatchSource[]

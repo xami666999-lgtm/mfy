@@ -6,29 +6,35 @@ const FONTS = [
   { family: 'system-ui, Segoe UI, sans-serif', weight: 900, tracking: '0.45em' },
   { family: 'Palatino Linotype, Book Antiqua, serif', weight: 600, tracking: '0.28em' },
   { family: 'Arial Black, Arial, sans-serif', weight: 900, tracking: '0.15em' },
+  { family: 'Courier New, monospace', weight: 700, tracking: '0.4em' },
 ]
+
+const FONT_MS = 140
+const HOLD_MS = 320
+const EXIT_MS = 620
 
 type Props = { onDone: () => void }
 
 export default function Intro({ onDone }: Props) {
-  const [phase, setPhase] = useState<'logos' | 'exit'>('logos')
   const [fontIndex, setFontIndex] = useState(0)
+  const [popping, setPopping] = useState(true)
+  const [phase, setPhase] = useState<'show' | 'exit'>('show')
 
   useEffect(() => {
     const timers: number[] = []
-    // Cycle through font styles
     FONTS.forEach((_, i) => {
-      timers.push(window.setTimeout(() => setFontIndex(i), i * 420))
+      timers.push(window.setTimeout(() => setFontIndex(i), i * FONT_MS))
     })
-    // Start slide-open exit
     timers.push(
-      window.setTimeout(() => setPhase('exit'), FONTS.length * 420 + 500)
+      window.setTimeout(() => {
+        setPopping(false)
+        setPhase('exit')
+      }, FONTS.length * FONT_MS + HOLD_MS)
     )
-    // Unmount
     timers.push(
-      window.setTimeout(() => onDone(), FONTS.length * 420 + 500 + 900)
+      window.setTimeout(() => onDone(), FONTS.length * FONT_MS + HOLD_MS + EXIT_MS)
     )
-    const safety = window.setTimeout(() => onDone(), 6000)
+    const safety = window.setTimeout(() => onDone(), 3200)
     timers.push(safety)
     return () => timers.forEach(clearTimeout)
   }, [onDone])
@@ -44,9 +50,10 @@ export default function Intro({ onDone }: Props) {
       <div className="mfy-intro-panel mfy-intro-left" />
       <div className="mfy-intro-panel mfy-intro-right" />
 
-      <div className="mfy-intro-center">
+      <div className={`mfy-intro-center ${popping ? 'mfy-intro-popping' : ''}`}>
         <img src="./icon.png" alt="" className="mfy-intro-mark" />
         <div
+          key={fontIndex}
           className="mfy-intro-word"
           style={{
             fontFamily: font.family,
