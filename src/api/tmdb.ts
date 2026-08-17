@@ -3,23 +3,21 @@ import { cachedFetch } from '../lib/cache'
 const TMDB_BASE = 'https://api.themoviedb.org/3'
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p'
 
-const DEFAULT_TMDB_KEY = '07cb14b54ce2bcf6a2441bcc4c7ba8a8'
-
 export const POSTER_URL = `${TMDB_IMAGE_BASE}/w500`
 export const BACKDROP_URL = `${TMDB_IMAGE_BASE}/original`
 export const PROFILE_URL = `${TMDB_IMAGE_BASE}/w185`
 export const STILL_URL = `${TMDB_IMAGE_BASE}/w300`
 
-/** Prefer env var, fall back to user-stored key from electron-store, then a built-in default */
+/** Prefer env var (injected at build time from .env), fall back to user-stored key from electron-store */
 function getApiKey(): string {
   const fromEnv = (import.meta as any).env?.VITE_TMDB_API_KEY
   if (fromEnv && typeof fromEnv === 'string' && fromEnv.length > 8) {
     return fromEnv
   }
   try {
-    return (window as any).__mfyTmdbKey || DEFAULT_TMDB_KEY
+    return (window as any).__mfyTmdbKey || ''
   } catch {
-    return DEFAULT_TMDB_KEY
+    return ''
   }
 }
 
