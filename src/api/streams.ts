@@ -96,6 +96,23 @@ export interface TorrentStream {
 }
 
 const DEFAULT_TORRENTIO = 'https://torrentio.strem.fun'
+const COMET_ADDON = 'https://comet.strem.dev'
+
+/** Public trackers so WebTorrent can find peers without relying on DHT alone. */
+const PUBLIC_TRACKERS = [
+  'udp://tracker.opentrackr.org:1337/announce',
+  'udp://open.stealth.si:80/announce',
+  'udp://tracker.torrent.eu.org:451/announce',
+  'udp://exodus.desync.com:6969/announce',
+  'udp://open.demonii.com:1337/announce',
+  'udp://tracker.openbittorrent.com:6969/announce',
+  'https://tracker.tamersunion.org:443/announce',
+]
+
+function magnetWithTrackers(infoHash: string): string {
+  const tr = PUBLIC_TRACKERS.map((t) => `&tr=${encodeURIComponent(t)}`).join('')
+  return `magnet:?xt=urn:btih:${infoHash}${tr}`
+}
 
 /**
  * Query a Stremio addon (Torrentio by default) for torrent streams.
@@ -107,7 +124,27 @@ export async function resolveFromTorrentio(
   imdbId: string,
   opts?: { baseUrl?: string; season?: number; episode?: number; provider?: string }
 ): Promise<TorrentStream[]> {
-  const base = (opts?.baseUrl || DEFAULT_TORRENTIO).replace(/\/$/, '')
+  const bases = [opts?.baseUrl || DEFAULT_TORRENTIO, COMET_ADDON]
+  const streams = await Promise.all(
+    bases.map((base) => resolveTorrentAddon(base, mediaType, imdbId, opts))
+  )
+  const seen = new Set<string>()
+  return streams
+    .flat()
+    .filter((s) => {
+      if (seen.has(s.infoHash)) return false
+      seen.add(s.infoHash)
+      return true
+    })
+}
+
+async function resolveTorrentAddon(
+  base: string,
+  mediaType: 'movie' | 'tv',
+  imdbId: string,
+  opts?: { baseUrl?: string; season?: number; episode?: number; provider?: string }
+): Promise<TorrentStream[]> {
+  const clean = base.replace(/\/$/, '')
   let path: string
   if (mediaType === 'movie') {
     path = `/stream/movie/${imdbId}.json`
@@ -120,7 +157,7 @@ export async function resolveFromTorrentio(
   try {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 20000)
-    const res = await fetch(`${base}${path}`, {
+    const res = await fetch(`${clean}${path}`, {
       headers: { Accept: 'application/json' },
       signal: controller.signal,
     })
@@ -134,7 +171,7 @@ export async function resolveFromTorrentio(
       .map((s: any) => {
         const infoHash = String(s.infoHash || '').trim()
         if (!infoHash) return null
-        const url = `magnet:?xt=urn:btih:${infoHash}`
+        const url = magnetWithTrackers(infoHash)
         const title = s.title || s.name || ''
         const quality = extractQuality(title) || s.quality || ''
         const size = title.match(/\b(\d+(?:\.\d+)?)\s*(GB|MB|TB)\b/i)?.[0] ||
@@ -160,7 +197,7 @@ export async function resolveFromTorrentio(
       })
       .filter(Boolean) as TorrentStream[]
   } catch (err) {
-    console.error('[streams] Torrentio resolve failed:', err)
+    console.error('[streams] addon resolve failed:', err)
     return []
   }
 }

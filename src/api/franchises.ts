@@ -50,7 +50,7 @@ export const franchises: Franchise[] = [
     name: 'DC',
     tagline: 'DC Universe',
     color: '#0476F4',
-    logo: './logos/dc.svg',
+    logo: './logos/dc-white.svg',
     keywords: [229266, 378944, 377234, 362002], // dceu, batman, superman, wonder woman
     collections: [404770, 421904], // Superman DCU Animated, Batman DCU Animated
   },

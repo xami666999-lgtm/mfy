@@ -51,7 +51,19 @@ export default function Intro({ onDone }: Props) {
       <div className="mfy-intro-panel mfy-intro-right" />
 
       <div className={`mfy-intro-center ${popping ? 'mfy-intro-popping' : ''}`}>
-        <img src="./icon.png" alt="" className="mfy-intro-mark" />
+        <svg className="mfy-intro-mark" viewBox="0 0 100 100" aria-hidden="true">
+          <defs>
+            <linearGradient id="mfyIntroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style={{ stopColor: '#FF1493', stopOpacity: 1 }} />
+              <stop offset="100%" style={{ stopColor: '#00E5FF', stopOpacity: 1 }} />
+            </linearGradient>
+          </defs>
+          <rect x="10" y="15" width="18" height="70" rx="3" fill="#FF1493" />
+          <rect x="32" y="15" width="18" height="70" rx="3" fill="#C71585" opacity="0.85" />
+          <rect x="54" y="15" width="18" height="70" rx="3" fill="#FF1493" />
+          <rect x="76" y="15" width="14" height="70" rx="3" fill="#C71585" opacity="0.85" />
+          <polygon points="42,30 42,70 72,50" fill="url(#mfyIntroGrad)" />
+        </svg>
         <div
           key={fontIndex}
           className="mfy-intro-word"

@@ -391,7 +391,21 @@ a:focus-visible,
 .player-back:hover, .player-icon-button:hover { color: #fff; background: rgba(255,255,255,.09); }
 .player-back svg, .player-icon-button svg { width: 16px; height: 16px; }
 .player-title { position: absolute; left: 50%; transform: translateX(-50%); font-size: 13px; font-weight: 650; color: rgba(255,255,255,.78); }
-.player-top-actions { display: flex; gap: 7px; }
+.player-top-actions { display: flex; gap: 7px; align-items: center; }
+.player-addon-select {
+  max-width: 260px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 9px;
+  background: rgba(10,10,16,0.92);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: rgba(255,255,255,0.85);
+  font-size: 11px;
+  cursor: pointer;
+  outline: none;
+}
+.player-addon-select:hover { border-color: rgba(255,20,147,0.5); }
+.player-addon-select option { background: #12121a; color: #fff; }
 .player-icon-button { width: 38px; padding: 0; cursor: pointer; }
 .player-stage video::-webkit-media-controls { display: none !important; }
 .player-empty {

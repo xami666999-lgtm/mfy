@@ -62,11 +62,16 @@ mainWindow.once('ready-to-show', () => {
     mainWindow?.show()
   })
 
-  // Never allow popup windows (popunder/popup ads from embedded players)
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:/i.test(url)) {
-      shell.openExternal(url)
-    }
+  // Re-trigger the intro splash whenever the window becomes visible
+  // (including re-opening from the tray).
+  mainWindow.on('show', () => {
+    mainWindow?.webContents.send('mfy-window-shown')
+  })
+
+  // Never allow popup windows (popunder/popup ads from embedded players).
+  // Deny everything — embedded players should stay inside the app. Links that
+  // the user explicitly opens (e.g. IMDb) go through `electronAPI.openExternal`.
+  mainWindow.webContents.setWindowOpenHandler(() => {
     return { action: 'deny' }
   })
 

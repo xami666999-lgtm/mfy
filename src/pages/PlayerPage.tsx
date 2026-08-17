@@ -6,8 +6,20 @@ import {
 import { useStore } from '../store'
 import { cn } from '../lib/utils'
 import { isTorrentInput, pickBestFile, onTorrentProgress, formatBytes, formatSpeed } from '../api/torrent'
+import { tmdb } from '../api/tmdb'
+import { AddonStreamService, type Stream } from '../services/addonStreamService'
 
 function isHls(url: string) { return /\.m3u8(?:$|\?)/i.test(url) }
+function isDash(url: string) { return /\.mpd(?:$|\?)/i.test(url) }
+function isDirectMedia(url: string) { return /\.(m3u8|mpd|mp4|webm|mkv|mov|avi|ts)(?:$|\?)/i.test(url) }
+function isEmbed(url: string) {
+  return Boolean(
+    url &&
+    /^https?:/i.test(url) &&
+    !isDirectMedia(url) &&
+    !isTorrentInput(url)
+  )
+}
 async function togglePip(video: HTMLVideoElement | null) {
   if (!video) return
   try {
@@ -20,8 +32,6 @@ async function togglePip(video: HTMLVideoElement | null) {
     console.warn('PiP failed', e)
   }
 }
-
-function isDash(url: string) { return /\.mpd(?:$|\?)/i.test(url) }
 
 function srtToVtt(input: string) {
   if (/^WEBVTT/m.test(input)) return input
@@ -51,6 +61,31 @@ export default function PlayerPage() {
   const [loaded, setLoaded] = useState(Boolean(currentStreamUrl))
   const [pipActive, setPipActive] = useState(false)
   const [torrentInfo, setTorrentInfo] = useState<any>(null)
+  const [addonStreams, setAddonStreams] = useState<Stream[]>([])
+  const [addonsLoading, setAddonsLoading] = useState(false)
+
+  // Load addon streams (Torrentio / Comet / Sports) for quick source picking
+  useEffect(() => {
+    let cancelled = false
+    if (!selectedMedia) return
+    setAddonsLoading(true)
+    setAddonStreams([])
+    ;(async () => {
+      try {
+        const ext = await tmdb.getExternalIds(selectedMedia.type, selectedMedia.id)
+        const imdbId = ext?.imdb_id
+        if (imdbId && !cancelled) {
+          const type = selectedMedia.type === 'movie' ? 'movie' : 'series'
+          const streams = await AddonStreamService.getStreams(imdbId, type)
+          if (!cancelled) setAddonStreams(streams)
+        }
+      } catch {}
+      if (!cancelled) setAddonsLoading(false)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [selectedMedia])
 
   useEffect(() => {
     const unsub = onTorrentProgress((t) => {
@@ -83,7 +118,6 @@ export default function PlayerPage() {
         profileId: 'default',
       })
     }, 5000)
-    const isEmbed = Boolean(streamUrl && (/embed\./i.test(streamUrl) || /\/embed\//i.test(streamUrl)))
 
   return () => clearInterval(id)
   }, [selectedMedia, loaded])
@@ -103,7 +137,6 @@ export default function PlayerPage() {
     v.addEventListener('pause', onPause)
     v.addEventListener('ended', onEnded)
     v.addEventListener('error', onError)
-    const isEmbed = Boolean(streamUrl && (/embed\./i.test(streamUrl) || /\/embed\//i.test(streamUrl)))
 
   return () => {
       v.removeEventListener('timeupdate', onTime)
@@ -118,7 +151,6 @@ export default function PlayerPage() {
   useEffect(() => {
     const onFullscreen = () => setFullscreen(Boolean(document.fullscreenElement))
     document.addEventListener('fullscreenchange', onFullscreen)
-    const isEmbed = Boolean(streamUrl && (/embed\./i.test(streamUrl) || /\/embed\//i.test(streamUrl)))
 
   return () => {
       document.removeEventListener('fullscreenchange', onFullscreen)
@@ -157,6 +189,12 @@ export default function PlayerPage() {
           throw new Error('No playable file found in that torrent.')
         }
         clean = torrentRes.streamUrl
+      }
+      if (isEmbed(clean)) {
+        setStreamUrl(clean)
+        setCurrentStreamUrl(clean)
+        setLoaded(true)
+        return
       }
       if (isHls(clean)) {
         const mod = await import('hls.js')
@@ -237,14 +275,29 @@ export default function PlayerPage() {
 
   const title = selectedMedia ? `${selectedMedia.type === 'movie' ? 'Movie' : 'Series'} ${selectedMedia.id}` : 'MFY Player'
 
-  const isEmbed = Boolean(streamUrl && (/embed\./i.test(streamUrl) || /\/embed\//i.test(streamUrl)))
-
   return (
     <div className="mfy-player" onMouseMove={onMouseMove}>
       <div className={cn('player-topbar', showUI ? 'visible' : 'hidden')}>
         <button onClick={() => setCurrentPage('detail')} className="player-back"><ArrowLeft /> Back</button>
         <div className="player-title">{title}</div>
         <div className="player-top-actions">
+          {addonStreams.length > 0 && (
+            <select
+              className="player-addon-select"
+              value=""
+              onChange={(e) => {
+                if (e.target.value) loadStream(e.target.value)
+              }}
+            >
+              <option value="">Addons · {addonsLoading ? 'loading…' : `${addonStreams.length} sources`}</option>
+              {addonStreams.map((s, i) => (
+                <option key={`${s.source}-${i}`} value={s.url}>
+                  {s.title} - {s.source}
+                  {typeof s.seeders === 'number' ? ` (${s.seeders} peers)` : ''}
+                </option>
+              ))}
+            </select>
+          )}
           <label className="player-icon-button" title="Load subtitles">
             <Subtitles />
             <input type="file" accept=".srt,.vtt,text/vtt" hidden onChange={(e) => e.target.files?.[0] && handleSubtitle(e.target.files[0])} />
@@ -254,7 +307,7 @@ export default function PlayerPage() {
       </div>
 
       <div className="player-stage" onClick={togglePlay}>
-        {isEmbed ? (
+        {isEmbed(streamUrl) ? (
           <iframe
             title="Stream"
             src={streamUrl}

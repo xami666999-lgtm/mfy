@@ -102,9 +102,19 @@ function registerHandlers() {
     try {
       const cleanId = String(torrentId.trim()).replace(/[?&]fileIdx=\d+/i, '')
       const torrent = await new Promise<any>((resolve, reject) => {
-        const t = client.add(cleanId, (readyTorrent: any) => resolve(readyTorrent))
-        t.once?.('error', reject)
-        client.once?.('error', reject)
+        const timer = setTimeout(() => reject(new Error('Timed out waiting for torrent metadata (no peers found).')), 45000)
+        const t = client.add(cleanId, (readyTorrent: any) => {
+          clearTimeout(timer)
+          resolve(readyTorrent)
+        })
+        t.once?.('error', (e: Error) => {
+          clearTimeout(timer)
+          reject(e)
+        })
+        client.once?.('error', (e: Error) => {
+          clearTimeout(timer)
+          reject(e)
+        })
       })
       await ensureServer()
       startProgress(torrent)

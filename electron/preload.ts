@@ -27,6 +27,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Auto-update
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+
+  // Window visibility (for the intro splash)
+  onWindowShown: (cb: () => void) => {
+    const listener = () => cb()
+    ipcRenderer.on('mfy-window-shown', listener)
+    return () => ipcRenderer.removeListener('mfy-window-shown', listener)
+  },
 })
 
 contextBridge.exposeInMainWorld('torrentAPI', {

@@ -51,6 +51,15 @@ export default function App() {
     applyTheme(theme)
   }, [theme])
 
+  // Replay the intro splash whenever the window is shown (first launch + re-open from tray)
+  useEffect(() => {
+    const api = (window as any).electronAPI
+    if (!api?.onWindowShown) return
+    return api.onWindowShown(() => {
+      setShowIntro(true)
+    })
+  }, [])
+
   useEffect(() => {
     const api = (window as any).electronAPI
     if (!api) return
