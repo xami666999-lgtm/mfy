@@ -87,7 +87,7 @@ export default function Wizard() {
       {/* Left sidebar */}
       <aside className="relative z-10 w-64 flex-shrink-0 border-r border-white/[0.06] bg-black/30 backdrop-blur-xl p-6 flex flex-col">
         <div className="flex items-center gap-2.5 mb-10">
-          <img src="/icon.png" alt="MFY" className="w-9 h-9 rounded-xl shadow-[0_0_20px_rgba(255,20,147,0.35)]" />
+          <img src="./icon.png" alt="MFY" className="w-9 h-9 rounded-xl shadow-[0_0_20px_rgba(255,20,147,0.35)]" />
           <div>
             <div className="text-sm font-extrabold tracking-tight text-white">MFY</div>
             <div className="text-[10px] text-white/30 tracking-wide">Setup</div>

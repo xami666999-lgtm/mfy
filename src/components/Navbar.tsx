@@ -17,7 +17,7 @@ export default function Navbar() {
   return (
     <header className="mfy-navbar select-none">
       <button onClick={() => setCurrentPage('home')} className="brand" aria-label="MFY Board" type="button">
-        <img src="/icon.png" alt="MFY" />
+        <img src="./icon.png" alt="MFY" />
         <span>MFY</span>
       </button>
 
@@ -44,7 +44,7 @@ export default function Navbar() {
 
       <div className="navbar-spacer" />
       <button className="profile-button" type="button" onClick={() => setCurrentPage('settings')} aria-label="Profile">
-        <img src="/icon.png" alt="" />
+        <img src="./icon.png" alt="" />
         <UserCircle className="profile-fallback" />
       </button>
     </header>

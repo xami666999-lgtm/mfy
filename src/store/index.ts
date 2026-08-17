@@ -140,7 +140,7 @@ export const useStore = create<AppState>((set, get) => ({
     const profile: UserProfile = {
       id: uid(),
       name: name.trim() || 'Profile',
-      avatar: '/icon.png',
+      avatar: './icon.png',
       createdAt: new Date().toISOString(),
     }
     const profiles = [...get().profiles, profile]
