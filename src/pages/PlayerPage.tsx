@@ -64,6 +64,25 @@ export default function PlayerPage() {
   const [addonStreams, setAddonStreams] = useState<Stream[]>([])
   const [addonsLoading, setAddonsLoading] = useState(false)
 
+  // Post-play episode rating prompt
+  const [showRating, setShowRating] = useState(false)
+  const [ratingHover, setRatingHover] = useState(0)
+  const ratingKey = selectedMedia ? `mfy-rating:${selectedMedia.type}-${selectedMedia.id}-${selectedMedia.season ?? 0}-${selectedMedia.episode ?? 0}` : null
+
+  function saveRating(stars: number) {
+    if (!ratingKey) return
+    try {
+      localStorage.setItem(ratingKey, String(stars))
+      localStorage.setItem(`${ratingKey}:at`, new Date().toISOString())
+    } catch {}
+    setShowRating(false)
+  }
+  function openRatingPrompt() {
+    if (selectedMedia && ratingKey && localStorage.getItem(ratingKey) == null) {
+      setShowRating(true)
+    }
+  }
+
   // Load addon streams (Torrentio / Comet / Sports) for quick source picking
   useEffect(() => {
     let cancelled = false
@@ -129,7 +148,7 @@ export default function PlayerPage() {
     const onTime = () => { setProgress(v.currentTime || 0); setDur(Number.isFinite(v.duration) ? v.duration : 0) }
     const onPlay = () => setPlaying(true)
     const onPause = () => setPlaying(false)
-    const onEnded = () => setPlaying(false)
+    const onEnded = () => { setPlaying(false); openRatingPrompt() }
     const onError = () => setError('The stream could not be loaded. Check the URL or choose another source.')
     v.addEventListener('timeupdate', onTime)
     v.addEventListener('loadedmetadata', onTime)
@@ -365,8 +384,37 @@ export default function PlayerPage() {
             <button title="PiP" type="button" onClick={() => togglePip(videoRef.current)} className="text-[10px] px-2">PiP</button>
             <button onClick={toggleFullscreen}>{fullscreen ? <Minimize /> : <Maximize />}</button>
           </div>
-        </div>
       </div>
     </div>
+
+    {showRating && selectedMedia && (
+      <div className="rating-overlay" onClick={() => setShowRating(false)}>
+        <div className="rating-card" onClick={(e) => e.stopPropagation()}>
+          <div className="rating-title">Rate this {selectedMedia.type === 'movie' ? 'movie' : 'episode'}</div>
+          <div className="rating-stars">
+            {[1, 2, 3, 4, 5].map((star) => {
+              const filled = star <= (ratingHover || 0)
+              return (
+                <button
+                  key={star}
+                  type="button"
+                  className="rating-star"
+                  style={{ color: filled ? '#FFD24C' : '#555' }}
+                  onMouseEnter={() => setRatingHover(star)}
+                  onMouseLeave={() => setRatingHover(0)}
+                  onClick={() => saveRating(star)}
+                  aria-label={`${star} stars`}
+                >
+                  ★
+                </button>
+              )
+            })}
+          </div>
+          <button type="button" className="rating-skip" onClick={() => setShowRating(false)}>Not now</button>
+          <div className="rating-note">Your rating is saved locally and shown on posters.</div>
+        </div>
+      </div>
+    )}
+  </div>
   )
 }

@@ -8,6 +8,40 @@ import { useStore } from '../store'
 import { cn } from '../lib/utils'
 import { SkeletonPoster, SkeletonHero } from '../components/Skeleton'
 
+const STAR_COLOR = '#FFD24C'
+
+function Stars({ value, size = 14 }: { value: number; size?: number }) {
+  const v = Number.isFinite(value) ? Math.max(0, Math.min(10, value)) : 0
+  const filled = Math.round(v / 2)
+  return (
+    <span className="stars" title={`${v.toFixed(1)}/10`} style={{ color: STAR_COLOR, fontSize: size + 2, lineHeight: 1 }}>
+      {'★'.repeat(filled)}{'☆'.repeat(5 - filled)}
+    </span>
+  )
+}
+
+// A curated, well-known subset of TMDB genres so browsing loads fast & predictably.
+const MOVIE_GENRES = [
+  { id: 28, name: 'Action' },
+  { id: 12, name: 'Adventure' },
+  { id: 16, name: 'Animation' },
+  { id: 35, name: 'Comedy' },
+  { id: 27, name: 'Horror' },
+  { id: 10749, name: 'Romance' },
+  { id: 14, name: 'Fantasy' },
+  { id: 878, name: 'Sci-Fi' },
+]
+const TV_GENRES = [
+  { id: 10765, name: 'Sci-Fi & Fantasy' },
+  { id: 10759, name: 'Action' },
+  { id: 10762, name: 'Kids' },
+  { id: 10763, name: 'News' },
+  { id: 10764, name: 'Reality' },
+  { id: 10766, name: 'Soap' },
+  { id: 10767, name: 'Talk' },
+  { id: 9648, name: 'Mystery' },
+]
+
 export default function Board() {
   const { tmdbApiKey, setCurrentPage, setSelectedMedia, addToWatchlist, isInWatchlist, removeFromWatchlist, watchHistory } = useStore()
   const [trending, setTrending] = useState<any[]>([])
@@ -19,6 +53,8 @@ export default function Board() {
   const [error, setError] = useState('')
   const [upcoming, setUpcoming] = useState<any[]>([])
   const [collection, setCollection] = useState<any[]>([])
+  const [genreMovie, setGenreMovie] = useState<Record<number, any[]>>({})
+  const [genreTv, setGenreTv] = useState<Record<number, any[]>>({})
 
   useEffect(() => {
     load()
@@ -47,6 +83,29 @@ export default function Board() {
       } catch {
         setAnime([])
       }
+      // Pre-fetch a few genre rows so they render instantly as the user scrolls.
+      const gm: Record<number, any[]> = {}
+      const gt: Record<number, any[]> = {}
+      await Promise.all([
+        ...MOVIE_GENRES.map(async (g) => {
+          try {
+            const d = await tmdb.discoverMovies({ with_genres: String(g.id), page: '1', sort_by: 'popularity.desc' })
+            gm[g.id] = d?.results || []
+          } catch {
+            gm[g.id] = []
+          }
+        }),
+        ...TV_GENRES.map(async (g) => {
+          try {
+            const d = await tmdb.discoverTV({ with_genres: String(g.id), page: '1', sort_by: 'popularity.desc' })
+            gt[g.id] = d?.results || []
+          } catch {
+            gt[g.id] = []
+          }
+        }),
+      ])
+      setGenreMovie(gm)
+      setGenreTv(gt)
     } catch (e) {
       setError('Could not load catalog. Check your TMDB API key in Settings.')
     }
@@ -273,7 +332,26 @@ export default function Board() {
         )}
         <Row title="Coming Soon" items={upcoming} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} />
         <Row title="Critically Acclaimed" items={collection} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} />
-        {anime.length > 0 && <AnimeRow items={anime} onItem={goDetail} />}
+
+        {/* Category / genre shelves */}
+        <section className="media-row">
+          <div className="media-row-header"><h2 className="media-row-title">Movies by Category</h2></div>
+          <div className="genre-chips">
+            {MOVIE_GENRES.map((g) => (
+              <GenreRow key={`m-${g.id}`} genre={g} items={genreMovie[g.id] || []} onItem={goDetail} />
+            ))}
+          </div>
+        </section>
+        <section className="media-row">
+          <div className="media-row-header"><h2 className="media-row-title">TV Shows by Category</h2></div>
+          <div className="genre-chips">
+            {TV_GENRES.map((g) => (
+              <GenreRow key={`t-${g.id}`} genre={g} items={genreTv[g.id] || []} onItem={goDetail} />
+            ))}
+          </div>
+        </section>
+
+        {anime.length > 0 && <AnimeSection items={anime} onItem={goDetail} />}
       </div>
     </div>
   )
@@ -384,13 +462,45 @@ function Row({
   )
 }
 
-function AnimeRow({ items, onItem }: { items: any[]; onItem: (id: number, type: string) => void }) {
+function GenreRow({ genre, items, onItem }: { genre: { id: number; name: string }; items: any[]; onItem: (id: number, type: string) => void }) {
+  return (
+    <div className="genre-slice">
+      <div className="genre-slice-label">{genre.name} · {items.length}</div>
+      <div
+        className="scroll-row"
+        onClick={() => items[0] && onItem(items[0].id, items[0].media_type === 'tv' || items[0].first_air_date ? 'tv' : 'movie')}
+        role="button"
+      >
+        {items.slice(0, 6).map((item: any) => {
+          const type = (item.media_type === 'tv' || item.first_air_date) ? 'tv' as const : 'movie' as const
+          return (
+            <div
+              key={`${type}-${item.id}`}
+              className="poster-card"
+              role="button"
+              tabIndex={0}
+              onClick={(e) => { e.stopPropagation(); onItem(item.id, type) }}
+              onKeyDown={(e) => e.key === 'Enter' && onItem(item.id, type)}
+            >
+              {item.poster_path ? <img src={`${POSTER_URL}${item.poster_path}`} alt={item.title || item.name} loading="lazy" /> : <div className="poster-fallback">{item.title || item.name}</div>}
+              <div className="poster-play"><Play size={18} fill="#fff" /></div>
+              <div className="poster-overlay">
+                <div className="poster-meta-title">{item.title || item.name}</div>
+                <div className="poster-meta-sub"><Stars value={item.vote_average} size={12} /></div>
+              </div>
+            </div>
+          )
+      })}
+      </div>
+    </div>
+  )
+}
+
+function AnimeSection({ items, onItem }: { items: any[]; onItem: (id: number, type: string) => void }) {
   const ref = useRef<HTMLDivElement>(null)
   return (
     <section className="media-row">
-      <div className="media-row-header">
-        <h2 className="media-row-title">Trending Anime</h2>
-      </div>
+      <div className="media-row-header"><h2 className="media-row-title">Anime</h2><button className="media-row-action" type="button">View All <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} /></button></div>
       <div style={{ position: 'relative' }}>
         <div ref={ref} className="scroll-row">
           {items.map((item: any) => (
@@ -410,21 +520,12 @@ function AnimeRow({ items, onItem }: { items: any[]; onItem: (id: number, type: 
               <div className="poster-play"><Play size={18} fill="#fff" /></div>
               <div className="poster-overlay">
                 <div className="poster-meta-title">{item.title?.english || item.title?.romaji}</div>
-                {item.averageScore ? (
-                  <div className="poster-meta-sub">★ {(item.averageScore / 10).toFixed(1)}</div>
-                ) : null}
+                <div className="poster-meta-sub"><Stars value={item.averageScore ? item.averageScore / 10 : 0} size={12} /></div>
               </div>
             </div>
           ))}
         </div>
-        <button
-          className="row-next"
-          onClick={() => ref.current?.scrollBy({ left: 560, behavior: 'smooth' })}
-          aria-label="More anime"
-          type="button"
-        >
-          <ChevronRight />
-        </button>
+        <button className="row-next" onClick={() => ref.current?.scrollBy({ left: 560, behavior: 'smooth' })} aria-label="More anime" type="button"><ChevronRight /></button>
       </div>
     </section>
   )
@@ -459,8 +560,7 @@ function Poster({
       )}
       {item.vote_average > 0 && (
         <div className="imdb-badge" title="Rating">
-          <span className="imdb-badge-label">IMDb</span>
-          <span className="imdb-badge-score">{Number(item.vote_average).toFixed(1)}</span>
+          <Stars value={item.vote_average} size={12} />
         </div>
       )}
       <div className="poster-play"><Play size={18} fill="#fff" /></div>

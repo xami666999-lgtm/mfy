@@ -8,17 +8,23 @@ export const BACKDROP_URL = `${TMDB_IMAGE_BASE}/original`
 export const PROFILE_URL = `${TMDB_IMAGE_BASE}/w185`
 export const STILL_URL = `${TMDB_IMAGE_BASE}/w300`
 
-/** Prefer env var, fall back to user-stored key from electron-store */
+// Baked-in default key (project is private/for known users); may be overridden via
+// env (VITE_TMDB_API_KEY) or by a user-stored key in Settings.
+const DEFAULT_TMDB_API_KEY = '15fdef3642df31491f4e1cfc08782dc6'
+
+/** Prefer env var, fall back to user-stored key, then the baked default */
 function getApiKey(): string {
   const fromEnv = (import.meta as any).env?.VITE_TMDB_API_KEY
   if (fromEnv && typeof fromEnv === 'string' && fromEnv.length > 8) {
     return fromEnv
   }
   try {
-    return (window as any).__mfyTmdbKey || ''
+    const stored = (window as any).__mfyTmdbKey || ''
+    if (stored && stored.length > 8) return stored
   } catch {
-    return ''
+    // ignore
   }
+  return DEFAULT_TMDB_API_KEY
 }
 
 /** Call once after electron store is loaded so subsequent requests work */
