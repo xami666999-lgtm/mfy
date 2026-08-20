@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Play, Plus, Info, ChevronRight, ArrowRight, Check } from 'lucide-react'
 import { tmdb, POSTER_URL, BACKDROP_URL } from '../api/tmdb'
 import { anilist } from '../api/anilist'
+import { openAnime } from '../api/animeOpen'
 import { streamingServices } from '../api/streaming'
 import { franchises } from '../api/franchises'
 import { useStore } from '../store'
@@ -351,7 +352,7 @@ export default function Board() {
           </div>
         </section>
 
-        {anime.length > 0 && <AnimeSection items={anime} onItem={goDetail} />}
+        {anime.length > 0 && <AnimeSection items={anime} />}
       </div>
     </div>
   )
@@ -496,11 +497,18 @@ function GenreRow({ genre, items, onItem }: { genre: { id: number; name: string 
   )
 }
 
-function AnimeSection({ items, onItem }: { items: any[]; onItem: (id: number, type: string) => void }) {
+function AnimeSection({ items }: { items: any[] }) {
+  const { setSelectedMedia, setCurrentPage } = useStore()
   const ref = useRef<HTMLDivElement>(null)
+  function open(item: any) {
+    openAnime(item, (id, type) => {
+      setSelectedMedia({ id, type })
+      setCurrentPage('detail')
+    })
+  }
   return (
     <section className="media-row">
-      <div className="media-row-header"><h2 className="media-row-title">Anime</h2><button className="media-row-action" type="button">View All <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} /></button></div>
+      <div className="media-row-header"><h2 className="media-row-title">Anime</h2><button className="media-row-action" type="button" onClick={() => setCurrentPage('anime')}>View All <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} /></button></div>
       <div style={{ position: 'relative' }}>
         <div ref={ref} className="scroll-row">
           {items.map((item: any) => (
@@ -509,8 +517,8 @@ function AnimeSection({ items, onItem }: { items: any[]; onItem: (id: number, ty
               className="poster-card"
               role="button"
               tabIndex={0}
-              onClick={() => onItem(item.id, 'tv')}
-              onKeyDown={(e) => e.key === 'Enter' && onItem(item.id, 'tv')}
+              onClick={() => open(item)}
+              onKeyDown={(e) => e.key === 'Enter' && open(item)}
             >
               {item.coverImage?.large ? (
                 <img src={item.coverImage.large} alt={item.title?.romaji || ''} loading="lazy" />

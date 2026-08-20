@@ -1,9 +1,9 @@
 const ANILIST_URL = 'https://graphql.anilist.co'
 
 const ANILIST_QUERY = `
-query ($id: Int, $search: String, $type: MediaType, $page: Int, $perPage: Int, $sort: [MediaSort]) {
+query ($id: Int, $search: String, $type: MediaType, $page: Int, $perPage: Int, $sort: [MediaSort], $genre: String) {
   Page(page: $page, perPage: $perPage) {
-    media(search: $search, type: $type, sort: $sort) {
+    media(search: $search, type: $type, sort: $sort, genre: $genre) {
       id
       title { romaji english native }
       coverImage { large color }
@@ -86,6 +86,26 @@ export const anilist = {
       body: JSON.stringify({
         query: ANILIST_QUERY,
         variables: { type: 'ANIME', page, perPage, sort: ['SCORE_DESC'] },
+      }),
+    })
+    const data = await res.json()
+    return data.data?.Page || null
+  },
+
+  /** Popular anime filtered by genre (for the Anime browse page) */
+  getByGenre: async (genre: string | null, page = 1, perPage = 24) => {
+    const res = await fetch(ANILIST_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: ANILIST_QUERY,
+        variables: {
+          type: 'ANIME',
+          page,
+          perPage,
+          sort: ['POPULARITY_DESC'],
+          genre: genre || undefined,
+        },
       }),
     })
     const data = await res.json()

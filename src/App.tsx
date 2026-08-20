@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useStore, applyTheme } from './store'
-import { setRuntimeTmdbKey, DEFAULT_TMDB_API_KEY } from './api/tmdb'
+import { setRuntimeTmdbKey, DEFAULT_TMDB_API_KEY, isTmdbKeyValid } from './api/tmdb'
 import { useKeyboardNav } from './hooks/useKeyboardNav'
 import TitleBar from './components/TitleBar'
 import Navbar from './components/Navbar'
@@ -19,6 +19,7 @@ import Franchise from './pages/Franchise'
 import Intro from './components/Intro'
 import Movies from './pages/Movies'
 import TvShows from './pages/TvShows'
+import Anime from './pages/Anime'
 import Sports from './pages/Sports'
 
 export default function App() {
@@ -67,9 +68,15 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
     // A TMDB key is always available (baked default + optional user override), so
     // the onboarding wizard only ever shows on a truly fresh install. Once loaded,
     // mark setup as complete so the recurring "Welcome to MFY" wizard no longer
-    // reappears on every app re-open.
-    api.get('tmdbApiKey').then((k: string) => {
-      const key = (k && typeof k === 'string' && k.trim()) || DEFAULT_TMDB_API_KEY
+    // reappears on every app re-open. A stale user-stored key is validated and
+    // replaced with the baked default so the catalog can never render empty.
+    api.get('tmdbApiKey').then(async (k: string) => {
+      const stored = (k && typeof k === 'string' && k.trim()) || ''
+      let key = stored || DEFAULT_TMDB_API_KEY
+      if (stored && !(await isTmdbKeyValid(stored))) {
+        key = DEFAULT_TMDB_API_KEY
+        api.set('tmdbApiKey', DEFAULT_TMDB_API_KEY)
+      }
       setTmdbApiKey(key)
       setRuntimeTmdbKey(key)
       setSetupComplete(true)
@@ -125,6 +132,7 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
         {currentPage === 'franchise' && <Franchise />}
         {currentPage === 'movies' && <Movies />}
         {currentPage === 'tv' && <TvShows />}
+        {currentPage === 'anime' && <Anime />}
         {currentPage === 'sports' && <Sports />}
       </main>
     </div>

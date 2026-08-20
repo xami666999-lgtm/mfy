@@ -32,6 +32,23 @@ export function setRuntimeTmdbKey(key: string) {
   ;(window as any).__mfyTmdbKey = key || ''
 }
 
+/**
+ * Quick sanity check against the TMDB API. Used at startup so a stale/revoked
+ * user-stored key can never brick the catalog — if it fails we fall back to the
+ * baked default key instead of showing empty pages.
+ */
+export async function isTmdbKeyValid(key: string): Promise<boolean> {
+  if (!key || key.length < 8) return false
+  try {
+    const res = await fetch(`${TMDB_BASE}/movie/550?api_key=${encodeURIComponent(key)}`)
+    if (!res.ok) return false
+    const data = await res.json()
+    return Boolean(data && typeof data.id === 'number')
+  } catch {
+    return false
+  }
+}
+
 export class TmdbError extends Error {
   status?: number
   constructor(message: string, status?: number) {

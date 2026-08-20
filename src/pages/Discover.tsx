@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { tmdb, POSTER_URL } from '../api/tmdb'
 import { anilist } from '../api/anilist'
+import { openAnime } from '../api/animeOpen'
 import { useStore } from '../store'
 import { cn } from '../lib/utils'
 
@@ -69,6 +70,13 @@ export default function Discover() {
     setCurrentPage('detail')
   }
 
+  function openAnimeItem(item: any) {
+    openAnime(item, (id, type) => {
+      setSelectedMedia({ id, type })
+      setCurrentPage('detail')
+    })
+  }
+
   const activeGenres = tab === 'movies' ? genres : tab === 'tv' ? tvGenres : []
 
   return (
@@ -127,7 +135,7 @@ export default function Discover() {
       ) : tab === 'anime' ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
           {items.map((item: any) => (
-            <div key={item.id} className="poster-card aspect-[2/3]" onClick={() => goDetail(item.id, 'tv')}>
+            <div key={item.id} className="poster-card aspect-[2/3]" onClick={() => openAnimeItem(item)}>
               {item.coverImage?.large ? (
                 <img src={item.coverImage.large} alt={item.title?.romaji} loading="lazy" />
               ) : (
