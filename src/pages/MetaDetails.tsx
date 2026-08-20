@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ArrowLeft, Play, Star, Clock, Calendar, Heart, Plus, Share2 } from 'lucide-react'
 import { tmdb, POSTER_URL, BACKDROP_URL, PROFILE_URL, STILL_URL } from '../api/tmdb'
 import { fetchOmdbByImdbId } from '../api/omdb'
+import { vidyUrl } from '../api/vidy'
 import { useStore } from '../store'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 
@@ -70,64 +71,47 @@ export default function MetaDetails() {
     setSeasonData(d)
   }
 
+  // Populate the streams list (addons + torrents) whenever the streams tab is shown.
+  useEffect(() => {
+    if (activeTab !== 'streams' || !selectedMedia || !detail || streamOptions.length > 0) return
+    let cancelled = false
+    setResolving(true)
+    ;(async () => {
+      try {
+        const { resolveFromAiostreams, resolveFromTorrentio, getExternalIds } = await import('../api/streams')
+        let idForAddon = String(selectedMedia.id)
+        if (tmdbApiKey) {
+          const ext = await getExternalIds(selectedMedia.type, selectedMedia.id, tmdbApiKey)
+          if (ext?.imdb_id) idForAddon = ext.imdb_id
+        }
+        const season = selectedMedia.season
+        const episode = selectedMedia.episode
+        let streams: any[] = []
+        if (aiostreamsUrl) {
+          streams = await resolveFromAiostreams(aiostreamsUrl, selectedMedia.type, idForAddon, season, episode)
+        }
+        const torrents = await resolveFromTorrentio(selectedMedia.type, idForAddon, { season, episode })
+        const list = [...streams, ...torrents]
+        if (!cancelled) setStreamOptions(list)
+      } catch {
+        if (!cancelled) setStreamOptions([])
+      }
+      if (!cancelled) setResolving(false)
+    })()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, selectedMedia, detail])
+
 
   async function handlePlay() {
     if (!selectedMedia || !detail) return
-    setStreamError('')
-    setResolving(true)
-    setActiveTab('streams')
-    requestAnimationFrame(() => {
-      document.getElementById('mfy-detail-body')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    })
-
-    try {
-      const { resolveFromAiostreams, resolveFromTorrentio, getExternalIds } = await import('../api/streams')
-      let idForAddon = String(selectedMedia.id)
-      if (tmdbApiKey) {
-        const ext = await getExternalIds(selectedMedia.type, selectedMedia.id, tmdbApiKey)
-        if (ext?.imdb_id) idForAddon = ext.imdb_id
-      }
-
-      const season = selectedMedia.season
-      const episode = selectedMedia.episode
-
-      let streams: any[] = []
-      if (aiostreamsUrl) {
-        streams = await resolveFromAiostreams(
-          aiostreamsUrl,
-          selectedMedia.type,
-          idForAddon,
-          season,
-          episode
-        )
-      }
-
-      // Stremio addons (Torrentio) — torrent streams played via WebTorrent.
-      // These are always available without a manual URL.
-      const torrents = await resolveFromTorrentio(selectedMedia.type, idForAddon, {
-        season,
-        episode,
-      })
-      streams = [...streams, ...torrents]
-
-      setStreamOptions(streams)
-
-      if (streams.length > 0) {
-        setCurrentStreamUrl(null)
-        setStreamError('')
-        // Show the picker so the user chooses a source/quality
-        setActiveTab('streams')
-      } else {
-        // Fallback: go to player so user can still play an authorized direct URL
-        setCurrentStreamUrl(null)
-        setCurrentPage('player')
-        setStreamError(aiostreamsUrl ? 'No streams found. You can still play a direct URL in the player.' : 'No streams found. Configure AIOStreams in Settings for direct sources, or pick a torrent quality above.')
-      }
-    } catch (e) {
-      setStreamError('Could not resolve streams.')
-      setCurrentPage('player')
-    }
-    setResolving(false)
+    // Instant playback via Vidy embed (no torrent peers needed). The streams tab
+    // below still lists every addon/torrent source to pick from.
+    const url = vidyUrl(selectedMedia.type === 'movie' ? 'movie' : 'tv', selectedMedia.id, activeSeason, selectedMedia.episode)
+    setCurrentStreamUrl(url)
+    setCurrentPage('player')
   }
 
   function goBack() {
@@ -438,6 +422,27 @@ export default function MetaDetails() {
                 No streams found. Try again in a moment.
               </p>
             )}
+
+            {/* Vidy — always-available embed player, no torrent needed */}
+            <button
+              type="button"
+              onClick={() => {
+                const url = vidyUrl(selectedMedia?.type === 'movie' ? 'movie' : 'tv', selectedMedia?.id ?? 0, activeSeason, selectedMedia?.episode)
+                setCurrentStreamUrl(url)
+                setCurrentPage('player')
+              }}
+              className="w-full flex items-center justify-between gap-3 p-3 rounded-xl bg-[#FF1493]/10 border border-[#FF1493]/25 hover:bg-[#FF1493]/15 text-left transition-all"
+            >
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs font-medium text-white/85 truncate">Vidy Player</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#FF1493]/25 text-[#FF1493] flex-shrink-0">Instant</span>
+                </div>
+                <div className="text-[10px] text-white/30 truncate mt-0.5">HD embed stream · works without torrent peers</div>
+              </div>
+              <span className="text-[10px] text-[#FF1493] flex-shrink-0">Play</span>
+            </button>
+
             {streamOptions.map((s: any, i: number) => {
               const isTorrent = s?.infoHash || /^magnet:/i.test(s?.url || '')
               const playLabel = s.quality || (isTorrent ? 'Torrent' : s.type || 'Play')

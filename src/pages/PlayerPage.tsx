@@ -319,6 +319,7 @@ export default function PlayerPage() {
   }
 
   const title = selectedMedia ? `${selectedMedia.type === 'movie' ? 'Movie' : 'Series'} ${selectedMedia.id}` : 'MFY Player'
+  const embedStream = isEmbed(streamUrl)
 
   return (
     <div className="mfy-player" onMouseMove={onMouseMove}>
@@ -343,10 +344,12 @@ export default function PlayerPage() {
               ))}
             </select>
           )}
-          <label className="player-icon-button" title="Load subtitles">
-            <Subtitles />
-            <input type="file" accept=".srt,.vtt,text/vtt" hidden onChange={(e) => e.target.files?.[0] && handleSubtitle(e.target.files[0])} />
-          </label>
+          {!embedStream && (
+            <label className="player-icon-button" title="Load subtitles">
+              <Subtitles />
+              <input type="file" accept=".srt,.vtt,text/vtt" hidden onChange={(e) => e.target.files?.[0] && handleSubtitle(e.target.files[0])} />
+            </label>
+          )}
           <button className="player-icon-button" onClick={toggleFullscreen}><Maximize /></button>
         </div>
       </div>
@@ -391,6 +394,7 @@ export default function PlayerPage() {
         {error && <div className="player-error"><AlertCircle /> {error}</div>}
       </div>
 
+      {!embedStream && (
       <div className={cn('player-controls', showUI ? 'visible' : 'hidden')} onClick={(e) => e.stopPropagation()}>
         <div className="player-progress" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); seek(((e.clientX - r.left) / r.width) * dur) }}>
           <div className="player-progress-fill" style={{ width: `${dur ? Math.min(100, (progress / dur) * 100) : 0}%` }} />
@@ -412,6 +416,7 @@ export default function PlayerPage() {
           </div>
       </div>
     </div>
+    )}
 
     {showRating && selectedMedia && (
       <div className="rating-overlay" onClick={() => setShowRating(false)}>

@@ -56,6 +56,7 @@ export default function Board() {
   const [collection, setCollection] = useState<any[]>([])
   const [genreMovie, setGenreMovie] = useState<Record<number, any[]>>({})
   const [genreTv, setGenreTv] = useState<Record<number, any[]>>({})
+  const [homeTab, setHomeTab] = useState<'movie' | 'tv'>('movie')
 
   useEffect(() => {
     load()
@@ -184,8 +185,15 @@ export default function Board() {
           <div className="hero-overlay" />
           <div className="hero-content">
             <div className="hero-copy fade-in">
-              <div className="hero-kicker">{hero.media_type === 'movie' ? 'TRENDING MOVIE' : 'TRENDING SERIES'}</div>
+              <div className="hero-kicker">{hero.media_type === 'movie' ? 'MOVIE' : 'SERIES'}</div>
               <h1>{hero.title || hero.name}</h1>
+              <div className="hero-meta">
+                <span>{(hero.release_date || hero.first_air_date || '').slice(0, 4) || '2026'}</span>
+                {(hero.genre_ids?.length || hero.genres?.length) ? (
+                  <span>{(hero.genre_ids?.length ? hero.genre_ids.slice(0, 2) : []).map((g: number) => ({ 28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime', 18: 'Drama', 14: 'Fantasy', 27: 'Horror', 10749: 'Romance', 878: 'Sci-Fi', 53: 'Thriller', 37: 'Western', 10765: 'Sci-Fi & Fantasy' } as Record<number, string>)[g] || g).filter(Boolean).join(' · ')}</span>
+                ) : null}
+                {hero.vote_average > 0 && <span>★ {hero.vote_average.toFixed(1)}</span>}
+              </div>
               <p>{hero.overview || 'Discover something new to watch tonight.'}</p>
               <div className="hero-actions">
                 <button className="hero-play" onClick={() => goDetail(hero.id, hero.media_type || 'movie')}>
@@ -224,59 +232,31 @@ export default function Board() {
 
         <FranchiseGrid />
 
-        {/* Top 10 */}
-        {movies.length > 0 && (
+        {/* TOP 10 */}
+        {(movies.length > 0 || shows.length > 0) && (
           <section className="media-row">
             <div className="media-row-header">
-              <h2 className="media-row-title">Top 10 Movies Today</h2>
+              <h2 className="media-row-title">TOP 10 on MFY</h2>
+              <div className="home-tabs">
+                <button type="button" className={cn('home-tab', homeTab === 'movie' && 'active')} onClick={() => setHomeTab('movie')}>Movies</button>
+                <button type="button" className={cn('home-tab', homeTab === 'tv' && 'active')} onClick={() => setHomeTab('tv')}>Series</button>
+              </div>
             </div>
             <div className="top10-row">
-              {movies.slice(0, 10).map((item, idx) => (
+              {(homeTab === 'movie' ? movies : shows).slice(0, 10).map((item, idx) => (
                 <div
                   key={item.id}
                   className="top10-card poster-card"
                   style={{ width: 150 }}
                   role="button"
                   tabIndex={0}
-                  onClick={() => goDetail(item.id, 'movie')}
+                  onClick={() => goDetail(item.id, homeTab)}
                 >
                   <span className="top10-rank">{idx + 1}</span>
                   {item.poster_path ? (
-                    <img src={`${POSTER_URL}${item.poster_path}`} alt={item.title} loading="lazy" />
+                    <img src={`${POSTER_URL}${item.poster_path}`} alt={item.title || item.name} loading="lazy" onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none'; el.parentElement?.classList.add('has-fallback') }} />
                   ) : (
-                    <div className="poster-fallback">{item.title}</div>
-                  )}
-                  {item.vote_average > 0 && (
-                    <div className="imdb-badge">
-                      <span className="imdb-badge-label">IMDb</span>
-                      <span className="imdb-badge-score">{Number(item.vote_average).toFixed(1)}</span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-        {shows.length > 0 && (
-          <section className="media-row">
-            <div className="media-row-header">
-              <h2 className="media-row-title">Top 10 TV Shows Today</h2>
-            </div>
-            <div className="top10-row">
-              {shows.slice(0, 10).map((item, idx) => (
-                <div
-                  key={item.id}
-                  className="top10-card poster-card"
-                  style={{ width: 150 }}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => goDetail(item.id, 'tv')}
-                >
-                  <span className="top10-rank">{idx + 1}</span>
-                  {item.poster_path ? (
-                    <img src={`${POSTER_URL}${item.poster_path}`} alt={item.name} loading="lazy" />
-                  ) : (
-                    <div className="poster-fallback">{item.name}</div>
+                    <div className="poster-fallback">{item.title || item.name}</div>
                   )}
                   {item.vote_average > 0 && (
                     <div className="imdb-badge">
@@ -290,9 +270,30 @@ export default function Board() {
           </section>
         )}
 
-        <Row title="Trending Now" items={movieRow} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('movies')} />
-        <Row title="Popular Movies" items={movies} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('movies')} />
-        <Row title="Popular TV Shows" items={shows} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('tv')} />
+        {/* Trending Today */}
+        {movieRow.length > 0 && (
+          <section className="media-row">
+            <div className="media-row-header">
+              <h2 className="media-row-title">Trending Today</h2>
+              <button className="media-row-action" type="button" onClick={() => setCurrentPage(homeTab === 'movie' ? 'movies' : 'tv')}>
+                View All <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
+              </button>
+            </div>
+            <div className="scroll-row">
+              {(homeTab === 'movie' ? movieRow : shows).slice(0, 20).map((item) => (
+                <Poster
+                  key={`${homeTab}-${item.id}`}
+                  item={item}
+                  type={homeTab}
+                  inList={isInWatchlist(item.id, homeTab)}
+                  onClick={() => goDetail(item.id, homeTab)}
+                  onToggleList={() => toggleList(item)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
         {watchHistory.length > 0 && (
           <section className="media-row">
             <div className="media-row-header">
@@ -311,7 +312,7 @@ export default function Board() {
                   }}
                 >
                   {h.posterPath ? (
-                    <img src={`${POSTER_URL}${h.posterPath}`} alt={h.title} loading="lazy" />
+                    <img src={`${POSTER_URL}${h.posterPath}`} alt={h.title} loading="lazy" onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none'; el.parentElement?.classList.add('has-fallback') }} />
                   ) : (
                     <div className="poster-fallback">{h.title}</div>
                   )}
@@ -331,6 +332,7 @@ export default function Board() {
             </div>
           </section>
         )}
+
         <Row title="Coming Soon" items={upcoming} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('movies')} />
         <Row title="Critically Acclaimed" items={collection} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('movies')} />
 
@@ -487,7 +489,7 @@ function GenreRow({ genre, items, onItem }: { genre: { id: number; name: string 
               onClick={(e) => { e.stopPropagation(); onItem(item.id, type) }}
               onKeyDown={(e) => e.key === 'Enter' && onItem(item.id, type)}
             >
-              {item.poster_path ? <img src={`${POSTER_URL}${item.poster_path}`} alt={item.title || item.name} loading="lazy" /> : <div className="poster-fallback">{item.title || item.name}</div>}
+              {item.poster_path ? <img src={`${POSTER_URL}${item.poster_path}`} alt={item.title || item.name} loading="lazy" onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none'; el.parentElement?.classList.add('has-fallback') }} /> : <div className="poster-fallback">{item.title || item.name}</div>}
               <div className="poster-play"><Play size={18} fill="#fff" /></div>
               <div className="poster-overlay">
                 <div className="poster-meta-title">{item.title || item.name}</div>
@@ -525,7 +527,7 @@ function AnimeSection({ items }: { items: any[] }) {
               onKeyDown={(e) => e.key === 'Enter' && open(item)}
             >
               {item.coverImage?.large ? (
-                <img src={item.coverImage.large} alt={item.title?.romaji || ''} loading="lazy" />
+                <img src={item.coverImage.large} alt={item.title?.romaji || ''} loading="lazy" onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none'; el.parentElement?.classList.add('has-fallback') }} />
               ) : (
                 <div className="poster-fallback">{item.title?.romaji}</div>
               )}
@@ -566,7 +568,7 @@ function Poster({
       onKeyDown={(e) => e.key === 'Enter' && onClick()}
     >
       {item.poster_path ? (
-        <img src={`${POSTER_URL}${item.poster_path}`} alt={title || ''} loading="lazy" />
+        <img src={`${POSTER_URL}${item.poster_path}`} alt={title || ''} loading="lazy" onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none'; el.parentElement?.classList.add('has-fallback') }} />
       ) : (
         <div className="poster-fallback">{title}</div>
       )}
