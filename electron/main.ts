@@ -126,10 +126,12 @@ function createTray() {
 function setupAutoUpdater() {
   if (!autoUpdater || isDev) return
 
-  autoUpdater.autoDownload = true
-  autoUpdater.autoInstallOnAppQuit = true
+  const enabled = store.get('autoUpdate', true) !== false
+  autoUpdater.autoDownload = enabled
+  autoUpdater.autoInstallOnAppQuit = enabled
 
   autoUpdater.on('update-available', (info: any) => {
+    if (!enabled) return
     new Notification({
       title: 'MFY Update Available',
       body: `Version ${info.version} is downloading in the background…`,
@@ -137,6 +139,7 @@ function setupAutoUpdater() {
   })
 
   autoUpdater.on('update-downloaded', (info: any) => {
+    if (!enabled) return
     new Notification({
       title: 'MFY Update Ready',
       body: `Version ${info.version} will install when you quit the app.`,
@@ -163,9 +166,11 @@ function setupAutoUpdater() {
   })
 
   // Check a few seconds after launch
-  setTimeout(() => {
-    autoUpdater.checkForUpdatesAndNotify().catch(() => {})
-  }, 5000)
+  if (enabled) {
+    setTimeout(() => {
+      autoUpdater.checkForUpdatesAndNotify().catch(() => {})
+    }, 5000)
+  }
 }
 
 app.whenReady().then(() => {

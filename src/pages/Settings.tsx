@@ -56,6 +56,7 @@ export default function Settings() {
   const [updateStatus, setUpdateStatus] = useState<string | null>(null)
   const [torrents, setTorrents] = useState<any[]>([])
   const [magnetInput, setMagnetInput] = useState('')
+  const [autoUpdate, setAutoUpdate] = useState(true)
 
   async function refreshTorrents() {
     try {
@@ -67,6 +68,9 @@ export default function Settings() {
 
   useEffect(() => {
     refreshTorrents()
+    ;(window as any).electronAPI?.get('autoUpdate').then((v: unknown) => {
+      if (typeof v === 'boolean') setAutoUpdate(v)
+    })
     const unsub = onTorrentProgress((t) => {
       setTorrents((prev) => {
         const idx = prev.findIndex((x) => x.infoHash === t.infoHash)
@@ -130,8 +134,8 @@ export default function Settings() {
         </Section>
 
         <Section title="Playback">
-          <Toggle label="Auto-resume" description="Remember where you left off" defaultChecked />
-          <Toggle label="Auto-download subtitles" description="Find subtitles automatically" defaultChecked />
+          <Toggle label="Auto-resume" description="Remember where you left off" checked={true} />
+          <Toggle label="Auto-download subtitles" description="Find subtitles automatically" checked={true} />
         </Section>
 
         <Section title="Appearance">
@@ -173,25 +177,34 @@ export default function Settings() {
               <option value="mpv">mpv (if installed)</option>
             </select>
           </div>
-          <Toggle label="Auto-resume" description="Remember where you left off" defaultChecked />
-          <Toggle label="Autoplay next episode" description="For TV shows when available" defaultChecked />
+          <Toggle label="Auto-resume" description="Remember where you left off" checked={true} />
+          <Toggle label="Autoplay next episode" description="For TV shows when available" checked={true} />
         </Section>
 
         <Section title="Profiles">
           <div className="flex gap-2 mb-2 flex-wrap">
             {profiles.map((pr) => (
-              <button
-                key={pr.id}
-                type="button"
-                onClick={() => store.switchProfile(pr.id)}
-                className={`h-8 px-3 rounded-lg text-xs border ${
-                  store.currentProfile?.id === pr.id
-                    ? 'border-[#FF1493]/40 text-[#FF1493] bg-[#FF1493]/10'
-                    : 'border-white/[0.06] text-white/40'
-                }`}
-              >
-                {pr.name}
-              </button>
+              <div key={pr.id} className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => store.switchProfile(pr.id)}
+                  className={`h-8 px-3 rounded-lg text-xs border ${
+                    store.currentProfile?.id === pr.id
+                      ? 'border-[#FF1493]/40 text-[#FF1493] bg-[#FF1493]/10'
+                      : 'border-white/[0.06] text-white/40'
+                  }`}
+                >
+                  {pr.name}
+                </button>
+                <button
+                  type="button"
+                  title={`Delete ${pr.name}`}
+                  onClick={() => store.removeProfile(pr.id)}
+                  className="w-6 h-6 grid place-items-center rounded-md text-white/25 hover:text-red-400 hover:bg-white/[0.06] transition-all"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
             ))}
           </div>
           <div className="flex gap-2">
@@ -330,8 +343,16 @@ export default function Settings() {
         </Section>
 
         <Section title="General">
-          <Toggle label="Notifications" description="Alert for new episodes" defaultChecked />
-          <Toggle label="Auto-update" description="Silently update when new versions arrive" defaultChecked />
+          <Toggle label="Notifications" description="Alert for new episodes" checked={true} />
+          <Toggle
+            label="Auto-update"
+            description="Download new versions in the background automatically"
+            checked={autoUpdate}
+            onChange={(v) => {
+              setAutoUpdate(v)
+              ;(window as any).electronAPI?.set('autoUpdate', v)
+            }}
+          />
           <p className="text-[10px] text-white/20 pt-1">Shortcuts: 1 Home · 2 Discover · 3 Search · 4 My List · / Search · Esc Back</p>
         </Section>
       </div>
@@ -372,16 +393,15 @@ function Input({ label, value, onChange, placeholder, link, type = 'text' }: {
   )
 }
 
-function Toggle({ label, description, defaultChecked = false }: { label: string; description: string; defaultChecked?: boolean }) {
-  const [on, setOn] = useState(defaultChecked)
+function Toggle({ label, description, checked, onChange }: { label: string; description: string; checked: boolean; onChange?: (v: boolean) => void }) {
   return (
     <div className="flex items-center justify-between">
       <div>
         <p className="text-xs text-white/60">{label}</p>
         <p className="text-[10px] text-white/20 mt-0.5">{description}</p>
       </div>
-      <button onClick={() => setOn(!on)} className={`w-9 h-5 rounded-full transition-all relative ${on ? 'bg-[#FF1493]' : 'bg-white/[0.08]'}`}>
-        <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${on ? 'left-[18px]' : 'left-0.5'}`} />
+      <button onClick={() => onChange?.(!checked)} className={`w-9 h-5 rounded-full transition-all relative ${checked ? 'bg-[#FF1493]' : 'bg-white/[0.08]'}`}>
+        <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${checked ? 'left-[18px]' : 'left-0.5'}`} />
       </button>
     </div>
   )

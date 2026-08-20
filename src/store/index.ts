@@ -33,6 +33,7 @@ interface AppState {
   profiles: UserProfile[]
   setProfiles: (profiles: UserProfile[]) => void
   addProfile: (name: string) => void
+  removeProfile: (id: string) => void
   switchProfile: (id: string) => void
   setProfilePin: (id: string, pin: string) => void
   verifyProfilePin: (id: string, pin: string) => boolean
@@ -159,6 +160,16 @@ export const useStore = create<AppState>((set, get) => ({
     set({ profiles, currentProfile: profile })
     persist('profiles', profiles)
     persist('currentProfileId', profile.id)
+  },
+  removeProfile: (id) => {
+    const profiles = get().profiles.filter((x) => x.id !== id)
+    set({ profiles })
+    persist('profiles', profiles)
+    if (get().currentProfile?.id === id) {
+      const next = profiles[0] || null
+      set({ currentProfile: next })
+      persist('currentProfileId', next ? next.id : '')
+    }
   },
   switchProfile: (id) => {
     const p = get().profiles.find((x) => x.id === id) || null
