@@ -1,4 +1,5 @@
 import { tmdb } from './tmdb'
+import { useStore } from '../store'
 
 /**
  * AniList items use AniList ids — TMDB can't look them up directly. Resolve by
@@ -21,7 +22,12 @@ export async function openAnime(item: any, onOpen: (id: number, type: 'movie' | 
   } catch {
     // fall through
   }
-  // Last resort: open the AniList item as a series so the detail page at least shows
-  // a loading state rather than nothing (user can search the title manually).
-  onOpen(item.id, 'tv')
+  // No TMDB match: open the search page with the title so the user can pick,
+  // instead of landing on a broken detail page.
+  try {
+    useStore.getState().setSearchQuery(q)
+    useStore.getState().setCurrentPage('search')
+  } catch {
+    onOpen(item.id, 'tv')
+  }
 }

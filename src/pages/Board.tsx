@@ -290,9 +290,9 @@ export default function Board() {
           </section>
         )}
 
-        <Row title="Trending Now" items={movieRow} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} />
-        <Row title="Popular Movies" items={movies} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} />
-        <Row title="Popular TV Shows" items={shows} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} />
+        <Row title="Trending Now" items={movieRow} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('movies')} />
+        <Row title="Popular Movies" items={movies} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('movies')} />
+        <Row title="Popular TV Shows" items={shows} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('tv')} />
         {watchHistory.length > 0 && (
           <section className="media-row">
             <div className="media-row-header">
@@ -331,8 +331,8 @@ export default function Board() {
             </div>
           </section>
         )}
-        <Row title="Coming Soon" items={upcoming} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} />
-        <Row title="Critically Acclaimed" items={collection} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} />
+        <Row title="Coming Soon" items={upcoming} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('movies')} />
+        <Row title="Critically Acclaimed" items={collection} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('movies')} />
 
         {/* Category / genre shelves */}
         <section className="media-row">
@@ -418,21 +418,25 @@ function Row({
   onItem,
   onToggleList,
   isInList,
+  viewAll,
 }: {
   title: string
   items: any[]
   onItem: (id: number, type: string) => void
   onToggleList: (item: any) => void
   isInList: (id: number, type: 'movie' | 'tv') => boolean
+  viewAll?: () => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
   return (
     <section className="media-row">
       <div className="media-row-header">
         <h2 className="media-row-title">{title}</h2>
-        <button className="media-row-action" type="button">
-          View All <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
-        </button>
+        {viewAll && (
+          <button className="media-row-action" type="button" onClick={viewAll}>
+            View All <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
+          </button>
+        )}
       </div>
       <div style={{ position: 'relative' }}>
         <div ref={ref} className="scroll-row">

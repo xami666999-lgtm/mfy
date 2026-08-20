@@ -63,6 +63,32 @@ export default function PlayerPage() {
   const [torrentInfo, setTorrentInfo] = useState<any>(null)
   const [addonStreams, setAddonStreams] = useState<Stream[]>([])
   const [addonsLoading, setAddonsLoading] = useState(false)
+  const stallTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // If a torrent is buffering with no peers for ~25s, give up and offer a way
+  // out instead of buffering forever.
+  useEffect(() => {
+    if (!torrentInfo || !torrentInfo.infoHash) return
+    if (torrentInfo.numPeers > 0 || torrentInfo.progress > 0) {
+      if (stallTimer.current) {
+        clearTimeout(stallTimer.current)
+        stallTimer.current = null
+      }
+      return
+    }
+    if (!stallTimer.current) {
+      stallTimer.current = setTimeout(() => {
+        stallTimer.current = null
+        setError('No peers found for this torrent. It may be dead — pick another source.')
+      }, 25000)
+    }
+    return () => {
+      if (stallTimer.current) {
+        clearTimeout(stallTimer.current)
+        stallTimer.current = null
+      }
+    }
+  }, [torrentInfo])
 
   // Post-play episode rating prompt
   const [showRating, setShowRating] = useState(false)
@@ -351,7 +377,7 @@ export default function PlayerPage() {
           </div>
         )}
         {loading && <div className="player-loading">Loading stream…</div>}
-        {torrentInfo && torrentInfo.progress < 1 && (
+        {torrentInfo && torrentInfo.progress < 1 && !error && (
           <div className="player-loading torrent-status">
             <div className="torrent-progress-bar">
               <div className="torrent-progress-fill" style={{ width: `${Math.round((torrentInfo.progress || 0) * 100)}%` }} />

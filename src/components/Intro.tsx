@@ -9,9 +9,9 @@ const FONTS = [
   { family: 'Courier New, monospace', weight: 700, tracking: '0.4em' },
 ]
 
-const FONT_MS = 140
-const HOLD_MS = 320
-const EXIT_MS = 620
+const FONT_MS = 180
+const HOLD_MS = 400
+const EXIT_MS = 700
 
 type Props = { onDone: () => void }
 

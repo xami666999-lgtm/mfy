@@ -1,7 +1,7 @@
 const ANILIST_URL = 'https://graphql.anilist.co'
 
 const ANILIST_QUERY = `
-query ($id: Int, $search: String, $type: MediaType, $page: Int, $perPage: Int, $sort: [MediaSort], $genre: String) {
+query ($search: String, $type: MediaType, $page: Int, $perPage: Int, $sort: [MediaSort], $genre: String) {
   Page(page: $page, perPage: $perPage) {
     media(search: $search, type: $type, sort: $sort, genre: $genre) {
       id
