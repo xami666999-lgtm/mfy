@@ -445,7 +445,6 @@ export default function MetaDetails() {
 
             {streamOptions.map((s: any, i: number) => {
               const isTorrent = s?.infoHash || /^magnet:/i.test(s?.url || '')
-              const playLabel = s.quality || (isTorrent ? 'Torrent' : s.type || 'Play')
               const meta = [
                 s.provider,
                 s.seeds ? `${s.seeds} seeds` : '',
@@ -481,17 +480,19 @@ export default function MetaDetails() {
                       setCurrentPage('player')
                     }
                   }}
-                  className="w-full flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] text-left transition-all"
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] text-left transition-all"
                 >
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="text-xs font-medium text-white/80 truncate">{s.name || s.provider || 'Stream'}</span>
-                      {s.quality && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#FF1493]/20 text-[#FF1493] flex-shrink-0">{s.quality}</span>}
                       {isTorrent && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 flex-shrink-0">Torrent</span>}
                     </div>
                     {meta && <div className="text-[10px] text-white/30 truncate mt-0.5">{meta}</div>}
                   </div>
-                  <span className="text-[10px] text-[#FF1493] flex-shrink-0">{playLabel}</span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {s.quality && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#FF1493]/20 text-[#FF1493]">{s.quality}</span>}
+                    <span className="text-[10px] text-[#FF1493]">Play</span>
+                  </div>
                 </button>
               )
             })}

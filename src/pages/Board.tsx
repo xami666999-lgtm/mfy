@@ -53,6 +53,9 @@ export default function Board() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [upcoming, setUpcoming] = useState<any[]>([])
+  const [nowPlaying, setNowPlaying] = useState<any[]>([])
+  const [onTheAir, setOnTheAir] = useState<any[]>([])
+  const [topRatedTv, setTopRatedTv] = useState<any[]>([])
   const [collection, setCollection] = useState<any[]>([])
   const [genreMovie, setGenreMovie] = useState<Record<number, any[]>>({})
   const [genreTv, setGenreTv] = useState<Record<number, any[]>>({})
@@ -79,6 +82,15 @@ export default function Board() {
       // Lightweight "collection-like" row from top rated
       const top = await tmdb.getTopRated('movie')
       setCollection(top?.results?.slice(0, 12) || [])
+      // Extra shelves: in-theaters, airing now, top rated series
+      const [np, ota, trt] = await Promise.all([
+        tmdb.getNowPlaying(),
+        tmdb.getOnTheAir(),
+        tmdb.getTopRated('tv'),
+      ])
+      setNowPlaying(np?.results?.slice(0, 16) || [])
+      setOnTheAir(ota?.results?.slice(0, 16) || [])
+      setTopRatedTv(trt?.results?.slice(0, 12) || [])
       try {
         const a = await anilist.getTrending(1, 20)
         setAnime(a?.media || [])
@@ -335,6 +347,17 @@ export default function Board() {
 
         <Row title="Coming Soon" items={upcoming} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('movies')} />
         <Row title="Critically Acclaimed" items={collection} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('movies')} />
+
+        {/* Extra shelves every streaming app has */}
+        {nowPlaying.length > 0 && (
+          <Row title="Now Playing · In Theaters" items={nowPlaying} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('movies')} />
+        )}
+        {onTheAir.length > 0 && (
+          <Row title="Airing Now · TV" items={onTheAir} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('tv')} />
+        )}
+        {topRatedTv.length > 0 && (
+          <Row title="Top Rated Series" items={topRatedTv} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('tv')} />
+        )}
 
         {/* Category / genre shelves */}
         <section className="media-row">

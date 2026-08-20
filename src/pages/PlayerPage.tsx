@@ -6,7 +6,7 @@ import {
 import { useStore } from '../store'
 import { cn } from '../lib/utils'
 import { isTorrentInput, pickBestFile, onTorrentProgress, formatBytes, formatSpeed } from '../api/torrent'
-import { tmdb } from '../api/tmdb'
+import { tmdb, POSTER_URL, STILL_URL } from '../api/tmdb'
 import { AddonStreamService, type Stream } from '../services/addonStreamService'
 
 function isHls(url: string) { return /\.m3u8(?:$|\?)/i.test(url) }
@@ -64,6 +64,94 @@ export default function PlayerPage() {
   const [addonStreams, setAddonStreams] = useState<Stream[]>([])
   const [addonsLoading, setAddonsLoading] = useState(false)
   const stallTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // "Starting soon" overlay: shows the episode picture + a small description,
+  // then auto-plays after 5s unless the user hits Play first.
+  const [intro, setIntro] = useState(false)
+  const [introCount, setIntroCount] = useState(5)
+  const [introInfo, setIntroInfo] = useState<{ image: string; title: string; sub: string; overview: string } | null>(null)
+  const introTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Fetch poster/still + title + short overview for the intro overlay.
+  useEffect(() => {
+    let cancelled = false
+    if (!selectedMedia) return
+    setIntroInfo(null)
+    ;(async () => {
+      try {
+        if (selectedMedia.type === 'movie') {
+          const d = await tmdb.getMovieDetail(selectedMedia.id)
+          if (cancelled || !d) return
+          setIntroInfo({
+            image: d.poster_path ? `${POSTER_URL}${d.poster_path}` : '',
+            title: d.title || '',
+            sub: 'Movie',
+            overview: d.overview || '',
+          })
+        } else {
+          const s = selectedMedia.season || 1
+          const e = selectedMedia.episode || 1
+          const season = await tmdb.getSeasonDetail(selectedMedia.id, s)
+          if (cancelled) return
+          const ep = season?.episodes?.find((x: any) => x.episode_number === e) || season?.episodes?.[e - 1]
+          const series = season?.name ? null : await tmdb.getTVDetail(selectedMedia.id).catch(() => null)
+          if (cancelled) return
+          setIntroInfo({
+            image: ep?.still_path ? `${STILL_URL}${ep.still_path}` : (season?.poster_path ? `${POSTER_URL}${season.poster_path}` : ''),
+            title: ep?.name || `Episode ${e}`,
+            sub: `S${s} · E${e}`,
+            overview: ep?.overview || series?.overview || season?.overview || '',
+          })
+        }
+      } catch {
+        // overlay still shows title fallback
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [selectedMedia])
+
+  // Reset intro when a new stream loads.
+  useEffect(() => {
+    if (!currentStreamUrl) {
+      setIntro(false)
+      if (introTimer.current) clearInterval(introTimer.current)
+      return
+    }
+    setIntroCount(5)
+    setIntro(true)
+    if (introTimer.current) clearInterval(introTimer.current)
+    introTimer.current = setInterval(() => {
+      setIntroCount((c) => {
+        if (c <= 1) {
+          if (introTimer.current) clearInterval(introTimer.current)
+          introTimer.current = null
+          setIntro(false)
+          autoplayAfterIntro()
+          return 0
+        }
+        return c - 1
+      })
+    }, 1000)
+    return () => {
+      if (introTimer.current) clearInterval(introTimer.current)
+      introTimer.current = null
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStreamUrl])
+
+  function dismissIntro(play = true) {
+    setIntro(false)
+    if (introTimer.current) clearInterval(introTimer.current)
+    introTimer.current = null
+    if (play) autoplayAfterIntro()
+  }
+
+  function autoplayAfterIntro() {
+    const v = videoRef.current
+    if (v && !isEmbed(streamUrl)) v.play().catch(() => {})
+  }
 
   // If a torrent is buffering with no peers for ~25s, give up and offer a way
   // out instead of buffering forever.
@@ -392,6 +480,29 @@ export default function PlayerPage() {
           </div>
         )}
         {error && <div className="player-error"><AlertCircle /> {error}</div>}
+
+        {intro && !error && (
+          <div className="player-intro" onClick={(e) => e.stopPropagation()}>
+            {introInfo?.image && <div className="player-intro-bg" style={{ backgroundImage: `url(${introInfo.image})` }} />}
+            <div className="player-intro-card">
+              {introInfo?.image && <img className="player-intro-poster" src={introInfo.image} alt="" />}
+              <div className="player-intro-body">
+                {introInfo?.sub && <div className="player-intro-kicker">{introInfo.sub}</div>}
+                <h2>{introInfo?.title || 'Ready to play'}</h2>
+                {introInfo?.overview && <p>{introInfo.overview}</p>}
+                <div className="player-intro-actions">
+                  <button className="player-intro-play" onClick={() => dismissIntro(true)}>
+                    <Play fill="currentColor" size={16} /> Play Now
+                  </button>
+                  <button className="player-intro-later" onClick={() => dismissIntro(false)}>Later</button>
+                  <div className="player-intro-count">
+                    <span className="player-intro-ring">{introCount}</span> auto-playing…
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {!embedStream && (

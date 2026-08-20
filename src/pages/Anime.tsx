@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { anilist } from '../api/anilist'
 import { openAnime } from '../api/animeOpen'
 import { useStore } from '../store'
@@ -30,7 +30,9 @@ export default function Anime() {
   const [items, setItems] = useState<any[]>([])
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [hasNext, setHasNext] = useState(false)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let c = false
@@ -51,7 +53,35 @@ export default function Anime() {
     return () => {
       c = true
     }
-  }, [genre, sort, page])
+  }, [genre, sort, page === 1])
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasNext) return
+    setLoadingMore(true)
+    const next = page + 1
+    try {
+      const g = genre === 'All' ? null : genre
+      const d = await anilist.getByGenre(g, next, 24)
+      const list = d?.media || []
+      setItems((prev) => [...prev, ...list])
+      setHasNext(Boolean(d?.pageInfo?.hasNextPage))
+      setPage(next)
+    } catch {}
+    setLoadingMore(false)
+  }, [loadingMore, hasNext, page, genre, sort])
+
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) loadMore()
+      },
+      { rootMargin: '600px' }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [loadMore, loading])
 
   function open(item: any) {
     openAnime(item, (id, type) => {
@@ -98,41 +128,36 @@ export default function Anime() {
           ))}
         </div>
       ) : items.length ? (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 2xl:grid-cols-7 gap-3">
-          {items.map((item: any) => (
-            <div key={item.id} className="poster-card aspect-[2/3]" role="button" tabIndex={0} onClick={() => open(item)}>
-              {item.coverImage?.large ? (
-                <img src={item.coverImage.large} alt={item.title?.english || item.title?.romaji} loading="lazy" />
-              ) : (
-                <div className="w-full h-full bg-white/[0.04] flex items-center justify-center text-white/15 text-[10px] text-center px-2">
-                  {item.title?.english || item.title?.romaji}
+        <>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 2xl:grid-cols-7 gap-3">
+            {items.map((item: any) => (
+              <div key={item.id} className="poster-card aspect-[2/3]" role="button" tabIndex={0} onClick={() => open(item)}>
+                {item.coverImage?.large ? (
+                  <img src={item.coverImage.large} alt={item.title?.english || item.title?.romaji} loading="lazy" onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none'; el.parentElement?.classList.add('has-fallback') }} />
+                ) : (
+                  <div className="w-full h-full bg-white/[0.04] flex items-center justify-center text-white/15 text-[10px] text-center px-2">
+                    {item.title?.english || item.title?.romaji}
+                  </div>
+                )}
+                {item.averageScore != null && item.averageScore > 0 && (
+                  <div className="imdb-badge">
+                    <span className="imdb-badge-label">SCORE</span>
+                    <span className="imdb-badge-score">{(item.averageScore / 10).toFixed(1)}</span>
+                  </div>
+                )}
+                <div className="poster-overlay">
+                  <div className="poster-meta-title">{item.title?.english || item.title?.romaji}</div>
                 </div>
-              )}
-              {item.averageScore != null && item.averageScore > 0 && (
-                <div className="imdb-badge">
-                  <span className="imdb-badge-label">SCORE</span>
-                  <span className="imdb-badge-score">{(item.averageScore / 10).toFixed(1)}</span>
-                </div>
-              )}
-              <div className="poster-overlay">
-                <div className="poster-meta-title">{item.title?.english || item.title?.romaji}</div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          <div ref={sentinelRef} className="h-16 flex items-center justify-center">
+            {loadingMore && <div className="skeleton skeleton-text w-24" />}
+          </div>
+        </>
       ) : (
         <p className="text-sm text-white/30 py-12 text-center">No anime found for this filter.</p>
       )}
-
-      <div className="flex justify-center gap-3 mt-8">
-        <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="h-8 px-4 rounded-md bg-white/[0.04] border border-white/[0.06] text-xs text-white/40 hover:text-white/60 disabled:opacity-30">
-          Prev
-        </button>
-        <span className="h-8 px-3 text-xs text-white/30 flex items-center">Page {page}</span>
-        <button onClick={() => setPage(page + 1)} disabled={!hasNext} className="h-8 px-4 rounded-md bg-white/[0.04] border border-white/[0.06] text-xs text-white/40 hover:text-white/60 disabled:opacity-30">
-          Next
-        </button>
-      </div>
     </div>
   )
 }
