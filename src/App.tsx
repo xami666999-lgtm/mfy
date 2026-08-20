@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { X } from 'lucide-react'
 import { useStore, applyTheme } from './store'
 import { setRuntimeTmdbKey, DEFAULT_TMDB_API_KEY, isTmdbKeyValid } from './api/tmdb'
 import { setRuntimeMdblistKey } from './api/mdblist'
@@ -27,6 +28,8 @@ import LoginGate from './components/LoginGate'
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true)
+  const [updateInfo, setUpdateInfo] = useState<{ version?: string } | null>(null)
+  const [updateDismissed, setUpdateDismissed] = useState(false)
   const {
     currentPage,
     isSetupComplete,
@@ -62,6 +65,16 @@ setExternalPlayer,
     if (!api?.onWindowShown) return
     return api.onWindowShown(() => {
       setShowIntro(true)
+    })
+  }, [])
+
+  // Surface a downloaded update inside the app (after login)
+  useEffect(() => {
+    const api = (window as any).electronAPI
+    if (!api?.onUpdateDownloaded) return
+    return api.onUpdateDownloaded((info: any) => {
+      setUpdateInfo(info || {})
+      setUpdateDismissed(false)
     })
   }, [])
 
@@ -128,6 +141,27 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
   return (
     <div className="h-screen flex flex-col bg-[#08080e]">
       {showIntro && <Intro onDone={() => setShowIntro(false)} />}
+      {updateInfo && !updateDismissed && currentPage !== 'player' && (
+        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#14101a] border border-[#FF1493]/30 shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
+          <div className="w-2 h-2 rounded-full bg-[#FF1493] animate-pulse" />
+          <div className="text-xs text-white/80">
+            Update {updateInfo.version ? `v${updateInfo.version} ` : ''}downloaded
+          </div>
+          <button
+            onClick={() => (window as any).electronAPI?.installUpdate?.()}
+            className="h-7 px-3 rounded-lg bg-[#FF1493] text-white text-[11px] font-semibold hover:brightness-110 transition-all"
+          >
+            Restart & install
+          </button>
+          <button
+            onClick={() => setUpdateDismissed(true)}
+            className="w-6 h-6 grid place-items-center rounded-md text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+            title="Dismiss"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
       {currentPage !== 'player' && (
         <>
           <TitleBar />

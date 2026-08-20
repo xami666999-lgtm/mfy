@@ -211,6 +211,46 @@ export const tmdb = {
       cacheKey: `person:popular:${page}`,
       ttlMs: 24 * 60 * 60 * 1000,
     }),
+
+  /** Fictional-character portraits — curated list of famous roles for profile avatars */
+  getCharacterAvatars: () => {
+    const characters: { query: string; label: string }[] = [
+      { query: 'Spider-Man', label: 'Spider-Man' },
+      { query: 'Batman', label: 'Batman' },
+      { query: 'Superman', label: 'Superman' },
+      { query: 'Iron Man', label: 'Iron Man' },
+      { query: 'Captain America', label: 'Captain America' },
+      { query: 'Thor', label: 'Thor' },
+      { query: 'Hulk', label: 'Hulk' },
+      { query: 'Black Panther', label: 'Black Panther' },
+      { query: 'Wonder Woman', label: 'Wonder Woman' },
+      { query: 'Joker', label: 'Joker' },
+      { query: 'Deadpool', label: 'Deadpool' },
+      { query: 'Wolverine', label: 'Wolverine' },
+      { query: 'John Wick', label: 'John Wick' },
+      { query: 'Neo', label: 'Neo' },
+      { query: 'Jack Sparrow', label: 'Jack Sparrow' },
+      { query: 'James Bond', label: 'James Bond' },
+      { query: 'Indiana Jones', label: 'Indiana Jones' },
+      { query: 'Darth Vader', label: 'Darth Vader' },
+      { query: 'Yoda', label: 'Yoda' },
+      { query: 'Harry Potter', label: 'Harry Potter' },
+      { query: 'Gandalf', label: 'Gandalf' },
+      { query: 'Terminator', label: 'Terminator' },
+      { query: 'Rocky Balboa', label: 'Rocky' },
+      { query: 'Jurassic Park', label: 'Jurassic Park' },
+    ]
+    return Promise.all(characters.map((c) => tmdbFetch(`/search/person`, { query: c.query }, { cacheKey: `person:search:${c.query}`, ttlMs: 7 * 24 * 60 * 60 * 1000 })))
+      .then((results) =>
+        results
+          .map((res, i) => {
+            const hit = res?.results?.[0]
+            return hit?.profile_path ? { path: hit.profile_path, name: characters[i].label } : null
+          })
+          .filter((x): x is { path: string; name: string } => Boolean(x))
+      )
+      .catch(() => [])
+  },
 }
 
 

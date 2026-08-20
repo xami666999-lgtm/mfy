@@ -39,7 +39,7 @@ export default function LoginGate() {
     }
   }, [profiles, currentProfile])
 
-  // Load a batch of actor/character portraits for the avatar picker.
+  // Load a batch of character portraits for the avatar picker.
   useEffect(() => {
     if (mode !== 'create' || avatarOptions.length > 0) return
     let cancelled = false
@@ -47,12 +47,7 @@ export default function LoginGate() {
     ;(async () => {
       try {
         const { tmdb } = await import('../api/tmdb')
-        const res = await tmdb.getPopularPeople(1)
-        const people: any[] = res?.results || []
-        const opts = people
-          .filter((p) => p?.profile_path)
-          .slice(0, 24)
-          .map((p) => ({ path: p.profile_path, name: p.name || 'Actor' }))
+        const opts = await tmdb.getCharacterAvatars()
         if (!cancelled) {
           setAvatarOptions(opts)
           setAvatar((cur) => cur || opts[0]?.path || '')
@@ -111,8 +106,8 @@ export default function LoginGate() {
       return
     }
     const api = (window as any).electronAPI
-    addProfile(name.trim(), avatar ? `${AVATAR_BASE}${avatar}` : '')
-    const created = useStore.getState().profiles.find((p) => p.name === name.trim())
+    const createdId = addProfile(name.trim(), avatar ? `${AVATAR_BASE}${avatar}` : '')
+    const created = useStore.getState().profiles.find((p) => p.id === createdId)
     if (created) {
       if (newPin) setProfilePin(created.id, newPin)
       setAuthenticated(true)

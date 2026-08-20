@@ -136,6 +136,7 @@ function setupAutoUpdater() {
       title: 'MFY Update Available',
       body: `Version ${info.version} is downloading in the background…`,
     }).show()
+    mainWindow?.webContents.send('mfy:update-available', info)
   })
 
   autoUpdater.on('update-downloaded', (info: any) => {
@@ -144,6 +145,7 @@ function setupAutoUpdater() {
       title: 'MFY Update Ready',
       body: `Version ${info.version} will install when you quit the app.`,
     }).show()
+    mainWindow?.webContents.send('mfy:update-downloaded', info)
     // Optional: prompt user
     if (mainWindow) {
       dialog
@@ -234,5 +236,16 @@ ipcMain.handle('check-for-updates', async () => {
     return { ok: true, updateInfo: result?.updateInfo || null }
   } catch (err: any) {
     return { ok: false, reason: err?.message || 'unknown' }
+  }
+})
+
+// Install a downloaded update (renderer "Restart & install" button)
+ipcMain.handle('install-update', () => {
+  if (!autoUpdater || isDev) return false
+  try {
+    autoUpdater.quitAndInstall()
+    return true
+  } catch {
+    return false
   }
 })

@@ -74,12 +74,7 @@ export default function Settings() {
     setAvatarsLoading(true)
     try {
       const { tmdb } = await import('../api/tmdb')
-      const res = await tmdb.getPopularPeople(1)
-      const people: any[] = res?.results || []
-      const opts = people
-        .filter((p) => p?.profile_path)
-        .slice(0, 24)
-        .map((p) => ({ path: p.profile_path, name: p.name || 'Actor' }))
+      const opts = await tmdb.getCharacterAvatars()
       setAvatarOptions(opts)
     } catch {
       // ignore

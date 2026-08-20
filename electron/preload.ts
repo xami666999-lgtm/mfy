@@ -27,6 +27,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Auto-update
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  installUpdate: () => ipcRenderer.invoke('install-update'),
+  onUpdateDownloaded: (cb: (info: any) => void) => {
+    const listener = (_e: unknown, info: any) => cb(info)
+    ipcRenderer.on('mfy:update-downloaded', listener)
+    return () => ipcRenderer.removeListener('mfy:update-downloaded', listener)
+  },
+  onUpdateAvailable: (cb: (info: any) => void) => {
+    const listener = (_e: unknown, info: any) => cb(info)
+    ipcRenderer.on('mfy:update-available', listener)
+    return () => ipcRenderer.removeListener('mfy:update-available', listener)
+  },
 
   // Window visibility (for the intro splash)
   onWindowShown: (cb: () => void) => {

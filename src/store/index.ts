@@ -32,7 +32,7 @@ interface AppState {
   setAuthenticated: (v: boolean) => void
   profiles: UserProfile[]
   setProfiles: (profiles: UserProfile[]) => void
-  addProfile: (name: string, avatar?: string) => void
+  addProfile: (name: string, avatar?: string) => string
   removeProfile: (id: string) => void
   setProfileAvatar: (id: string, avatar: string) => void
   switchProfile: (id: string) => void
@@ -161,10 +161,15 @@ export const useStore = create<AppState>((set, get) => ({
     set({ profiles, currentProfile: profile })
     persist('profiles', profiles)
     persist('currentProfileId', profile.id)
+    return profile.id
   },
   setProfileAvatar: (id, avatar) => {
+    const cur = get().currentProfile
     const profiles = get().profiles.map((p) => (p.id === id ? { ...p, avatar } : p))
-    set({ profiles })
+    set({
+      profiles,
+      currentProfile: cur && cur.id === id ? { ...cur, avatar } : cur,
+    })
     persist('profiles', profiles)
   },
   removeProfile: (id) => {
