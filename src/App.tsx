@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useStore, applyTheme } from './store'
-import { setRuntimeTmdbKey } from './api/tmdb'
+import { setRuntimeTmdbKey, DEFAULT_TMDB_API_KEY } from './api/tmdb'
 import { useKeyboardNav } from './hooks/useKeyboardNav'
 import TitleBar from './components/TitleBar'
 import Navbar from './components/Navbar'
@@ -69,10 +69,9 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
     // mark setup as complete so the recurring "Welcome to MFY" wizard no longer
     // reappears on every app re-open.
     api.get('tmdbApiKey').then((k: string) => {
-      if (k) {
-        setTmdbApiKey(k)
-        setRuntimeTmdbKey(k)
-      }
+      const key = (k && typeof k === 'string' && k.trim()) || DEFAULT_TMDB_API_KEY
+      setTmdbApiKey(key)
+      setRuntimeTmdbKey(key)
       setSetupComplete(true)
     })
     api.get('traktToken').then((t: string) => { if (t) setTraktToken(t) })

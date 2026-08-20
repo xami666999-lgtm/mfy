@@ -10,7 +10,7 @@ export const STILL_URL = `${TMDB_IMAGE_BASE}/w300`
 
 // Baked-in default key (project is private/for known users); may be overridden via
 // env (VITE_TMDB_API_KEY) or by a user-stored key in Settings.
-const DEFAULT_TMDB_API_KEY = '15fdef3642df31491f4e1cfc08782dc6'
+export const DEFAULT_TMDB_API_KEY = '15fdef3642df31491f4e1cfc08782dc6'
 
 /** Prefer env var, fall back to user-stored key, then the baked default */
 function getApiKey(): string {
