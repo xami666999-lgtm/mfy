@@ -1,11 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Film, Lock, UserPlus, LogIn, ArrowRight } from 'lucide-react'
 import { useStore } from '../store'
 import { cn } from '../lib/utils'
 
 export default function LoginGate() {
   const { profiles, currentProfile, addProfile, setProfilePin, switchProfile, setAuthenticated, setCurrentPage } = useStore()
-  const [mode, setMode] = useState<'login' | 'create'>(profiles.length === 0 ? 'create' : 'login')
+  // Profiles hydrate asynchronously from disk, so we can't trust the first render.
+  // Track whether the user deliberately opened the create form so a later profile
+  // load doesn't yank them away from it.
+  const userWantCreate = useRef(false)
+  const [mode, setMode] = useState<'login' | 'create'>('create')
   const [selectedId, setSelectedId] = useState<string | null>(currentProfile?.id || null)
   const [pin, setPin] = useState('')
   const [error, setError] = useState('')
@@ -17,8 +21,16 @@ export default function LoginGate() {
   const [createError, setCreateError] = useState('')
 
   useEffect(() => {
-    if (profiles.length === 0) setMode('create')
-  }, [profiles.length])
+    if (profiles.length === 0) {
+      setMode('create')
+      return
+    }
+    // Profiles loaded — show the picker unless the user chose to create one.
+    if (!userWantCreate.current) {
+      setMode('login')
+      setSelectedId((cur) => cur || currentProfile?.id || profiles[0]?.id || null)
+    }
+  }, [profiles, currentProfile])
 
   function select(id: string) {
     setSelectedId(id)
@@ -71,6 +83,7 @@ export default function LoginGate() {
       setAuthenticated(true)
       switchProfile(created.id)
       if (api) api.set('currentProfileId', created.id)
+      userWantCreate.current = false
     }
     setCurrentPage('home')
   }
@@ -205,7 +218,7 @@ export default function LoginGate() {
 
               <button
                 type="button"
-                onClick={() => { setMode('create'); setName(''); setNewPin(''); setConfirmPin(''); setCreateError('') }}
+                onClick={() => { userWantCreate.current = true; setMode('create'); setName(''); setNewPin(''); setConfirmPin(''); setCreateError('') }}
                 className="mt-5 w-full flex items-center justify-center gap-1.5 text-[11px] text-white/30 hover:text-white/55 transition-colors"
               >
                 <UserPlus className="w-3.5 h-3.5" /> Create a new account

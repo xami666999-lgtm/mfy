@@ -101,11 +101,12 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
     api.get('jellyfinApiKey').then((k: string) => { if (k) setJellyfinApiKey(k) })
     api.get('watchlist').then((list: any) => { if (Array.isArray(list)) setWatchlist(list) })
     api.get('watchHistory').then((list: any) => { if (Array.isArray(list)) setWatchHistory(list) })
-    api.get('profiles').then((list: any) => { if (Array.isArray(list)) setProfiles(list) })
-    api.get('currentProfileId').then((id: string) => {
+    api.get('profiles').then(async (list: any) => {
+      const loaded: any[] = Array.isArray(list) ? list : []
+      if (loaded.length) setProfiles(loaded)
+      const id = await api.get('currentProfileId')
       if (id) {
-        const profiles = useStore.getState().profiles
-        const p = profiles.find((x) => x.id === id)
+        const p = loaded.find((x) => x.id === id)
         if (p) setCurrentProfile(p)
       }
     })

@@ -45,6 +45,8 @@ export default function PlayerPage() {
   const shakaRef = useRef<any>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [streamUrl, setStreamUrl] = useState(currentStreamUrl || '')
+  const streamUrlRef = useRef(streamUrl)
+  streamUrlRef.current = streamUrl
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const [dur, setDur] = useState(0)
@@ -119,6 +121,14 @@ export default function PlayerPage() {
       if (introTimer.current) clearInterval(introTimer.current)
       return
     }
+    // Cross-origin embeds (e.g. Vidy) show their own splash and cannot be
+    // force-played from here — skip the countdown so there is no misleading
+    // "auto-playing…" that ends in nothing.
+    if (isEmbed(currentStreamUrl)) {
+      setIntro(false)
+      if (introTimer.current) clearInterval(introTimer.current)
+      return
+    }
     setIntroCount(5)
     setIntro(true)
     if (introTimer.current) clearInterval(introTimer.current)
@@ -150,7 +160,13 @@ export default function PlayerPage() {
 
   function autoplayAfterIntro() {
     const v = videoRef.current
-    if (v && !isEmbed(streamUrl)) v.play().catch(() => {})
+    if (!v) return
+    if (isEmbed(streamUrlRef.current)) return
+    const tryPlay = () => v.play().catch(() => {})
+    tryPlay()
+    if (!v.readyState || v.readyState < 2) {
+      v.addEventListener('loadeddata', tryPlay, { once: true })
+    }
   }
 
   // If a torrent is buffering with no peers for ~25s, give up and offer a way
