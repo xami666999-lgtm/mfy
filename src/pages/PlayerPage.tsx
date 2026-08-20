@@ -376,6 +376,14 @@ export default function PlayerPage() {
     if (videoRef.current && Number.isFinite(t)) videoRef.current.currentTime = Math.max(0, Math.min(dur || t, t))
   }
 
+  // Skip Intro — appears during the opening minutes and jumps ahead ~85s.
+  const [introSkipped, setIntroSkipped] = useState(false)
+  const showSkipIntro = !isEmbed(streamUrl) && !introSkipped && progress > 5 && progress < 240
+  function skipIntro() {
+    seek(progress + 85)
+    setIntroSkipped(true)
+  }
+
   function fmt(s: number) {
     if (!Number.isFinite(s) || s < 0) return '0:00'
     const h = Math.floor(s / 3600)
@@ -480,6 +488,12 @@ export default function PlayerPage() {
           </div>
         )}
         {error && <div className="player-error"><AlertCircle /> {error}</div>}
+
+        {showSkipIntro && (
+          <button type="button" className="player-skip-intro" onClick={skipIntro}>
+            <SkipForward size={15} /> Skip Intro
+          </button>
+        )}
 
         {intro && !error && (
           <div className="player-intro" onClick={(e) => e.stopPropagation()}>

@@ -454,6 +454,18 @@ a:focus-visible,
   padding: 12px 20px; border-radius: 12px; background: rgba(0,0,0,.7); backdrop-filter: blur(10px); font-size: 13px;
 }
 .player-error { color: #fca5a5; display: flex; align-items: center; gap: 8px; }
+
+.player-skip-intro {
+  position: absolute; top: 84px; right: 20px; z-index: 16;
+  display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px;
+  border-radius: 10px; background: rgba(12,10,16,.82); backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,.12); color: #fff; font-size: 12px; font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4); cursor: pointer;
+  animation: fadeInUp .25s ease both; transition: background var(--transition-fast);
+}
+.player-skip-intro:hover { background: rgba(255,20,147,.35); border-color: rgba(255,20,147,.5); }
+.player-skip-intro svg { width: 15px; height: 15px; }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 .torrent-status { display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 300px; }
 .torrent-progress-bar { width: 100%; height: 5px; border-radius: 99px; background: rgba(255,255,255,.12); overflow: hidden; }
 .torrent-progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #00E5FF, #FF1493); transition: width .4s; }

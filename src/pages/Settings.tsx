@@ -3,6 +3,7 @@ import { Save, Check, ExternalLink, RefreshCw, FolderPlus, UserPlus, X, Magnet }
 import { useStore } from '../store'
 import { setRuntimeTmdbKey } from '../api/tmdb'
 import { setRuntimeOmdbKey } from '../api/omdb'
+import { setRuntimeMdblistKey } from '../api/mdblist'
 import type { ThemeId } from '../store'
 import { listTorrents, removeTorrent, onTorrentProgress, formatBytes, formatSpeed } from '../api/torrent'
 
@@ -15,6 +16,7 @@ export default function Settings() {
   const [jellyfinUrl, setJellyfinUrl] = useState(store.jellyfinUrl)
   const [jellyfinKey, setJellyfinKey] = useState(store.jellyfinApiKey)
   const [omdbKey, setOmdbKey] = useState(store.omdbApiKey)
+  const [mdblistKey, setMdblistKey] = useState(store.mdblistApiKey)
   const [saved, setSaved] = useState(false)
   const [profileName, setProfileName] = useState('')
   const theme = store.theme
@@ -33,6 +35,8 @@ export default function Settings() {
     store.setJellyfinApiKey(jellyfinKey)
     store.setOmdbApiKey(omdbKey)
     setRuntimeOmdbKey(omdbKey)
+    store.setMdblistApiKey(mdblistKey)
+    setRuntimeMdblistKey(mdblistKey)
     if (api) {
       await api.set('tmdbApiKey', tmdbKey)
       await api.set('traktToken', traktTok)
@@ -41,6 +45,7 @@ export default function Settings() {
       await api.set('jellyfinUrl', jellyfinUrl)
       await api.set('jellyfinApiKey', jellyfinKey)
       await api.set('omdbApiKey', omdbKey)
+      await api.set('mdblistApiKey', mdblistKey)
     }
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -114,6 +119,7 @@ export default function Settings() {
         <Section title="API Keys">
           <Input label="TMDB API Key" value={tmdbKey} onChange={setTmdbKey} placeholder="Your TMDB API key" link="https://www.themoviedb.org/settings/api" />
           <Input label="OMDb API Key" value={omdbKey} onChange={setOmdbKey} placeholder="Optional — IMDb + Rotten Tomatoes scores" link="https://www.omdbapi.com/apikey.aspx" />
+          <Input label="MDBList API Key" value={mdblistKey} onChange={setMdblistKey} placeholder="Optional — aggregated ratings (IMDb, Trakt, Metacritic, RT, Letterboxd)" link="https://mdblist.com/apikey" />
           <Input label="AIOStreams URL" value={aiosUrl} onChange={setAiosUrl} placeholder="http://localhost:3000 (when ready)" />
           <Input label="Real-Debrid API" value={rdKey} onChange={setRdKey} placeholder="Real-Debrid token" link="https://realdebrid.com/apitoken" type="password" />
           <Input label="Trakt Token (optional)" value={traktTok} onChange={setTraktTok} placeholder="Not required — local lists used by default" type="password" />

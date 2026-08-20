@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react'
 import { ArrowLeft, Play, Star, Clock, Calendar, Heart, Plus, Share2 } from 'lucide-react'
 import { tmdb, POSTER_URL, BACKDROP_URL, PROFILE_URL, STILL_URL } from '../api/tmdb'
 import { fetchOmdbByImdbId } from '../api/omdb'
+import { fetchMdblistRatings, type MdblistRating } from '../api/mdblist'
 import { vidyUrl } from '../api/vidy'
 import { useStore } from '../store'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 
 export default function MetaDetails() {
-  const { selectedMedia, setCurrentPage, setSelectedMedia, tmdbApiKey, setCurrentStreamUrl, addToWatchlist, removeFromWatchlist, isInWatchlist, addFavorite, removeFavorite, isFavorite, aiostreamsUrl, externalPlayer } = useStore()
+  const { selectedMedia, setCurrentPage, setSelectedMedia, tmdbApiKey, setCurrentStreamUrl, addToWatchlist, removeFromWatchlist, isInWatchlist, addFavorite, removeFavorite, isFavorite, aiostreamsUrl, externalPlayer, mdblistApiKey } = useStore()
   const [detail, setDetail] = useState<any>(null)
   const [seasonData, setSeasonData] = useState<any>(null)
   const [activeSeason, setActiveSeason] = useState(0)
@@ -20,6 +21,7 @@ export default function MetaDetails() {
   const [streamError, setStreamError] = useState('')
   const [omdb, setOmdb] = useState<{ imdbRating: string | null; rottenTomatoes: string | null; imdbVotes: string | null } | null>(null)
   const [imdbId, setImdbId] = useState<string | null>(null)
+  const [mdblistRatings, setMdblistRatings] = useState<MdblistRating[] | null>(null)
 
   useEffect(() => {
     if (!selectedMedia) return
@@ -60,6 +62,16 @@ export default function MetaDetails() {
       }
     } catch {
       setOmdb(null)
+    }
+    try {
+      if (selectedMedia && mdblistApiKey) {
+        const data = await fetchMdblistRatings(selectedMedia.type, selectedMedia.id)
+        setMdblistRatings(data?.ratings || null)
+      } else {
+        setMdblistRatings(null)
+      }
+    } catch {
+      setMdblistRatings(null)
     }
     setLoading(false)
   }
@@ -135,6 +147,24 @@ export default function MetaDetails() {
   const year = (detail.release_date || detail.first_air_date || '').slice(0, 4)
   const runtime = detail.runtime || detail.episode_run_time?.[0] || 0
 
+  // Binge time — native version of bingeclock.com: for a movie it's the runtime,
+  // for a series it's avg episode length × total episodes across all seasons.
+  const bingeMinutes = selectedMedia?.type === 'tv'
+    ? (detail.episode_run_time?.[0] || 0) * (detail.number_of_episodes || 0)
+    : runtime
+  function formatBinge(mins: number): string {
+    if (!mins || !Number.isFinite(mins)) return ''
+    const total = Math.round(mins)
+    const d = Math.floor(total / 1440)
+    const h = Math.floor((total % 1440) / 60)
+    const m = total % 60
+    const parts: string[] = []
+    if (d > 0) parts.push(`${d}d`)
+    if (h > 0) parts.push(`${h}h`)
+    if (m > 0 || parts.length === 0) parts.push(`${m}m`)
+    return parts.join(' ')
+  }
+
   return (
     <div className="page-fade-enter">
       {/* Cinematic full-bleed hero */}
@@ -194,6 +224,12 @@ export default function MetaDetails() {
                   <span>{formatRuntime(runtime)}</span>
                 </>
               )}
+              {bingeMinutes > 0 && selectedMedia?.type === 'tv' && (
+                <>
+                  <span className="text-white/25">·</span>
+                  <span title="Total time to watch every episode">Binge {formatBinge(bingeMinutes)}</span>
+                </>
+              )}
             </div>
 
             {/* Ratings row */}
@@ -207,6 +243,26 @@ export default function MetaDetails() {
                 <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-[#fa320a]/15 border border-[#fa320a]/40 text-[11px] font-bold text-[#ff6b4a]">
                   RT {omdb.rottenTomatoes}
                 </span>
+              )}
+              {mdblistRatings && mdblistRatings.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {mdblistRatings.slice(0, 5).map((r) => {
+                    const label = (r.source || '').toLowerCase()
+                    const score = r.score ?? r.value
+                    if (score == null || !Number.isFinite(score)) return null
+                    const pct = label === 'letterboxd' ? Math.round(score * 20) : label === 'imdb' || label === 'tmdb' || label === 'trakt' ? Math.round(score * 10) : Math.round(score)
+                    const badge = label === 'rotten' ? { c: 'bg-[#fa320a]/15 text-[#ff6b4a] border-[#fa320a]/40', t: 'RT' }
+                      : label === 'metacritic' ? { c: 'bg-[#3a6ea5]/20 text-[#7cb2e8] border-[#3a6ea5]/45', t: 'MC' }
+                      : label === 'letterboxd' ? { c: 'bg-[#00b19d]/15 text-[#34d4c0] border-[#00b19d]/40', t: 'LB' }
+                      : label === 'trakt' ? { c: 'bg-[#ed1c24]/15 text-[#ff6b6b] border-[#ed1c24]/40', t: 'TK' }
+                      : { c: 'bg-[#f5c518]/20 text-[#f5c518] border-[#f5c518]/40', t: 'IMDb' }
+                    return (
+                      <span key={r.source} className={`inline-flex items-center gap-1 h-7 px-2.5 rounded-md border text-[11px] font-bold ${badge.c}`} title={`${r.source}: ${score}${r.votes != null ? ` (${r.votes} votes)` : ''}`}>
+                        {badge.t} {pct}%
+                      </span>
+                    )
+                  })}
+                </div>
               )}
               {imdbId && (
                 <button

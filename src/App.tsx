@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useStore, applyTheme } from './store'
 import { setRuntimeTmdbKey, DEFAULT_TMDB_API_KEY, isTmdbKeyValid } from './api/tmdb'
+import { setRuntimeMdblistKey } from './api/mdblist'
 import { useKeyboardNav } from './hooks/useKeyboardNav'
 import TitleBar from './components/TitleBar'
 import Navbar from './components/Navbar'
@@ -21,6 +22,7 @@ import Movies from './pages/Movies'
 import TvShows from './pages/TvShows'
 import Anime from './pages/Anime'
 import Sports from './pages/Sports'
+import Iptv from './pages/Iptv'
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true)
@@ -39,6 +41,8 @@ export default function App() {
     setProfiles,
     setCurrentProfile,
     setTheme,
+    setOmdbApiKey,
+    setMdblistApiKey,
 setExternalPlayer,
     setLocalFolders,
     theme,
@@ -80,6 +84,13 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
       setTmdbApiKey(key)
       setRuntimeTmdbKey(key)
       setSetupComplete(true)
+    })
+    api.get('omdbApiKey').then((k: string) => { if (k) setOmdbApiKey(k) })
+    api.get('mdblistApiKey').then((k: string) => {
+      if (k) {
+        setMdblistApiKey(k)
+        setRuntimeMdblistKey(k)
+      }
     })
     api.get('traktToken').then((t: string) => { if (t) setTraktToken(t) })
     api.get('realDebridKey').then((k: string) => { if (k) setRealDebridKey(k) })
@@ -134,6 +145,7 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
         {currentPage === 'tv' && <TvShows />}
         {currentPage === 'anime' && <Anime />}
         {currentPage === 'sports' && <Sports />}
+        {currentPage === 'iptv' && <Iptv />}
       </main>
     </div>
   )

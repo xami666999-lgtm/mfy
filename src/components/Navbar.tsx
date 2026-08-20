@@ -1,4 +1,4 @@
-import { Home, Film, Tv, Trophy, Search, Bookmark, Settings, BookOpen, Sparkles } from 'lucide-react'
+import { Home, Film, Tv, Trophy, Search, Bookmark, Settings, BookOpen, Sparkles, Radio } from 'lucide-react'
 import { useStore } from '../store'
 import { cn } from '../lib/utils'
 
@@ -8,6 +8,7 @@ const tabs = [
   { id: 'tv', label: 'TV Shows', icon: Tv },
   { id: 'anime', label: 'Anime', icon: Sparkles },
   { id: 'sports', label: 'Sports', icon: Trophy },
+  { id: 'iptv', label: 'IPTV', icon: Radio },
   { id: 'search', label: 'Search', icon: Search },
   { id: 'library', label: 'My List', icon: Bookmark },
   { id: 'guide', label: 'Guide', icon: BookOpen },

@@ -80,6 +80,9 @@ interface AppState {
   omdbApiKey: string
   setOmdbApiKey: (key: string) => void
 
+  mdblistApiKey: string
+  setMdblistApiKey: (key: string) => void
+
   selectedProviderId: string | null
   setSelectedProviderId: (id: string | null) => void
 
@@ -237,6 +240,9 @@ export const useStore = create<AppState>((set, get) => ({
 
   omdbApiKey: '',
   setOmdbApiKey: (key) => set({ omdbApiKey: key }),
+
+  mdblistApiKey: '',
+  setMdblistApiKey: (key) => set({ mdblistApiKey: key }),
 
   selectedProviderId: null,
   setSelectedProviderId: (id) => set({ selectedProviderId: id }),
