@@ -62,9 +62,20 @@ export default function Iptv() {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch(u)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const text = await res.text()
+      let text = ''
+      const api = (window as any).electronAPI
+      if (api?.fetchText) {
+        const r = await api.fetchText(u)
+        if (r?.ok) {
+          text = r.text
+        } else {
+          throw new Error(r?.error || 'fetch failed')
+        }
+      } else {
+        const res = await fetch(u)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        text = await res.text()
+      }
       const parsed = parseM3U(text)
       if (parsed.length === 0) throw new Error('No channels found in that playlist')
       setChannels(parsed)
@@ -73,6 +84,18 @@ export default function Iptv() {
       setError('Could not load that playlist. Check the URL and that it points to an .m3u file.')
     }
     setLoading(false)
+  }
+
+  async function importFile() {
+    const api = (window as any).electronAPI
+    if (!api?.selectFileText) return
+    setError('')
+    const r = await api.selectFileText()
+    if (!r?.text) return
+    const parsed = parseM3U(r.text)
+    if (parsed.length === 0) { setError('No channels found in that file.'); return }
+    setChannels(parsed)
+    setUrl(r.path || '')
   }
 
   function play(ch: Channel) {
@@ -120,6 +143,13 @@ export default function Iptv() {
           >
             {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
             Load
+          </button>
+          <button
+            type="button"
+            onClick={importFile}
+            className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#FF1493]/10 border border-[#FF1493]/25 text-xs text-[#FF1493]/80 hover:bg-[#FF1493]/20"
+          >
+            Import .m3u file…
           </button>
         </div>
         <div className="flex flex-wrap gap-1.5 mt-3">

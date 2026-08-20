@@ -15,8 +15,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // External
   openExternal: (url: string) => ipcRenderer.send('open-external', url),
 
+  // CORS-free text fetch (IPTV playlists)
+  fetchText: (url: string, timeoutMs?: number) => ipcRenderer.invoke('fetch-text', url, timeoutMs),
+
   // Dialog
   selectFolder: () => ipcRenderer.invoke('select-folder'),
+  selectFileText: () => ipcRenderer.invoke('select-file-text'),
 
   // Notifications
   showNotification: (title: string, body: string) => ipcRenderer.send('show-notification', title, body),

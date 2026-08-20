@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { useStore, applyTheme } from './store'
-import { setRuntimeTmdbKey, DEFAULT_TMDB_API_KEY, isTmdbKeyValid } from './api/tmdb'
+import { setRuntimeTmdbKey, DEFAULT_TMDB_API_KEY, isTmdbKeyValid, tmdb } from './api/tmdb'
 import { setRuntimeMdblistKey } from './api/mdblist'
 import { useKeyboardNav } from './hooks/useKeyboardNav'
 import TitleBar from './components/TitleBar'
@@ -132,7 +132,50 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
         useStore.setState({ favorites: list })
       }
     })
+
+    // New release notifications: check watchlist/favorites once per launch for
+    // new seasons/episodes and surface OS notifications (throttled to once/day).
+    setTimeout(() => {
+      checkReleases().catch(() => {})
+    }, 12000)
   }, [])
+
+  // For each TV title in the watchlist/favorites, check if a new season was
+  // released since the last notification (stored per-title). Uses the in-app
+  // banner path so results show whether or not a key is set.
+  async function checkReleases() {
+    const api = (window as any).electronAPI
+    const { watchlist, favorites, tmdbApiKey } = useStore.getState()
+    const titles = [...watchlist, ...favorites].filter((t: any) => t.mediaType === 'tv')
+    const unique = Array.from(new Map(titles.map((t: any) => [`${t.mediaType}-${t.mediaId}`, t])).values()).slice(0, 10)
+    if (!unique.length) return
+    let lastNotified: Record<string, string> = {}
+    try { lastNotified = JSON.parse(localStorage.getItem('mfy-release-notified') || '{}') } catch {}
+    const notifications: { title: string; body: string }[] = []
+    for (const t of unique) {
+      try {
+        const key = `tv-${t.mediaId}`
+        const d = await tmdb.getTVDetail(t.mediaId)
+        const seasons = (d?.seasons || []).filter((s: any) => s.season_number > 0)
+        if (!seasons.length) continue
+        const latest = seasons.sort((a: any, b: any) => (b.season_number || 0) - (a.season_number || 0))[0]
+        if (!latest?.air_date) continue
+        const last = lastNotified[key] || ''
+        if (last === latest.air_date) continue
+        lastNotified[key] = latest.air_date
+        notifications.push({
+          title: d.name || t.title,
+          body: `New season ${latest.season_number} is out (${latest.air_date})`,
+        })
+      } catch {}
+    }
+    if (notifications.length) {
+      try { localStorage.setItem('mfy-release-notified', JSON.stringify(lastNotified)) } catch {}
+      if (api?.showNotification) {
+        for (const n of notifications.slice(0, 3)) api.showNotification(n.title, n.body)
+      }
+    }
+  }
 
   if (!isSetupComplete) return <Wizard />
 

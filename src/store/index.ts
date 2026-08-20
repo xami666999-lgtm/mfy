@@ -9,7 +9,7 @@ export interface WatchlistItem {
   addedAt: string
 }
 
-export type ThemeId = 'pink' | 'cyan' | 'emerald' | 'amber' | 'pure'
+export type ThemeId = 'pink' | 'cyan' | 'emerald' | 'amber' | 'pure' | 'violet' | 'rose' | 'blue' | 'orange' | 'red' | 'lime' | 'purple'
 
 export interface DownloadItem {
   id: string
@@ -45,6 +45,12 @@ interface AppState {
 
   customLists: CustomList[]
   setCustomLists: (lists: CustomList[]) => void
+  createCustomList: (name: string) => string
+  renameCustomList: (id: string, name: string) => void
+  deleteCustomList: (id: string) => void
+  addToCustomList: (listId: string, mediaId: number, mediaType: 'movie' | 'tv', meta?: { title?: string; posterPath?: string | null }) => void
+  removeFromCustomList: (listId: string, mediaId: number, mediaType: 'movie' | 'tv') => void
+  isInCustomList: (listId: string, mediaId: number, mediaType: 'movie' | 'tv') => boolean
 
   watchlist: WatchlistItem[]
   setWatchlist: (items: WatchlistItem[]) => void
@@ -88,6 +94,9 @@ interface AppState {
 
   mdblistApiKey: string
   setMdblistApiKey: (key: string) => void
+
+  opensubtitlesKey: string
+  setOpensubtitlesKey: (key: string) => void
 
   selectedProviderId: string | null
   setSelectedProviderId: (id: string | null) => void
@@ -214,7 +223,46 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   customLists: [],
-  setCustomLists: (lists) => set({ customLists: lists }),
+  setCustomLists: (lists) => {
+    set({ customLists: lists })
+    persist('customLists', lists)
+  },
+  createCustomList: (name) => {
+    const id = `list-${Date.now()}`
+    const list = { id, name, profileId: get().currentProfile?.id || 'default', items: [] }
+    const next = [...get().customLists, list]
+    set({ customLists: next })
+    persist('customLists', next)
+    return id
+  },
+  renameCustomList: (id, name) => {
+    const next = get().customLists.map((l) => (l.id === id ? { ...l, name } : l))
+    set({ customLists: next })
+    persist('customLists', next)
+  },
+  deleteCustomList: (id) => {
+    const next = get().customLists.filter((l) => l.id !== id)
+    set({ customLists: next })
+    persist('customLists', next)
+  },
+  addToCustomList: (listId, mediaId, mediaType, meta) => {
+    const next = get().customLists.map((l) => {
+      if (l.id !== listId) return l
+      if (l.items.some((i) => i.mediaId === mediaId && i.mediaType === mediaType)) return l
+      return { ...l, items: [...l.items, { mediaId, mediaType, addedAt: new Date().toISOString(), ...meta }] }
+    })
+    set({ customLists: next })
+    persist('customLists', next)
+  },
+  removeFromCustomList: (listId, mediaId, mediaType) => {
+    const next = get().customLists.map((l) =>
+      l.id === listId ? { ...l, items: l.items.filter((i) => !(i.mediaId === mediaId && i.mediaType === mediaType)) } : l
+    )
+    set({ customLists: next })
+    persist('customLists', next)
+  },
+  isInCustomList: (listId, mediaId, mediaType) =>
+    get().customLists.find((l) => l.id === listId)?.items.some((i) => i.mediaId === mediaId && i.mediaType === mediaType) ?? false,
 
   watchlist: [],
   setWatchlist: (items) => {
@@ -283,6 +331,9 @@ export const useStore = create<AppState>((set, get) => ({
   mdblistApiKey: '',
   setMdblistApiKey: (key) => set({ mdblistApiKey: key }),
 
+  opensubtitlesKey: '',
+  setOpensubtitlesKey: (key) => set({ opensubtitlesKey: key }),
+
   selectedProviderId: null,
   setSelectedProviderId: (id) => set({ selectedProviderId: id }),
 
@@ -346,6 +397,13 @@ export function applyTheme(theme: ThemeId) {
     emerald: { pink: '#10B981', glow: 'rgba(16,185,129,0.45)' },
     amber: { pink: '#F59E0B', glow: 'rgba(245,158,11,0.45)' },
     pure: { pink: '#E5E7EB', glow: 'rgba(229,231,235,0.35)' },
+    violet: { pink: '#8B5CF6', glow: 'rgba(139,92,246,0.45)' },
+    rose: { pink: '#F43F5E', glow: 'rgba(244,63,94,0.45)' },
+    blue: { pink: '#3B82F6', glow: 'rgba(59,130,246,0.45)' },
+    orange: { pink: '#F97316', glow: 'rgba(249,115,22,0.45)' },
+    red: { pink: '#EF4444', glow: 'rgba(239,68,68,0.45)' },
+    lime: { pink: '#84CC16', glow: 'rgba(132,204,22,0.45)' },
+    purple: { pink: '#A855F7', glow: 'rgba(168,85,247,0.45)' },
   }
   const c = map[theme] || map.pink
   root.style.setProperty('--mfy-pink', c.pink)

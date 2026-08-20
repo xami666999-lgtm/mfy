@@ -211,12 +211,48 @@ ipcMain.handle('store-delete', (_event, key: string) => store.delete(key))
 // Open external URL
 ipcMain.on('open-external', (_event, url: string) => shell.openExternal(url))
 
+// Fetch text via Node (bypasses renderer CORS) — used for IPTV playlists
+ipcMain.handle('fetch-text', async (_event, url: string, timeoutMs?: number) => {
+  const timeout = timeoutMs || 15000
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeout)
+  try {
+    const res = await fetch(url, { signal: controller.signal })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return { ok: true, text: await res.text() }
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'fetch failed' }
+  } finally {
+    clearTimeout(timer)
+  }
+})
+
 // File dialog
 ipcMain.handle('select-folder', async () => {
   const result = await dialog.showOpenDialog(mainWindow!, {
     properties: ['openDirectory'],
   })
   return result.filePaths[0] || null
+})
+
+// Open a file picker and return { path, text } for importable text files
+ipcMain.handle('select-file-text', async () => {
+  const result = await dialog.showOpenDialog(mainWindow!, {
+    properties: ['openFile'],
+    filters: [
+      { name: 'Playlists & Subtitles', extensions: ['m3u', 'm3u8', 'srt', 'vtt'] },
+      { name: 'All Files', extensions: ['*'] },
+    ],
+  })
+  const path = result.filePaths[0]
+  if (!path) return null
+  try {
+    const fs = await import('node:fs/promises')
+    const text = await fs.readFile(path, 'utf-8')
+    return { path, text }
+  } catch {
+    return null
+  }
 })
 
 // Notification

@@ -8,6 +8,7 @@ import { cn } from '../lib/utils'
 import { isTorrentInput, pickBestFile, onTorrentProgress, formatBytes, formatSpeed } from '../api/torrent'
 import { tmdb, POSTER_URL, STILL_URL } from '../api/tmdb'
 import { AddonStreamService, type Stream } from '../services/addonStreamService'
+import { searchSubtitles, downloadSubtitle, setRuntimeSubtitleKey } from '../api/subtitles'
 
 function isHls(url: string) { return /\.m3u8(?:$|\?)/i.test(url) }
 function isDash(url: string) { return /\.mpd(?:$|\?)/i.test(url) }
@@ -39,7 +40,7 @@ function srtToVtt(input: string) {
 }
 
 export default function PlayerPage() {
-  const { selectedMedia, currentStreamUrl, setCurrentStreamUrl, setCurrentPage, upsertHistory, autoplayNext } = useStore()
+  const { selectedMedia, currentStreamUrl, setCurrentStreamUrl, setSelectedMedia, setCurrentPage, upsertHistory, autoplayNext } = useStore()
   const videoRef = useRef<HTMLVideoElement>(null)
   const hlsRef = useRef<any>(null)
   const shakaRef = useRef<any>(null)
@@ -65,7 +66,34 @@ export default function PlayerPage() {
   const [torrentInfo, setTorrentInfo] = useState<any>(null)
   const [addonStreams, setAddonStreams] = useState<Stream[]>([])
   const [addonsLoading, setAddonsLoading] = useState(false)
+  const [rate, setRate] = useState(1)
   const stallTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Auto-download English subtitles when a stream loads (if a key is set).
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      if (!currentStreamUrl || !selectedMedia || subtitleUrl) return
+      try {
+        const { getExternalIds } = await import('../api/streams')
+        const { opensubtitlesKey, tmdbApiKey } = useStore.getState()
+        if (!opensubtitlesKey) return
+        setRuntimeSubtitleKey(opensubtitlesKey)
+        const ext = await getExternalIds(selectedMedia.type, selectedMedia.id, tmdbApiKey)
+        const imdbId = ext?.imdb_id
+        if (!imdbId) return
+        const subs = await searchSubtitles(selectedMedia.type, imdbId, selectedMedia.season, selectedMedia.episode)
+        if (!subs.length || cancelled) return
+        const url = await downloadSubtitle(subs[0].url, opensubtitlesKey)
+        if (!url || cancelled) return
+        setSubtitleUrl(url)
+        setSubtitleLabel(subs[0].name)
+        setSubtitleEnabled(true)
+      } catch {}
+    })()
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStreamUrl])
 
   // "Starting soon" overlay: shows the episode picture + a small description,
   // then auto-plays after 5s unless the user hits Play first.
@@ -278,7 +306,7 @@ export default function PlayerPage() {
     const onTime = () => { setProgress(v.currentTime || 0); setDur(Number.isFinite(v.duration) ? v.duration : 0) }
     const onPlay = () => setPlaying(true)
     const onPause = () => setPlaying(false)
-    const onEnded = () => { setPlaying(false); openRatingPrompt() }
+    const onEnded = () => { setPlaying(false); openRatingPrompt(); handleEnded() }
     const onError = () => setError('The stream could not be loaded. Check the URL or choose another source.')
     v.addEventListener('timeupdate', onTime)
     v.addEventListener('loadedmetadata', onTime)
@@ -388,6 +416,46 @@ export default function PlayerPage() {
     v.paused ? v.play().catch(() => {}) : v.pause()
   }
 
+  function changeRate(r: number) {
+    setRate(r)
+    if (videoRef.current) videoRef.current.playbackRate = r
+  }
+
+  // Auto-play the next episode when a TV episode finishes (if the user wants).
+  const [autoNextBusy, setAutoNextBusy] = useState(false)
+  async function handleEnded() {
+    if (autoplayNext && selectedMedia?.type === 'tv' && !autoNextBusy) {
+      setAutoNextBusy(true)
+      try {
+        const { vidyUrl } = await import('../api/vidy')
+        const curSeason = selectedMedia.season || 1
+        const curEpisode = selectedMedia.episode || 1
+        const season = await tmdb.getSeasonDetail(selectedMedia.id, curSeason).catch(() => null)
+        const eps = season?.episodes || []
+        const next = eps.find((e: any) => e.episode_number === curEpisode + 1)
+        if (next) {
+          setSelectedMedia({ id: selectedMedia.id, type: 'tv', season: curSeason, episode: next.episode_number })
+          setCurrentStreamUrl(vidyUrl('tv', selectedMedia.id, curSeason, next.episode_number))
+          setCurrentPage('player')
+        } else {
+          const d = await tmdb.getTVDetail(selectedMedia.id).catch(() => null)
+          const seasons = d?.seasons || []
+          const nextSeason = seasons.find((s: any) => s.season_number === curSeason + 1 && s.episode_count > 0)
+          if (nextSeason) {
+            const s = await tmdb.getSeasonDetail(selectedMedia.id, nextSeason.season_number).catch(() => null)
+            const first = s?.episodes?.[0]
+            if (first) {
+              setSelectedMedia({ id: selectedMedia.id, type: 'tv', season: nextSeason.season_number, episode: first.episode_number })
+              setCurrentStreamUrl(vidyUrl('tv', selectedMedia.id, nextSeason.season_number, first.episode_number))
+              setCurrentPage('player')
+            }
+          }
+        }
+      } catch {}
+      setAutoNextBusy(false)
+    }
+  }
+
   function seek(t: number) {
     if (videoRef.current && Number.isFinite(t)) videoRef.current.currentTime = Math.max(0, Math.min(dur || t, t))
   }
@@ -428,7 +496,30 @@ export default function PlayerPage() {
     setSubtitleUrl(url)
     setSubtitleLabel(file.name)
     setSubtitleEnabled(true)
+    setSubtitleOffset(0)
+    subRawRef.current = srtToVtt(text)
   }
+
+  // Subtitle timing sync: shift all cue timestamps by an offset (seconds).
+  const [subtitleOffset, setSubtitleOffset] = useState(0)
+  const subRawRef = useRef<string>('')
+  useEffect(() => {
+    if (!subRawRef.current) return
+    try {
+      const shift = (t: string) => {
+        const [h, m, s] = t.split(':').map(Number)
+        let total = (h * 3600) + (m * 60) + s + subtitleOffset
+        total = Math.max(0, total)
+        const nh = Math.floor(total / 3600)
+        const nm = Math.floor((total % 3600) / 60)
+        const ns = (total % 60).toFixed(3)
+        return `${String(nh).padStart(2, '0')}:${String(nm).padStart(2, '0')}:${String(ns).padStart(6, '0')}`
+      }
+      const vtt = subRawRef.current.replace(/(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})/g, (_, a, b) => `${shift(a)} --> ${shift(b)}`)
+      const blob = new Blob([vtt], { type: 'text/vtt' })
+      setSubtitleUrl(URL.createObjectURL(blob))
+    } catch {}
+  }, [subtitleOffset])
 
   const title = selectedMedia ? `${selectedMedia.type === 'movie' ? 'Movie' : 'Series'} ${selectedMedia.id}` : 'MFY Player'
   const embedStream = isEmbed(streamUrl)
@@ -551,6 +642,16 @@ export default function PlayerPage() {
           </div>
           <div className="player-right-controls">
             {subtitleLabel && <button className={cn('subtitle-toggle', subtitleEnabled && 'on')} onClick={() => { const next = !subtitleEnabled; setSubtitleEnabled(next); const track = trackRef.current?.track; if (track) track.mode = next ? 'showing' : 'hidden' }} title="Toggle subtitles"><Subtitles /> {subtitleEnabled ? 'CC On' : 'CC Off'}</button>}
+            {subtitleLabel && subtitleEnabled && (
+              <div className="flex items-center gap-1">
+                <button type="button" title="Subtitle sync −0.5s" onClick={() => setSubtitleOffset((o) => o - 0.5)} className="text-[10px] w-7 h-9 rounded-lg border border-white/[0.08] bg-white/[0.04] text-white/60 hover:text-white hover:bg-white/[0.08] transition-all">−</button>
+                <span className="text-[10px] text-white/50 w-9 text-center">{subtitleOffset ? `${subtitleOffset > 0 ? '+' : ''}${subtitleOffset}s` : 'sync'}</span>
+                <button type="button" title="Subtitle sync +0.5s" onClick={() => setSubtitleOffset((o) => o + 0.5)} className="text-[10px] w-7 h-9 rounded-lg border border-white/[0.08] bg-white/[0.04] text-white/60 hover:text-white hover:bg-white/[0.08] transition-all">+</button>
+              </div>
+            )}
+            <button title="Playback speed" onClick={() => { const speeds = [1, 1.25, 1.5, 1.75, 2, 0.5, 0.75]; const next = speeds[(speeds.indexOf(rate) + 1) % speeds.length]; changeRate(next) }} className="text-[10px] px-2 h-9 rounded-lg border border-white/[0.08] bg-white/[0.04] text-white/70 hover:bg-white/[0.08] hover:text-white transition-all">
+              {rate}x
+            </button>
             <button title="Picture in Picture" onClick={() => togglePip(videoRef.current)} type="button"><Settings2 /></button>
             <button title="PiP" type="button" onClick={() => togglePip(videoRef.current)} className="text-[10px] px-2">PiP</button>
             <button onClick={toggleFullscreen}>{fullscreen ? <Minimize /> : <Maximize />}</button>

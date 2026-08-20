@@ -44,7 +44,7 @@ const TV_GENRES = [
 ]
 
 export default function Board() {
-  const { tmdbApiKey, setCurrentPage, setSelectedMedia, addToWatchlist, isInWatchlist, removeFromWatchlist, watchHistory } = useStore()
+  const { tmdbApiKey, setCurrentPage, setSelectedMedia, addToWatchlist, isInWatchlist, removeFromWatchlist, watchHistory, favorites } = useStore()
   const [trending, setTrending] = useState<any[]>([])
   const [movies, setMovies] = useState<any[]>([])
   const [shows, setShows] = useState<any[]>([])
@@ -60,10 +60,51 @@ export default function Board() {
   const [genreMovie, setGenreMovie] = useState<Record<number, any[]>>({})
   const [genreTv, setGenreTv] = useState<Record<number, any[]>>({})
   const [homeTab, setHomeTab] = useState<'movie' | 'tv'>('movie')
+  const [recommended, setRecommended] = useState<any[]>([])
 
   useEffect(() => {
     load()
   }, [tmdbApiKey])
+
+  // Refresh the "Recommended for You" row when what you've watched/liked changes.
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const seeds = [
+        ...favorites.map((f) => ({ id: f.mediaId, type: f.mediaType })),
+        ...watchHistory.map((h) => ({ id: h.mediaId, type: h.mediaType })),
+      ]
+      if (seeds.length === 0) {
+        if (!cancelled) setRecommended([])
+        return
+      }
+      try {
+        const unique = Array.from(new Map(seeds.map((s) => [`${s.type}-${s.id}`, s])).values()).slice(0, 3)
+        const lists = await Promise.all(
+          unique.map((s) =>
+            s.type === 'movie' ? tmdb.getMovieDetail(s.id) : tmdb.getTVDetail(s.id)
+          )
+        )
+        const picked: any[] = []
+        for (const d of lists) {
+          if (!d) continue
+          const recs = d?.recommendations?.results || []
+          if (recs.length) picked.push(...recs.slice(0, 8))
+        }
+        const seen = new Set(seeds.map((s) => `${s.type}-${s.id}`))
+        const out = picked.filter((r) => {
+          const t = (r.media_type === 'tv' || r.first_air_date) ? 'tv' as const : 'movie' as const
+          return !seen.has(`${t}-${r.id}`)
+        })
+        if (!cancelled) setRecommended(Array.from(new Map(out.map((r) => [`${r.media_type}-${r.id}`, r])).values()).slice(0, 16))
+      } catch {
+        if (!cancelled) setRecommended([])
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [favorites, watchHistory])
 
   async function load() {
     setLoading(true)
@@ -97,33 +138,38 @@ export default function Board() {
       } catch {
         setAnime([])
       }
-      // Pre-fetch a few genre rows so they render instantly as the user scrolls.
-      const gm: Record<number, any[]> = {}
-      const gt: Record<number, any[]> = {}
-      await Promise.all([
-        ...MOVIE_GENRES.map(async (g) => {
-          try {
-            const d = await tmdb.discoverMovies({ with_genres: String(g.id), page: '1', sort_by: 'popularity.desc' })
-            gm[g.id] = d?.results || []
-          } catch {
-            gm[g.id] = []
-          }
-        }),
-        ...TV_GENRES.map(async (g) => {
-          try {
-            const d = await tmdb.discoverTV({ with_genres: String(g.id), page: '1', sort_by: 'popularity.desc' })
-            gt[g.id] = d?.results || []
-          } catch {
-            gt[g.id] = []
-          }
-        }),
-      ])
-      setGenreMovie(gm)
-      setGenreTv(gt)
     } catch (e) {
       setError('Could not load catalog. Check your TMDB API key in Settings.')
     }
     setLoading(false)
+    // Pre-fetch genre rows in the background so they fill in as the user scrolls
+    // (does not block initial render).
+    loadGenres().catch(() => {})
+  }
+
+  async function loadGenres() {
+    const gm: Record<number, any[]> = {}
+    const gt: Record<number, any[]> = {}
+    await Promise.all([
+      ...MOVIE_GENRES.map(async (g) => {
+        try {
+          const d = await tmdb.discoverMovies({ with_genres: String(g.id), page: '1', sort_by: 'popularity.desc' })
+          gm[g.id] = d?.results || []
+        } catch {
+          gm[g.id] = []
+        }
+      }),
+      ...TV_GENRES.map(async (g) => {
+        try {
+          const d = await tmdb.discoverTV({ with_genres: String(g.id), page: '1', sort_by: 'popularity.desc' })
+          gt[g.id] = d?.results || []
+        } catch {
+          gt[g.id] = []
+        }
+      }),
+    ])
+    setGenreMovie(gm)
+    setGenreTv(gt)
   }
 
   useEffect(() => {
@@ -345,8 +391,12 @@ export default function Board() {
           </section>
         )}
 
-        <Row title="Coming Soon" items={upcoming} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('movies')} />
-        <Row title="Critically Acclaimed" items={collection} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('movies')} />
+        {recommended.length > 0 && (
+          <Row title="Recommended For You" items={recommended} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} />
+        )}
+
+        <Row title="Upcoming Releases" items={upcoming} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('movies')} />
+        <Row title="Season Highlights" items={topRatedTv.length ? [...onTheAir, ...topRatedTv].slice(0, 16) : collection} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('tv')} />
 
         {/* Extra shelves every streaming app has */}
         {nowPlaying.length > 0 && (

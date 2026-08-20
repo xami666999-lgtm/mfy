@@ -9,9 +9,9 @@ const FONTS = [
   { family: 'Courier New, monospace', weight: 700, tracking: '0.4em' },
 ]
 
-const FONT_MS = 180
-const HOLD_MS = 400
-const EXIT_MS = 700
+const FONT_MS = 110
+const HOLD_MS = 200
+const EXIT_MS = 450
 
 type Props = { onDone: () => void }
 
@@ -34,7 +34,7 @@ export default function Intro({ onDone }: Props) {
     timers.push(
       window.setTimeout(() => onDone(), FONTS.length * FONT_MS + HOLD_MS + EXIT_MS)
     )
-    const safety = window.setTimeout(() => onDone(), 3200)
+    const safety = window.setTimeout(() => onDone(), 1500)
     timers.push(safety)
     return () => timers.forEach(clearTimeout)
   }, [onDone])

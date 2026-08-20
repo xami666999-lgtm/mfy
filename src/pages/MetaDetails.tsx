@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Play, Star, Clock, Calendar, Heart, Plus, Share2 } from 'lucide-react'
+import { ArrowLeft, Play, Star, Clock, Calendar, Heart, Plus, Share2, List, Check } from 'lucide-react'
 import { tmdb, POSTER_URL, BACKDROP_URL, PROFILE_URL, STILL_URL } from '../api/tmdb'
 import { fetchOmdbByImdbId } from '../api/omdb'
 import { fetchMdblistRatings, type MdblistRating } from '../api/mdblist'
@@ -8,7 +8,7 @@ import { useStore } from '../store'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 
 export default function MetaDetails() {
-  const { selectedMedia, setCurrentPage, setSelectedMedia, tmdbApiKey, setCurrentStreamUrl, addToWatchlist, removeFromWatchlist, isInWatchlist, addFavorite, removeFavorite, isFavorite, aiostreamsUrl, externalPlayer, mdblistApiKey } = useStore()
+  const { selectedMedia, setCurrentPage, setSelectedMedia, tmdbApiKey, setCurrentStreamUrl, addToWatchlist, removeFromWatchlist, isInWatchlist, addFavorite, removeFavorite, isFavorite, aiostreamsUrl, externalPlayer, mdblistApiKey, customLists, addToCustomList, removeFromCustomList, isInCustomList, createCustomList } = useStore()
   const [detail, setDetail] = useState<any>(null)
   const [seasonData, setSeasonData] = useState<any>(null)
   const [activeSeason, setActiveSeason] = useState(0)
@@ -22,6 +22,8 @@ export default function MetaDetails() {
   const [omdb, setOmdb] = useState<{ imdbRating: string | null; rottenTomatoes: string | null; imdbVotes: string | null } | null>(null)
   const [imdbId, setImdbId] = useState<string | null>(null)
   const [mdblistRatings, setMdblistRatings] = useState<MdblistRating[] | null>(null)
+  const [listOpen, setListOpen] = useState(false)
+  const [newListName, setNewListName] = useState('')
 
   useEffect(() => {
     if (!selectedMedia) return
@@ -81,6 +83,24 @@ export default function MetaDetails() {
     setActiveSeason(num)
     const d = await tmdb.getSeasonDetail(selectedMedia.id, num)
     setSeasonData(d)
+  }
+
+  // Rank streams: prefer non-torrent direct/embed streams, then torrents by
+  // seed count, then quality. Returns the best source.
+  function pickBestStream(list: any[]): any | null {
+    if (!list.length) return null
+    const rank = (s: any) => {
+      const isTorrent = s?.infoHash || /^magnet:/i.test(s?.url || '')
+      let score = isTorrent ? 10 : 100
+      if (s?.seeds) score += Math.min(50, s.seeds)
+      if (s?.size) score += 5
+      const q = String(s?.quality || '')
+      if (/4k|2160/i.test(q)) score += 30
+      else if (/1080/i.test(q)) score += 20
+      else if (/720/i.test(q)) score += 10
+      return score
+    }
+    return [...list].sort((a, b) => rank(b) - rank(a))[0]
   }
 
   // Populate the streams list (addons + torrents) whenever the streams tab is shown.
@@ -324,6 +344,79 @@ export default function MetaDetails() {
                 <Plus className="w-4 h-4" />
                 {selectedMedia && isInWatchlist(selectedMedia.id, selectedMedia.type) ? 'In List' : 'My List'}
               </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setListOpen((v) => !v)}
+                  className={cn(
+                    'inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/8 border text-sm transition-all',
+                    listOpen ? 'text-white border-white/25 bg-white/12' : 'text-white/70 border-white/12 hover:text-white'
+                  )}
+                >
+                  <List className="w-4 h-4" />
+                  Add to list
+                </button>
+                {listOpen && (
+                  <div className="absolute z-50 right-0 top-full mt-2 w-56 rounded-xl bg-[#1a1a1f] border border-white/10 shadow-2xl p-2 page-fade-enter">
+                    {customLists.length > 0 && (
+                      <div className="max-h-48 overflow-y-auto space-y-0.5 mb-1">
+                        {customLists.map((l) => {
+                          const inList = selectedMedia && isInCustomList(l.id, selectedMedia.id, selectedMedia.type)
+                          return (
+                            <button
+                              key={l.id}
+                              type="button"
+                              onClick={() => {
+                                if (!selectedMedia) return
+                                if (inList) {
+                                  removeFromCustomList(l.id, selectedMedia.id, selectedMedia.type)
+                                } else {
+                                  addToCustomList(l.id, selectedMedia.id, selectedMedia.type, { title, posterPath: detail?.poster_path || null })
+                                }
+                                setListOpen(false)
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-white/70 hover:bg-white/[0.06] hover:text-white text-left transition-all"
+                            >
+                              <span className={cn('w-2 h-2 rounded-full flex-shrink-0', inList ? 'bg-[#FF1493]' : 'bg-white/15')} />
+                              <span className="flex-1 truncate">{l.name}</span>
+                              {inList && <Check className="w-3.5 h-3.5 text-[#FF1493] flex-shrink-0" />}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                    <div className="flex gap-1.5">
+                      <input
+                        value={newListName}
+                        onChange={(e) => setNewListName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && newListName.trim()) {
+                            const id = createCustomList(newListName.trim())
+                            if (selectedMedia) addToCustomList(id, selectedMedia.id, selectedMedia.type, { title, posterPath: detail?.poster_path || null })
+                            setNewListName('')
+                            setListOpen(false)
+                          }
+                        }}
+                        placeholder="New list name…"
+                        className="flex-1 min-w-0 h-8 px-2.5 rounded-lg bg-white/[0.06] border border-white/[0.08] text-[11px] text-white placeholder-white/20 focus:outline-none focus:border-[#FF1493]/40"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!newListName.trim()) return
+                          const id = createCustomList(newListName.trim())
+                          if (selectedMedia) addToCustomList(id, selectedMedia.id, selectedMedia.type, { title, posterPath: detail?.poster_path || null })
+                          setNewListName('')
+                          setListOpen(false)
+                        }}
+                        className="h-8 px-2.5 rounded-lg bg-[#FF1493]/20 text-[#FF1493] hover:bg-[#FF1493]/30 text-xs flex items-center gap-1"
+                      >
+                        <Plus size={12} /> New
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
               {trailerKey && (
                 <button
                   type="button"
@@ -498,6 +591,50 @@ export default function MetaDetails() {
               </div>
               <span className="text-[10px] text-[#FF1493] flex-shrink-0">Play</span>
             </button>
+
+            {streamOptions.length > 0 && (
+              <button
+                type="button"
+                onClick={async () => {
+                  const best = pickBestStream(streamOptions)
+                  if (!best) { setStreamError('No playable source found.'); return }
+                  setResolving(true)
+                  try {
+                    if (best.infoHash || /^magnet:/i.test(best.url || '')) {
+                      const { pickBestFile } = await import('../api/torrent')
+                      const picked = await pickBestFile(best.url, best.fileIdx)
+                      if (picked?.streamUrl) {
+                        setCurrentStreamUrl(picked.streamUrl)
+                        setCurrentPage('player')
+                      } else {
+                        setStreamError('Could not start that torrent. Try another source.')
+                      }
+                    } else {
+                      setCurrentStreamUrl(best.url)
+                      if (externalPlayer && externalPlayer !== '') {
+                        ;(window as any).electronAPI?.openExternal?.(best.url)
+                      } else {
+                        setCurrentPage('player')
+                      }
+                    }
+                  } catch {
+                    setStreamError('Could not start that source. Try another one.')
+                  } finally {
+                    setResolving(false)
+                  }
+                }}
+                className="w-full flex items-center justify-between gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/15 text-left transition-all"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-xs font-medium text-white/85 truncate">Auto-play Best Source</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/25 text-emerald-400 flex-shrink-0">Auto</span>
+                  </div>
+                  <div className="text-[10px] text-white/30 truncate mt-0.5">Picks the highest-quality, most-seeded source automatically</div>
+                </div>
+                <span className="text-[10px] text-emerald-400 flex-shrink-0">Play</span>
+              </button>
+            )}
 
             {streamOptions.map((s: any, i: number) => {
               const isTorrent = s?.infoHash || /^magnet:/i.test(s?.url || '')

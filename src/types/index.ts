@@ -123,7 +123,7 @@ export interface CustomList {
   id: string
   name: string
   profileId: string
-  items: { mediaId: number; mediaType: 'movie' | 'tv'; addedAt: string }[]
+  items: { mediaId: number; mediaType: 'movie' | 'tv'; addedAt: string; title?: string; posterPath?: string | null }[]
 }
 
 export interface StreamingService {
