@@ -23,12 +23,14 @@ import TvShows from './pages/TvShows'
 import Anime from './pages/Anime'
 import Sports from './pages/Sports'
 import Iptv from './pages/Iptv'
+import LoginGate from './components/LoginGate'
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true)
   const {
     currentPage,
     isSetupComplete,
+    authenticated,
     setSetupComplete,
     setTmdbApiKey,
     setTraktToken,
@@ -119,6 +121,8 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
   }, [])
 
   if (!isSetupComplete) return <Wizard />
+
+  if (!authenticated) return <LoginGate />
 
   return (
     <div className="h-screen flex flex-col bg-[#08080e]">

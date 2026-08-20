@@ -28,10 +28,14 @@ interface AppState {
 
   currentProfile: UserProfile | null
   setCurrentProfile: (profile: UserProfile | null) => void
+  authenticated: boolean
+  setAuthenticated: (v: boolean) => void
   profiles: UserProfile[]
   setProfiles: (profiles: UserProfile[]) => void
   addProfile: (name: string) => void
   switchProfile: (id: string) => void
+  setProfilePin: (id: string, pin: string) => void
+  verifyProfilePin: (id: string, pin: string) => boolean
 
   watchHistory: WatchHistoryItem[]
   setWatchHistory: (history: WatchHistoryItem[]) => void
@@ -137,6 +141,8 @@ export const useStore = create<AppState>((set, get) => ({
 
   currentProfile: null,
   setCurrentProfile: (profile) => set({ currentProfile: profile }),
+  authenticated: false,
+  setAuthenticated: (v) => set({ authenticated: v }),
   profiles: [],
   setProfiles: (profiles) => {
     set({ profiles })
@@ -158,6 +164,17 @@ export const useStore = create<AppState>((set, get) => ({
     const p = get().profiles.find((x) => x.id === id) || null
     set({ currentProfile: p })
     persist('currentProfileId', id)
+  },
+  setProfilePin: (id, pin) => {
+    const profiles = get().profiles.map((p) => (p.id === id ? { ...p, pin: pin || undefined } : p))
+    set({ profiles })
+    persist('profiles', profiles)
+  },
+  verifyProfilePin: (id, pin) => {
+    const p = get().profiles.find((x) => x.id === id)
+    if (!p) return false
+    if (!p.pin) return true
+    return p.pin === pin
   },
 
   watchHistory: [],

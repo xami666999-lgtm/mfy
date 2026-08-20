@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Save, Check, ExternalLink, RefreshCw, FolderPlus, UserPlus, X, Magnet } from 'lucide-react'
+import { Save, Check, ExternalLink, RefreshCw, FolderPlus, UserPlus, X, Magnet, Lock, LogOut } from 'lucide-react'
 import { useStore } from '../store'
 import { setRuntimeTmdbKey } from '../api/tmdb'
 import { setRuntimeOmdbKey } from '../api/omdb'
@@ -19,6 +19,8 @@ export default function Settings() {
   const [mdblistKey, setMdblistKey] = useState(store.mdblistApiKey)
   const [saved, setSaved] = useState(false)
   const [profileName, setProfileName] = useState('')
+  const [pin, setPin] = useState('')
+  const [pinMsg, setPinMsg] = useState('')
   const theme = store.theme
   const externalPlayer = store.externalPlayer
   const profiles = store.profiles
@@ -210,6 +212,49 @@ export default function Settings() {
               className="h-9 px-3 rounded-lg bg-white/[0.06] border border-white/[0.08] text-xs text-white/60 flex items-center gap-1"
             >
               <UserPlus className="w-3.5 h-3.5" /> Add
+            </button>
+          </div>
+
+          <div className="pt-2 border-t border-white/[0.05] mt-4 space-y-3">
+            <p className="text-[10px] text-white/25">Set or change the PIN for your current profile. Leave blank to remove it.</p>
+            <div className="flex gap-2">
+              <input
+                type="password"
+                value={pin}
+                onChange={(e) => { setPin(e.target.value); setPinMsg('') }}
+                placeholder="New PIN (4+ characters)"
+                className="flex-1 h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.06] text-xs text-white placeholder-white/15 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (!store.currentProfile) return
+                  if (pin && pin.length < 4) {
+                    setPinMsg('PIN must be at least 4 characters.')
+                    return
+                  }
+                  store.setProfilePin(store.currentProfile.id, pin)
+                  const api = (window as any).electronAPI
+                  api?.set?.('profiles', store.profiles)
+                  setPin('')
+                  setPinMsg('PIN updated.')
+                  setTimeout(() => setPinMsg(''), 2000)
+                }}
+                className="h-9 px-3 rounded-lg bg-white/[0.06] border border-white/[0.08] text-xs text-white/60 flex items-center gap-1"
+              >
+                <Lock className="w-3.5 h-3.5" /> Set PIN
+              </button>
+            </div>
+            {pinMsg && <p className="text-[10px] text-white/40">{pinMsg}</p>}
+            <button
+              type="button"
+              onClick={() => {
+                store.setAuthenticated(false)
+                store.setCurrentPage('home')
+              }}
+              className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-400/80 hover:bg-red-500/15"
+            >
+              <LogOut className="w-3.5 h-3.5" /> Log out (back to account picker)
             </button>
           </div>
         </Section>

@@ -102,6 +102,7 @@ export interface UserProfile {
   name: string
   avatar: string
   createdAt: string
+  pin?: string
 }
 
 export interface WatchHistoryItem {
