@@ -23,7 +23,7 @@ const GENRES = [
 ]
 
 export default function TvShows() {
-  const { tmdbApiKey, setSelectedMedia, setCurrentPage } = useStore()
+  const { setSelectedMedia, setCurrentPage } = useStore()
   const [genre, setGenre] = useState(0)
   const [sort, setSort] = useState('popularity.desc')
   const [items, setItems] = useState<any[]>([])
@@ -31,10 +31,6 @@ export default function TvShows() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!tmdbApiKey) {
-      setLoading(false)
-      return
-    }
     let c = false
     ;(async () => {
       setLoading(true)
@@ -51,7 +47,7 @@ export default function TvShows() {
     return () => {
       c = true
     }
-  }, [tmdbApiKey, genre, sort, page])
+  }, [genre, sort, page])
 
   function open(item: any) {
     setSelectedMedia({ id: item.id, type: 'tv' })

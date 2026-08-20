@@ -650,7 +650,7 @@ a:focus-visible,
   overflow: hidden;
 }
 .mfy-intro-center {
-  position: relative; z-index: 2;
+  position: relative; z-index: 4;
   text-align: center;
   will-change: opacity, transform;
 }

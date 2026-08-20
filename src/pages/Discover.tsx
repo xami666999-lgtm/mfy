@@ -34,7 +34,7 @@ const tvGenres = [
 ]
 
 export default function Discover() {
-  const { tmdbApiKey, setSelectedMedia, setCurrentPage } = useStore()
+  const { setSelectedMedia, setCurrentPage } = useStore()
   const [tab, setTab] = useState<'movies' | 'tv' | 'anime'>('movies')
   const [genre, setGenre] = useState(0)
   const [sort, setSort] = useState('popularity.desc')
@@ -43,9 +43,8 @@ export default function Discover() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!tmdbApiKey && tab !== 'anime') return
     load()
-  }, [tab, genre, sort, page, tmdbApiKey])
+  }, [tab, genre, sort, page])
 
   async function load() {
     setLoading(true)
