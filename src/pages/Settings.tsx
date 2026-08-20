@@ -5,6 +5,7 @@ import { setRuntimeTmdbKey } from '../api/tmdb'
 import { setRuntimeOmdbKey } from '../api/omdb'
 import { setRuntimeMdblistKey } from '../api/mdblist'
 import type { ThemeId } from '../store'
+import { cn } from '../lib/utils'
 import { listTorrents, removeTorrent, onTorrentProgress, formatBytes, formatSpeed } from '../api/torrent'
 
 export default function Settings() {
@@ -57,12 +58,33 @@ export default function Settings() {
   const [torrents, setTorrents] = useState<any[]>([])
   const [magnetInput, setMagnetInput] = useState('')
   const [autoUpdate, setAutoUpdate] = useState(true)
+  const [avatarOptions, setAvatarOptions] = useState<{ path: string; name: string }[]>([])
+  const [avatarsLoading, setAvatarsLoading] = useState(false)
 
   async function refreshTorrents() {
     try {
       setTorrents(await listTorrents())
     } catch {
       setTorrents([])
+    }
+  }
+
+  async function loadAvatars() {
+    if (avatarOptions.length > 0) return
+    setAvatarsLoading(true)
+    try {
+      const { tmdb } = await import('../api/tmdb')
+      const res = await tmdb.getPopularPeople(1)
+      const people: any[] = res?.results || []
+      const opts = people
+        .filter((p) => p?.profile_path)
+        .slice(0, 24)
+        .map((p) => ({ path: p.profile_path, name: p.name || 'Actor' }))
+      setAvatarOptions(opts)
+    } catch {
+      // ignore
+    } finally {
+      setAvatarsLoading(false)
     }
   }
 
@@ -226,6 +248,52 @@ export default function Settings() {
             >
               <UserPlus className="w-3.5 h-3.5" /> Add
             </button>
+          </div>
+
+          <div className="pt-2 border-t border-white/[0.05] mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] text-white/25">Avatar for {store.currentProfile?.name || 'current profile'}</p>
+              {avatarOptions.length === 0 && !avatarsLoading && (
+                <button onClick={loadAvatars} className="text-[10px] text-[#FF1493]/70 hover:text-[#FF1493] transition-colors">Load actors</button>
+              )}
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white/10 flex-shrink-0">
+                <img src={store.currentProfile?.avatar || './icon.png'} alt="" className="w-full h-full object-cover" />
+              </div>
+              <button
+                type="button"
+                onClick={() => store.currentProfile && store.setProfileAvatar(store.currentProfile.id, './icon.png')}
+                className={cn(
+                  'h-8 px-3 rounded-lg text-xs border transition-all',
+                  !store.currentProfile?.avatar || store.currentProfile.avatar === './icon.png'
+                    ? 'border-[#FF1493]/40 text-[#FF1493] bg-[#FF1493]/10'
+                    : 'border-white/[0.06] text-white/40'
+                )}
+              >
+                Default
+              </button>
+            </div>
+            <div className="grid grid-cols-8 gap-2 max-h-32 overflow-y-auto pr-1">
+              {avatarsLoading
+                ? Array.from({ length: 16 }).map((_, i) => <div key={i} className="aspect-square rounded-full bg-white/[0.04] animate-pulse" />)
+                : avatarOptions.map((o) => (
+                    <button
+                      key={o.path}
+                      type="button"
+                      title={o.name}
+                      onClick={() => store.currentProfile && store.setProfileAvatar(store.currentProfile.id, `https://image.tmdb.org/t/p/w185${o.path}`)}
+                      className={cn(
+                        'aspect-square rounded-full overflow-hidden border-2 transition-all',
+                        store.currentProfile?.avatar === `https://image.tmdb.org/t/p/w185${o.path}`
+                          ? 'border-[#FF1493] shadow-[0_0_12px_rgba(255,20,147,0.35)]'
+                          : 'border-transparent hover:border-white/25'
+                      )}
+                    >
+                      <img src={`https://image.tmdb.org/t/p/w185${o.path}`} alt={o.name} className="w-full h-full object-cover" loading="lazy" />
+                    </button>
+                  ))}
+            </div>
           </div>
 
           <div className="pt-2 border-t border-white/[0.05] mt-4 space-y-3">

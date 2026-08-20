@@ -204,6 +204,13 @@ export const tmdb = {
     }, {
       cacheKey: `prov:${mediaType}:${providerId}:${page}`,
     }),
+
+  /** Popular people (actors/directors) — used as avatar choices for profiles */
+  getPopularPeople: (page = 1) =>
+    tmdbFetch(`/person/popular`, { page: String(page) }, {
+      cacheKey: `person:popular:${page}`,
+      ttlMs: 24 * 60 * 60 * 1000,
+    }),
 }
 
 
