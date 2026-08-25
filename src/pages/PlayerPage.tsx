@@ -1,321 +1,102 @@
 import { useEffect, useRef, useState } from 'react'
-import {
-  ArrowLeft, Play, Pause, SkipBack, SkipForward, Volume2, VolumeX,
-  Maximize, Minimize, Settings2, Subtitles, AlertCircle
-} from 'lucide-react'
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Settings2, Maximize, Minimize, Subtitles, ArrowLeft, Cast, RefreshCw, Zap } from 'lucide-react'
+import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
+import { tmdb, POSTER_URL, BACKDROP_URL } from '../api/tmdb'
+import { vidyUrl, getPlayerUrl, isPlayerEmbed, getFallbackSources, PlayerSource } from '../api/vidy'
 import { useStore } from '../store'
-import { cn } from '../lib/utils'
-import { isTorrentInput, pickBestFile, onTorrentProgress, formatBytes, formatSpeed } from '../api/torrent'
-import { tmdb, POSTER_URL, STILL_URL } from '../api/tmdb'
-import { AddonStreamService, type Stream } from '../services/addonStreamService'
-import { searchSubtitles, downloadSubtitle, setRuntimeSubtitleKey } from '../api/subtitles'
 
-function isHls(url: string) { return /\.m3u8(?:$|\?)/i.test(url) }
-function isDash(url: string) { return /\.mpd(?:$|\?)/i.test(url) }
-function isDirectMedia(url: string) { return /\.(m3u8|mpd|mp4|webm|mkv|mov|avi|ts)(?:$|\?)/i.test(url) }
-function isEmbed(url: string) {
-  return Boolean(
-    url &&
-    /^https?:/i.test(url) &&
-    !isDirectMedia(url) &&
-    !isTorrentInput(url)
-  )
-}
-async function togglePip(video: HTMLVideoElement | null) {
-  if (!video) return
-  try {
-    if (document.pictureInPictureElement) {
-      await document.exitPictureInPicture()
-    } else if (document.pictureInPictureEnabled) {
-      await video.requestPictureInPicture()
-    }
-  } catch (e) {
-    console.warn('PiP failed', e)
-  }
-}
-
-function srtToVtt(input: string) {
-  if (/^WEBVTT/m.test(input)) return input
-  return `WEBVTT\n\n${input.replace(/\r?\n/g, '\n').replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2')}`
+function isPlayerEmbedUrl(url: string) {
+  return isPlayerEmbed(url)
 }
 
 export default function PlayerPage() {
-  const { selectedMedia, currentStreamUrl, setCurrentStreamUrl, setSelectedMedia, setCurrentPage, upsertHistory, autoplayNext } = useStore()
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const hlsRef = useRef<any>(null)
-  const shakaRef = useRef<any>(null)
+  const {
+    selectedMedia,
+    currentStreamUrl,
+    setCurrentStreamUrl,
+    setSelectedMedia,
+    setCurrentPage,
+    upsertHistory,
+    autoplayNext,
+    externalPlayer,
+  } = useStore()
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [streamUrl, setStreamUrl] = useState(currentStreamUrl || '')
-  const streamUrlRef = useRef(streamUrl)
-  streamUrlRef.current = streamUrl
+  const [streamUrl, setStreamUrl] = useState('')
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const [dur, setDur] = useState(0)
-  const [vol, setVol] = useState(1)
-  const [muted, setMuted] = useState(false)
-  const [showUI, setShowUI] = useState(true)
+  const [loaded, setLoaded] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [showUI, setShowUI] = useState(true)
+  const [fullscreen, setFullscreen] = useState(false)
+  const [muted, setMuted] = useState(false)
+  const [vol, setVol] = useState(1)
+  const [rate, setRate] = useState(1)
+  const [subtitleEnabled, setSubtitleEnabled] = useState(false)
   const [subtitleUrl, setSubtitleUrl] = useState('')
   const [subtitleLabel, setSubtitleLabel] = useState('')
-  const [subtitleEnabled, setSubtitleEnabled] = useState(true)
+  const [subtitleOffset, setSubtitleOffset] = useState(0)
   const trackRef = useRef<HTMLTrackElement>(null)
-  const [fullscreen, setFullscreen] = useState(false)
-  const [loaded, setLoaded] = useState(Boolean(currentStreamUrl))
-  const [pipActive, setPipActive] = useState(false)
-  const [torrentInfo, setTorrentInfo] = useState<any>(null)
-  const [addonStreams, setAddonStreams] = useState<Stream[]>([])
-  const [addonsLoading, setAddonsLoading] = useState(false)
-  const [rate, setRate] = useState(1)
-  const stallTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Auto-download English subtitles when a stream loads (if a key is set).
+  const [autoNextBusy, setAutoNextBusy] = useState(false)
+  const [playerSource, setPlayerSource] = useState<PlayerSource>('vidy')
+
   useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      if (!currentStreamUrl || !selectedMedia || subtitleUrl) return
-      try {
-        const { getExternalIds } = await import('../api/streams')
-        const { opensubtitlesKey, tmdbApiKey } = useStore.getState()
-        if (!opensubtitlesKey) return
-        setRuntimeSubtitleKey(opensubtitlesKey)
-        const ext = await getExternalIds(selectedMedia.type, selectedMedia.id, tmdbApiKey)
-        const imdbId = ext?.imdb_id
-        if (!imdbId) return
-        const subs = await searchSubtitles(selectedMedia.type, imdbId, selectedMedia.season, selectedMedia.episode)
-        if (!subs.length || cancelled) return
-        const url = await downloadSubtitle(subs[0].url, opensubtitlesKey)
-        if (!url || cancelled) return
-        setSubtitleUrl(url)
-        setSubtitleLabel(subs[0].name)
-        setSubtitleEnabled(true)
-      } catch {}
-    })()
-    return () => { cancelled = true }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStreamUrl])
-
-  // "Starting soon" overlay: shows the episode picture + a small description,
-  // then auto-plays after 5s unless the user hits Play first.
-  const [intro, setIntro] = useState(false)
-  const [introCount, setIntroCount] = useState(5)
-  const [introInfo, setIntroInfo] = useState<{ image: string; title: string; sub: string; overview: string } | null>(null)
-  const introTimer = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  // Fetch poster/still + title + short overview for the intro overlay.
-  useEffect(() => {
-    let cancelled = false
     if (!selectedMedia) return
-    setIntroInfo(null)
-    ;(async () => {
-      try {
-        if (selectedMedia.type === 'movie') {
-          const d = await tmdb.getMovieDetail(selectedMedia.id)
-          if (cancelled || !d) return
-          setIntroInfo({
-            image: d.poster_path ? `${POSTER_URL}${d.poster_path}` : '',
-            title: d.title || '',
-            sub: 'Movie',
-            overview: d.overview || '',
-          })
-        } else {
-          const s = selectedMedia.season || 1
-          const e = selectedMedia.episode || 1
-          const season = await tmdb.getSeasonDetail(selectedMedia.id, s)
-          if (cancelled) return
-          const ep = season?.episodes?.find((x: any) => x.episode_number === e) || season?.episodes?.[e - 1]
-          const series = season?.name ? null : await tmdb.getTVDetail(selectedMedia.id).catch(() => null)
-          if (cancelled) return
-          setIntroInfo({
-            image: ep?.still_path ? `${STILL_URL}${ep.still_path}` : (season?.poster_path ? `${POSTER_URL}${season.poster_path}` : ''),
-            title: ep?.name || `Episode ${e}`,
-            sub: `S${s} · E${e}`,
-            overview: ep?.overview || series?.overview || season?.overview || '',
-          })
-        }
-      } catch {
-        // overlay still shows title fallback
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [selectedMedia])
+    const url = getPlayerUrl(
+      playerSource,
+      selectedMedia.type === 'movie' ? 'movie' : 'tv',
+      selectedMedia.id,
+      selectedMedia.season,
+      selectedMedia.episode
+    )
+    setStreamUrl(url)
+    setCurrentStreamUrl(url)
+    setLoaded(true)
+    setLoading(false)
+    setError('')
+  }, [selectedMedia, playerSource])
 
-  // Reset intro when a new stream loads.
-  useEffect(() => {
-    if (!currentStreamUrl) {
-      setIntro(false)
-      if (introTimer.current) clearInterval(introTimer.current)
-      return
-    }
-    // Cross-origin embeds (e.g. Vidy) show their own splash and cannot be
-    // force-played from here — skip the countdown so there is no misleading
-    // "auto-playing…" that ends in nothing.
-    if (isEmbed(currentStreamUrl)) {
-      setIntro(false)
-      if (introTimer.current) clearInterval(introTimer.current)
-      return
-    }
-    setIntroCount(5)
-    setIntro(true)
-    if (introTimer.current) clearInterval(introTimer.current)
-    introTimer.current = setInterval(() => {
-      setIntroCount((c) => {
-        if (c <= 1) {
-          if (introTimer.current) clearInterval(introTimer.current)
-          introTimer.current = null
-          setIntro(false)
-          autoplayAfterIntro()
-          return 0
-        }
-        return c - 1
-      })
-    }, 1000)
-    return () => {
-      if (introTimer.current) clearInterval(introTimer.current)
-      introTimer.current = null
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStreamUrl])
-
-  function dismissIntro(play = true) {
-    setIntro(false)
-    if (introTimer.current) clearInterval(introTimer.current)
-    introTimer.current = null
-    if (play) autoplayAfterIntro()
-  }
-
-  function autoplayAfterIntro() {
-    const v = videoRef.current
-    if (!v) return
-    if (isEmbed(streamUrlRef.current)) return
-    const tryPlay = () => v.play().catch(() => {})
-    tryPlay()
-    if (!v.readyState || v.readyState < 2) {
-      v.addEventListener('loadeddata', tryPlay, { once: true })
+  const handleIframeError = () => {
+    // Try fallback source if current one fails
+    const sources = getFallbackSources(
+      selectedMedia?.type === 'movie' ? 'movie' : 'tv',
+      selectedMedia?.id,
+      selectedMedia?.season,
+      selectedMedia?.episode
+    )
+    const currentIndex = sources.findIndex(s => s.source === playerSource)
+    const nextSource = sources[(currentIndex + 1) % sources.length]
+    if (nextSource && nextSource.source !== playerSource) {
+      setPlayerSource(nextSource.source)
+      setError(`Trying ${nextSource.source}...`)
+    } else {
+      setError('Stream not available on any source')
     }
   }
-
-  // If a torrent is buffering with no peers for ~25s, give up and offer a way
-  // out instead of buffering forever.
-  useEffect(() => {
-    if (!torrentInfo || !torrentInfo.infoHash) return
-    if (torrentInfo.numPeers > 0 || torrentInfo.progress > 0) {
-      if (stallTimer.current) {
-        clearTimeout(stallTimer.current)
-        stallTimer.current = null
-      }
-      return
-    }
-    if (!stallTimer.current) {
-      stallTimer.current = setTimeout(() => {
-        stallTimer.current = null
-        setError('No peers found for this torrent. It may be dead — pick another source.')
-      }, 25000)
-    }
-    return () => {
-      if (stallTimer.current) {
-        clearTimeout(stallTimer.current)
-        stallTimer.current = null
-      }
-    }
-  }, [torrentInfo])
-
-  // Post-play episode rating prompt
-  const [showRating, setShowRating] = useState(false)
-  const [ratingHover, setRatingHover] = useState(0)
-  const ratingKey = selectedMedia ? `mfy-rating:${selectedMedia.type}-${selectedMedia.id}-${selectedMedia.season ?? 0}-${selectedMedia.episode ?? 0}` : null
-
-  function saveRating(stars: number) {
-    if (!ratingKey) return
-    try {
-      localStorage.setItem(ratingKey, String(stars))
-      localStorage.setItem(`${ratingKey}:at`, new Date().toISOString())
-    } catch {}
-    setShowRating(false)
-  }
-  function openRatingPrompt() {
-    if (selectedMedia && ratingKey && localStorage.getItem(ratingKey) == null) {
-      setShowRating(true)
-    }
-  }
-
-  // Load addon streams (Torrentio / Comet / Sports) for quick source picking
-  useEffect(() => {
-    let cancelled = false
-    if (!selectedMedia) return
-    setAddonsLoading(true)
-    setAddonStreams([])
-    ;(async () => {
-      try {
-        const ext = await tmdb.getExternalIds(selectedMedia.type, selectedMedia.id)
-        const imdbId = ext?.imdb_id
-        if (imdbId && !cancelled) {
-          const type = selectedMedia.type === 'movie' ? 'movie' : 'series'
-          const streams = await AddonStreamService.getStreams(imdbId, type)
-          if (!cancelled) setAddonStreams(streams)
-        }
-      } catch {}
-      if (!cancelled) setAddonsLoading(false)
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [selectedMedia])
-
-  useEffect(() => {
-    const unsub = onTorrentProgress((t) => {
-      setTorrentInfo(t)
-    })
-    return () => unsub()
-  }, [])
-
-  useEffect(() => {
-    setStreamUrl(currentStreamUrl || '')
-  }, [currentStreamUrl])
-
-  // Persist continue-watching progress every ~5s while playing
-  useEffect(() => {
-    const v = videoRef.current
-    if (!v || !selectedMedia) return
-    const id = setInterval(() => {
-      if (!v.duration || v.paused) return
-      upsertHistory({
-        id: `${selectedMedia.type}-${selectedMedia.id}-${selectedMedia.season || 0}-${selectedMedia.episode || 0}`,
-        mediaId: selectedMedia.id,
-        mediaType: selectedMedia.type,
-        title: document.title || 'Watching',
-        posterPath: null,
-        progress: v.currentTime,
-        duration: v.duration,
-        season: selectedMedia.season,
-        episode: selectedMedia.episode,
-        watchedAt: new Date().toISOString(),
-        profileId: 'default',
-      })
-    }, 5000)
-
-  return () => clearInterval(id)
-  }, [selectedMedia, loaded])
-
 
   useEffect(() => {
     const v = videoRef.current
-    if (!v) return
+    if (!v || !streamUrl) return
+    if (isPlayerEmbedUrl(streamUrl)) return
+    v.src = streamUrl
+    v.load()
+    v.play().catch(() => {})
     const onTime = () => { setProgress(v.currentTime || 0); setDur(Number.isFinite(v.duration) ? v.duration : 0) }
     const onPlay = () => setPlaying(true)
     const onPause = () => setPlaying(false)
-    const onEnded = () => { setPlaying(false); openRatingPrompt(); handleEnded() }
-    const onError = () => setError('The stream could not be loaded. Check the URL or choose another source.')
+    const onEnded = () => { setPlaying(false); handleEnded() }
+    const onError = () => setError('The stream could not be loaded.')
     v.addEventListener('timeupdate', onTime)
     v.addEventListener('loadedmetadata', onTime)
     v.addEventListener('play', onPlay)
     v.addEventListener('pause', onPause)
     v.addEventListener('ended', onEnded)
     v.addEventListener('error', onError)
-
-  return () => {
+    return () => {
       v.removeEventListener('timeupdate', onTime)
       v.removeEventListener('loadedmetadata', onTime)
       v.removeEventListener('play', onPlay)
@@ -323,111 +104,18 @@ export default function PlayerPage() {
       v.removeEventListener('ended', onEnded)
       v.removeEventListener('error', onError)
     }
-  }, [])
+  }, [streamUrl])
 
   useEffect(() => {
     const onFullscreen = () => setFullscreen(Boolean(document.fullscreenElement))
     document.addEventListener('fullscreenchange', onFullscreen)
-
-  return () => {
-      document.removeEventListener('fullscreenchange', onFullscreen)
-      hlsRef.current?.destroy?.()
-      shakaRef.current?.destroy?.()
-      if (timer.current) clearTimeout(timer.current)
-    }
+    return () => document.removeEventListener('fullscreenchange', onFullscreen)
   }, [])
 
-  useEffect(() => {
-    if (currentStreamUrl) loadStream(currentStreamUrl)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStreamUrl])
-
-  async function loadStream(url: string) {
-    const v = videoRef.current
-    if (!v || !url.trim()) return
-    setLoading(true)
-    setLoaded(false)
-    setError('')
-    setProgress(0)
-    setDur(0)
-    hlsRef.current?.destroy?.()
-    hlsRef.current = null
-    await shakaRef.current?.destroy?.()
-    shakaRef.current = null
-    v.removeAttribute('src')
-    v.load()
-
-    try {
-      let clean = url.trim()
-      if (isTorrentInput(clean)) {
-        setStreamUrl(clean)
-        const torrentRes = await pickBestFile(clean)
-        if (!torrentRes?.streamUrl) {
-          throw new Error('No playable file found in that torrent.')
-        }
-        clean = torrentRes.streamUrl
-      }
-      if (isEmbed(clean)) {
-        setStreamUrl(clean)
-        setCurrentStreamUrl(clean)
-        setLoaded(true)
-        return
-      }
-      if (isHls(clean)) {
-        const mod = await import('hls.js')
-        const HlsCtor: any = (mod as any).default || mod
-        if (HlsCtor.isSupported()) {
-          const hls = new HlsCtor({ enableWorker: true, lowLatencyMode: false })
-          hls.loadSource(clean)
-          hls.attachMedia(v)
-          hls.on(HlsCtor.Events.ERROR, (_event: any, data: any) => {
-            if (data?.fatal) setError('HLS playback failed. Try another source.')
-          })
-          hlsRef.current = hls
-        } else {
-          v.src = clean
-        }
-      } else if (isDash(clean)) {
-        const mod: any = await import('shaka-player')
-        const shaka: any = mod.default || mod
-        shaka.polyfill?.installAll?.()
-        if (!shaka.Player?.isBrowserSupported?.()) throw new Error('DASH playback is not supported by this build.')
-        const player = new shaka.Player(v)
-        player.addEventListener('error', (e: any) => setError(`DASH playback error${e?.detail?.code ? ` (${e.detail.code})` : ''}.`))
-        await player.load(clean)
-        shakaRef.current = player
-      } else {
-        v.src = clean
-        await v.load()
-      }
-      setCurrentStreamUrl(clean)
-      setLoaded(true)
-      await v.play().catch(() => {})
-    } catch (e: any) {
-      setError(e?.message || 'Unable to initialize the player.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  function togglePlay() {
-    const v = videoRef.current
-    if (!v || !streamUrl) return
-    v.paused ? v.play().catch(() => {}) : v.pause()
-  }
-
-  function changeRate(r: number) {
-    setRate(r)
-    if (videoRef.current) videoRef.current.playbackRate = r
-  }
-
-  // Auto-play the next episode when a TV episode finishes (if the user wants).
-  const [autoNextBusy, setAutoNextBusy] = useState(false)
   async function handleEnded() {
     if (autoplayNext && selectedMedia?.type === 'tv' && !autoNextBusy) {
       setAutoNextBusy(true)
       try {
-        const { vidyUrl } = await import('../api/vidy')
         const curSeason = selectedMedia.season || 1
         const curEpisode = selectedMedia.episode || 1
         const season = await tmdb.getSeasonDetail(selectedMedia.id, curSeason).catch(() => null)
@@ -435,7 +123,8 @@ export default function PlayerPage() {
         const next = eps.find((e: any) => e.episode_number === curEpisode + 1)
         if (next) {
           setSelectedMedia({ id: selectedMedia.id, type: 'tv', season: curSeason, episode: next.episode_number })
-          setCurrentStreamUrl(vidyUrl('tv', selectedMedia.id, curSeason, next.episode_number))
+          const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, curSeason, next.episode_number)
+          setCurrentStreamUrl(url)
           setCurrentPage('player')
         } else {
           const d = await tmdb.getTVDetail(selectedMedia.id).catch(() => null)
@@ -446,7 +135,8 @@ export default function PlayerPage() {
             const first = s?.episodes?.[0]
             if (first) {
               setSelectedMedia({ id: selectedMedia.id, type: 'tv', season: nextSeason.season_number, episode: first.episode_number })
-              setCurrentStreamUrl(vidyUrl('tv', selectedMedia.id, nextSeason.season_number, first.episode_number))
+              const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, nextSeason.season_number, first.episode_number)
+              setCurrentStreamUrl(url)
               setCurrentPage('player')
             }
           }
@@ -460,12 +150,47 @@ export default function PlayerPage() {
     if (videoRef.current && Number.isFinite(t)) videoRef.current.currentTime = Math.max(0, Math.min(dur || t, t))
   }
 
-  // Skip Intro — appears during the opening minutes and jumps ahead ~85s.
-  const [introSkipped, setIntroSkipped] = useState(false)
-  const showSkipIntro = !isEmbed(streamUrl) && !introSkipped && progress > 5 && progress < 240
-  function skipIntro() {
-    seek(progress + 85)
-    setIntroSkipped(true)
+  async function goToEpisode(season: number, episode: number) {
+    if (!selectedMedia || selectedMedia.type !== 'tv') return
+    if (episode < 1) return
+    setAutoNextBusy(true)
+    try {
+      const seasonData = await tmdb.getSeasonDetail(selectedMedia.id, season).catch(() => null)
+      const eps = seasonData?.episodes || []
+      const target = eps.find((e: any) => e.episode_number === episode)
+      if (target) {
+        setSelectedMedia({ id: selectedMedia.id, type: 'tv', season, episode: target.episode_number })
+        const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, season, target.episode_number)
+        setCurrentStreamUrl(url)
+        setCurrentPage('player')
+      } else {
+        const d = await tmdb.getTVDetail(selectedMedia.id).catch(() => null)
+        const seasons = d?.seasons || []
+        const nextSeason = seasons.find((s: any) => s.season_number === season + 1 && s.episode_count > 0)
+        if (nextSeason) {
+          const s = await tmdb.getSeasonDetail(selectedMedia.id, nextSeason.season_number).catch(() => null)
+          const first = s?.episodes?.[0]
+          if (first) {
+            setSelectedMedia({ id: selectedMedia.id, type: 'tv', season: nextSeason.season_number, episode: first.episode_number })
+            const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, nextSeason.season_number, first.episode_number)
+            setCurrentStreamUrl(url)
+            setCurrentPage('player')
+          }
+        }
+      }
+    } catch {}
+    setAutoNextBusy(false)
+  }
+
+  function togglePlay() {
+    const v = videoRef.current
+    if (!v || isPlayerEmbedUrl(streamUrl)) return
+    v.paused ? v.play().catch(() => {}) : v.pause()
+  }
+
+  function changeRate(r: number) {
+    setRate(r)
+    if (videoRef.current && !isPlayerEmbedUrl(streamUrl)) videoRef.current.playbackRate = r
   }
 
   function fmt(s: number) {
@@ -483,211 +208,133 @@ export default function PlayerPage() {
   }
 
   async function toggleFullscreen() {
-    const root = videoRef.current?.parentElement?.parentElement
-    if (!root) return
-    if (document.fullscreenElement) await document.exitFullscreen()
-    else await root.requestFullscreen()
-  }
-
-  async function handleSubtitle(file: File) {
-    const text = await file.text()
-    const blob = new Blob([srtToVtt(text)], { type: 'text/vtt' })
-    const url = URL.createObjectURL(blob)
-    setSubtitleUrl(url)
-    setSubtitleLabel(file.name)
-    setSubtitleEnabled(true)
-    setSubtitleOffset(0)
-    subRawRef.current = srtToVtt(text)
-  }
-
-  // Subtitle timing sync: shift all cue timestamps by an offset (seconds).
-  const [subtitleOffset, setSubtitleOffset] = useState(0)
-  const subRawRef = useRef<string>('')
-  useEffect(() => {
-    if (!subRawRef.current) return
-    try {
-      const shift = (t: string) => {
-        const [h, m, s] = t.split(':').map(Number)
-        let total = (h * 3600) + (m * 60) + s + subtitleOffset
-        total = Math.max(0, total)
-        const nh = Math.floor(total / 3600)
-        const nm = Math.floor((total % 3600) / 60)
-        const ns = (total % 60).toFixed(3)
-        return `${String(nh).padStart(2, '0')}:${String(nm).padStart(2, '0')}:${String(ns).padStart(6, '0')}`
+    if (isPlayerEmbedUrl(streamUrl)) {
+      const iframe = iframeRef.current
+      if (!iframe) return
+      if (document.fullscreenElement === iframe) {
+        await document.exitFullscreen()
+      } else {
+        await iframe.requestFullscreen()
       }
-      const vtt = subRawRef.current.replace(/(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})/g, (_, a, b) => `${shift(a)} --> ${shift(b)}`)
-      const blob = new Blob([vtt], { type: 'text/vtt' })
-      setSubtitleUrl(URL.createObjectURL(blob))
-    } catch {}
-  }, [subtitleOffset])
+    } else {
+      const root = videoRef.current?.parentElement?.parentElement
+      if (!root) return
+      if (document.fullscreenElement === root) {
+        await document.exitFullscreen()
+      } else {
+        await root.requestFullscreen()
+      }
+    }
+  }
+
+  async function togglePip(video: HTMLVideoElement | null) {
+    if (!video) return
+    try {
+      if (document.pictureInPictureElement) await document.exitPictureInPicture()
+      else if (document.pictureInPictureEnabled) await video.requestPictureInPicture()
+    } catch (e) { console.warn('PiP failed', e) }
+  }
+
+  function goBack() {
+    setSelectedMedia(null)
+    setCurrentPage('detail')
+  }
 
   const title = selectedMedia ? `${selectedMedia.type === 'movie' ? 'Movie' : 'Series'} ${selectedMedia.id}` : 'MFY Player'
-  const embedStream = isEmbed(streamUrl)
 
   return (
-    <div className="mfy-player" onMouseMove={onMouseMove}>
-      <div className={cn('player-topbar', showUI ? 'visible' : 'hidden')}>
-        <button onClick={() => setCurrentPage('detail')} className="player-back"><ArrowLeft /> Back</button>
-        <div className="player-title">{title}</div>
-        <div className="player-top-actions">
-          {addonStreams.length > 0 && (
+    <div className="mfy-player" onMouseMove={onMouseMove} style={{ background: '#000', minHeight: '100vh' }}>
+      <div className={cn('player-topbar', showUI ? 'visible' : 'hidden')} style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
+        <button onClick={goBack} className="player-back flex items-center gap-2 text-white/80 hover:text-white" style={{ background: 'rgba(0,0,0,0.5)', padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>
+          <ArrowLeft size={16} /> Back
+        </button>
+        <div className="player-title text-white font-medium truncate" style={{ maxWidth: 400 }}>{title}</div>
+        <div className="player-top-actions flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <span style={{ fontSize: 10, color: 'white/60' }}>Source:</span>
             <select
-              className="player-addon-select"
-              value=""
-              onChange={(e) => {
-                if (e.target.value) loadStream(e.target.value)
+              value={playerSource}
+              onChange={(e) => setPlayerSource(e.target.value as PlayerSource)}
+              style={{
+                background: 'rgba(255,255,255,0.1)',
+                border: 'none',
+                borderRadius: 6,
+                padding: '6px 10px',
+                color: 'white',
+                fontSize: 11,
+                cursor: 'pointer',
+                appearance: 'none'
               }}
             >
-              <option value="">Addons · {addonsLoading ? 'loading…' : `${addonStreams.length} sources`}</option>
-              {addonStreams.map((s, i) => (
-                <option key={`${s.source}-${i}`} value={s.url}>
-                  {s.title} - {s.source}
-                  {typeof s.seeders === 'number' ? ` (${s.seeders} peers)` : ''}
-                </option>
-              ))}
+              <option value="vidy">Vidy</option>
+              <option value="vidking">VidKing</option>
             </select>
-          )}
-          {!embedStream && (
-            <label className="player-icon-button" title="Load subtitles">
-              <Subtitles />
-              <input type="file" accept=".srt,.vtt,text/vtt" hidden onChange={(e) => e.target.files?.[0] && handleSubtitle(e.target.files[0])} />
-            </label>
-          )}
-          <button className="player-icon-button" onClick={toggleFullscreen}><Maximize /></button>
+            <Zap size={12} style={{ color: '#FFD24C' }} />
+          </div>
+          <button className="player-icon-button" onClick={toggleFullscreen} style={{ background: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white' }}><Maximize size={18} /></button>
         </div>
       </div>
 
-      <div className="player-stage" onClick={togglePlay}>
-        {isEmbed(streamUrl) ? (
+      <div className="player-stage" onClick={togglePlay} style={{ position: 'relative', width: '100%', height: 'calc(100vh - 100px)', minHeight: 400 }}>
+        {!loaded && !error && (
+          <div className="player-empty" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white/60' }}>
+            <div className="player-empty-icon" style={{ fontSize: 48, marginBottom: 16 }}><Play /></div>
+            <h2>Loading stream…</h2>
+          </div>
+        )}
+        {error && <div className="player-error" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'red', padding: 24, textAlign: 'center' }}>{error}</div>}
+        {loaded && !error && isPlayerEmbedUrl(streamUrl) && (
           <iframe
-            title="Stream"
+            ref={iframeRef}
             src={streamUrl}
-            className="w-full h-full border-0"
+            title="Stream"
+            style={{ width: '100%', height: '100%', border: 'none', background: '#000' }}
             allow="autoplay; fullscreen; encrypted-media"
             allowFullScreen
+            onError={handleIframeError}
           />
-        ) : (
-        <video ref={videoRef} playsInline preload="metadata">
-          {subtitleUrl && <track ref={trackRef} kind="subtitles" src={subtitleUrl} srcLang="en" label={subtitleLabel || 'Subtitles'} default />}
-        </video>
         )}
-        {!loaded && (
-          <div className="player-empty" onClick={(e) => e.stopPropagation()}>
-            <div className="player-empty-icon"><Play /></div>
-            <h2>No source selected</h2>
-            <p>Pick a stream from the title's stream list to start watching.</p>
-            <div className="test-links">
-              <button onClick={() => setCurrentPage('detail')}>Back to streams</button>
-              <button onClick={() => setCurrentPage('home')}>Home</button>
-            </div>
-          </div>
-        )}
-        {loading && <div className="player-loading">Loading stream…</div>}
-        {torrentInfo && torrentInfo.progress < 1 && !error && (
-          <div className="player-loading torrent-status">
-            <div className="torrent-progress-bar">
-              <div className="torrent-progress-fill" style={{ width: `${Math.round((torrentInfo.progress || 0) * 100)}%` }} />
-            </div>
-            <span>
-              Torrent buffering · {Math.round((torrentInfo.progress || 0) * 100)}% ·{' '}
-              {formatSpeed(torrentInfo.downloadSpeed || 0)} down · {torrentInfo.numPeers || 0} peers
-            </span>
-          </div>
-        )}
-        {error && <div className="player-error"><AlertCircle /> {error}</div>}
-
-        {showSkipIntro && (
-          <button type="button" className="player-skip-intro" onClick={skipIntro}>
-            <SkipForward size={15} /> Skip Intro
-          </button>
+        {loaded && !error && !isPlayerEmbedUrl(streamUrl) && (
+          <video ref={videoRef} playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }} />
         )}
 
-        {intro && !error && (
-          <div className="player-intro" onClick={(e) => e.stopPropagation()}>
-            {introInfo?.image && <div className="player-intro-bg" style={{ backgroundImage: `url(${introInfo.image})` }} />}
-            <div className="player-intro-card">
-              {introInfo?.image && <img className="player-intro-poster" src={introInfo.image} alt="" />}
-              <div className="player-intro-body">
-                {introInfo?.sub && <div className="player-intro-kicker">{introInfo.sub}</div>}
-                <h2>{introInfo?.title || 'Ready to play'}</h2>
-                {introInfo?.overview && <p>{introInfo.overview}</p>}
-                <div className="player-intro-actions">
-                  <button className="player-intro-play" onClick={() => dismissIntro(true)}>
-                    <Play fill="currentColor" size={16} /> Play Now
-                  </button>
-                  <button className="player-intro-later" onClick={() => dismissIntro(false)}>Later</button>
-                  <div className="player-intro-count">
-                    <span className="player-intro-ring">{introCount}</span> auto-playing…
-                  </div>
-                </div>
+        {showUI && loaded && !error && !isPlayerEmbedUrl(streamUrl) && (
+          <div className={cn('player-controls', showUI ? 'visible' : 'hidden')} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 20, padding: '16px 24px 24px', background: 'linear-gradient(0deg, rgba(0,0,0,0.95) 0%, transparent 100%)', pointerEvents: 'auto' }}>
+            <div className="player-progress" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); seek(((e.clientX - r.left) / r.width) * dur) }} style={{ cursor: 'pointer', height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 2, marginBottom: 12 }}>
+              <div className="player-progress-fill" style={{ height: '100%', background: '#FF1493', borderRadius: 2, transition: 'width 0.1s linear', width: `${dur ? Math.min(100, (progress / dur) * 100) : 0}%` }} />
+            </div>
+            <div className="player-control-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+              <div className="player-left-controls" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button onClick={() => seek(progress - 10)} title="Rewind 10s" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><SkipBack size={20} /></button>
+                <button className="player-main-play" onClick={togglePlay} style={{ background: '#FF1493', border: 'none', borderRadius: '50%', padding: 12, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{playing ? <Pause size={24} /> : <Play size={24} />}</button>
+                <button onClick={() => seek(progress + 10)} title="Forward 10s" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><SkipForward size={20} /></button>
+                {selectedMedia?.type === 'tv' && selectedMedia.season !== undefined && selectedMedia.episode !== undefined && (
+                  <>
+                    <button onClick={() => goToEpisode(selectedMedia.season!, (selectedMedia.episode || 1) - 1)} title="Previous episode" disabled={selectedMedia.episode === 1} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: selectedMedia.episode === 1 ? 0.5 : 1 }}><SkipBack size={18} /></button>
+                    <button onClick={() => goToEpisode(selectedMedia.season!, (selectedMedia.episode || 1) + 1)} title="Next episode" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><SkipForward size={18} /></button>
+                  </>
+                )}
+                <button onClick={() => { const next = !muted; setMuted(next); if (videoRef.current) videoRef.current.muted = next }} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{muted ? <VolumeX size={20} /> : <Volume2 size={20} />}</button>
+                <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : vol} onChange={(e) => { const value = Number(e.target.value); setVol(value); setMuted(value === 0); if (videoRef.current) { videoRef.current.volume = value; videoRef.current.muted = value === 0 } }} style={{ width: 80, accentColor: '#FF1493' }} />
+                <span style={{ color: 'white/70', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>{fmt(progress)} / {fmt(dur)}</span>
+              </div>
+              <div className="player-right-controls" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button title="Playback speed" onClick={() => { const speeds = [1, 1.25, 1.5, 1.75, 2, 0.5, 0.75]; const next = speeds[(speeds.indexOf(rate) + 1) % speeds.length]; changeRate(next) }} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', color: 'white', fontSize: 11, fontWeight: 600 }}>{rate}x</button>
+                <button title="Picture in Picture" onClick={() => togglePip(videoRef.current)} type="button" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Settings2 size={18} /></button>
+                <button onClick={toggleFullscreen} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{fullscreen ? <Minimize size={20} /> : <Maximize size={20} />}</button>
               </div>
             </div>
           </div>
         )}
-      </div>
-
-      {!embedStream && (
-      <div className={cn('player-controls', showUI ? 'visible' : 'hidden')} onClick={(e) => e.stopPropagation()}>
-        <div className="player-progress" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); seek(((e.clientX - r.left) / r.width) * dur) }}>
-          <div className="player-progress-fill" style={{ width: `${dur ? Math.min(100, (progress / dur) * 100) : 0}%` }} />
-        </div>
-        <div className="player-control-row">
-          <div className="player-left-controls">
-            <button onClick={() => seek(progress - 10)}><SkipBack /></button>
-            <button className="player-main-play" onClick={togglePlay}>{playing ? <Pause /> : <Play />}</button>
-            <button onClick={() => seek(progress + 10)}><SkipForward /></button>
-            <button onClick={() => { const next = !muted; setMuted(next); if (videoRef.current) videoRef.current.muted = next }}>{muted ? <VolumeX /> : <Volume2 />}</button>
-            <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : vol} onChange={(e) => { const value = Number(e.target.value); setVol(value); setMuted(value === 0); if (videoRef.current) { videoRef.current.volume = value; videoRef.current.muted = value === 0 } }} />
-            <span>{fmt(progress)} / {fmt(dur)}</span>
-          </div>
-          <div className="player-right-controls">
-            {subtitleLabel && <button className={cn('subtitle-toggle', subtitleEnabled && 'on')} onClick={() => { const next = !subtitleEnabled; setSubtitleEnabled(next); const track = trackRef.current?.track; if (track) track.mode = next ? 'showing' : 'hidden' }} title="Toggle subtitles"><Subtitles /> {subtitleEnabled ? 'CC On' : 'CC Off'}</button>}
-            {subtitleLabel && subtitleEnabled && (
-              <div className="flex items-center gap-1">
-                <button type="button" title="Subtitle sync −0.5s" onClick={() => setSubtitleOffset((o) => o - 0.5)} className="text-[10px] w-7 h-9 rounded-lg border border-white/[0.08] bg-white/[0.04] text-white/60 hover:text-white hover:bg-white/[0.08] transition-all">−</button>
-                <span className="text-[10px] text-white/50 w-9 text-center">{subtitleOffset ? `${subtitleOffset > 0 ? '+' : ''}${subtitleOffset}s` : 'sync'}</span>
-                <button type="button" title="Subtitle sync +0.5s" onClick={() => setSubtitleOffset((o) => o + 0.5)} className="text-[10px] w-7 h-9 rounded-lg border border-white/[0.08] bg-white/[0.04] text-white/60 hover:text-white hover:bg-white/[0.08] transition-all">+</button>
-              </div>
-            )}
-            <button title="Playback speed" onClick={() => { const speeds = [1, 1.25, 1.5, 1.75, 2, 0.5, 0.75]; const next = speeds[(speeds.indexOf(rate) + 1) % speeds.length]; changeRate(next) }} className="text-[10px] px-2 h-9 rounded-lg border border-white/[0.08] bg-white/[0.04] text-white/70 hover:bg-white/[0.08] hover:text-white transition-all">
-              {rate}x
-            </button>
-            <button title="Picture in Picture" onClick={() => togglePip(videoRef.current)} type="button"><Settings2 /></button>
-            <button title="PiP" type="button" onClick={() => togglePip(videoRef.current)} className="text-[10px] px-2">PiP</button>
-            <button onClick={toggleFullscreen}>{fullscreen ? <Minimize /> : <Maximize />}</button>
-          </div>
       </div>
     </div>
-    )}
-
-    {showRating && selectedMedia && (
-      <div className="rating-overlay" onClick={() => setShowRating(false)}>
-        <div className="rating-card" onClick={(e) => e.stopPropagation()}>
-          <div className="rating-title">Rate this {selectedMedia.type === 'movie' ? 'movie' : 'episode'}</div>
-          <div className="rating-stars">
-            {[1, 2, 3, 4, 5].map((star) => {
-              const filled = star <= (ratingHover || 0)
-              return (
-                <button
-                  key={star}
-                  type="button"
-                  className="rating-star"
-                  style={{ color: filled ? '#FFD24C' : '#555' }}
-                  onMouseEnter={() => setRatingHover(star)}
-                  onMouseLeave={() => setRatingHover(0)}
-                  onClick={() => saveRating(star)}
-                  aria-label={`${star} stars`}
-                >
-                  ★
-                </button>
-              )
-            })}
-          </div>
-          <button type="button" className="rating-skip" onClick={() => setShowRating(false)}>Not now</button>
-          <div className="rating-note">Your rating is saved locally and shown on posters.</div>
-        </div>
-      </div>
-    )}
-  </div>
   )
+}
+
+function fmt(s: number) {
+  if (!Number.isFinite(s) || s < 0) return '0:00'
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const sec = Math.floor(s % 60)
+  return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}` : `${m}:${String(sec).padStart(2, '0')}`
 }

@@ -21,6 +21,7 @@ export default function Wizard() {
   const [aiosUrl, setAiosUrl] = useState(store.aiostreamsUrl || '')
   const [jellyfinUrl, setJellyfinUrl] = useState(store.jellyfinUrl || '')
   const [jellyfinKey, setJellyfinKey] = useState(store.jellyfinApiKey || '')
+  const [shortcut, setShortcut] = useState(true)
   const [saving, setSaving] = useState(false)
   const [tmdbError, setTmdbError] = useState('')
 
@@ -46,6 +47,7 @@ export default function Wizard() {
         await api.set('jellyfinUrl', jellyfinUrl)
         await api.set('jellyfinApiKey', jellyfinKey)
         await api.setSetupComplete()
+        if (shortcut) await api.createDesktopShortcut?.()
       } catch {
         // still continue into the app
       }
@@ -211,16 +213,25 @@ export default function Wizard() {
               </Step>
             )}
 
-            {step === 4 && (
+{step === 4 && (
               <div className="text-center py-4">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#FF1493]/20 to-[#00E5FF]/20 border border-[#FF1493]/30 flex items-center justify-center mx-auto mb-5">
                   <Check className="w-8 h-8 text-[#00E5FF]" />
                 </div>
-                <h2 className="text-xl font-bold text-white mb-2 tracking-tight">You’re all set</h2>
+                <h2 className="text-xl font-bold text-white mb-2 tracking-tight">You're all set</h2>
                 <p className="text-sm text-white/35 max-w-sm mx-auto leading-relaxed">
                   {tmdbKey ? 'TMDB is configured.' : 'Add a TMDB key in Settings to load the catalog.'}
                   {' '}Everything can be changed anytime.
                 </p>
+                <label className="flex items-center justify-center gap-2 mt-6 text-sm text-white/70">
+                  <input
+                    type="checkbox"
+                    checked={shortcut}
+                    onChange={(e) => setShortcut(e.target.checked)}
+                    className="w-4 h-4 accent-[#FF1493] rounded border-white/20 bg-white/5"
+                  />
+                  <span>Create desktop shortcut</span>
+                </label>
               </div>
             )}
 

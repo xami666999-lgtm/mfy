@@ -49,6 +49,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('mfy-window-shown', listener)
     return () => ipcRenderer.removeListener('mfy-window-shown', listener)
   },
+
+  // Desktop shortcut
+  createDesktopShortcut: () => ipcRenderer.invoke('createDesktopShortcut'),
 })
 
 contextBridge.exposeInMainWorld('torrentAPI', {
