@@ -323,6 +323,133 @@ export default function Board() {
 
   const movieRow = useMemo(() => trending.filter((x) => x.media_type !== 'tv'), [trending])
 
+  // Airing schedule content - computed outside JSX to avoid ternary parsing issues
+  const airingContent = (() => {
+    if (loadingAiring) {
+      return (
+        <div style={{ display: 'flex', gap: 16, overflowX: 'auto', scrollBehavior: 'smooth', paddingBottom: 16 }}>
+          <div style={{ flexShrink: 0, width: 320, minWidth: 280 }}>
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-4">
+              <div className="w-12 h-12 rounded-xl bg-white/[0.05] animate-pulse" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-3/4 bg-white/[0.05] animate-pulse rounded" />
+                <div className="h-3 w-1/2 bg-white/[0.03] animate-pulse rounded" />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, paddingBottom: 8 }}>
+              {Array.from({ length: 4 }).map((_, j) => (
+                <div key={j} style={{ flexShrink: 0, width: 140 }}>
+                  <div className="aspect-[2/3] bg-white/[0.05] animate-pulse rounded-lg mb-2" />
+                  <div className="h-3 w-full bg-white/[0.05] animate-pulse rounded" />
+                  <div className="h-2 w-3/4 bg-white/[0.03] animate-pulse rounded mt-1" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ flexShrink: 0, width: 320, minWidth: 280 }}>
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-4">
+              <div className="w-12 h-12 rounded-xl bg-white/[0.05] animate-pulse" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-3/4 bg-white/[0.05] animate-pulse rounded" />
+                <div className="h-3 w-1/2 bg-white/[0.03] animate-pulse rounded" />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, paddingBottom: 8 }}>
+              {Array.from({ length: 4 }).map((_, j) => (
+                <div key={j} style={{ flexShrink: 0, width: 140 }}>
+                  <div className="aspect-[2/3] bg-white/[0.05] animate-pulse rounded-lg mb-2" />
+                  <div className="h-3 w-full bg-white/[0.05] animate-pulse rounded" />
+                  <div className="h-2 w-3/4 bg-white/[0.03] animate-pulse rounded mt-1" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    if (airingAnime.length === 0 && airingTVShows.length === 0) {
+      return (
+        <div style={{ textAlign: 'center', padding: 16, color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', width: '100%' }}>
+          No airing schedule data available
+        </div>
+      )
+    }
+
+    return (
+      <div style={{ display: 'flex', gap: 16, overflowX: 'auto', scrollBehavior: 'smooth', paddingBottom: 16 }}>
+        {airingAnime.length > 0 && (
+          <div style={{ flexShrink: 0, width: 320, minWidth: 280 }}>
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-4" style={{ cursor: 'pointer' }}>
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#FF1493]/20 to-[#00E5FF]/20 border border-[#FF1493]/30 flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-6 h-6 text-[#FF1493]" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Airing Anime</p>
+                <p className="text-[11px] text-white/35">{airingAnime.length} airing now</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollBehavior: 'smooth', paddingBottom: 8 }}>
+              {airingAnime.slice(0, 8).map((anime) => (
+                <div key={anime.id} style={{ flexShrink: 0, width: 140 }} className="text-left">
+                  <div style={{ position: 'relative', width: '100%', paddingTop: '150%' }}>
+                    {anime.coverImage ? (
+                      <img src={anime.coverImage} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} loading="lazy" />
+                    ) : (
+                      <div style={{ position: 'absolute', inset: 0, borderRadius: 8, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Sparkles size={24} color="rgba(255,255,255,0.3)" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-white text-xs truncate">{anime.titleEnglish || anime.titleRomaji || anime.title}</p>
+                    <p className="text-white/40 text-[10px]">
+                      Ep {anime.nextAiringEpisode || '?'} � {anime.timeUntilAiring ? `${Math.round(anime.timeUntilAiring / 60)}m` : 'Soon'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {airingTVShows.length > 0 && (
+          <div style={{ flexShrink: 0, width: 320, minWidth: 280 }}>
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-4" style={{ cursor: 'pointer' }}>
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#FF1493]/20 to-[#00E5FF]/20 border border-[#FF1493]/30 flex items-center justify-center flex-shrink-0">
+                <Tv className="w-6 h-6 text-[#FF1493]" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Airing TV Shows</p>
+                <p className="text-[11px] text-white/35">{airingTVShows.length} airing now</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollBehavior: 'smooth', paddingBottom: 8 }}>
+              {airingTVShows.slice(0, 4).map((show) => (
+                <div key={show.id} style={{ flexShrink: 0, width: 140 }} className="text-left">
+                  <div style={{ position: 'relative', width: '100%', paddingTop: '150%' }}>
+                    {show.posterPath ? (
+                      <img src={`${POSTER_URL}${show.posterPath}`} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} loading="lazy" />
+                    ) : (
+                      <div style={{ position: 'absolute', inset: 0, borderRadius: 8, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Tv size={24} color="rgba(255,255,255,0.3)" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-white text-xs truncate">{show.name}</p>
+                    <p className="text-white/40 text-[10px]">
+                      Ep {show.nextEpisodeToAir?.episodeNumber || '?'} � {show.nextEpisodeToAir?.airDate ? new Date(show.nextEpisodeToAir.airDate).toLocaleDateString() : 'Soon'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  })()
+
   if (loading) {
     return (
       <div className="board">
@@ -550,7 +677,7 @@ export default function Board() {
         {anime.length > 0 && <AnimeSection items={anime} />}
 
         {/* Providers Section */}
-        {providers.length > 0 && (
+        {(providers.length > 0 || loadingProviders) && (
           <section style={{ marginTop: 16 }}>
             <div style={{ 
               display: 'flex', 
@@ -561,23 +688,25 @@ export default function Board() {
               <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>
                 Streaming Providers
               </h2>
-              <button 
-                style={{ 
-                  color: 'rgba(255,255,255,0.5)', 
-                  background: 'none', 
-                  border: 'none', 
-                  fontSize: '0.875rem', 
-                  cursor: 'pointer',
-                  padding: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4
-                }}
-                onClick={() => setCurrentPage('providers')}
-              >
-                View All
-                <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
-              </button>
+              {providers.length > 0 && (
+                <button 
+                  style={{ 
+                    color: 'rgba(255,255,255,0.5)', 
+                    background: 'none', 
+                    border: 'none', 
+                    fontSize: '0.875rem', 
+                    cursor: 'pointer',
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}
+                  onClick={() => setCurrentPage('providers')}
+                >
+                  View All
+                  <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                </button>
+              )}
             </div>
             <div
               ref={providerRef}
@@ -590,42 +719,75 @@ export default function Board() {
                 paddingBottom: 16
               }}
             >
-              {providers.slice(0, 8).map((provider) => (
-                <div key={provider.id} style={{ flexShrink: 0, width: 320, minWidth: 280 }}>
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-4" style={{ cursor: 'pointer' }}>
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#FF1493]/20 to-[#00E5FF]/20 border border-[#FF1493]/30 flex items-center justify-center flex-shrink-0">
-                      <Film className="w-6 h-6 text-[#FF1493]" />
+              {loadingProviders
+                ? Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} style={{ flexShrink: 0, width: 320, minWidth: 280 }}>
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-4">
+                        <div className="w-12 h-12 rounded-xl bg-white/[0.05] animate-pulse" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 w-3/4 bg-white/[0.05] animate-pulse rounded" />
+                          <div className="h-3 w-1/2 bg-white/[0.03] animate-pulse rounded" />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, paddingBottom: 8 }}>
+                        {Array.from({ length: 4 }).map((_, j) => (
+                          <div key={j} style={{ flexShrink: 0, width: 120 }}>
+                            <div className="aspect-[2/3] bg-white/[0.05] animate-pulse rounded-lg mb-2" />
+                            <div className="h-3 w-full bg-white/[0.05] animate-pulse rounded" />
+                            <div className="h-2 w-3/4 bg-white/[0.03] animate-pulse rounded mt-1" />
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-white">{provider.name}</p>
-                      <p className="text-[11px] text-white/35">{(provider.movies?.length || 0) + (provider.tv?.length || 0)} titles</p>
+                  ))
+                : providers.length > 0
+                ? providers.slice(0, 8).map((provider) => (
+                    <div key={provider.id} style={{ flexShrink: 0, width: 320, minWidth: 280 }}>
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-4" style={{ cursor: 'pointer' }}>
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#FF1493]/20 to-[#00E5FF]/20 border border-[#FF1493]/30 flex items-center justify-center flex-shrink-0">
+                          <Film className="w-6 h-6 text-[#FF1493]" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-white">{provider.name}</p>
+                          <p className="text-[11px] text-white/35">{(provider.movies?.length || 0) + (provider.tv?.length || 0)} titles</p>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollBehavior: 'smooth', paddingBottom: 8 }}>
+                        {(provider.movies?.slice(0, 4) || []).map((item: any) => (
+                          <button key={item.id} onClick={() => goDetail(item.id, 'movie')} style={{ flexShrink: 0, width: 120 }} className="text-left">
+                            <img src={`${POSTER_URL}${item.poster_path}`} alt="" className="w-full aspect-[2/3] rounded-lg object-cover mb-2" loading="lazy" />
+                            <p className="text-[11px] font-medium text-white truncate">{item.title}</p>
+                            <p className="text-[10px] text-white/30">{item.release_date?.slice(0,4) || ''}</p>
+                          </button>
+                        ))}
+                        {(provider.tv?.slice(0, 4) || []).map((item: any) => (
+                          <button key={item.id} onClick={() => goDetail(item.id, 'tv')} style={{ flexShrink: 0, width: 120 }} className="text-left">
+                            <img src={`${POSTER_URL}${item.poster_path}`} alt="" className="w-full aspect-[2/3] rounded-lg object-cover mb-2" loading="lazy" />
+                            <p className="text-[11px] font-medium text-white truncate">{item.name}</p>
+                            <p className="text-[10px] text-white/30">{item.first_air_date?.slice(0,4) || ''}</p>
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollBehavior: 'smooth', paddingBottom: 8 }}>
-                    {(provider.movies?.slice(0, 4) || []).map((item: any) => (
-                      <button key={item.id} onClick={() => goDetail(item.id, 'movie')} style={{ flexShrink: 0, width: 120 }} className="text-left">
-                        <img src={`${POSTER_URL}${item.poster_path}`} alt="" className="w-full aspect-[2/3] rounded-lg object-cover mb-2" loading="lazy" />
-                        <p className="text-[11px] font-medium text-white truncate">{item.title}</p>
-                        <p className="text-[10px] text-white/30">{item.release_date?.slice(0,4) || ''}</p>
-                      </button>
-                    ))}
-                    {(provider.tv?.slice(0, 4) || []).map((item: any) => (
-                      <button key={item.id} onClick={() => goDetail(item.id, 'tv')} style={{ flexShrink: 0, width: 120 }} className="text-left">
-                        <img src={`${POSTER_URL}${item.poster_path}`} alt="" className="w-full aspect-[2/3] rounded-lg object-cover mb-2" loading="lazy" />
-                        <p className="text-[11px] font-medium text-white truncate">{item.name}</p>
-                        <p className="text-[10px] text-white/30">{item.first_air_date?.slice(0,4) || ''}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                  ))
+                : tmdbApiKey
+                ? (
+                    <div style={{ textAlign: 'center', padding: 16, color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', width: '100%' }}>
+                      No provider data available
+                    </div>
+                  )
+                : (
+                    <div style={{ textAlign: 'center', padding: 16, color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', width: '100%' }}>
+                      Add TMDB API key in Settings to load provider data
+                    </div>
+                  )}
             </div>
           </section>
         )}
 
 
         {/* Franchises Section */}
-        {franchisesData.length > 0 && (
+        {(franchisesData.length > 0 || loadingFranchises) && (
           <section style={{ marginTop: 16 }}>
             <div style={{ 
               display: 'flex', 
@@ -636,23 +798,25 @@ export default function Board() {
               <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>
                 Franchises & Collections
               </h2>
-              <button 
-                style={{ 
-                  color: 'rgba(255,255,255,0.5)', 
-                  background: 'none', 
-                  border: 'none', 
-                  fontSize: '0.875rem', 
-                  cursor: 'pointer',
-                  padding: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4
-                }}
-                onClick={() => setCurrentPage('franchises')}
-              >
-                View All
-                <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
-              </button>
+              {franchisesData.length > 0 && (
+                <button 
+                  style={{ 
+                    color: 'rgba(255,255,255,0.5)', 
+                    background: 'none', 
+                    border: 'none', 
+                    fontSize: '0.875rem', 
+                    cursor: 'pointer',
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}
+                  onClick={() => setCurrentPage('franchises')}
+                >
+                  View All
+                  <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                </button>
+              )}
             </div>
             <div
               ref={franchiseRef}
@@ -665,35 +829,68 @@ export default function Board() {
                 paddingBottom: 16
               }}
             >
-              {franchisesData.slice(0, 8).map((franchise) => (
-                <div key={franchise.id} style={{ flexShrink: 0, width: 320, minWidth: 280 }}>
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-4" style={{ cursor: 'pointer' }}>
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#FF1493]/20 to-[#00E5FF]/20 border border-[#FF1493]/30 flex items-center justify-center flex-shrink-0">
-                      <BookOpen className="w-6 h-6 text-[#FF1493]" />
+              {loadingFranchises
+                ? Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} style={{ flexShrink: 0, width: 320, minWidth: 280 }}>
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-4">
+                        <div className="w-12 h-12 rounded-xl bg-white/[0.05] animate-pulse" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 w-3/4 bg-white/[0.05] animate-pulse rounded" />
+                          <div className="h-3 w-1/2 bg-white/[0.03] animate-pulse rounded" />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, paddingBottom: 8 }}>
+                        {Array.from({ length: 4 }).map((_, j) => (
+                          <div key={j} style={{ flexShrink: 0, width: 120 }}>
+                            <div className="aspect-[2/3] bg-white/[0.05] animate-pulse rounded-lg mb-2" />
+                            <div className="h-3 w-full bg-white/[0.05] animate-pulse rounded" />
+                            <div className="h-2 w-3/4 bg-white/[0.03] animate-pulse rounded mt-1" />
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-white">{franchise.name}</p>
-                      <p className="text-[11px] text-white/35">{franchise.parts?.length || 0} titles</p>
+                  ))
+                : franchisesData.length > 0
+                ? franchisesData.slice(0, 8).map((franchise) => (
+                    <div key={franchise.id} style={{ flexShrink: 0, width: 320, minWidth: 280 }}>
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-4" style={{ cursor: 'pointer' }}>
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#FF1493]/20 to-[#00E5FF]/20 border border-[#FF1493]/30 flex items-center justify-center flex-shrink-0">
+                          <BookOpen className="w-6 h-6 text-[#FF1493]" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-white">{franchise.name}</p>
+                          <p className="text-[11px] text-white/35">{franchise.parts?.length || 0} titles</p>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollBehavior: 'smooth', paddingBottom: 8 }}>
+                        {(franchise.parts || []).slice(0, 4).map((item: any) => (
+                          <button key={item.id} onClick={() => goDetail(item.id, item.media_type === 'tv' ? 'tv' : 'movie')} style={{ flexShrink: 0, width: 120 }} className="text-left">
+                            <img src={`${POSTER_URL}${item.poster_path}`} alt="" className="w-full aspect-[2/3] rounded-lg object-cover mb-2" loading="lazy" />
+                            <p className="text-[11px] font-medium text-white truncate">{item.title || item.name}</p>
+                            <p className="text-[10px] text-white/30">{item.release_date?.slice(0,4) || item.first_air_date?.slice(0,4) || ''}</p>
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollBehavior: 'smooth', paddingBottom: 8 }}>
-                    {(franchise.parts || []).slice(0, 4).map((item: any) => (
-                      <button key={item.id} onClick={() => goDetail(item.id, item.media_type === 'tv' ? 'tv' : 'movie')} style={{ flexShrink: 0, width: 120 }} className="text-left">
-                        <img src={`${POSTER_URL}${item.poster_path}`} alt="" className="w-full aspect-[2/3] rounded-lg object-cover mb-2" loading="lazy" />
-                        <p className="text-[11px] font-medium text-white truncate">{item.title || item.name}</p>
-                        <p className="text-[10px] text-white/30">{item.release_date?.slice(0,4) || item.first_air_date?.slice(0,4) || ''}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                  ))
+                : tmdbApiKey
+                ? (
+                    <div style={{ textAlign: 'center', padding: 16, color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', width: '100%' }}>
+                      No franchise data available
+                    </div>
+                  )
+                : (
+                    <div style={{ textAlign: 'center', padding: 16, color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', width: '100%' }}>
+                      Add TMDB API key in Settings to load franchise data
+                    </div>
+                  )}
             </div>
           </section>
         )}
 
 
         {/* Manga Section */}
-        {manga.length > 0 && (
+        {(manga.length > 0 || loadingManga) && (
           <section style={{ marginTop: 16 }}>
             <div style={{ 
               display: 'flex', 
@@ -704,23 +901,25 @@ export default function Board() {
               <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>
                 Manga
               </h2>
-              <button 
-                style={{ 
-                  color: 'rgba(255,255,255,0.5)', 
-                  background: 'none', 
-                  border: 'none', 
-                  fontSize: '0.875rem', 
-                  cursor: 'pointer',
-                  padding: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4
-                }}
-                onClick={() => setCurrentPage('manga')}
-              >
-                View All
-                <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
-              </button>
+              {manga.length > 0 && (
+                <button 
+                  style={{ 
+                    color: 'rgba(255,255,255,0.5)', 
+                    background: 'none', 
+                    border: 'none', 
+                    fontSize: '0.875rem', 
+                    cursor: 'pointer',
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}
+                  onClick={() => setCurrentPage('manga')}
+                >
+                  View All
+                  <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                </button>
+              )}
             </div>
             <div
               ref={mangaRef}
@@ -733,46 +932,60 @@ export default function Board() {
                 paddingBottom: 16
               }}
             >
-              {manga.slice(0, 16).map((item) => (
-                <div
-                  key={item.id}
-                  className="poster-card"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => {
-                    // Open manga detail page
-                    setCurrentPage('manga-detail')
-                  }}
-                  style={{ flexShrink: 0, width: POSTER_W }}
-                >
-                  {item.coverImage ? (
-                    <img 
-                      src={item.coverImage} 
-                      alt={item.title} 
-                      loading="lazy" 
-                      style={{ width: '100%', height: POSTER_H, objectFit: 'cover' }}
-                      onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none'; el.parentElement?.classList.add('has-fallback') }}
-                    />
-                  ) : (
-                    <div className="poster-fallback">{item.title}</div>
-                  )}
-                  <div className="poster-play"><Play size={18} fill="#fff" /></div>
-                  <div className="poster-overlay">
-                    <div className="poster-meta-title">{item.title}</div>
-                    <div className="poster-meta-sub">
-                      <Stars value={item.averageScore ? item.averageScore / 10 : 0} size={12} />
-                      <span className="ml-1 text-[10px] text-white/60">{item.status}</span>
+              {loadingManga
+                ? Array.from({ length: 16 }).map((_, i) => (
+                    <div key={i} style={{ flexShrink: 0, width: POSTER_W }}>
+                      <div className="aspect-[2/3] bg-white/[0.05] animate-pulse rounded-lg mb-2" />
+                      <div className="h-4 w-full bg-white/[0.05] animate-pulse rounded" />
+                      <div className="h-3 w-3/4 bg-white/[0.03] animate-pulse rounded mt-1" />
                     </div>
-                  </div>
-                </div>
-              ))}
+                  ))
+                : manga.length > 0
+                ? manga.slice(0, 16).map((item) => (
+                    <div
+                      key={item.id}
+                      className="poster-card"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => {
+                        // Open manga detail page
+                        setCurrentPage('manga-detail')
+                      }}
+                      style={{ flexShrink: 0, width: POSTER_W }}
+                    >
+                      {item.coverImage ? (
+                        <img 
+                          src={item.coverImage} 
+                          alt={item.title} 
+                          loading="lazy" 
+                          style={{ width: '100%', height: POSTER_H, objectFit: 'cover' }}
+                          onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none'; el.parentElement?.classList.add('has-fallback') }}
+                        />
+                      ) : (
+                        <div className="poster-fallback">{item.title}</div>
+                      )}
+                      <div className="poster-play"><Play size={18} fill="#fff" /></div>
+                      <div className="poster-overlay">
+                        <div className="poster-meta-title">{item.title}</div>
+                        <div className="poster-meta-sub">
+                          <Stars value={item.averageScore ? item.averageScore / 10 : 0} size={12} />
+                          <span className="ml-1 text-[10px] text-white/60">{item.status}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                : (
+                    <div style={{ textAlign: 'center', padding: 16, color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', width: '100%' }}>
+                      No manga data available
+                    </div>
+                  )}
             </div>
           </section>
         )}
 
 
         {/* Airing Schedule Section */}
-        {(airingAnime.length > 0 || airingTVShows.length > 0) && (
+        {(airingAnime.length > 0 || airingTVShows.length > 0 || loadingAiring) && (
           <section style={{ marginTop: 16 }}>
             <div style={{ 
               display: 'flex', 
@@ -783,97 +996,27 @@ export default function Board() {
               <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>
                 Airing Schedule
               </h2>
-              <button 
-                style={{ 
-                  color: 'rgba(255,255,255,0.5)', 
-                  background: 'none', 
-                  border: 'none', 
-                  fontSize: '0.875rem', 
-                  cursor: 'pointer',
-                  padding: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4
-                }}
-                onClick={() => setCurrentPage('airing')}
-              >
-                View All
-                <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
-              </button>
-            </div>
-            <div style={{ display: 'flex', gap: 16, overflowX: 'auto', scrollBehavior: 'smooth', paddingBottom: 16 }}>
-              {/* Airing Anime */}
-              {airingAnime.length > 0 && (
-                <div style={{ flexShrink: 0, width: 320, minWidth: 280 }}>
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-4" style={{ cursor: 'pointer' }}>
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#FF1493]/20 to-[#00E5FF]/20 border border-[#FF1493]/30 flex items-center justify-center flex-shrink-0">
-                      <Sparkles className="w-6 h-6 text-[#FF1493]" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-white">Airing Anime</p>
-                      <p className="text-[11px] text-white/35">{airingAnime.length} airing now</p>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollBehavior: 'smooth', paddingBottom: 8 }}>
-                    {airingAnime.slice(0, 8).map((anime) => (
-                      <div key={anime.id} style={{ flexShrink: 0, width: 140 }} className="text-left">
-                        <div style={{ position: 'relative', width: '100%', paddingTop: '150%' }}>
-                          {anime.coverImage ? (
-                            <img src={anime.coverImage} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} loading="lazy" />
-                          ) : (
-                            <div style={{ position: 'absolute', inset: 0, borderRadius: 8, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <Sparkles size={24} color="rgba(255,255,255,0.3)" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="mt-2">
-                          <p className="text-white text-xs truncate">{anime.titleEnglish || anime.titleRomaji || anime.title}</p>
-                          <p className="text-white/40 text-[10px]">
-                            Ep {anime.nextAiringEpisode || '?'} � {anime.timeUntilAiring ? `${Math.round(anime.timeUntilAiring / 60)}m` : 'Soon'}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Airing TV Shows */}
-              {airingTVShows.length > 0 && (
-                <div style={{ flexShrink: 0, width: 320, minWidth: 280 }}>
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-4" style={{ cursor: 'pointer' }}>
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#FF1493]/20 to-[#00E5FF]/20 border border-[#FF1493]/30 flex items-center justify-center flex-shrink-0">
-                      <Tv className="w-6 h-6 text-[#FF1493]" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-white">Airing TV Shows</p>
-                      <p className="text-[11px] text-white/35">{airingTVShows.length} airing now</p>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollBehavior: 'smooth', paddingBottom: 8 }}>
-                    {airingTVShows.slice(0, 4).map((show) => (
-                      <div key={show.id} style={{ flexShrink: 0, width: 140 }} className="text-left">
-                        <div style={{ position: 'relative', width: '100%', paddingTop: '150%' }}>
-                          {show.posterPath ? (
-                            <img src={`${POSTER_URL}${show.posterPath}`} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} loading="lazy" />
-                          ) : (
-                            <div style={{ position: 'absolute', inset: 0, borderRadius: 8, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <Tv size={24} color="rgba(255,255,255,0.3)" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="mt-2">
-                          <p className="text-white text-xs truncate">{show.name}</p>
-                          <p className="text-white/40 text-[10px]">
-                            Ep {show.nextEpisodeToAir?.episodeNumber || '?'} � {show.nextEpisodeToAir?.airDate ? new Date(show.nextEpisodeToAir.airDate).toLocaleDateString() : 'Soon'}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              {(airingAnime.length > 0 || airingTVShows.length > 0) && (
+                <button 
+                  style={{ 
+                    color: 'rgba(255,255,255,0.5)', 
+                    background: 'none', 
+                    border: 'none', 
+                    fontSize: '0.875rem', 
+                    cursor: 'pointer',
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}
+                  onClick={() => setCurrentPage('airing')}
+                >
+                  View All
+                  <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                </button>
               )}
             </div>
+            {airingContent}
           </section>
         )}
 

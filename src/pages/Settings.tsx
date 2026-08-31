@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Save, Check, ExternalLink, RefreshCw, FolderPlus, UserPlus, X, Magnet, Lock, LogOut } from 'lucide-react'
+import { Save, Check, ExternalLink, RefreshCw, FolderPlus, UserPlus, X, Magnet, Lock, LogOut, User, Link, Unlink, Eye, EyeOff } from 'lucide-react'
 import { useStore } from '../store'
 import { setRuntimeTmdbKey } from '../api/tmdb'
 import { setRuntimeOmdbKey } from '../api/omdb'
@@ -8,6 +8,7 @@ import { setRuntimeSubtitleKey } from '../api/subtitles'
 import type { ThemeId } from '../store'
 import { cn } from '../lib/utils'
 import { listTorrents, removeTorrent, onTorrentProgress, formatBytes, formatSpeed } from '../api/torrent'
+import { serializdApi } from '../api/serializd'
 
 export default function Settings() {
   const store = useStore()
@@ -29,8 +30,16 @@ export default function Settings() {
   const profiles = store.profiles
   const localFolders = store.localFolders
 
+  // Serializd
+  const [serializdEmail, setSerializdEmail] = useState(store.serializdEmail)
+  const [serializdPassword, setSerializdPassword] = useState('')
+  const [serializdStatus, setSerializdStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [serializdError, setSerializdError] = useState('')
+  const [showSerializdPassword, setShowSerializdPassword] = useState(false)
+
+  const api = (window as any).electronAPI
+
   async function save() {
-    const api = (window as any).electronAPI
     store.setTmdbApiKey(tmdbKey)
     setRuntimeTmdbKey(tmdbKey)
     store.setTraktToken(traktTok)
@@ -57,6 +66,47 @@ export default function Settings() {
     }
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
+  }
+
+  async function loginSerializd() {
+    if (!serializdEmail || !serializdPassword) {
+      setSerializdError('Email and password required')
+      return
+    }
+    setSerializdStatus('loading')
+    setSerializdError('')
+    try {
+      const res = await serializdApi.login(serializdEmail, serializdPassword)
+      serializdApi.loadToken(res.access_token)
+      store.setSerializdEmail(serializdEmail)
+      store.setSerializdToken(res.access_token)
+      store.setSerializdUser(res.user)
+      store.setSerializdSyncEnabled(true)
+      setSerializdStatus('success')
+      setSerializdPassword('')
+      if (api) {
+        await api.set('serializdEmail', serializdEmail)
+        await api.set('serializdToken', res.access_token)
+        await api.set('serializdUser', res.user)
+        await api.set('serializdSyncEnabled', true)
+      }
+    } catch (e: any) {
+      setSerializdError(e.message || 'Login failed')
+      setSerializdStatus('error')
+    }
+  }
+
+  async function logoutSerializd() {
+    serializdApi.accessToken = null
+    store.setSerializdToken('')
+    store.setSerializdUser(null)
+    store.setSerializdSyncEnabled(false)
+    setSerializdEmail('')
+    if (api) {
+      await api.set('serializdToken', '')
+      await api.set('serializdUser', null)
+      await api.set('serializdSyncEnabled', false)
+    }
   }
 
   const [updateStatus, setUpdateStatus] = useState<string | null>(null)
@@ -149,6 +199,106 @@ export default function Settings() {
           <Input label="OMDb API Key" value={omdbKey} onChange={setOmdbKey} placeholder="Optional — IMDb + Rotten Tomatoes scores" link="https://www.omdbapi.com/apikey.aspx" />
           <Input label="MDBList API Key" value={mdblistKey} onChange={setMdblistKey} placeholder="Optional — aggregated ratings (IMDb, Trakt, Metacritic, RT, Letterboxd)" link="https://mdblist.com/apikey" />
           <Input label="OpenSubtitles API Key" value={subtitleKey} onChange={setSubtitleKey} placeholder="Optional — auto-downloads English subtitles in the player" link="https://opensubtitles.com" />
+
+          {/* Serializd Section */}
+          <div className="pt-4 border-t border-white/[0.06]">
+            <h4 className="text-sm font-medium text-white/60 mb-3">Serializd (Watch History Sync)</h4>
+            {store.serializdToken ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                  <div className="flex items-center gap-3">
+                    {store.serializdUser?.avatar ? (
+                      <img src={store.serializdUser.avatar} alt="" className="w-8 h-8 rounded-full" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-white/[0.05] flex items-center justify-center">
+                        <User className="w-4 h-4 text-white/40" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-white font-medium">{store.serializdUser?.username || store.serializdEmail}</p>
+                      <p className="text-xs text-white/40">{store.serializdUser?.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      store.serializdSyncEnabled ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
+                    }`}>
+                      {store.serializdSyncEnabled ? 'Sync Enabled' : 'Sync Paused'}
+                    </span>
+                    <button
+                      onClick={logoutSerializd}
+                      className="text-xs text-white/50 hover:text-white/80 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4 inline" /> Logout
+                    </button>
+                  </div>
+                </div>
+                <Toggle
+                  label="Sync watch history & ratings"
+                  description="Automatically sync watched episodes and ratings to Serializd"
+                  checked={store.serializdSyncEnabled}
+                  onChange={store.setSerializdSyncEnabled}
+                />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <Input
+                  label="Email"
+                  value={serializdEmail}
+                  onChange={setSerializdEmail}
+                  placeholder="your@email.com"
+                  type="email"
+                />
+                <div className="relative">
+                  <Input
+                    label="Password"
+                    value={serializdPassword}
+                    onChange={setSerializdPassword}
+                    placeholder="••••••••"
+                    type={showSerializdPassword ? 'text' : 'password'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSerializdPassword(!showSerializdPassword)}
+                    className="absolute right-3 top-[38px] text-white/40 hover:text-white/60"
+                  >
+                    {showSerializdPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {serializdError && (
+                  <p className="text-xs text-red-400 flex items-center gap-1">
+                    <X className="w-3 h-3" /> {serializdError}
+                  </p>
+                )}
+                <button
+                  onClick={loginSerializd}
+                  disabled={serializdStatus === 'loading'}
+                  className="w-full h-10 rounded-lg bg-[#FF1493]/10 border border-[#FF1493]/30 text-white font-medium text-sm hover:bg-[#FF1493]/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {serializdStatus === 'loading' ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="animate-spin">⏳</span> Logging in...
+                    </span>
+                  ) : serializdStatus === 'success' ? (
+                    <span className="flex items-center justify-center gap-2 text-green-400">
+                      <Check className="w-4 h-4" /> Logged in!
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <Link className="w-4 h-4" /> Login to Serializd
+                    </span>
+                  )}
+                </button>
+                <p className="text-xs text-white/30 text-center">
+                  Creates a local account that syncs your watch history and ratings to{' '}
+                  <a href="https://serializd.com" target="_blank" rel="noopener noreferrer" className="text-[#FF1493] hover:underline">
+                    Serializd.com
+                  </a>
+                </p>
+              </div>
+            )}
+          </div>
+
           <Input label="AIOStreams URL" value={aiosUrl} onChange={setAiosUrl} placeholder="http://localhost:3000 (when ready)" />
           <Input label="Real-Debrid API" value={rdKey} onChange={setRdKey} placeholder="Real-Debrid token" link="https://realdebrid.com/apitoken" type="password" />
           <Input label="Trakt Token (optional)" value={traktTok} onChange={setTraktTok} placeholder="Not required — local lists used by default" type="password" />

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { Page, UserProfile, WatchHistoryItem, CustomList } from '../types'
+import type { SerializdUser } from '../api/serializd'
 
 export interface WatchlistItem {
   mediaId: number
@@ -98,6 +99,16 @@ interface AppState {
 
   opensubtitlesKey: string
   setOpensubtitlesKey: (key: string) => void
+
+  // Serializd
+  serializdEmail: string
+  setSerializdEmail: (email: string) => void
+  serializdToken: string
+  setSerializdToken: (token: string) => void
+  serializdUser: SerializdUser | null
+  setSerializdUser: (user: SerializdUser | null) => void
+  serializdSyncEnabled: boolean
+  setSerializdSyncEnabled: (enabled: boolean) => void
 
   selectedProviderId: string | null
   setSelectedProviderId: (id: string | null) => void
@@ -333,7 +344,32 @@ export const useStore = create<AppState>((set, get) => ({
   setMdblistApiKey: (key) => set({ mdblistApiKey: key }),
 
   opensubtitlesKey: '',
-  setOpensubtitlesKey: (key) => set({ opensubtitlesKey: key }),
+  setOpensubtitlesKey: (key) => {
+    set({ opensubtitlesKey: key })
+    persist('opensubtitlesKey', key)
+  },
+
+  // Serializd
+  serializdEmail: '',
+  setSerializdEmail: (email) => {
+    set({ serializdEmail: email })
+    persist('serializdEmail', email)
+  },
+  serializdToken: '',
+  setSerializdToken: (token) => {
+    set({ serializdToken: token })
+    persist('serializdToken', token)
+  },
+  serializdUser: null,
+  setSerializdUser: (user) => {
+    set({ serializdUser: user })
+    persist('serializdUser', user)
+  },
+  serializdSyncEnabled: false,
+  setSerializdSyncEnabled: (enabled) => {
+    set({ serializdSyncEnabled: enabled })
+    persist('serializdSyncEnabled', enabled)
+  },
 
   selectedProviderId: null,
   setSelectedProviderId: (id) => set({ selectedProviderId: id }),
@@ -416,6 +452,10 @@ export const useStore = create<AppState>((set, get) => ({
     loadKey('omdbApiKey', (v) => set({ omdbApiKey: v as string }))
     loadKey('mdblistApiKey', (v) => set({ mdblistApiKey: v as string }))
     loadKey('opensubtitlesKey', (v) => set({ opensubtitlesKey: v as string }))
+    loadKey('serializdEmail', (v) => set({ serializdEmail: v as string }))
+    loadKey('serializdToken', (v) => set({ serializdToken: v as string }))
+    loadKey('serializdUser', (v) => set({ serializdUser: v as SerializdUser | null }))
+    loadKey('serializdSyncEnabled', (v) => set({ serializdSyncEnabled: v as boolean }))
     loadKey('theme', (v) => { set({ theme: v as ThemeId }); applyTheme(v as ThemeId) })
     loadKey('externalPlayer', (v) => set({ externalPlayer: v as string }))
     loadKey('autoplayNext', (v) => set({ autoplayNext: v as boolean }))
