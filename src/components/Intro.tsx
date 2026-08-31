@@ -41,16 +41,19 @@ export default function Intro({ onDone }: Props) {
 
   const font = FONTS[fontIndex] || FONTS[0]
 
+  const isExiting = phase === 'exit'
+  const slideX = isExiting ? '-100%' : '0'
+
   return (
     <div
-      className={`mfy-intro ${phase === 'exit' ? 'mfy-intro-exit' : ''}`}
+      className={`mfy-intro ${isExiting ? 'mfy-intro-exit' : ''}`}
       onClick={onDone}
       role="presentation"
     >
       <div className="mfy-intro-panel mfy-intro-left" />
       <div className="mfy-intro-panel mfy-intro-right" />
 
-      <div className={`mfy-intro-center ${popping ? 'mfy-intro-popping' : ''}`}>
+      <div className={`mfy-intro-center ${popping ? 'mfy-intro-popping' : ''}`} style={{ transform: slideX }}>
         <svg className="mfy-intro-mark" viewBox="0 0 100 100" aria-hidden="true">
           <defs>
             <linearGradient id="mfyIntroGrad" x1="0%" y1="0%" x2="100%" y2="100%">

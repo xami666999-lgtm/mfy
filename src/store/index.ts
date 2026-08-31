@@ -42,6 +42,7 @@ interface AppState {
   watchHistory: WatchHistoryItem[]
   setWatchHistory: (history: WatchHistoryItem[]) => void
   upsertHistory: (item: WatchHistoryItem) => void
+  init: () => void
 
   customLists: CustomList[]
   setCustomLists: (lists: CustomList[]) => void
@@ -387,6 +388,50 @@ export const useStore = create<AppState>((set, get) => ({
 
   partyCode: null,
   setPartyCode: (code) => set({ partyCode: code }),
+
+  // Initialize store from persisted storage
+  init: () => {
+    const api = (window as any).electronAPI
+    const loadKey = (key: string, setter: (v: unknown) => void) => {
+      if (api?.get) {
+        api.get(key).then((v: unknown) => { if (v !== undefined && v !== null) setter(v) }).catch(() => {})
+      } else {
+        try {
+          const v = JSON.parse(localStorage.getItem('mfy-' + key) || 'null')
+          if (v !== null) setter(v)
+        } catch {}
+      }
+    }
+    loadKey('watchHistory', (v) => set({ watchHistory: v as WatchHistoryItem[] }))
+    loadKey('watchlist', (v) => set({ watchlist: v as WatchlistItem[] }))
+    loadKey('favorites', (v) => set({ favorites: v as WatchlistItem[] }))
+    loadKey('profiles', (v) => set({ profiles: v as UserProfile[] }))
+    loadKey('customLists', (v) => set({ customLists: v as CustomList[] }))
+    loadKey('tmdbApiKey', (v) => set({ tmdbApiKey: v as string }))
+    loadKey('traktToken', (v) => set({ traktToken: v as string }))
+    loadKey('realDebridKey', (v) => set({ realDebridKey: v as string }))
+    loadKey('aiostreamsUrl', (v) => set({ aiostreamsUrl: v as string }))
+    loadKey('jellyfinUrl', (v) => set({ jellyfinUrl: v as string }))
+    loadKey('jellyfinApiKey', (v) => set({ jellyfinApiKey: v as string }))
+    loadKey('omdbApiKey', (v) => set({ omdbApiKey: v as string }))
+    loadKey('mdblistApiKey', (v) => set({ mdblistApiKey: v as string }))
+    loadKey('opensubtitlesKey', (v) => set({ opensubtitlesKey: v as string }))
+    loadKey('theme', (v) => { set({ theme: v as ThemeId }); applyTheme(v as ThemeId) })
+    loadKey('externalPlayer', (v) => set({ externalPlayer: v as string }))
+    loadKey('autoplayNext', (v) => set({ autoplayNext: v as boolean }))
+    loadKey('localFolders', (v) => set({ localFolders: v as string[] }))
+    loadKey('downloads', (v) => set({ downloads: v as DownloadItem[] }))
+    loadKey('partyCode', (v) => set({ partyCode: v as string | null }))
+    // Load current profile
+    if (api?.get) {
+      api.get('currentProfileId').then((v: unknown) => {
+        if (v) {
+          const profile = get().profiles.find((p: UserProfile) => p.id === v)
+          if (profile) set({ currentProfile: profile })
+        }
+      }).catch(() => {})
+    }
+  }
 }))
 
 export function applyTheme(theme: ThemeId) {

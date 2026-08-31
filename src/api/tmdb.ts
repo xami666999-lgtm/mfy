@@ -194,6 +194,27 @@ export const tmdb = {
       ttlMs: 24 * 60 * 60 * 1000,
     }),
 
+  /** Search collections/franchises */
+  searchCollection: (query: string) =>
+    tmdbFetch('/search/collection', { query }, {
+      cacheKey: `search:collection:${query.toLowerCase().trim()}`,
+      ttlMs: 10 * 60 * 1000,
+    }),
+
+  /** Get collection/franchise details with parts */
+  getCollectionDetail: (collectionId: number) =>
+    tmdbFetch(`/collection/${collectionId}`, {}, {
+      cacheKey: `collection:${collectionId}`,
+      ttlMs: 24 * 60 * 60 * 1000,
+    }),
+
+  /** Get trailers/videos for a movie or TV show */
+  getVideos: (mediaType: 'movie' | 'tv', id: number) =>
+    tmdbFetch(`/${mediaType}/${id}/videos`, {}, {
+      cacheKey: `videos:${mediaType}:${id}`,
+      ttlMs: 60 * 60 * 1000,
+    }),
+
   /** Popular titles available on a given watch provider (TMDB provider id) */
   discoverByProvider: (mediaType: 'movie' | 'tv', providerId: number, page = 1) =>
     tmdbFetch(`/discover/${mediaType}`, {
@@ -210,6 +231,20 @@ export const tmdb = {
     tmdbFetch(`/person/popular`, { page: String(page) }, {
       cacheKey: `person:popular:${page}`,
       ttlMs: 24 * 60 * 60 * 1000,
+    }),
+
+  /** Search people (actors/directors) */
+  searchPerson: (query: string) =>
+    tmdbFetch('/search/person', { query }, {
+      cacheKey: `search:person:${query.toLowerCase().trim()}`,
+      ttlMs: 10 * 60 * 1000,
+    }),
+
+  /** Get person details with their known for works */
+  getPersonDetail: (id: number) =>
+    tmdbFetch(`/person/${id}`, { append_to_response: 'movie_credits,tv_credits,combined_credits' }, {
+      cacheKey: `person:${id}`,
+      ttlMs: 30 * 60 * 1000,
     }),
 
   /** Fictional-character portraits — curated list of famous roles for profile avatars */

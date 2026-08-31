@@ -100,15 +100,27 @@ export default function Library() {
                   onClick={() => openItem(item.mediaId, item.mediaType)}
                   onKeyDown={(e) => e.key === 'Enter' && openItem(item.mediaId, item.mediaType)}
                 >
-                  {item.posterPath ? (
-                    <img
-                      src={`${POSTER_URL}${item.posterPath}`}
-                      alt={item.title}
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="poster-fallback">{item.title}</div>
-                  )}
+{item.posterPath ? (
+                      <img
+                        src={`${POSTER_URL}${item.posterPath}`}
+                        alt={item.title || ''}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div
+                        className="poster-fallback flex flex-col items-center justify-center h-full w-full text-center"
+                        style={{ color: 'var(--mfy-text)', background: 'var(--mfy-surface-2)' }}
+                      >
+                        {item.title ? (
+                          <div className="text-sm font-medium truncate">{item.title}</div>
+                        ) : (
+                          <div className="text-xs text-white/60">Media {item.mediaType}</div>
+                        )}
+                        {item.mediaId && (
+                          <div className="text-[10px] text-white/30 mt-1">#{item.mediaId}</div>
+                        )}
+                      </div>
+                    )}
                   <div className="poster-play"><Play size={18} fill="#fff" /></div>
                   <div className="poster-overlay">
                     <div className="poster-meta-title">{item.title}</div>
@@ -193,6 +205,14 @@ export default function Library() {
           {customLists.length === 0 ? (
             <div className="empty-state">
               <List />
+              <img
+                src={Math.random() < 0.5 
+                  ? 'https://image.tmdb.org/t/p/w300/kqjL17yufAw3FSj2Q2CvstUlitT.jpg'
+                  : 'https://image.tmdb.org/t/p/w300/8uO5yKg1968B2IS3bnl0JpWhWFp.jpg'}
+                alt="Random movie poster"
+                className="w-full h-[200px] object-cover rounded-2xl mb-3"
+                onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none' }}
+              />
               <p className="text-sm text-white/30 mb-1">No custom lists yet</p>
               <p className="text-xs text-white/15">Create lists to organize titles your way</p>
             </div>
@@ -253,7 +273,7 @@ export default function Library() {
                               onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none'; if (el.parentElement) el.parentElement.classList.add('has-fallback') }}
                             />
                           ) : (
-                            <div className="poster-fallback">{item.title || `#${item.mediaId}`}</div>
+                            <div className="poster-fallback" style={{ color: 'var(--mfy-text)', background: 'var(--mfy-surface-2)' }}>{item.title || `#${item.mediaId}`}</div>
                           )}
                           <div className="poster-overlay">
                             <div className="poster-meta-title">{item.title || item.mediaType}</div>

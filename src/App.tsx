@@ -59,6 +59,12 @@ setExternalPlayer,
     applyTheme(theme)
   }, [theme])
 
+  // Initialize store from persisted storage
+  useEffect(() => {
+    const { init } = useStore.getState()
+    init()
+  }, [])
+
   // Replay the intro splash whenever the window is shown (first launch + re-open from tray)
   useEffect(() => {
     const api = (window as any).electronAPI
@@ -140,6 +146,19 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
     }, 12000)
   }, [])
 
+  // Track whether intro has been shown — only show once per install.
+  const [introSeen, setIntroSeen] = useState(() => {
+    const v = localStorage.getItem('mfy-intro-seen')
+    return v ? JSON.parse(v) : false
+  })
+
+  // On first launch, show legacy "Welcome to MFY" branding briefly, then never show intro again.
+  useEffect(() => {
+    if (!introSeen) {
+      setTimeout(() => setIntroSeen(true), 2000)
+    }
+  }, [introSeen])
+
   // For each TV title in the watchlist/favorites, check if a new season was
   // released since the last notification (stored per-title). Uses the in-app
   // banner path so results show whether or not a key is set.
@@ -183,7 +202,7 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
 
   return (
     <div className="h-screen flex flex-col bg-[#08080e]">
-      {showIntro && <Intro onDone={() => setShowIntro(false)} />}
+      {!introSeen && <Intro onDone={() => { setShowIntro(false); setIntroSeen(true) }} />}
       {updateInfo && !updateDismissed && currentPage !== 'player' && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#14101a] border border-[#FF1493]/30 shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
           <div className="w-2 h-2 rounded-full bg-[#FF1493] animate-pulse" />

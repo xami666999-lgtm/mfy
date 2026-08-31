@@ -267,7 +267,6 @@ export default function PlayerPage() {
               }}
             >
               <option value="vidy">Vidy</option>
-              <option value="vidking">VidKing</option>
             </select>
             <Zap size={12} style={{ color: '#FFD24C' }} />
           </div>
@@ -292,6 +291,19 @@ export default function PlayerPage() {
             allow="autoplay; fullscreen; encrypted-media"
             allowFullScreen
             onError={handleIframeError}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onLoad={() => {
+              // Check if iframe loaded properly
+              try {
+                const iframeDoc = iframeRef.current?.contentDocument
+                if (iframeDoc && iframeDoc.body.innerText.includes('Opss') || iframeDoc?.body.innerText.includes('lost')) {
+                  handleIframeError()
+                }
+              } catch (e) {
+                // Cross-origin, can't check content
+              }
+            }}
           />
         )}
         {loaded && !error && !isPlayerEmbedUrl(streamUrl) && (

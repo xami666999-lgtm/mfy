@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Trophy, Radio, ExternalLink, Loader2, Activity, Flag, Volleyball, Target, Gauge, Swords, Medal, Siren, Dumbbell, Skull, Bike, Sparkles } from 'lucide-react'
+import { useEffect, useState, useMemo } from 'react'
+import { Trophy, Radio, ExternalLink, Loader2, Activity, Flag, Volleyball, Target, Gauge, Swords, Medal, Siren, Dumbbell, Skull, Bike, Sparkles, PlayCircle, X, Search, Filter } from 'lucide-react'
 import { sportsApi, badgeUrl, posterUrl, type SportCategory, type SportMatch, type SportStream } from '../api/sports'
 import { useStore } from '../store'
 import { cn } from '../lib/utils'
@@ -30,11 +30,26 @@ export default function Sports() {
   const [sportId, setSportId] = useState(DEFAULT_SPORT)
   const [matches, setMatches] = useState<SportMatch[]>([])
   const [live, setLive] = useState<SportMatch[]>([])
-  const [loading, setLoading] = useState(true)
+  const [multiView, setMultiView] = useState(false)
+  const [partyCode, setPartyCode] = useState('')
   const [streams, setStreams] = useState<SportStream[] | null>(null)
   const [activeMatch, setActiveMatch] = useState<SportMatch | null>(null)
   const [streamError, setStreamError] = useState('')
   const [resolving, setResolving] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showSearch, setShowSearch] = useState(false)
+
+  const filteredMatches = useMemo(() => {
+    if (!searchQuery.trim()) return matches
+    const q = searchQuery.toLowerCase()
+    return matches.filter(m =>
+      m.title.toLowerCase().includes(q) ||
+      m.category.toLowerCase().includes(q) ||
+      m.teams?.home?.name?.toLowerCase().includes(q) ||
+      m.teams?.away?.name?.toLowerCase().includes(q)
+    )
+  }, [matches, searchQuery])
 
   useEffect(() => {
     sportsApi.getSports().then(setSports).catch(() => setSports([]))
@@ -125,21 +140,42 @@ export default function Sports() {
         </div>
       </div>
 
-      {live.length > 0 && (
-        <section className="mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <Radio className="w-3.5 h-3.5 text-red-400" />
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-red-400/90">Live now</span>
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-12 h-12 rounded-2xl bg-[#FF1493]/15 border border-[#FF1493]/25 flex items-center justify-center overflow-hidden">
+          <div className="flex flex-col items-center leading-none py-2">
+            <Trophy className="w-5 h-5 text-[#FF1493]" />
+            <span className="text-[8px] font-black text-[#FF1493] mt-0.5 tracking-tight">MFY</span>
           </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {live.slice(0, 6).map((m) => (
-              <MatchCard key={m.id} match={m} onOpen={() => openMatch(m)} formatDate={formatDate} />
-            ))}
-          </div>
-        </section>
-      )}
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold text-white tracking-tight">Sports</h2>
+          <p className="text-[11px] text-white/30">Live & upcoming · Streamed.pk API</p>
+        </div>
+        <div className="flex-1" />
+        <button
+          type="button"
+          onClick={() => setShowSearch(!showSearch)}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#FF1493]/15 border border-[#FF1493]/30 text-xs text-[#FF1493] hover:bg-[#FF1493]/25 transition-all"
+          title="Search">
+          <Search className="w-3.5 h-3.5" /> Search
+        </button>
+        <button
+          type="button"
+          onClick={() => setMultiView(!multiView)}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#FF1493]/15 border border-[#FF1493]/30 text-xs text-[#FF1493] hover:bg-[#FF1493]/25 transition-all"
+          title="Multi-view">
+          <PlayCircle className="w-3.5 h-3.5" /> Multi-view
+        </button>
+        <button
+          type="button"
+          onClick={() => setPartyCode((v) => (typeof v === 'string' ? '' : 'watching'))}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-xs hover:bg-emerald-500/15 transition-all"
+          title="Watch party">
+          <PlayCircle className="w-3.5 h-3.5" /> Party
+        </button>
+      </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-3 mb-4 scroll-row">
+      <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-4 scroll-row">
         {sports.map((s) => {
           const meta = SPORT_META[s.id] || SPORT_META.other
           const Icon = meta.icon
@@ -169,23 +205,42 @@ export default function Sports() {
         })}
       </div>
 
-      {loading ? (
-        <div className="flex items-center gap-2 text-white/30 text-xs py-12 justify-center">
-          <Loader2 className="w-4 h-4 animate-spin" /> Loading matches…
-        </div>
-      ) : (
-        <div className="grid gap-2 sm:grid-cols-2">
-          {matches.map((m) => (
-            <MatchCard key={m.id} match={m} onOpen={() => openMatch(m)} formatDate={formatDate} />
-          ))}
-          {!matches.length && (
-            <p className="text-xs text-white/25 col-span-2 py-10 text-center">No matches for this sport right now.</p>
-          )}
-        </div>
+      {live.length > 0 && (
+        <section className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Radio className="w-3.5 h-3.5 text-red-400" />
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-red-400/90">Live now</span>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {live.slice(0, 12).map((m) => (
+              <MatchCard key={m.id} match={m} onOpen={() => openMatch(m)} formatDate={formatDate} />
+            ))}
+          </div>
+        </section>
       )}
 
-      {/* Stream picker modal */}
-      {(activeMatch || resolving || streams) && (
+      {multiView && (
+        <section className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[11px] text-white/60">Multi-view</span>
+            <button
+              type="button"
+              onClick={() => setMultiView(false)}
+              className="ml-2 text-[10px] text-red-400 hover:text-red-300"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {live.slice(0, 4).map((m) => (
+              <MatchCard key={m.id} match={m} onOpen={() => openMatch(m)} formatDate={formatDate} />
+            ))}
+          </div>
+          <p className="text-[10px] text-white/30 mt-2">Multi-view is opt-in. Click the button above to close.</p>
+        </section>
+      )}
+
+      {activeMatch || resolving || streams ? (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4"
           onClick={() => {
@@ -252,7 +307,63 @@ export default function Sports() {
             </button>
           </div>
         </div>
+      ) : (
+        <div className="pb-6">
+          <p className="text-[11px] text-white/25 text-center">Select a sport above to see live matches</p>
+        </div>
       )}
+
+      {activeMatch && partyCode && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
+          <div className="bg-white/90 rounded-2xl p-8 max-w-md w-full text-center">
+            <h3 className="text-lg font-bold mb-4">Watch Party</h3>
+            <p className="text-white/70 mb-6">Share this party code with friends:</p>
+            <div className="bg-white/20 rounded p-4 mb-6">
+              <code className="text-lg font-mono text-white/80">{partyCode}</code>
+            </div>
+            <button
+              className="bg-[#FF1493] text-white px-6 py-2 rounded-md hover:bg-[#FF1493]/90"
+              onClick={() => setPartyCode('')}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+    <div className="flex items-center gap-2 text-white/30 text-xs py-12 justify-center">
+      <Loader2 className="w-4 h-4 animate-spin" /> Loading matches…
+    </div>
+  ) : (
+    <>
+      {showSearch && (
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+            <input
+              type="text"
+              placeholder="Search matches, teams, leagues..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white placeholder-white/20 focus:border-[#FF1493]/50 focus:outline-none focus:ring-1 focus:ring-[#FF1493]/30 text-sm"
+            />
+          </div>
+        </div>
+      )}
+      {filteredMatches.length === 0 && searchQuery && !loading && (
+        <p className="text-xs text-white/25 text-center py-10">No matches found for "<span className="text-white/60">{searchQuery}</span>"</p>
+      )}
+      <div className="grid gap-2 sm:grid-cols-2">
+        {filteredMatches.map((m) => (
+          <MatchCard key={m.id} match={m} onOpen={() => openMatch(m)} formatDate={formatDate} />
+        ))}
+        {!filteredMatches.length && !loading && !searchQuery && (
+          <p className="text-xs text-white/25 col-span-2 py-10 text-center">No matches for this sport right now.</p>
+        )}
+      </div>
+    </>
+    )}
     </div>
   )
 }

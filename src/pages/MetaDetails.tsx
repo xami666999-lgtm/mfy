@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Play, Star, Clock, Calendar, Heart, Plus, Share2, List, Check } from 'lucide-react'
+import { ArrowLeft, Play, Star, Clock, Calendar, Heart, Plus, Share2, List, Check, Cast } from 'lucide-react'
 import { tmdb, POSTER_URL, BACKDROP_URL, PROFILE_URL, STILL_URL } from '../api/tmdb'
 import { fetchOmdbByImdbId } from '../api/omdb'
 import { fetchMdblistRatings, type MdblistRating } from '../api/mdblist'
@@ -139,9 +139,8 @@ export default function MetaDetails() {
 
   async function handlePlay() {
     if (!selectedMedia || !detail) return
-    // Instant playback via Vidy embed (no torrent peers needed). The streams tab
-    // below still lists every addon/torrent source to pick from.
     const url = vidyUrl(selectedMedia.type === 'movie' ? 'movie' : 'tv', selectedMedia.id, activeSeason, selectedMedia.episode)
+    setSelectedMedia({ ...selectedMedia, season: activeSeason, episode: selectedMedia.episode })
     setCurrentStreamUrl(url)
     setCurrentPage('player')
   }
@@ -339,10 +338,19 @@ export default function MetaDetails() {
                     addToWatchlist(item)
                   }
                 }}
-                className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/8 border border-white/12 text-sm text-white/70 hover:text-white transition-all"
-              >
+className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/8 border border-white/12 text-sm text-white/70 hover:text-white transition-all"
+                >
                 <Plus className="w-4 h-4" />
                 {selectedMedia && isInWatchlist(selectedMedia.id, selectedMedia.type) ? 'In List' : 'My List'}
+              </button>
+              <button
+                type="button"
+                onClick={() => window.open('https://google.com/cast', '_blank')}
+                className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-[#FF1493]/15 border border-[#FF1493]/30 text-sm text-[#FF1493] hover:bg-[#FF1493]/25 transition-all"
+                title="Cast to TV"
+              >
+                <Cast className="w-4 h-4" />
+                Cast
               </button>
               <div className="relative">
                 <button

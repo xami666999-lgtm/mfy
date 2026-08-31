@@ -204,9 +204,42 @@ ipcMain.on('window-close', () => mainWindow?.close())
 ipcMain.handle('window-is-maximized', () => mainWindow?.isMaximized() ?? false)
 
 // Store operations
-ipcMain.handle('store-get', (_event, key: string) => store.get(key))
-ipcMain.handle('store-set', (_event, key: string, value: unknown) => store.set(key, value))
-ipcMain.handle('store-delete', (_event, key: string) => store.delete(key))
+  ipcMain.handle('store-get', (_event, key: string) => store.get(key))
+  ipcMain.handle('store-set', (_event, key: string, value: unknown) => {
+    store.set(key, value)
+    // If autoUpdate setting changed, reconfigure autoUpdater
+    if (key === 'autoUpdate' && autoUpdater && !isDev) {
+      const enabled = value !== false
+      autoUpdater.autoDownload = enabled
+      autoUpdater.autoInstallOnAppQuit = enabled
+    }
+    return true
+  })
+  ipcMain.handle('store-delete', (_event, key: string) => store.delete(key))
+
+  // Create desktop shortcut
+  ipcMain.handle('createDesktopShortcut', async () => {
+    try {
+      const { app, shell } = require('electron')
+      const path = require('path')
+      const fs = require('fs')
+      const exePath = process.execPath
+      const desktopDir = app.getPath('desktop')
+      const shortcutPath = path.join(desktopDir, 'MFY.lnk')
+      if (!fs.existsSync(shortcutPath)) {
+        await shell.writeShortcutLink({
+          target: exePath,
+          args: '',
+          description: 'MFY - Movies For You',
+          cwd: path.dirname(exePath),
+        }, shortcutPath)
+      }
+      return true
+    } catch (e) {
+      console.error('Failed to create desktop shortcut:', e)
+      return false
+    }
+  })
 
 // Open external URL
 ipcMain.on('open-external', (_event, url: string) => shell.openExternal(url))

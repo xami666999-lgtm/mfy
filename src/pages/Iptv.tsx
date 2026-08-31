@@ -44,6 +44,9 @@ const SAMPLE_PLAYLISTS: { name: string; url: string }[] = [
   { name: 'iptv-org (free public)', url: 'https://iptv-org.github.io/iptv/index.m3u' },
   { name: 'iptv-org countries', url: 'https://iptv-org.github.io/iptv/countries.m3u' },
   { name: 'iptv-org categories', url: 'https://iptv-org.github.io/iptv/categories.m3u' },
+  { name: 'free-tv/iptv index', url: 'https://raw.githubusercontent.com/free-tv/iptv/master/index.m3u' },
+  { name: 'free-tv/iptv countries', url: 'https://raw.githubusercontent.com/free-tv/iptv/master/countries.m3u' },
+  { name: 'free-tv/iptv categories', url: 'https://raw.githubusercontent.com/free-tv/iptv/master/categories.m3u' },
 ]
 
 export default function Iptv() {
@@ -110,129 +113,114 @@ export default function Iptv() {
     .sort((a, b) => (sortAlpha ? a.name.localeCompare(b.name) : 0))
 
   return (
-    <div className="p-6 md:p-8 page-fade-enter">
-      <div className="flex flex-wrap items-center gap-4 mb-5">
-        <h2 className="text-lg font-semibold text-white tracking-tight flex items-center gap-2"><Tv className="w-4.5 h-4.5" /> IPTV</h2>
-        <div className="flex-1" />
-        <button
-          type="button"
-          onClick={() => setSortAlpha(!sortAlpha)}
-          className="h-7 px-3 rounded-md bg-white/[0.04] border border-white/[0.06] text-[11px] text-white/50 hover:text-white/70"
-        >
-          {sortAlpha ? 'Sort: A–Z' : 'Sort: Default'}
-        </button>
-      </div>
-
-      <div className="mb-5 max-w-2xl">
-        <div className="flex gap-2">
-          <div className="flex-1 flex items-center gap-2 h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.06]">
-            <Link2 className="w-3.5 h-3.5 text-white/30" />
-            <input
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && load(url)}
-              placeholder="Paste an .m3u playlist URL, e.g. https://iptv-org.github.io/iptv/index.m3u"
-              className="flex-1 bg-transparent text-xs text-white placeholder-white/20 focus:outline-none"
-            />
-          </div>
+    <div className="p-6 md:p-8 bg-black/30 min-h-screen">
+      <header className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
+        <h1 className="text-2xl font-bold text-white">IPTV</h1>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-white/40">Free live channels</span>
           <button
-            type="button"
-            onClick={() => load(url)}
-            disabled={loading}
-            className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-white/[0.08] border border-white/[0.1] text-xs text-white/80 hover:bg-white/[0.12] disabled:opacity-50"
+            onClick={() => setSortAlpha(!sortAlpha)}
+            className="text-white/50 hover:text-white/70 text-xs transition-colors"
           >
-            {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-            Load
-          </button>
-          <button
-            type="button"
-            onClick={importFile}
-            className="flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#FF1493]/10 border border-[#FF1493]/25 text-xs text-[#FF1493]/80 hover:bg-[#FF1493]/20"
-          >
-            Import .m3u file…
+            {sortAlpha ? '↕ Sort A-Z' : '↕ Sort Default'}
           </button>
         </div>
-        <div className="flex flex-wrap gap-1.5 mt-3">
-          {SAMPLE_PLAYLISTS.map((p) => (
-            <button
-              key={p.url}
-              type="button"
-              onClick={() => load(p.url)}
-              className="px-3 py-1.5 rounded-full text-[11px] border border-white/[0.06] bg-white/[0.03] text-white/40 hover:text-white/60 hover:border-white/10"
-            >
-              {p.name}
-            </button>
-          ))}
-        </div>
-        {error && <p className="text-xs text-red-400/80 mt-3">{error}</p>}
-      </div>
+      </header>
 
-      {channels.length > 0 && (
-        <>
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            <input
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              placeholder="Search channels…"
-              className="h-8 px-3 rounded-md bg-white/[0.04] border border-white/[0.06] text-xs text-white placeholder-white/20 focus:outline-none w-56"
-            />
-            <div className="flex-1" />
-            <span className="text-[11px] text-white/30">{visible.length} channels</span>
-          </div>
-          {groups.length > 0 && (
-            <div className="flex gap-1.5 mb-5 flex-wrap">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <div className="bg-white/5 backdrop-blur rounded-xl p-5">
+            <div className="flex gap-2 mb-4">
+              <input
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && load(url)}
+                placeholder="Paste playlist URL or search..."
+                className="flex-1 bg-white/10 border border-white/15 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-white/30"
+              />
               <button
-                type="button"
-                onClick={() => setGroup(null)}
-                className={`px-3 py-1 rounded-full text-[11px] font-medium border transition-all ${group === null ? 'bg-white/10 text-white border-white/20' : 'bg-transparent text-white/30 border-white/[0.06] hover:text-white/50'}`}
+                onClick={() => load(url)}
+                disabled={loading}
+                className="px-4 py-2 rounded-lg bg-cyan-600 text-white text-sm hover:bg-cyan-500 transition-colors disabled:opacity-50"
               >
-                All
+                {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin mr-2" /> : 'Load'}
               </button>
-              {groups.map((g) => (
+              <button
+                onClick={importFile}
+                className="px-4 py-2 rounded-lg bg-white/10 text-white/40 hover:text-white/60 transition-colors"
+              >
+                Import .m3u
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-2 mb-4">
+              {SAMPLE_PLAYLISTS.map((p) => (
                 <button
-                  key={g}
+                  key={p.url}
                   type="button"
-                  onClick={() => setGroup(g)}
-                  className={`px-3 py-1 rounded-full text-[11px] font-medium border transition-all ${group === g ? 'bg-white/10 text-white border-white/20' : 'bg-transparent text-white/30 border-white/[0.06] hover:text-white/50'}`}
+                  onClick={() => load(p.url)}
+                  className="px-3 py-1.5 rounded-full text-[10px] border border-white/15 bg-white/5 text-white/40 hover:text-white/70 hover:border-white/20 transition-all"
                 >
-                  {g}
+                  {p.name}
                 </button>
               ))}
             </div>
-          )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-3">
+            {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold text-white mb-3">Categories</h2>
+          <div className="grid grid-cols-2 gap-2">
+            <button className="px-3 py-1.5 rounded text-[10px] border border-white/15 text-white/40 hover:bg-white/10 hover:text-black transition-colors">All</button>
+            <button className="px-3 py-1.5 rounded text-[10px] border border-white/15 text-white/40 hover:bg-white/10 hover:text-black transition-colors">Series</button>
+            <button className="px-3 py-1.5 rounded text-[10px] border border-white/15 text-white/40 hover:bg-white/10 hover:text-black transition-colors">Movies</button>
+            <button className="px-3 py-1.5 rounded text-[10px] border border-white/15 text-white/40 hover:bg-white/10 hover:text-black transition-colors">Sports</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8">
+        {channels.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {visible.map((c, i) => (
-              <button
+              <a
                 key={`${c.url}-${i}`}
-                type="button"
-                onClick={() => play(c)}
-                className="group flex flex-col items-center gap-2 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.07] hover:border-white/15 transition-all text-center"
+                href={c.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group block rounded-lg bg-white/5 border border-white/10 hover:bg-white/8 hover:border-white/20 transition-all p-4 flex flex-col items-center gap-2"
               >
                 {c.logo ? (
-                  <img src={c.logo} alt="" loading="lazy" className="w-12 h-12 object-contain"
-                    onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none' }} />
+                  <img
+                    src={c.logo}
+                    alt={c.name}
+                    loading="lazy"
+                    className="w-10 h-10 object-contain rounded-md"
+                    onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none' }}
+                  />
                 ) : (
-                  <div className="w-12 h-12 grid place-items-center rounded-full bg-white/[0.06] text-white/30">
-                    <Radio className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                    <Tv className="w-5 h-5 text-white/30" />
                   </div>
                 )}
-                <span className="text-[11px] text-white/70 leading-snug line-clamp-2">{c.name}</span>
-              </button>
+                <span className="text-xs text-white/70 line-clamp-1">{c.name}</span>
+              </a>
             ))}
           </div>
-        </>
-      )}
+        )}
 
-      {channels.length === 0 && !loading && !error && (
-        <div className="py-20 text-center">
-          <div className="mx-auto mb-4 w-16 h-16 grid place-items-center rounded-2xl bg-white/[0.04] border border-white/[0.08] text-white/25">
-            <Tv className="w-7 h-7" />
+        {channels.length === 0 && !loading && !error && (
+          <div className="py-20 text-center">
+            <div className="mx-auto mb-6 w-16 h-16 grid place-items-center rounded-2xl bg-white/5 border border-white/10 text-white/30">
+              <Tv className="w-7 h-7" />
+            </div>
+            <p className="text-base text-white/40 mb-2">Load an IPTV playlist above to start watching live channels.</p>
+            <p className="text-sm text-white/30">Paste any public or personal .m3u URL, or pick one of the free sample playlists.</p>
           </div>
-          <p className="text-sm text-white/30">Load an IPTV playlist above to start watching live channels.</p>
-          <p className="text-[11px] text-white/20 mt-2 max-w-md mx-auto">Paste any public or personal .m3u URL, or pick one of the free sample playlists. Channels play through the built-in HLS player.</p>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
