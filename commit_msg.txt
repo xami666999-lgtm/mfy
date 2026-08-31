@@ -1,1 +1,0 @@
-v1.2.34: Add Providers, Franchises, Manga, Airing Schedule sections to Board; fix build issues
