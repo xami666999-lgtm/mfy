@@ -243,6 +243,13 @@ loadGenres().catch(() => {})
   loadEclipse().catch(() => {})
   loadEclipseTrending().catch(() => {})
   loadEclipseArtists().catch(() => {})
+  loadLocalManga().catch(() => {})
+  loadLocalAnime().catch(() => {})
+  loadLocalTorrents().catch(() => {})
+  loadLocalIptv().catch(() => {})
+  loadLocalMetegol().catch(() => {})
+  loadLocalNoutube().catch(() => {})
+  loadLocalEclipse().catch(() => {})
 }
 
   async function loadProviders() {
@@ -524,6 +531,96 @@ loadGenres().catch(() => {})
       console.error('Failed to load Eclipse artists:', e)
     }
     setLoadingEclipseArtists(false)
+  }
+
+  // Local data loading functions
+  async function loadLocalManga() {
+    try {
+      const res = await fetch('/data/manga.json')
+      if (res.ok) {
+        const data = await res.json()
+        setSeanimeManga(data.manga || [])
+        setSeanimePopular(data.manga || [])
+      }
+    } catch (e) {
+      console.error('Failed to load local manga:', e)
+    }
+  }
+
+  async function loadLocalAnime() {
+    try {
+      const res = await fetch('/data/anime.json')
+      if (res.ok) {
+        const data = await res.json()
+        setMiruroAnime(data.anime || [])
+        setMiruroPopular(data.anime || [])
+      }
+    } catch (e) {
+      console.error('Failed to load local anime:', e)
+    }
+  }
+
+  async function loadLocalTorrents() {
+    try {
+      const res = await fetch('/data/torrents.json')
+      if (res.ok) {
+        const data = await res.json()
+        setPlaytorrioTrending(data.torrents || [])
+      }
+    } catch (e) {
+      console.error('Failed to load local torrents:', e)
+    }
+  }
+
+  async function loadLocalIptv() {
+    try {
+      const res = await fetch('/data/iptv-channels.json')
+      if (res.ok) {
+        const data = await res.json()
+        setIptvChannels(data.channels || [])
+        setIptvSportsChannels(data.channels || [])
+      }
+    } catch (e) {
+      console.error('Failed to load local IPTV:', e)
+    }
+  }
+
+  async function loadLocalMetegol() {
+    try {
+      const res = await fetch('/data/metegol.json')
+      if (res.ok) {
+        const data = await res.json()
+        setMetegolEvents(data.events || [])
+      }
+    } catch (e) {
+      console.error('Failed to load local Metegol:', e)
+    }
+  }
+
+  async function loadLocalNoutube() {
+    try {
+      const res = await fetch('/data/noutube.json')
+      if (res.ok) {
+        const data = await res.json()
+        setNoutubeTrending(data.videos || [])
+        setNoutubeMusic(data.videos || [])
+      }
+    } catch (e) {
+      console.error('Failed to load local NouTube:', e)
+    }
+  }
+
+  async function loadLocalEclipse() {
+    try {
+      const res = await fetch('/data/eclipse-music.json')
+      if (res.ok) {
+        const data = await res.json()
+        setEclipseTrending(data.tracks || [])
+        setEclipseTracks(data.tracks || [])
+      }
+    } catch (e) {
+      console.error('Failed to load local Eclipse:', e)
+    }
   }
 
   async function loadGenres() {

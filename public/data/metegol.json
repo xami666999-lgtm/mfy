@@ -1,0 +1,235 @@
+{
+  "events": [
+    {
+      "id": "1",
+      "title": "Real Madrid vs Barcelona",
+      "competition": "La Liga",
+      "sport": "Football",
+      "startTime": 1704067200,
+      "endTime": 1704074400,
+      "status": "live",
+      "streams": [
+        {
+          "id": "1",
+          "title": "ESPN HD",
+          "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+          "quality": "1080p",
+          "language": "English",
+          "provider": "ESPN",
+          "isHLS": true
+        },
+        {
+          "id": "2",
+          "title": "beIN Sports HD",
+          "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+          "quality": "1080p",
+          "language": "English",
+          "provider": "beIN Sports",
+          "isHLS": true
+        },
+        {
+          "id": "3",
+          "title": "La Liga TV",
+          "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+          "quality": "1080p",
+          "language": "Spanish",
+          "provider": "La Liga TV",
+          "isHLS": true
+        }
+      ],
+      "homeTeam": { "name": "Real Madrid", "logo": "https://upload.wikimedia.org/wikipedia/en/5/56/Real_Madrid_CF.svg", "score": 1 },
+      "awayTeam": { "name": "Barcelona", "logo": "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona.svg", "score": 0 },
+      "venue": "Santiago Bernabéu Stadium",
+      "country": "Spain"
+    },
+    {
+      "id": "2",
+      "title": "Manchester United vs Liverpool",
+      "competition": "Premier League",
+      "sport": "Football",
+      "startTime": 1704067200,
+      "endTime": 1704074400,
+      "status": "scheduled",
+      "streams": [
+        {
+          "id": "1",
+          "title": "Sky Sports Main Event",
+          "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+          "quality": "1080p",
+          "language": "English",
+          "provider": "Sky Sports",
+          "isHLS": true
+        },
+        {
+          "id": "2",
+          "title": "Sky Sports Premier League",
+          "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+          "quality": "1080p",
+          "language": "English",
+          "provider": "Sky Sports",
+          "isHLS": true
+        },
+        {
+          "id": "3",
+          "title": "NBC Sports",
+          "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+          "quality": "1080p",
+          "language": "English",
+          "provider": "NBC Sports",
+          "isHLS": true
+        }
+      ],
+      "homeTeam": { "name": "Manchester United", "logo": "https://upload.wikimedia.org/wikipedia/en/7/7a/Manchester_United_FC_crest.svg", "score": null },
+      "awayTeam": { "name": "Liverpool", "logo": "https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg", "score": null },
+      "venue": "Old Trafford",
+      "country": "England"
+    },
+    {
+      "id": "3",
+      "title": "UFC 300: Pereira vs Hill",
+      "competition": "UFC",
+      "sport": "MMA",
+      "startTime": 1704067200,
+      "endTime": 1704074400,
+      "status": "scheduled",
+      "streams": [
+        {
+          "id": "1",
+          "title": "ESPN+ PPV",
+          "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+          "quality": "1080p",
+          "language": "English",
+          "provider": "ESPN+",
+          "isHLS": true
+        }
+      ],
+      "homeTeam": { "name": "Alex Pereira", "logo": "", "score": null },
+      "awayTeam": { "name": "Jamahal Hill", "logo": "", "score": null },
+      "venue": "T-Mobile Arena",
+      "country": "USA"
+    },
+    {
+      "id": "4",
+      "title": "F1 Bahrain Grand Prix",
+      "competition": "Formula 1",
+      "sport": "Racing",
+      "startTime": 1704067200,
+      "endTime": 1704074400,
+      "status": "scheduled",
+      "streams": [
+        {
+          "id": "1",
+          "title": "Sky Sports F1",
+          "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+          "quality": "1080p",
+          "language": "English",
+          "provider": "Sky Sports F1",
+          "isHLS": true
+        },
+        {
+          "id": "2",
+          "title": "ESPN F1",
+          "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+          "quality": "1080p",
+          "language": "English",
+          "provider": "ESPN",
+          "isHLS": true
+        }
+      ],
+      "homeTeam": { "name": "", "logo": "", "score": null },
+      "awayTeam": { "name": "", "logo": "", "score": null },
+      "venue": "Bahrain International Circuit",
+      "country": "Bahrain"
+    },
+    {
+      "id": "5",
+      "title": "NBA: Lakers vs Celtics",
+      "competition": "NBA",
+      "sport": "Basketball",
+      "startTime": 1704067200,
+      "endTime": 1704074400,
+      "status": "live",
+      "streams": [
+        {
+          "id": "1",
+          "title": "ESPN",
+          "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+          "quality": "1080p",
+          "language": "English",
+          "provider": "ESPN",
+          "isHLS": true
+        },
+        {
+          "id": "2",
+          "title": "TNT",
+          "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+          "quality": "1080p",
+          "language": "English",
+          "provider": "TNT",
+          "isHLS": true
+        }
+      ],
+      "homeTeam": { "name": "Los Angeles Lakers", "logo": "https://upload.wikimedia.org/wikipedia/en/3/3c/Los_Angeles_Lakers_logo.svg", "score": 98 },
+      "awayTeam": { "name": "Boston Celtics", "logo": "https://upload.wikimedia.org/wikipedia/en/8/8f/Boston_Celtics.svg", "score": 95 },
+      "venue": "Crypto.com Arena",
+      "country": "USA"
+    },
+    {
+      "id": "6",
+      "title": "UFC Fight Night: Strickland vs Du Plessis",
+      "competition": "UFC",
+      "sport": "MMA",
+      "startTime": 1704067200,
+      "endTime": 1704074400,
+      "status": "scheduled",
+      "streams": [
+        {
+          "id": "1",
+          "title": "ESPN+",
+          "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+          "quality": "1080p",
+          "language": "English",
+          "provider": "ESPN+",
+          "isHLS": true
+        }
+      ],
+      "homeTeam": { "name": "Sean Strickland", "logo": "", "score": null },
+      "awayTeam": { "name": "Dricus du Plessis", "logo": "", "score": null },
+      "venue": "Scotiabank Arena",
+      "country": "Canada"
+    },
+    {
+      "id": "7",
+      "title": "Champions League: PSG vs Bayern Munich",
+      "competition": "UEFA Champions League",
+      "sport": "Football",
+      "startTime": 1704067200,
+      "endTime": 1704074400,
+      "status": "scheduled",
+      "streams": [
+        {
+          "id": "1",
+          "title": "CBS Sports",
+          "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+          "quality": "1080p",
+          "language": "English",
+          "provider": "CBS Sports",
+          "isHLS": true
+        },
+        {
+          "id": "2",
+          "title": "Paramount+",
+          "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+          "quality": "1080p",
+          "language": "English",
+          "provider": "Paramount+",
+          "isHLS": true
+        }
+      ],
+      "homeTeam": { "name": "Paris Saint-Germain", "logo": "https://upload.wikimedia.org/wikipedia/en/a/a7/Paris_Saint-Germain_F.C..svg", "score": null },
+      "awayTeam": { "name": "Bayern Munich", "logo": "https://upload.wikimedia.org/wikipedia/commons/1/1f/FC_Bayern_Munich_logo_%282017%29.svg", "score": null },
+      "venue": "Parc des Princes",
+      "country": "France"
+    }
+  ]
+}

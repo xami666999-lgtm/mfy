@@ -1,0 +1,54 @@
+{
+  "categories": [
+    {
+      "id": "sports",
+      "name": "Sports",
+      "channels": []
+    },
+    {
+      "id": "news",
+      "name": "News",
+      "channels": []
+    },
+    {
+      "id": "movies",
+      "name": "Movies",
+      "channels": []
+    },
+    {
+      "id": "music",
+      "name": "Music",
+      "channels": []
+    },
+    {
+      "id": "kids",
+      "name": "Kids",
+      "channels": []
+    },
+    {
+      "id": "documentary",
+      "name": "Documentary",
+      "channels": []
+    },
+    {
+      "id": "entertainment",
+      "name": "Entertainment",
+      "channels": []
+    },
+    {
+      "id": "general",
+      "name": "General",
+      "channels": []
+    },
+    {
+      "id": "religious",
+      "name": "Religious",
+      "channels": []
+    },
+    {
+      "id": "weather",
+      "name": "Weather",
+      "channels": []
+    }
+  ]
+}
