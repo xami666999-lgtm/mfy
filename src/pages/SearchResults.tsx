@@ -23,7 +23,7 @@ export default function SearchResults() {
     const [m, t, a] = await Promise.allSettled([
       tmdb.searchMovies(searchQuery),
       tmdb.searchTV(searchQuery),
-      anilist.search(searchQuery, 1, 20),
+      anilist.search(searchQuery, 'ANIME', 1, 20),
     ])
     setMovies(m.status === 'fulfilled' ? m.value?.results || [] : [])
     setTv(t.status === 'fulfilled' ? t.value?.results || [] : [])

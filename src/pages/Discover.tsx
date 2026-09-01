@@ -50,7 +50,7 @@ export default function Discover() {
     setLoading(true)
     try {
       if (tab === 'anime') {
-        const d = await anilist.getPopular(page, 24)
+        const d = await anilist.getPopular('ANIME', page, 24)
         setItems(d?.media || [])
       } else {
         const params: Record<string, string> = { sort_by: sort, page: String(page) }

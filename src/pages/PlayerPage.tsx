@@ -118,7 +118,7 @@ export default function PlayerPage() {
       try {
         const curSeason = selectedMedia.season || 1
         const curEpisode = selectedMedia.episode || 1
-        const season = await tmdb.getSeasonDetail(selectedMedia.id, curSeason).catch(() => null)
+        const season = await tmdb.getSeasonDetail(selectedMedia.id as number, curSeason).catch(() => null)
         const eps = season?.episodes || []
         const next = eps.find((e: any) => e.episode_number === curEpisode + 1)
         if (next) {
@@ -127,11 +127,11 @@ export default function PlayerPage() {
           setCurrentStreamUrl(url)
           setCurrentPage('player')
         } else {
-          const d = await tmdb.getTVDetail(selectedMedia.id).catch(() => null)
+const d = await tmdb.getTVDetail(selectedMedia.id as number).catch(() => null)
           const seasons = d?.seasons || []
           const nextSeason = seasons.find((s: any) => s.season_number === curSeason + 1 && s.episode_count > 0)
           if (nextSeason) {
-            const s = await tmdb.getSeasonDetail(selectedMedia.id, nextSeason.season_number).catch(() => null)
+const s = await tmdb.getSeasonDetail(selectedMedia.id as number, nextSeason.season_number).catch(() => null)
             const first = s?.episodes?.[0]
             if (first) {
               setSelectedMedia({ id: selectedMedia.id, type: 'tv', season: nextSeason.season_number, episode: first.episode_number })
@@ -155,7 +155,7 @@ export default function PlayerPage() {
     if (episode < 1) return
     setAutoNextBusy(true)
     try {
-      const seasonData = await tmdb.getSeasonDetail(selectedMedia.id, season).catch(() => null)
+      const seasonData = await tmdb.getSeasonDetail(selectedMedia.id as number, season).catch(() => null)
       const eps = seasonData?.episodes || []
       const target = eps.find((e: any) => e.episode_number === episode)
       if (target) {
@@ -164,11 +164,11 @@ export default function PlayerPage() {
         setCurrentStreamUrl(url)
         setCurrentPage('player')
       } else {
-        const d = await tmdb.getTVDetail(selectedMedia.id).catch(() => null)
+        const d = await tmdb.getTVDetail(selectedMedia.id as number).catch(() => null)
         const seasons = d?.seasons || []
         const nextSeason = seasons.find((s: any) => s.season_number === season + 1 && s.episode_count > 0)
         if (nextSeason) {
-          const s = await tmdb.getSeasonDetail(selectedMedia.id, nextSeason.season_number).catch(() => null)
+          const s = await tmdb.getSeasonDetail(selectedMedia.id as number, nextSeason.season_number).catch(() => null)
           const first = s?.episodes?.[0]
           if (first) {
             setSelectedMedia({ id: selectedMedia.id, type: 'tv', season: nextSeason.season_number, episode: first.episode_number })

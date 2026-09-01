@@ -39,8 +39,12 @@ export default function Anime() {
     ;(async () => {
       setLoading(true)
       try {
-        const g = genre === 'All' ? null : genre
-        const d = await anilist.getByGenre(g, page, 24)
+        let d: { media: any[]; pageInfo: any }
+        if (genre === 'All') {
+          d = await (anilist.getPopular as any)('ANIME', page, 24)
+        } else {
+          d = await (anilist.getByGenre as any)(genre, page, 24)
+        }
         if (!c) {
           setItems(d?.media || [])
           setHasNext(Boolean(d?.pageInfo?.hasNextPage))
@@ -60,8 +64,12 @@ export default function Anime() {
     setLoadingMore(true)
     const next = page + 1
     try {
-      const g = genre === 'All' ? null : genre
-      const d = await anilist.getByGenre(g, next, 24)
+      let d: { media: any[]; pageInfo: any }
+      if (genre === 'All') {
+        d = await (anilist.getPopular as any)('ANIME', next, 24)
+      } else {
+        d = await (anilist.getByGenre as any)(genre, next, 24)
+      }
       const list = d?.media || []
       setItems((prev) => [...prev, ...list])
       setHasNext(Boolean(d?.pageInfo?.hasNextPage))

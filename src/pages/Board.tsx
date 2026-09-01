@@ -99,9 +99,10 @@ export default function Board() {
       try {
         const unique = Array.from(new Map(seeds.map((s) => [`${s.type}-${s.id}`, s])).values()).slice(0, 3)
         const lists = await Promise.all(
-          unique.map((s) =>
-            s.type === 'movie' ? tmdb.getMovieDetail(s.id) : tmdb.getTVDetail(s.id)
-          )
+          unique.map((s) => {
+            if (s.type === 'iptv') return null
+            return s.type === 'movie' ? tmdb.getMovieDetail(s.id as number) : tmdb.getTVDetail(s.id as number)
+          })
         )
         const picked: any[] = []
         for (const d of lists) {
@@ -151,7 +152,7 @@ export default function Board() {
       setOnTheAir(ota?.results?.slice(0, 16) || [])
       setTopRatedTv(trt?.results?.slice(0, 12) || [])
       try {
-        const a = await anilist.getTrending(1, 20)
+        const a = await anilist.getTrending('ANIME', 20)
         setAnime(a?.media || [])
       } catch {
         setAnime([])
@@ -300,7 +301,7 @@ export default function Board() {
 
   const hero = trending[heroIdx]
 
-  function goDetail(id: number, type: string) {
+  function goDetail(id: number | string, type: string) {
     setSelectedMedia({ id, type: type === 'movie' ? 'movie' : 'tv' })
     setCurrentPage('detail')
   }
@@ -404,7 +405,7 @@ export default function Board() {
                   <div className="mt-2">
                     <p className="text-white text-xs truncate">{anime.titleEnglish || anime.titleRomaji || anime.title}</p>
                     <p className="text-white/40 text-[10px]">
-                      Ep {anime.nextAiringEpisode || '?'} · {anime.timeUntilAiring ? `${Math.round(anime.timeUntilAiring / 60)}m` : 'Soon'}
+                      Ep {anime.nextAiringEpisode || '?'} ï¿½ {anime.timeUntilAiring ? `${Math.round(anime.timeUntilAiring / 60)}m` : 'Soon'}
                     </p>
                   </div>
                 </div>
@@ -438,7 +439,7 @@ export default function Board() {
                   <div className="mt-2">
                     <p className="text-white text-xs truncate">{show.name}</p>
                     <p className="text-white/40 text-[10px]">
-                      Ep {show.nextEpisodeToAir?.episodeNumber || '?'} · {show.nextEpisodeToAir?.airDate ? new Date(show.nextEpisodeToAir.airDate).toLocaleDateString() : 'Soon'}
+                      Ep {show.nextEpisodeToAir?.episodeNumber || '?'} ï¿½ {show.nextEpisodeToAir?.airDate ? new Date(show.nextEpisodeToAir.airDate).toLocaleDateString() : 'Soon'}
                     </p>
                   </div>
                 </div>

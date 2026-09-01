@@ -107,8 +107,8 @@ export interface UserProfile {
 
 export interface WatchHistoryItem {
   id: string
-  mediaId: number
-  mediaType: 'movie' | 'tv'
+  mediaId: number | string
+  mediaType: 'movie' | 'tv' | 'iptv'
   title: string
   posterPath: string | null
   progress: number
@@ -123,7 +123,7 @@ export interface CustomList {
   id: string
   name: string
   profileId: string
-  items: { mediaId: number; mediaType: 'movie' | 'tv'; addedAt: string; title?: string; posterPath?: string | null }[]
+  items: { mediaId: number | string; mediaType: 'movie' | 'tv' | 'iptv'; addedAt: string; title?: string; posterPath?: string | null }[]
 }
 
 export interface StreamingService {

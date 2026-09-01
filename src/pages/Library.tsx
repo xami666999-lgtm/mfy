@@ -26,7 +26,7 @@ export default function Library() {
   const [editingList, setEditingList] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
 
-  function openItem(mediaId: number, mediaType: 'movie' | 'tv') {
+  function openItem(mediaId: number | string, mediaType: 'movie' | 'tv' | 'iptv') {
     setSelectedMedia({ id: mediaId, type: mediaType })
     setCurrentPage('detail')
   }
@@ -283,7 +283,7 @@ export default function Library() {
                         <button
                           type="button"
                           className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-black/70 border border-white/15 text-white/70 grid place-items-center opacity-0 group-hover:opacity-100"
-                          onClick={(e) => { e.stopPropagation(); removeFromCustomList(list.id, item.mediaId, item.mediaType) }}
+                          onClick={(e) => { e.stopPropagation(); removeFromCustomList(list.id, item.mediaId as number, item.mediaType) }}
                         >
                           <Trash2 size={13} />
                         </button>
@@ -311,7 +311,7 @@ export default function Library() {
                 key={h.id}
                 type="button"
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] text-left transition-all"
-                onClick={() => openItem(h.mediaId, h.mediaType)}
+                onClick={() => openItem(h.mediaId as number, h.mediaType)}
               >
                 {h.posterPath ? (
                   <img

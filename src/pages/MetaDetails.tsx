@@ -34,25 +34,33 @@ export default function MetaDetails() {
     if (!selectedMedia) return
     setLoading(true)
     try {
+      // Handle IPTV
+      if (selectedMedia.type === 'iptv') {
+        setDetail({ id: selectedMedia.id, title: selectedMedia.channel?.name || 'IPTV Channel', overview: '', poster_path: selectedMedia.channel?.logo, backdrop_path: null, vote_average: 0, genres: [] })
+        setLoading(false)
+        return
+      }
+      // TypeScript type narrowing: after iptv check, type is 'movie' | 'tv'
+      const mediaId = selectedMedia.id as number
       if (selectedMedia.type === 'movie') {
-        const d = await tmdb.getMovieDetail(selectedMedia.id)
+        const d = await tmdb.getMovieDetail(mediaId)
         setDetail(d)
         setTrailerKey(d?.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')?.key || null)
       } else {
-        const d = await tmdb.getTVDetail(selectedMedia.id)
+        const d = await tmdb.getTVDetail(mediaId)
         setDetail(d)
         setTrailerKey(d?.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')?.key || null)
         if (d?.seasons?.length) {
           const sNum = d.seasons.find((s: any) => s.season_number > 0)?.season_number || 0
           setActiveSeason(sNum)
-          const sd = await tmdb.getSeasonDetail(selectedMedia.id, sNum)
+          const sd = await tmdb.getSeasonDetail(mediaId, sNum)
           setSeasonData(sd)
         }
       }
     } catch {}
     try {
-      if (selectedMedia) {
-        const ext = await tmdb.getExternalIds(selectedMedia.type, selectedMedia.id)
+      if (selectedMedia && selectedMedia.type !== 'iptv') {
+        const ext = await tmdb.getExternalIds(selectedMedia.type, selectedMedia.id as number)
         const iid = ext?.imdb_id || null
         setImdbId(iid)
         if (iid) {
@@ -66,8 +74,8 @@ export default function MetaDetails() {
       setOmdb(null)
     }
     try {
-      if (selectedMedia && mdblistApiKey) {
-        const data = await fetchMdblistRatings(selectedMedia.type, selectedMedia.id)
+      if (selectedMedia && selectedMedia.type !== 'iptv' && mdblistApiKey) {
+        const data = await fetchMdblistRatings(selectedMedia.type, selectedMedia.id as number)
         setMdblistRatings(data?.ratings || null)
       } else {
         setMdblistRatings(null)
@@ -79,9 +87,9 @@ export default function MetaDetails() {
   }
 
   async function changeSeason(num: number) {
-    if (!selectedMedia) return
+    if (!selectedMedia || selectedMedia.type !== 'tv') return
     setActiveSeason(num)
-    const d = await tmdb.getSeasonDetail(selectedMedia.id, num)
+    const d = await tmdb.getSeasonDetail(selectedMedia.id as number, num)
     setSeasonData(d)
   }
 
@@ -106,23 +114,29 @@ export default function MetaDetails() {
   // Populate the streams list (addons + torrents) whenever the streams tab is shown.
   useEffect(() => {
     if (activeTab !== 'streams' || !selectedMedia || !detail || streamOptions.length > 0) return
+    // Skip streams for IPTV
+    if (selectedMedia.type === 'iptv') return
     let cancelled = false
     setResolving(true)
     ;(async () => {
       try {
         const { resolveFromAiostreams, resolveFromTorrentio, getExternalIds } = await import('../api/streams')
         let idForAddon = String(selectedMedia.id)
-        if (tmdbApiKey) {
-          const ext = await getExternalIds(selectedMedia.type, selectedMedia.id, tmdbApiKey)
+        if (tmdbApiKey && (selectedMedia.type === 'movie' || selectedMedia.type === 'tv')) {
+          const ext = await getExternalIds(selectedMedia.type, selectedMedia.id as number, tmdbApiKey)
           if (ext?.imdb_id) idForAddon = ext.imdb_id
         }
         const season = selectedMedia.season
         const episode = selectedMedia.episode
         let streams: any[] = []
-        if (aiostreamsUrl) {
-          streams = await resolveFromAiostreams(aiostreamsUrl, selectedMedia.type, idForAddon, season, episode)
+        let torrents: any[] = []
+        const mediaId = selectedMedia.id as number
+        if (aiostreamsUrl && (selectedMedia.type === 'movie' || selectedMedia.type === 'tv')) {
+          streams = await resolveFromAiostreams(aiostreamsUrl, selectedMedia.type, String(mediaId), season, episode)
         }
-        const torrents = await resolveFromTorrentio(selectedMedia.type, idForAddon, { season, episode })
+        if (selectedMedia.type === 'movie' || selectedMedia.type === 'tv') {
+          torrents = await resolveFromTorrentio(selectedMedia.type, String(mediaId), { season, episode })
+        }
         const list = [...streams, ...torrents]
         if (!cancelled) setStreamOptions(list)
       } catch {
@@ -136,10 +150,15 @@ export default function MetaDetails() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, selectedMedia, detail])
 
+  // Skip streams for iptv type
+  useEffect(() => {
+    if (selectedMedia?.type === 'iptv') return
+  }, [selectedMedia])
+
 
   async function handlePlay() {
-    if (!selectedMedia || !detail) return
-    const url = vidyUrl(selectedMedia.type === 'movie' ? 'movie' : 'tv', selectedMedia.id, activeSeason, selectedMedia.episode)
+    if (!selectedMedia || !detail || selectedMedia.type === 'iptv') return
+    const url = vidyUrl(selectedMedia.type === 'movie' ? 'movie' : 'tv', selectedMedia.id as number, activeSeason, selectedMedia.episode)
     setSelectedMedia({ ...selectedMedia, season: activeSeason, episode: selectedMedia.episode })
     setCurrentStreamUrl(url)
     setCurrentPage('player')
@@ -324,16 +343,17 @@ export default function MetaDetails() {
               <button
                 type="button"
                 onClick={() => {
-                  if (!selectedMedia || !detail) return
+                  if (!selectedMedia || !detail || selectedMedia.type === 'iptv') return
+                  const mediaId = selectedMedia.id as number
                   const item = {
-                    mediaId: selectedMedia.id,
+                    mediaId,
                     mediaType: selectedMedia.type,
                     title,
                     posterPath: detail.poster_path || null,
                     addedAt: new Date().toISOString(),
                   }
-                  if (isInWatchlist(selectedMedia.id, selectedMedia.type)) {
-                    removeFromWatchlist(selectedMedia.id, selectedMedia.type)
+                  if (isInWatchlist(mediaId, selectedMedia.type)) {
+                    removeFromWatchlist(mediaId, selectedMedia.type)
                   } else {
                     addToWatchlist(item)
                   }
@@ -341,7 +361,7 @@ export default function MetaDetails() {
 className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/8 border border-white/12 text-sm text-white/70 hover:text-white transition-all"
                 >
                 <Plus className="w-4 h-4" />
-                {selectedMedia && isInWatchlist(selectedMedia.id, selectedMedia.type) ? 'In List' : 'My List'}
+                {selectedMedia && selectedMedia.type !== 'iptv' && isInWatchlist(selectedMedia.id as number, selectedMedia.type) ? 'In List' : 'My List'}
               </button>
               <button
                 type="button"
@@ -369,17 +389,18 @@ className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/8 bord
                     {customLists.length > 0 && (
                       <div className="max-h-48 overflow-y-auto space-y-0.5 mb-1">
                         {customLists.map((l) => {
-                          const inList = selectedMedia && isInCustomList(l.id, selectedMedia.id, selectedMedia.type)
+                          const mediaId = selectedMedia?.id
+                          const inList = selectedMedia && mediaId && selectedMedia.type !== 'iptv' && isInCustomList(l.id, mediaId as number, selectedMedia.type)
                           return (
                             <button
                               key={l.id}
                               type="button"
                               onClick={() => {
-                                if (!selectedMedia) return
+                                if (!selectedMedia || !mediaId || selectedMedia.type === 'iptv') return
                                 if (inList) {
-                                  removeFromCustomList(l.id, selectedMedia.id, selectedMedia.type)
+                                  removeFromCustomList(l.id, mediaId as number, selectedMedia.type)
                                 } else {
-                                  addToCustomList(l.id, selectedMedia.id, selectedMedia.type, { title, posterPath: detail?.poster_path || null })
+                                  addToCustomList(l.id, mediaId as number, selectedMedia.type, { title, posterPath: detail?.poster_path || null })
                                 }
                                 setListOpen(false)
                               }}
@@ -397,10 +418,11 @@ className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/8 bord
                       <input
                         value={newListName}
                         onChange={(e) => setNewListName(e.target.value)}
-                        onKeyDown={(e) => {
+onKeyDown={(e) => {
                           if (e.key === 'Enter' && newListName.trim()) {
                             const id = createCustomList(newListName.trim())
-                            if (selectedMedia) addToCustomList(id, selectedMedia.id, selectedMedia.type, { title, posterPath: detail?.poster_path || null })
+                            const mediaId = selectedMedia?.id
+                            if (selectedMedia && mediaId && selectedMedia.type !== 'iptv') addToCustomList(id, mediaId as number, selectedMedia.type, { title, posterPath: detail?.poster_path || null })
                             setNewListName('')
                             setListOpen(false)
                           }
@@ -413,7 +435,8 @@ className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/8 bord
                         onClick={() => {
                           if (!newListName.trim()) return
                           const id = createCustomList(newListName.trim())
-                          if (selectedMedia) addToCustomList(id, selectedMedia.id, selectedMedia.type, { title, posterPath: detail?.poster_path || null })
+                          const mediaId = selectedMedia?.id
+                          if (selectedMedia && mediaId && selectedMedia.type !== 'iptv') addToCustomList(id, mediaId as number, selectedMedia.type, { title, posterPath: detail?.poster_path || null })
                           setNewListName('')
                           setListOpen(false)
                         }}

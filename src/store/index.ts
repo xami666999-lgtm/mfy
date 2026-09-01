@@ -4,7 +4,7 @@ import type { SerializdUser } from '../api/serializd'
 
 export interface WatchlistItem {
   mediaId: number
-  mediaType: 'movie' | 'tv'
+  mediaType: 'movie' | 'tv' | 'iptv'
   title: string
   posterPath: string | null
   addedAt: string
@@ -24,8 +24,8 @@ interface AppState {
   currentPage: Page
   setCurrentPage: (page: Page) => void
 
-  selectedMedia: { id: number; type: 'movie' | 'tv'; season?: number; episode?: number } | null
-  setSelectedMedia: (media: { id: number; type: 'movie' | 'tv'; season?: number; episode?: number } | null) => void
+  selectedMedia: { id: number | string; type: 'movie' | 'tv' | 'iptv'; season?: number; episode?: number; channel?: any } | null
+  setSelectedMedia: (media: { id: number | string; type: 'movie' | 'tv' | 'iptv'; season?: number; episode?: number; channel?: any } | null) => void
 
   currentProfile: UserProfile | null
   setCurrentProfile: (profile: UserProfile | null) => void
@@ -50,19 +50,19 @@ interface AppState {
   createCustomList: (name: string) => string
   renameCustomList: (id: string, name: string) => void
   deleteCustomList: (id: string) => void
-  addToCustomList: (listId: string, mediaId: number, mediaType: 'movie' | 'tv', meta?: { title?: string; posterPath?: string | null }) => void
-  removeFromCustomList: (listId: string, mediaId: number, mediaType: 'movie' | 'tv') => void
-  isInCustomList: (listId: string, mediaId: number, mediaType: 'movie' | 'tv') => boolean
+  addToCustomList: (listId: string, mediaId: number, mediaType: 'movie' | 'tv' | 'iptv', meta?: { title?: string; posterPath?: string | null }) => void
+  removeFromCustomList: (listId: string, mediaId: number, mediaType: 'movie' | 'tv' | 'iptv') => void
+  isInCustomList: (listId: string, mediaId: number, mediaType: 'movie' | 'tv' | 'iptv') => boolean
 
   watchlist: WatchlistItem[]
   setWatchlist: (items: WatchlistItem[]) => void
   addToWatchlist: (item: WatchlistItem) => void
-  removeFromWatchlist: (mediaId: number, mediaType: 'movie' | 'tv') => void
-  isInWatchlist: (mediaId: number, mediaType: 'movie' | 'tv') => boolean
+  removeFromWatchlist: (mediaId: number, mediaType: 'movie' | 'tv' | 'iptv') => void
+  isInWatchlist: (mediaId: number, mediaType: 'movie' | 'tv' | 'iptv') => boolean
 
   favorites: WatchlistItem[]
   addFavorite: (item: WatchlistItem) => void
-  removeFavorite: (mediaId: number, mediaType: 'movie' | 'tv') => void
+  removeFavorite: (mediaId: number | string, mediaType: 'movie' | 'tv' | 'iptv') => void
   isFavorite: (mediaId: number, mediaType: 'movie' | 'tv') => boolean
 
   isSetupComplete: boolean
@@ -109,6 +109,12 @@ interface AppState {
   setSerializdUser: (user: SerializdUser | null) => void
   serializdSyncEnabled: boolean
   setSerializdSyncEnabled: (enabled: boolean) => void
+
+  // IPTV
+  iptvMultiview: boolean
+  setIptvMultiview: (enabled: boolean) => void
+  iptvMultiviewUrls: string[]
+  setIptvMultiviewUrls: (urls: string[]) => void
 
   selectedProviderId: string | null
   setSelectedProviderId: (id: string | null) => void
@@ -371,6 +377,18 @@ export const useStore = create<AppState>((set, get) => ({
     persist('serializdSyncEnabled', enabled)
   },
 
+  // IPTV
+  iptvMultiview: false,
+  setIptvMultiview: (enabled) => {
+    set({ iptvMultiview: enabled })
+    persist('iptvMultiview', enabled)
+  },
+  iptvMultiviewUrls: [],
+  setIptvMultiviewUrls: (urls) => {
+    set({ iptvMultiviewUrls: urls })
+    persist('iptvMultiviewUrls', urls)
+  },
+
   selectedProviderId: null,
   setSelectedProviderId: (id) => set({ selectedProviderId: id }),
 
@@ -456,6 +474,8 @@ export const useStore = create<AppState>((set, get) => ({
     loadKey('serializdToken', (v) => set({ serializdToken: v as string }))
     loadKey('serializdUser', (v) => set({ serializdUser: v as SerializdUser | null }))
     loadKey('serializdSyncEnabled', (v) => set({ serializdSyncEnabled: v as boolean }))
+    loadKey('iptvMultiview', (v) => set({ iptvMultiview: v as boolean }))
+    loadKey('iptvMultiviewUrls', (v) => set({ iptvMultiviewUrls: v as string[] }))
     loadKey('theme', (v) => { set({ theme: v as ThemeId }); applyTheme(v as ThemeId) })
     loadKey('externalPlayer', (v) => set({ externalPlayer: v as string }))
     loadKey('autoplayNext', (v) => set({ autoplayNext: v as boolean }))

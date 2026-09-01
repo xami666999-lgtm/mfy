@@ -1,1 +1,0 @@
-v1.2.35: Add Serializd integration (login/sync), fix Board.tsx build issues, improve airing schedule rendering
