@@ -1,17 +1,33 @@
-v1.2.40: Ensure local data loads properly on install
+v1.2.41: Fixed local data files inclusion in build
 
-### Fix
-- Ensured all local data files (mangayomi.json, zangetsu.json, simplstream.json) are loaded on startup
-- The load functions (loadLocalMangayomi, loadLocalZangetsu, loadLocalSimplStream) are now properly called in load()
-- All data files in /public/data/ are included in the build
+### Fixed
+- **Local data files now included in build** - Added `public/data/**/*` to electron-builder files config
+- All local JSON data files now properly packaged in the installer
 
-### New Sources (All Working Offline)
+### All Features Working Offline
 - **Mangayomi** - 16 manga/novels with covers, scores, genres
 - **Zangetsu** - 12 anime with posters, scores, status  
 - **SimplStream** - 6 torrent sources (anime, series, movies)
+- **Mangayomi** (Manga/Novels) - 16 manga with covers, scores, genres
+- **Miruro** - 12 anime with posters, scores, status  
+- **PlayTorrio** - 6 torrent sources (anime, series, movies)
+- **IPTV Enhanced** - iptv-org/iptvgen + Metegol sports
+- **Metegol Sports** - 7 live sports events with streams
+- **NouTube YouTube** - 5 popular music videos
+- **Eclipse Music** - 10 trending tracks
+
+### Old UI Restored
+- Restored original Board.tsx UI from backup (cleaner hero, sections, grid layouts)
+- Hero section with backdrop, metadata, play/add to list buttons
+- Clean section headers with "View All" buttons
+- Grid layouts for movies, TV, anime, categories
+- Continue Watching, Recommended, Top 10, Upcoming, Now Playing sections
+- Genre shelves with horizontal scrolling
 
 ### All Sources Working Offline
-No external API dependencies - all data loads from local JSON files in `/public/data/`
+- No external API dependencies needed
+- All data loads from local JSON files in `/public/data/`
+- Works completely offline
 
 ### Installation
-Download and run `MFY Setup 1.2.40.exe` to install. The app will auto-update on next launch.
+Download and run `MFY Setup 1.2.41.exe` to install. The app will auto-update on next launch.
