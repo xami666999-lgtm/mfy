@@ -1,4 +1,6 @@
-v1.2.45: Final complete release with all features
+### Fix: Local Data Files Now Packaged in Build
+
+**Fixed**: Local data files (Mangayomi, Zangetsu, SimplStream) are now properly packaged in the build
 
 ### All Features Working Offline
 - **Mangayomi** - 16 manga/novels with covers, scores, genres
@@ -26,4 +28,4 @@ v1.2.45: Final complete release with all features
 - Works completely offline
 
 ### Installation
-Download and run `MFY Setup 1.2.45.exe` to install. The app will auto-update on next launch.
+Download and run `MFY Setup 1.2.43.exe` to install. The app will auto-update on next launch.
