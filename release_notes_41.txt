@@ -1,7 +1,6 @@
-v1.2.42: Fixed local data files inclusion in build (public/data/**/*)
+### Fix: Local Data Files Now Packaged in Build
 
-### Fixed
-- Added `public/data/**/*` to electron-builder files config so local JSON data is packaged
+**Fixed**: Local data files (Mangayomi, Zangetsu, SimplStream) are now properly packaged in the build
 
 ### All Features Working Offline
 - **Mangayomi** - 16 manga/novels with covers, scores, genres
@@ -17,8 +16,16 @@ v1.2.42: Fixed local data files inclusion in build (public/data/**/*)
 
 ### Old UI Restored
 - Restored original Board.tsx UI from backup (cleaner hero, sections, grid layouts)
+- Hero section with backdrop, metadata, play/add to list buttons
+- Clean section headers with "View All" buttons
+- Grid layouts for movies, TV, anime, categories
+- Continue Watching, Recommended, Top 10, Upcoming, Now Playing sections
+- Genre shelves with horizontal scrolling
 
 ### All Sources Working Offline
 - No external API dependencies needed
 - All data loads from local JSON files in `/public/data/`
 - Works completely offline
+
+### Installation
+Download and run `MFY Setup 1.2.42.exe` to install. The app will auto-update on next launch.
