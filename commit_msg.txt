@@ -1,23 +1,17 @@
-v1.2.39: Added Mangayomi, Zangetsu, SimplStream with local data and restored old UI
+v1.2.40: Ensure local data loads properly on install
 
-### New Sources Added (All Working Offline)
-- **Mangayomi** (https://github.com/kodjodevf/mangayomi): 16 manga/novels with covers, scores, genres
-- **Zangetsu** (https://github.com/Spyou/Zangetsu): 12 anime with posters, scores, status
-- **SimplStream** (https://github.com/JustANormalChurro/SimplStream): 6 torrent sources (anime, series, movies)
+### Fix
+- Ensured all local data files (mangayomi.json, zangetsu.json, simplstream.json) are loaded on startup
+- The load functions (loadLocalMangayomi, loadLocalZangetsu, loadLocalSimplStream) are now properly called in load()
+- All data files in /public/data/ are included in the build
 
-### Old UI Restored
-- Restored original Board.tsx UI from backup (cleaner hero, sections, grid layouts)
-- Hero section with backdrop, metadata, play/add to list buttons
-- Clean section headers with "View All" buttons
-- Grid layouts for movies, TV, anime, categories
-- Continue Watching, Recommended, Top 10, Upcoming, Now Playing sections
-- Genre shelves with horizontal scrolling
+### New Sources (All Working Offline)
+- **Mangayomi** - 16 manga/novels with covers, scores, genres
+- **Zangetsu** - 12 anime with posters, scores, status  
+- **SimplStream** - 6 torrent sources (anime, series, movies)
 
-### Local Data Files Added
-- `/public/data/mangayomi.json` - 16 manga
-- `/public/data/zangetsu.json` - 12 anime
-- `/public/data/simplstream.json` - 6 torrent sources
-- All loaded from local JSON files - works offline
+### All Sources Working Offline
+No external API dependencies - all data loads from local JSON files in `/public/data/`
 
-### Build
-- v1.2.39 builds successfully
+### Installation
+Download and run `MFY Setup 1.2.40.exe` to install. The app will auto-update on next launch.
