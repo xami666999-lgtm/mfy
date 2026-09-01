@@ -7,6 +7,12 @@ import { streamingServices } from '../api/streaming'
 import { franchises } from '../api/franchises'
 import { mangahookApi, AiringAnime, AiringTVShow } from '../api/mangahook'
 import { mcpAnimeApi, Manga } from '../api/mcpAnime'
+import { seanimeApi, SeanimeManga, SeanimeSearchResult } from '../api/seanime'
+import { miruroApi, MiruroAnime } from '../api/miruro'
+import { playtorrioApi, PlayTorrioMedia } from '../api/playtorrio'
+import { iptvEnhancedApi, IPTVChannel, MetegolEvent } from '../api/iptv-enhanced'
+import { noutubeApi, NouTubeVideo, NouTubeSearchResult } from '../api/noutube'
+import { eclipseApi, EclipseTrack, EclipseSearchResult } from '../api/eclipse'
 import { useStore } from '../store'
 import { cn } from '../lib/utils'
 import { SkeletonPoster, SkeletonHero } from '../components/Skeleton'
@@ -76,9 +82,62 @@ export default function Board() {
   const [loadingManga, setLoadingManga] = useState(false)
   const [loadingAiring, setLoadingAiring] = useState(false)
 
+  // Seanime Manga/Comics/Books
+  const [seanimeManga, setSeanimeManga] = useState<SeanimeManga[]>([])
+  const [seanimePopular, setSeanimePopular] = useState<SeanimeManga[]>([])
+  const [loadingSeanime, setLoadingSeanime] = useState(false)
+  const [loadingSeanimePopular, setLoadingSeanimePopular] = useState(false)
+
+  // Miruro Anime
+  const [miruroAnime, setMiruroAnime] = useState<MiruroAnime[]>([])
+  const [miruroPopular, setMiruroPopular] = useState<MiruroAnime[]>([])
+  const [loadingMiruro, setLoadingMiruro] = useState(false)
+  const [loadingMiruroPopular, setLoadingMiruroPopular] = useState(false)
+
+  // PlayTorrio
+  const [playtorrioMedia, setPlaytorrioMedia] = useState<PlayTorrioMedia[]>([])
+  const [playtorrioTrending, setPlaytorrioTrending] = useState<PlayTorrioMedia[]>([])
+  const [loadingPlaytorrio, setLoadingPlaytorrio] = useState(false)
+  const [loadingPlaytorrioTrending, setLoadingPlaytorrioTrending] = useState(false)
+
+  // IPTV Enhanced
+  const [iptvChannels, setIptvChannels] = useState<IPTVChannel[]>([])
+  const [iptvCategories, setIptvCategories] = useState<any[]>([])
+  const [iptvSportsChannels, setIptvSportsChannels] = useState<IPTVChannel[]>([])
+  const [loadingIptv, setLoadingIptv] = useState(false)
+  const [loadingIptvCategories, setLoadingIptvCategories] = useState(false)
+  const [loadingIptvSports, setLoadingIptvSports] = useState(false)
+
+  // Metegol Sports
+  const [metegolEvents, setMetegolEvents] = useState<MetegolEvent[]>([])
+  const [loadingMetegol, setLoadingMetegol] = useState(false)
+
+  // NouTube YouTube
+  const [noutubeVideos, setNoutubeVideos] = useState<NouTubeVideo[]>([])
+  const [noutubeTrending, setNoutubeTrending] = useState<NouTubeVideo[]>([])
+  const [noutubeMusic, setNoutubeMusic] = useState<NouTubeVideo[]>([])
+  const [loadingNoutube, setLoadingNoutube] = useState(false)
+  const [loadingNoutubeTrending, setLoadingNoutubeTrending] = useState(false)
+  const [loadingNoutubeMusic, setLoadingNoutubeMusic] = useState(false)
+
+  // Eclipse Music
+  const [eclipseTracks, setEclipseTracks] = useState<EclipseTrack[]>([])
+  const [eclipseTrending, setEclipseTrending] = useState<EclipseTrack[]>([])
+  const [eclipseArtists, setEclipseArtists] = useState<any[]>([])
+  const [loadingEclipse, setLoadingEclipse] = useState(false)
+  const [loadingEclipseTrending, setLoadingEclipseTrending] = useState(false)
+  const [loadingEclipseArtists, setLoadingEclipseArtists] = useState(false)
+
   const providerRef = useRef<HTMLDivElement>(null)
   const franchiseRef = useRef<HTMLDivElement>(null)
   const mangaRef = useRef<HTMLDivElement>(null)
+  const seanimeRef = useRef<HTMLDivElement>(null)
+  const miruroRef = useRef<HTMLDivElement>(null)
+  const playtorrioRef = useRef<HTMLDivElement>(null)
+  const iptvRef = useRef<HTMLDivElement>(null)
+  const metegolRef = useRef<HTMLDivElement>(null)
+  const noutubeRef = useRef<HTMLDivElement>(null)
+  const eclipseRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     load()
@@ -163,12 +222,28 @@ export default function Board() {
     setLoading(false)
     // Pre-fetch genre rows in the background so they fill in as the user scrolls
     // (does not block initial render).
-    loadGenres().catch(() => {})
-    loadProviders().catch(() => {})
-    loadFranchises().catch(() => {})
-    loadManga().catch(() => {})
-    loadAiringSchedule().catch(() => {})
-  }
+loadGenres().catch(() => {})
+  loadProviders().catch(() => {})
+  loadFranchises().catch(() => {})
+  loadManga().catch(() => {})
+  loadAiringSchedule().catch(() => {})
+  loadSeanime().catch(() => {})
+  loadSeanimePopular().catch(() => {})
+  loadMiruro().catch(() => {})
+  loadMiruroPopular().catch(() => {})
+  loadPlaytorrio().catch(() => {})
+  loadPlaytorrioTrending().catch(() => {})
+  loadIptv().catch(() => {})
+  loadIptvCategories().catch(() => {})
+  loadIptvSports().catch(() => {})
+  loadMetegol().catch(() => {})
+  loadNoutube().catch(() => {})
+  loadNoutubeTrending().catch(() => {})
+  loadNoutubeMusic().catch(() => {})
+  loadEclipse().catch(() => {})
+  loadEclipseTrending().catch(() => {})
+  loadEclipseArtists().catch(() => {})
+}
 
   async function loadProviders() {
     setLoadingProviders(true)
@@ -266,6 +341,189 @@ export default function Board() {
       console.error('Failed to load airing schedule:', e)
     }
     setLoadingAiring(false)
+  }
+
+  // Seanime Manga/Comics/Books
+  async function loadSeanime() {
+    setLoadingSeanime(true)
+    try {
+      const data = await seanimeApi.search('popular', 1, 30)
+      setSeanimeManga(data.manga || [])
+    } catch (e) {
+      console.error('Failed to load Seanime manga:', e)
+    }
+    setLoadingSeanime(false)
+  }
+
+  async function loadSeanimePopular() {
+    setLoadingSeanimePopular(true)
+    try {
+      const data = await seanimeApi.getPopular(1, 20)
+      setSeanimePopular(data.manga || [])
+    } catch (e) {
+      console.error('Failed to load Seanime popular:', e)
+    }
+    setLoadingSeanimePopular(false)
+  }
+
+  // Miruro Anime
+  async function loadMiruro() {
+    setLoadingMiruro(true)
+    try {
+      const data = await miruroApi.getAiring(1)
+      setMiruroAnime(data.data || [])
+    } catch (e) {
+      console.error('Failed to load Miruro anime:', e)
+    }
+    setLoadingMiruro(false)
+  }
+
+  async function loadMiruroPopular() {
+    setLoadingMiruroPopular(true)
+    try {
+      const data = await miruroApi.getPopular(1)
+      setMiruroPopular(data.data || [])
+    } catch (e) {
+      console.error('Failed to load Miruro popular:', e)
+    }
+    setLoadingMiruroPopular(false)
+  }
+
+  // PlayTorrio
+  async function loadPlaytorrio() {
+    setLoadingPlaytorrio(true)
+    try {
+      const data = await playtorrioApi.getTrending('anime', 'week', 1)
+      setPlaytorrioTrending(data.results || [])
+    } catch (e) {
+      console.error('Failed to load PlayTorrio trending:', e)
+    }
+    setLoadingPlaytorrio(false)
+  }
+
+  async function loadPlaytorrioTrending() {
+    setLoadingPlaytorrioTrending(true)
+    try {
+      const data = await playtorrioApi.getTrending('anime', 'week', 1)
+      setPlaytorrioTrending(data.results || [])
+    } catch (e) {
+      console.error('Failed to load PlayTorrio trending:', e)
+    }
+    setLoadingPlaytorrioTrending(false)
+  }
+
+  // IPTV Enhanced
+  async function loadIptv() {
+    setLoadingIptv(true)
+    try {
+      const channels = await iptvEnhancedApi.getAllChannels()
+      setIptvChannels(channels.slice(0, 100))
+    } catch (e) {
+      console.error('Failed to load IPTV channels:', e)
+    }
+    setLoadingIptv(false)
+  }
+
+  async function loadIptvCategories() {
+    setLoadingIptvCategories(true)
+    try {
+      const cats = await iptvEnhancedApi.getCategoriesWithCounts()
+      setIptvCategories(cats)
+    } catch (e) {
+      console.error('Failed to load IPTV categories:', e)
+    }
+    setLoadingIptvCategories(false)
+  }
+
+  async function loadIptvSports() {
+    setLoadingIptvSports(true)
+    try {
+      const channels = await iptvEnhancedApi.getSportsChannels()
+      setIptvSportsChannels(channels.slice(0, 50))
+    } catch (e) {
+      console.error('Failed to load IPTV sports:', e)
+    }
+    setLoadingIptvSports(false)
+  }
+
+  // Metegol Sports
+  async function loadMetegol() {
+    setLoadingMetegol(true)
+    try {
+      const events = await iptvEnhancedApi.getMetegolEvents()
+      setMetegolEvents(events.slice(0, 50))
+    } catch (e) {
+      console.error('Failed to load Metegol sports:', e)
+    }
+    setLoadingMetegol(false)
+  }
+
+  // NouTube YouTube
+  async function loadNoutube() {
+    setLoadingNoutube(true)
+    try {
+      const data = await noutubeApi.getTrending(1)
+      setNoutubeTrending(data.videos || [])
+    } catch (e) {
+      console.error('Failed to load NouTube trending:', e)
+    }
+    setLoadingNoutube(false)
+  }
+
+  async function loadNoutubeTrending() {
+    setLoadingNoutubeTrending(true)
+    try {
+      const data = await noutubeApi.getTrending(1)
+      setNoutubeTrending(data.videos || [])
+    } catch (e) {
+      console.error('Failed to load NouTube trending:', e)
+    }
+    setLoadingNoutubeTrending(false)
+  }
+
+  async function loadNoutubeMusic() {
+    setLoadingNoutubeMusic(true)
+    try {
+      const data = await noutubeApi.getTrendingMusic(1)
+      setNoutubeMusic(data.videos || [])
+    } catch (e) {
+      console.error('Failed to load NouTube music:', e)
+    }
+    setLoadingNoutubeMusic(false)
+  }
+
+  // Eclipse Music
+  async function loadEclipse() {
+    setLoadingEclipse(true)
+    try {
+      const data = await eclipseApi.getTrending('tracks', 1, 20)
+      setEclipseTrending(data.tracks || [])
+    } catch (e) {
+      console.error('Failed to load Eclipse trending:', e)
+    }
+    setLoadingEclipse(false)
+  }
+
+  async function loadEclipseTrending() {
+    setLoadingEclipseTrending(true)
+    try {
+      const data = await eclipseApi.getTrending('tracks', 1, 20)
+      setEclipseTrending(data.tracks || [])
+    } catch (e) {
+      console.error('Failed to load Eclipse trending:', e)
+    }
+    setLoadingEclipseTrending(false)
+  }
+
+  async function loadEclipseArtists() {
+    setLoadingEclipseArtists(true)
+    try {
+      const data = await eclipseApi.getTrending('artists', 1, 20)
+      setEclipseArtists(data.artists || [])
+    } catch (e) {
+      console.error('Failed to load Eclipse artists:', e)
+    }
+    setLoadingEclipseArtists(false)
   }
 
   async function loadGenres() {
