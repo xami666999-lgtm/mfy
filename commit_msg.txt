@@ -1,20 +1,23 @@
-v1.2.38: Local data integration - all sources now hardcoded and working
+v1.2.39: Added Mangayomi, Zangetsu, SimplStream with local data and restored old UI
 
-### What's New
-- **Seanime Manga/Comics/Books**: 16 popular manga titles hardcoded with covers, scores, genres
-- **Miruro Anime**: 12 popular anime with posters, scores, genres  
-- **PlayTorrio Torrents**: 6 popular torrents (anime, series, movies)
-- **IPTV Enhanced**: 20 sports channels from iptv-org with logos, groups
-- **Metegol Sports**: 7 live sports events with streams (football, MMA, F1, NBA, UFC, Champions League)
-- **NouTube YouTube**: 5 popular music videos (Rick Astley, Luis Fonsi, Ed Sheeran, Mark Ronson, Queen)
-- **Eclipse Music**: 10 trending tracks (The Weeknd, Ed Sheeran, Tones and I, Lewis Capaldi, etc.)
+### New Sources Added (All Working Offline)
+- **Mangayomi** (https://github.com/kodjodevf/mangayomi): 16 manga/novels with covers, scores, genres
+- **Zangetsu** (https://github.com/Spyou/Zangetsu): 12 anime with posters, scores, status
+- **SimplStream** (https://github.com/JustANormalChurro/SimplStream): 6 torrent sources (anime, series, movies)
 
-### Features
-- All data loaded from local JSON files in `/public/data/` - works offline
-- No external API dependencies - works offline
-- All sections integrated into Home/Board page with proper UI
-- Skeleton loading states for each section
-- "View All" buttons for each section
+### Old UI Restored
+- Restored original Board.tsx UI from backup (cleaner hero, sections, grid layouts)
+- Hero section with backdrop, metadata, play/add to list buttons
+- Clean section headers with "View All" buttons
+- Grid layouts for movies, TV, anime, categories
+- Continue Watching, Recommended, Top 10, Upcoming, Now Playing sections
+- Genre shelves with horizontal scrolling
+
+### Local Data Files Added
+- `/public/data/mangayomi.json` - 16 manga
+- `/public/data/zangetsu.json` - 12 anime
+- `/public/data/simplstream.json` - 6 torrent sources
+- All loaded from local JSON files - works offline
 
 ### Build
-- v1.2.38 builds successfully
+- v1.2.39 builds successfully

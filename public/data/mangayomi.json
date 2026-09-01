@@ -1,0 +1,132 @@
+{
+  "manga": [
+    {
+      "id": "1",
+      "title": "One Piece",
+      "coverImage": "https://cdn.myanimelist.net/images/manga/2/174804.jpg",
+      "status": "Ongoing",
+      "averageScore": 9.1,
+      "genres": ["Action", "Adventure", "Fantasy"]
+    },
+    {
+      "id": "2",
+      "title": "Attack on Titan",
+      "coverImage": "https://cdn.myanimelist.net/images/manga/3/165572.jpg",
+      "status": "Completed",
+      "averageScore": 9.0,
+      "genres": ["Action", "Drama", "Fantasy"]
+    },
+    {
+      "id": "3",
+      "title": "Berserk",
+      "coverImage": "https://cdn.myanimelist.net/images/manga/2/175959.jpg",
+      "status": "Hiatus",
+      "averageScore": 9.5,
+      "genres": ["Action", "Dark Fantasy", "Horror"]
+    },
+    {
+      "id": "4",
+      "title": "Fullmetal Alchemist",
+      "coverImage": "https://cdn.myanimelist.net/images/manga/1/165572.jpg",
+      "status": "Completed",
+      "averageScore": 9.3,
+      "genres": ["Action", "Adventure", "Fantasy"]
+    },
+    {
+      "id": "5",
+      "title": "Vinland Saga",
+      "coverImage": "https://cdn.myanimelist.net/images/manga/1/175959.jpg",
+      "status": "Ongoing",
+      "averageScore": 9.2,
+      "genres": ["Action", "Historical", "Seinen"]
+    },
+    {
+      "id": "6",
+      "title": "Monster",
+      "coverImage": "https://cdn.myanimelist.net/images/manga/2/175959.jpg",
+      "status": "Completed",
+      "averageScore": 9.1,
+      "genres": ["Mystery", "Psychological", "Thriller"]
+    },
+    {
+      "id": "7",
+      "title": "20th Century Boys",
+      "coverImage": "https://cdn.myanimelist.net/images/manga/1/175959.jpg",
+      "status": "Completed",
+      "averageScore": 9.0,
+      "genres": ["Mystery", "Sci-Fi", "Seinen"]
+    },
+    {
+      "id": "8",
+      "title": "JoJo's Bizarre Adventure",
+      "coverImage": "https://cdn.myanimelist.net/images/manga/2/175959.jpg",
+      "status": "Ongoing",
+      "averageScore": 8.9,
+      "genres": ["Action", "Adventure", "Supernatural"]
+    },
+    {
+      "id": "9",
+      "title": "Hunter x Hunter",
+      "coverImage": "https://cdn.myanimelist.net/images/manga/3/175959.jpg",
+      "status": "Hiatus",
+      "averageScore": 9.1,
+      "genres": ["Action", "Adventure", "Fantasy"]
+    },
+    {
+      "id": "10",
+      "title": "Chainsaw Man",
+      "coverImage": "https://cdn.myanimelist.net/images/manga/1/175959.jpg",
+      "status": "Ongoing",
+      "averageScore": 8.8,
+      "genres": ["Action", "Horror", "Supernatural"]
+    },
+    {
+      "id": "11",
+      "title": "Jujutsu Kaisen",
+      "coverImage": "https://cdn.myanimelist.net/images/manga/2/175959.jpg",
+      "status": "Ongoing",
+      "averageScore": 8.7,
+      "genres": ["Action", "Supernatural", "School"]
+    },
+    {
+      "id": "12",
+      "title": "Spy × Family",
+      "coverImage": "https://cdn.myanimelist.net/images/manga/1/175959.jpg",
+      "status": "Ongoing",
+      "averageScore": 8.6,
+      "genres": ["Action", "Comedy", "Spy"]
+    },
+    {
+      "id": "13",
+      "title": "Demon Slayer",
+      "coverImage": "https://cdn.myanimelist.net/images/manga/2/175959.jpg",
+      "status": "Completed",
+      "averageScore": 8.6,
+      "genres": ["Action", "Historical", "Supernatural"]
+    },
+    {
+      "id": "14",
+      "title": "My Hero Academia",
+      "coverImage": "https://cdn.myanimelist.net/images/manga/1/175959.jpg",
+      "status": "Ongoing",
+      "averageScore": 8.3,
+      "genres": ["Action", "School", "Superhero"]
+    },
+    {
+      "id": "15",
+      "title": "Tokyo Ghoul",
+      "coverImage": "https://cdn.myanimelist.net/images/manga/2/175959.jpg",
+      "status": "Completed",
+      "averageScore": 8.2,
+      "genres": ["Action", "Horror", "Supernatural"]
+    },
+    {
+      "id": "16",
+      "title": "Death Note",
+      "coverImage": "https://cdn.myanimelist.net/images/manga/1/175959.jpg",
+      "status": "Completed",
+      "averageScore": 8.9,
+      "genres": ["Mystery", "Psychological", "Supernatural"]
+    }
+  ]
+}

@@ -133,4 +133,4 @@ export interface StreamingService {
   color: string
 }
 
-export type Page = 'home' | 'discover' | 'search' | 'search-results' | 'library' | 'settings' | 'detail' | 'player' | 'wizard' | 'guide' | 'provider' | 'franchise' | 'movies' | 'tv' | 'anime' | 'sports' | 'iptv' | 'providers' | 'franchises' | 'manga' | 'manga-detail' | 'airing'
+export type Page = 'home' | 'discover' | 'search' | 'search-results' | 'library' | 'settings' | 'detail' | 'player' | 'wizard' | 'guide' | 'provider' | 'franchise' | 'movies' | 'tv' | 'anime' | 'sports' | 'iptv' | 'providers' | 'franchises' | 'manga' | 'manga-detail' | 'airing' | 'mangayomi' | 'mangayomi-detail' | 'zangetsu' | 'zangetsu-detail' | 'simplstream' | 'simplstream-detail'

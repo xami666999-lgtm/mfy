@@ -13,6 +13,9 @@ import { playtorrioApi, PlayTorrioMedia } from '../api/playtorrio'
 import { iptvEnhancedApi, IPTVChannel, MetegolEvent } from '../api/iptv-enhanced'
 import { noutubeApi, NouTubeVideo, NouTubeSearchResult } from '../api/noutube'
 import { eclipseApi, EclipseTrack, EclipseSearchResult } from '../api/eclipse'
+import { mangayomiApi, MangayomiManga } from '../api/mangayomi'
+import { zangetsuApi, ZangetsuAnime } from '../api/zangetsu'
+import { simplstreamApi, SimplStreamMedia } from '../api/simplstream'
 import { useStore } from '../store'
 import { cn } from '../lib/utils'
 import { SkeletonPoster, SkeletonHero } from '../components/Skeleton'
@@ -128,6 +131,24 @@ export default function Board() {
   const [loadingEclipseTrending, setLoadingEclipseTrending] = useState(false)
   const [loadingEclipseArtists, setLoadingEclipseArtists] = useState(false)
 
+  // Mangayomi Manga/Novel
+  const [mangayomiManga, setMangayomiManga] = useState<MangayomiManga[]>([])
+  const [mangayomiPopular, setMangayomiPopular] = useState<MangayomiManga[]>([])
+  const [loadingMangayomi, setLoadingMangayomi] = useState(false)
+  const [loadingMangayomiPopular, setLoadingMangayomiPopular] = useState(false)
+
+  // Zangetsu Anime
+  const [zangetsuAnime, setZangetsuAnime] = useState<any[]>([])
+  const [zangetsuPopular, setZangetsuPopular] = useState<any[]>([])
+  const [loadingZangetsu, setLoadingZangetsu] = useState(false)
+  const [loadingZangetsuPopular, setLoadingZangetsuPopular] = useState(false)
+
+  // SimplStream
+  const [simplstreamMedia, setSimplStreamMedia] = useState<any[]>([])
+  const [simplstreamTrending, setSimplStreamTrending] = useState<any[]>([])
+  const [loadingSimplStream, setLoadingSimplStream] = useState(false)
+  const [loadingSimplStreamTrending, setLoadingSimplStreamTrending] = useState(false)
+
   const providerRef = useRef<HTMLDivElement>(null)
   const franchiseRef = useRef<HTMLDivElement>(null)
   const mangaRef = useRef<HTMLDivElement>(null)
@@ -138,6 +159,9 @@ export default function Board() {
   const metegolRef = useRef<HTMLDivElement>(null)
   const noutubeRef = useRef<HTMLDivElement>(null)
   const eclipseRef = useRef<HTMLDivElement>(null)
+  const mangayomiRef = useRef<HTMLDivElement>(null)
+  const zangetsuRef = useRef<HTMLDivElement>(null)
+  const simplstreamRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     load()
@@ -250,6 +274,9 @@ loadGenres().catch(() => {})
   loadLocalMetegol().catch(() => {})
   loadLocalNoutube().catch(() => {})
   loadLocalEclipse().catch(() => {})
+  loadLocalMangayomi().catch(() => {})
+  loadLocalZangetsu().catch(() => {})
+  loadLocalSimplStream().catch(() => {})
 }
 
   async function loadProviders() {
@@ -620,6 +647,48 @@ loadGenres().catch(() => {})
       }
     } catch (e) {
       console.error('Failed to load local Eclipse:', e)
+    }
+  }
+
+  // Mangayomi
+  async function loadLocalMangayomi() {
+    try {
+      const res = await fetch('/data/mangayomi.json')
+      if (res.ok) {
+        const data = await res.json()
+        setMangayomiManga(data.manga || [])
+        setMangayomiPopular(data.manga || [])
+      }
+    } catch (e) {
+      console.error('Failed to load Mangayomi:', e)
+    }
+  }
+
+  // Zangetsu
+  async function loadLocalZangetsu() {
+    try {
+      const res = await fetch('/data/zangetsu.json')
+      if (res.ok) {
+        const data = await res.json()
+        setZangetsuAnime(data.anime || [])
+        setZangetsuPopular(data.anime || [])
+      }
+    } catch (e) {
+      console.error('Failed to load Zangetsu:', e)
+    }
+  }
+
+  // SimplStream
+  async function loadLocalSimplStream() {
+    try {
+      const res = await fetch('/data/simplstream.json')
+      if (res.ok) {
+        const data = await res.json()
+        setSimplStreamTrending(data.torrents || [])
+        setSimplStreamMedia(data.torrents || [])
+      }
+    } catch (e) {
+      console.error('Failed to load SimplStream:', e)
     }
   }
 
@@ -1373,6 +1442,288 @@ loadGenres().catch(() => {})
               )}
             </div>
             {airingContent}
+          </section>
+        )}
+
+
+        {/* Mangayomi Manga/Novel Section */}
+        {(mangayomiManga.length > 0 || mangayomiPopular.length > 0 || loadingMangayomi || loadingMangayomiPopular) && (
+          <section style={{ marginTop: 16 }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              marginBottom: 16 
+            }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>
+                Manga & Novels (Mangayomi)
+              </h2>
+              {(mangayomiManga.length > 0 || mangayomiPopular.length > 0) && (
+                <button 
+                  style={{ 
+                    color: 'rgba(255,255,255,0.5)', 
+                    background: 'none', 
+                    border: 'none', 
+                    fontSize: '0.875rem', 
+                    cursor: 'pointer',
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}
+                  onClick={() => setCurrentPage('mangayomi')}
+                >
+                  View All
+                  <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                </button>
+              )}
+            </div>
+            <div
+              ref={mangayomiRef}
+              style={{
+                display: 'flex',
+                gap: GAP,
+                overflowX: 'auto',
+                scrollBehavior: 'smooth',
+                WebkitOverflowScrolling: 'touch',
+                paddingBottom: 16
+              }}
+            >
+              {loadingMangayomi || loadingMangayomiPopular
+                ? Array.from({ length: 16 }).map((_, i) => (
+                    <div key={i} style={{ flexShrink: 0, width: POSTER_W }}>
+                      <div className="aspect-[2/3] bg-white/[0.05] animate-pulse rounded-lg mb-2" />
+                      <div className="h-4 w-full bg-white/[0.05] animate-pulse rounded" />
+                      <div className="h-3 w-3/4 bg-white/[0.03] animate-pulse rounded mt-1" />
+                    </div>
+                  ))
+                : (mangayomiPopular.length > 0 ? mangayomiPopular : mangayomiManga).length > 0
+                ? (mangayomiPopular.length > 0 ? mangayomiPopular : mangayomiManga).slice(0, 16).map((item) => (
+                    <div
+                      key={item.id}
+                      className="poster-card"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => {
+                        setCurrentPage('mangayomi-detail')
+                      }}
+                      style={{ flexShrink: 0, width: POSTER_W }}
+                    >
+                      {item.coverImage ? (
+                        <img 
+                          src={item.coverImage} 
+                          alt={item.title} 
+                          loading="lazy" 
+                          style={{ width: '100%', height: POSTER_H, objectFit: 'cover' }}
+                          onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none'; el.parentElement?.classList.add('has-fallback') }}
+                        />
+                      ) : (
+                        <div className="poster-fallback">{item.title}</div>
+                      )}
+                      <div className="poster-play"><Play size={18} fill="#fff" /></div>
+                      <div className="poster-overlay">
+                        <div className="poster-meta-title">{item.title}</div>
+                        <div className="poster-meta-sub">
+                          <Stars value={item.averageScore ? item.averageScore / 10 : 0} size={12} />
+                          <span className="ml-1 text-[10px] text-white/60">{item.status}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                : (
+                    <div style={{ textAlign: 'center', padding: 16, color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', width: '100%' }}>
+                      No manga data available
+                    </div>
+                  )}
+            </div>
+          </section>
+        )}
+
+
+        {/* Zangetsu Anime Section */}
+        {(zangetsuAnime.length > 0 || zangetsuPopular.length > 0 || loadingZangetsu || loadingZangetsuPopular) && (
+          <section style={{ marginTop: 16 }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              marginBottom: 16 
+            }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>
+                Anime (Zangetsu)
+              </h2>
+              {(zangetsuAnime.length > 0 || zangetsuPopular.length > 0) && (
+                <button 
+                  style={{ 
+                    color: 'rgba(255,255,255,0.5)', 
+                    background: 'none', 
+                    border: 'none', 
+                    fontSize: '0.875rem', 
+                    cursor: 'pointer',
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}
+                  onClick={() => setCurrentPage('zangetsu')}
+                >
+                  View All
+                  <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                </button>
+              )}
+            </div>
+            <div
+              ref={zangetsuRef}
+              style={{
+                display: 'flex',
+                gap: GAP,
+                overflowX: 'auto',
+                scrollBehavior: 'smooth',
+                WebkitOverflowScrolling: 'touch',
+                paddingBottom: 16
+              }}
+            >
+              {loadingZangetsu || loadingZangetsuPopular
+                ? Array.from({ length: 16 }).map((_, i) => (
+                    <div key={i} style={{ flexShrink: 0, width: POSTER_W }}>
+                      <div className="aspect-[2/3] bg-white/[0.05] animate-pulse rounded-lg mb-2" />
+                      <div className="h-4 w-full bg-white/[0.05] animate-pulse rounded" />
+                      <div className="h-3 w-3/4 bg-white/[0.03] animate-pulse rounded mt-1" />
+                    </div>
+                  ))
+                : (zangetsuPopular.length > 0 ? zangetsuPopular : zangetsuAnime).length > 0
+                ? (zangetsuPopular.length > 0 ? zangetsuPopular : zangetsuAnime).slice(0, 16).map((item) => (
+                    <div
+                      key={item.id}
+                      className="poster-card"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => {
+                        setCurrentPage('zangetsu-detail')
+                      }}
+                      style={{ flexShrink: 0, width: POSTER_W }}
+                    >
+                      {item.coverImage ? (
+                        <img 
+                          src={item.coverImage} 
+                          alt={item.title} 
+                          loading="lazy" 
+                          style={{ width: '100%', height: POSTER_H, objectFit: 'cover' }}
+                          onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none'; el.parentElement?.classList.add('has-fallback') }}
+                        />
+                      ) : (
+                        <div className="poster-fallback">{item.title}</div>
+                      )}
+                      <div className="poster-play"><Play size={18} fill="#fff" /></div>
+                      <div className="poster-overlay">
+                        <div className="poster-meta-title">{item.title}</div>
+                        <div className="poster-meta-sub">
+                          <Stars value={item.averageScore ? item.averageScore / 10 : 0} size={12} />
+                          <span className="ml-1 text-[10px] text-white/60">{item.status}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                : (
+                    <div style={{ textAlign: 'center', padding: 16, color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', width: '100%' }}>
+                      No anime data available
+                    </div>
+                  )}
+            </div>
+          </section>
+        )}
+
+
+        {/* SimplStream Torrent Streaming Section */}
+        {(simplstreamTrending.length > 0 || loadingSimplStream || loadingSimplStreamTrending) && (
+          <section style={{ marginTop: 16 }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              marginBottom: 16 
+            }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', margin: 0 }}>
+                Torrent Streaming (SimplStream)
+              </h2>
+              {simplstreamTrending.length > 0 && (
+                <button 
+                  style={{ 
+                    color: 'rgba(255,255,255,0.5)', 
+                    background: 'none', 
+                    border: 'none', 
+                    fontSize: '0.875rem', 
+                    cursor: 'pointer',
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}
+                  onClick={() => setCurrentPage('simplstream')}
+                >
+                  View All
+                  <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                </button>
+              )}
+            </div>
+            <div
+              ref={simplstreamRef}
+              style={{
+                display: 'flex',
+                gap: GAP,
+                overflowX: 'auto',
+                scrollBehavior: 'smooth',
+                WebkitOverflowScrolling: 'touch',
+                paddingBottom: 16
+              }}
+            >
+              {loadingSimplStream || loadingSimplStreamTrending
+                ? Array.from({ length: 16 }).map((_, i) => (
+                    <div key={i} style={{ flexShrink: 0, width: POSTER_W }}>
+                      <div className="aspect-[2/3] bg-white/[0.05] animate-pulse rounded-lg mb-2" />
+                      <div className="h-4 w-full bg-white/[0.05] animate-pulse rounded" />
+                      <div className="h-3 w-3/4 bg-white/[0.03] animate-pulse rounded mt-1" />
+                    </div>
+                  ))
+                : simplstreamTrending.length > 0
+                ? simplstreamTrending.slice(0, 16).map((item) => (
+                    <div
+                      key={item.id}
+                      className="poster-card"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => {
+                        setCurrentPage('simplstream-detail')
+                      }}
+                      style={{ flexShrink: 0, width: POSTER_W }}
+                    >
+                      {item.coverImage ? (
+                        <img 
+                          src={item.coverImage} 
+                          alt={item.title} 
+                          loading="lazy" 
+                          style={{ width: '100%', height: POSTER_H, objectFit: 'cover' }}
+                          onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none'; el.parentElement?.classList.add('has-fallback') }}
+                        />
+                      ) : (
+                        <div className="poster-fallback">{item.title}</div>
+                      )}
+                      <div className="poster-play"><Play size={18} fill="#fff" /></div>
+                      <div className="poster-overlay">
+                        <div className="poster-meta-title">{item.title}</div>
+                        <div className="poster-meta-sub">
+                          <Stars value={item.imdbRating ? item.imdbRating : 0} size={12} />
+                          <span className="ml-1 text-[10px] text-white/60">{item.year}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                : (
+                    <div style={{ textAlign: 'center', padding: 16, color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', width: '100%' }}>
+                      No torrent data available
+                    </div>
+                  )}
+            </div>
           </section>
         )}
 
