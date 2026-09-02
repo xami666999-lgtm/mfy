@@ -175,12 +175,31 @@ function setupAutoUpdater() {
   }
 }
 
+function addDesktopShortcut() {
+  try {
+    const path = require('path')
+    const exePath = process.execPath
+    const shortcutPath = path.join(app.getPath('desktop'), 'MFY.lnk')
+    return shell.writeShortcutLink(shortcutPath, 'replace', {
+      target: exePath,
+      args: '',
+      description: 'MFY - Movies For You',
+      cwd: path.dirname(exePath),
+      icon: exePath,
+      iconIndex: 0,
+    })
+  } catch {
+    return false
+  }
+}
+
 app.whenReady().then(() => {
   createWindow()
   createTray()
   setupAutoUpdater()
   setupTorrentEngine()
   setupAdBlocker()
+  if (app.isPackaged) addDesktopShortcut()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -218,26 +237,7 @@ ipcMain.handle('window-is-maximized', () => mainWindow?.isMaximized() ?? false)
   ipcMain.handle('store-delete', (_event, key: string) => store.delete(key))
 
   // Create desktop shortcut
-  ipcMain.handle('createDesktopShortcut', async () => {
-    try {
-      const path = require('path')
-      const exePath = process.execPath
-      const desktopDir = app.getPath('desktop')
-      const shortcutPath = path.join(desktopDir, 'MFY.lnk')
-      const ok = shell.writeShortcutLink(shortcutPath, 'replace', {
-        target: exePath,
-        args: '',
-        description: 'MFY - Movies For You',
-        cwd: path.dirname(exePath),
-        icon: exePath,
-        iconIndex: 0,
-      })
-      return ok
-    } catch (e) {
-      console.error('Failed to create desktop shortcut:', e)
-      return false
-    }
-  })
+  ipcMain.handle('createDesktopShortcut', async () => addDesktopShortcut())
 
 // Open external URL
 ipcMain.on('open-external', (_event, url: string) => shell.openExternal(url))
