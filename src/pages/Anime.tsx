@@ -99,7 +99,23 @@ export default function Anime() {
   }
 
   return (
-    <div className="p-6 md:p-8 page-fade-enter">
+    <div className="page-fade-enter">
+      {items[0]?.bannerImage && (
+        <section className="hero mx-5 mt-4" style={{ height: 280 }}>
+          <div className="hero-backdrop" style={{ backgroundImage: `url(${items[0].bannerImage})` }} />
+          <div className="hero-overlay" />
+          <div className="hero-content">
+            <div className="hero-copy">
+              <div className="hero-kicker">ANIME</div>
+              <h1>{items[0].title?.english || items[0].title?.romaji}</h1>
+              <div className="hero-actions">
+                <button className="hero-play" type="button" onClick={() => open(items[0])}>Watch now</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+      <div className="p-6 md:p-8">
       <div className="flex flex-wrap items-center gap-4 mb-5">
         <h2 className="text-lg font-semibold text-white tracking-tight">Anime</h2>
         <div className="flex-1" />
@@ -166,6 +182,7 @@ export default function Anime() {
       ) : (
         <p className="text-sm text-white/30 py-12 text-center">No anime found for this filter.</p>
       )}
+      </div>
     </div>
   )
 }

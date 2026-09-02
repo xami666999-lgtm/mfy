@@ -22,25 +22,23 @@ function Stars({ value, size = 14 }: { value: number; size?: number }) {
 }
 
 const MOVIE_GENRES = [
-  { id: 28, name: 'Action' },
-  { id: 12, name: 'Adventure' },
-  { id: 16, name: 'Animation' },
-  { id: 35, name: 'Comedy' },
-  { id: 27, name: 'Horror' },
-  { id: 10749, name: 'Romance' },
-  { id: 14, name: 'Fantasy' },
-  { id: 878, name: 'Sci-Fi' },
+  { id: 28, name: 'Action' }, { id: 12, name: 'Adventure' }, { id: 16, name: 'Animation' },
+  { id: 35, name: 'Comedy' }, { id: 80, name: 'Crime' }, { id: 99, name: 'Documentary' },
+  { id: 18, name: 'Drama' }, { id: 10751, name: 'Family' }, { id: 14, name: 'Fantasy' },
+  { id: 36, name: 'History' }, { id: 27, name: 'Horror' }, { id: 10402, name: 'Music' },
+  { id: 9648, name: 'Mystery' }, { id: 10749, name: 'Romance' }, { id: 878, name: 'Sci-Fi' },
+  { id: 10770, name: 'TV Movie' }, { id: 53, name: 'Thriller' }, { id: 10752, name: 'War' },
+  { id: 37, name: 'Western' },
 ]
 const TV_GENRES = [
-  { id: 10765, name: 'Sci-Fi & Fantasy' },
-  { id: 10759, name: 'Action' },
-  { id: 10762, name: 'Kids' },
-  { id: 10763, name: 'News' },
-  { id: 10764, name: 'Reality' },
-  { id: 10766, name: 'Soap' },
-  { id: 10767, name: 'Talk' },
-  { id: 9648, name: 'Mystery' },
+  { id: 10759, name: 'Action & Adventure' }, { id: 16, name: 'Animation' }, { id: 35, name: 'Comedy' },
+  { id: 80, name: 'Crime' }, { id: 99, name: 'Documentary' }, { id: 18, name: 'Drama' },
+  { id: 10751, name: 'Family' }, { id: 10762, name: 'Kids' }, { id: 9648, name: 'Mystery' },
+  { id: 10763, name: 'News' }, { id: 10764, name: 'Reality' }, { id: 10765, name: 'Sci-Fi & Fantasy' },
+  { id: 10766, name: 'Soap' }, { id: 10767, name: 'Talk' }, { id: 10768, name: 'War & Politics' },
+  { id: 37, name: 'Western' },
 ]
+const ANIME_GENRES = ['Action', 'Adventure', 'Comedy', 'Drama', 'Ecchi', 'Fantasy', 'Horror', 'Mahou Shoujo', 'Mecha', 'Music', 'Mystery', 'Psychological', 'Romance', 'Sci-Fi', 'Slice of Life', 'Sports', 'Supernatural', 'Thriller']
 
 export default function Board() {
   const { tmdbApiKey, setCurrentPage, setSelectedMedia, addToWatchlist, isInWatchlist, removeFromWatchlist, watchHistory, favorites } = useStore()
@@ -451,20 +449,30 @@ export default function Board() {
             <div className="section-header">
               <h2 className="section-title">Movies by Category</h2>
             </div>
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
-              {TV_GENRES.map((g) => {
-                return <GenreRow key={`t-${g.id}`} genre={g} items={genreTv[g.id] || []} onItem={goDetail} />
-              })}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+              {MOVIE_GENRES.map((g) => (
+                <GenreRow key={`m-${g.id}`} genre={g} items={genreMovie[g.id] || []} onItem={goDetail} />
+              ))}
             </div>
           </section>
           <section className="section pt-6">
             <div className="section-header">
               <h2 className="section-title">TV Shows by Category</h2>
             </div>
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
-              {MOVIE_GENRES.map((g) => {
-                return <GenreRow key={`m-${g.id}`} genre={g} items={genreMovie[g.id] || []} onItem={goDetail} />
-              })}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+              {TV_GENRES.map((g) => (
+                <GenreRow key={`t-${g.id}`} genre={g} items={genreTv[g.id] || []} onItem={goDetail} />
+              ))}
+            </div>
+          </section>
+          <section className="section pt-6">
+            <div className="section-header">
+              <h2 className="section-title">Anime by Category</h2>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {ANIME_GENRES.map((g) => (
+                <button key={g} type="button" className="h-8 px-3 rounded-full bg-white/[0.05] text-[11px] text-white/60 hover:bg-[#FF1493]/20 hover:text-white" onClick={() => setCurrentPage('anime')}>{g}</button>
+              ))}
             </div>
           </section>
         </div>

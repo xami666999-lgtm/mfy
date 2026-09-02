@@ -27,7 +27,8 @@ import Iptv from './pages/Iptv'
 import LoginGate from './components/LoginGate'
 import RemoteHelp from './components/RemoteHelp'
 import CatalogSection from './pages/CatalogSection'
-import People from './pages/People'
+import YouTubePage from './pages/YouTubePage'
+import MusicPage from './pages/MusicPage'
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true)
@@ -254,9 +255,8 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
         {currentPage === 'manga' && <CatalogSection kind="manga" title="Manga & Novels" />}
         {currentPage === 'comics' && <CatalogSection kind="comics" title="Comics" />}
         {currentPage === 'books' && <CatalogSection kind="books" title="Books" />}
-        {currentPage === 'youtube' && <CatalogSection kind="youtube" title="YouTube" />}
-        {currentPage === 'music' && <CatalogSection kind="music" title="Music" />}
-        {currentPage === 'people' && <People />}
+        {currentPage === 'youtube' && <YouTubePage />}
+        {currentPage === 'music' && <MusicPage />}
       </main>
     </div>
   )

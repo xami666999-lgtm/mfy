@@ -128,12 +128,14 @@ export default function CatalogSection({ kind, title }: { kind: Kind; title: str
           openLibrary(term).catch(() => []),
           anilist.search(term, 'MANGA', 1, 24).then((r) => aniCards(r.media)).catch(() => []),
         ])
-        setItems([...al, ...ol].slice(0, 48))
+        const more = await Promise.all([1, 2, 3, 4, 5].map((p) => anilist.search(term, 'MANGA', p, 50).then((r) => aniCards(r.media)).catch(() => [])))
+        const ol2 = await Promise.all(['marvel comics', 'dc comics', 'image comics', term].map((t) => openLibrary(t).catch(() => [])))
+        setItems([...al, ...more.flat(), ...ol, ...ol2.flat()].filter((x, i, a) => a.findIndex((y) => y.id === x.id) === i).slice(0, 300))
       } else {
         const term = query.trim()
         if (term) setItems(aniCards((await anilist.search(term, 'MANGA', 1, 40)).media))
         else {
-          const pages = await Promise.all([1, 2, 3].map((p) => anilist.getPopular('MANGA', p, 20)))
+          const pages = await Promise.all([1, 2, 3, 4, 5, 6, 7, 8].map((p) => anilist.getPopular('MANGA', p, 50)))
           let media = pages.flatMap((p) => p.media)
           if (kind === 'novels') media = media.filter((m) => /NOVEL/i.test(m.format || ''))
           if (label !== 'Popular') {
