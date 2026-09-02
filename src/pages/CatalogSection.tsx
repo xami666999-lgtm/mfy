@@ -90,9 +90,9 @@ export default function CatalogSection({ kind, title }: { kind: Kind; title: str
   const [loading, setLoading] = useState(true)
 
   const chips =
-    kind === 'comics' ? ['Popular', 'Marvel', 'DC', 'Image', 'Star Wars']
-      : kind === 'books' ? ['Bestsellers', 'Fantasy', 'Sci-Fi', 'Romance', 'Comics']
-      : kind === 'manga' || kind === 'novels' ? ['Popular', 'Action', 'Romance', 'Fantasy', 'Horror']
+    kind === 'comics' ? ['Popular', 'Marvel', 'DC', 'Image', 'Star Wars', 'Superhero', 'Horror', 'Sci-Fi', 'Indie']
+      : kind === 'books' ? ['Bestsellers', 'Fantasy', 'Sci-Fi', 'Romance', 'Comics', 'Mystery', 'History']
+      : kind === 'manga' || kind === 'novels' ? ['Popular', 'Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror', 'Mystery', 'Romance', 'Sci-Fi', 'Slice of Life', 'Sports', 'Supernatural', 'Thriller', 'Mecha']
       : kind === 'youtube' ? ['Trending', 'Music', 'Trailers', 'Anime']
       : ['Top songs', 'Pop', 'Hip-Hop', 'Rock', 'Anime']
 
@@ -194,6 +194,7 @@ export default function CatalogSection({ kind, title }: { kind: Kind; title: str
         ))}
       </div>
 
+      <h2 className="text-sm font-semibold text-white/70 mb-3">{chip === 'Popular' ? 'Popular' : chip}</h2>
       {loading && <p className="text-sm text-white/30 mb-4">Loading…</p>}
 
       <div className={wide ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4' : 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-4'}>

@@ -52,10 +52,8 @@ export default function Library() {
   }
 
   return (
-    <div className="p-8 page-fade-enter">
-      <div className="flex items-center gap-6 mb-6">
-        <h2 className="text-lg font-semibold text-white tracking-tight">My List</h2>
-      </div>
+    <div className="p-6 page-fade-enter">
+      <h2 className="text-2xl font-bold text-white mb-4">My List</h2>
 
       <div className="flex gap-2 mb-6 flex-wrap">
         {tabs.map((t) => {

@@ -164,6 +164,17 @@ export default function MetaDetails() {
   }, [selectedMedia])
 
 
+  const PLAYERS = [
+    { id: 'playtorrio', label: 'PlayTorrio' },
+    { id: 'simplstream', label: 'SimplStream' },
+    { id: 'zangetsu', label: 'Zangetsu' },
+    { id: 'miruro', label: 'Miruro' },
+    { id: 'vidy', label: 'Vidy' },
+  ]
+  const [playerPick, setPlayerPick] = useState(() => {
+    try { return localStorage.getItem('mfy-player-engine') || 'playtorrio' } catch { return 'playtorrio' }
+  })
+
   async function handlePlay() {
     if (!selectedMedia || !detail || selectedMedia.type === 'iptv') return
     const url = vidyUrl(selectedMedia.type === 'movie' ? 'movie' : 'tv', selectedMedia.id as number, activeSeason, selectedMedia.episode)
@@ -332,10 +343,28 @@ export default function MetaDetails() {
               </p>
             )}
 
+            <div className="flex flex-wrap items-center gap-1.5 mb-3">
+              {PLAYERS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => {
+                    setPlayerPick(p.id)
+                    try { localStorage.setItem('mfy-player-engine', p.id) } catch {}
+                  }}
+                  className={`h-7 px-2.5 rounded-full text-[10px] font-semibold ${playerPick === p.id ? 'bg-[#FF1493] text-white' : 'bg-white/10 text-white/50'}`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
             <div className="flex flex-wrap items-center gap-2.5">
               <button
                 type="button"
-                onClick={handlePlay}
+                onClick={() => {
+                  try { localStorage.setItem('mfy-player-engine', playerPick) } catch {}
+                  handlePlay()
+                }}
                 disabled={resolving}
                 className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all disabled:opacity-60 shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
               >

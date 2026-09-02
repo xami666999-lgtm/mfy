@@ -293,7 +293,11 @@ export default function Board() {
                 {(homeTab === 'movie' ? movies : shows).slice(0, 12).map((item, idx) => (
                   <div
                     key={item.id}
-                    className="poster-card hover-card rounded-lg overflow-hidden transition-transform hover:shadow-lg hover:brightness-110"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => goDetail(item.id, homeTab)}
+                    onKeyDown={(e) => e.key === 'Enter' && goDetail(item.id, homeTab)}
+                    className="poster-card hover-card rounded-lg overflow-hidden transition-transform hover:shadow-lg hover:brightness-110 cursor-pointer"
                   >
                     <img
                       src={item.poster_path ? `${POSTER_URL}${item.poster_path}` : '/placeholder-poster.jpg'}
@@ -327,7 +331,11 @@ export default function Board() {
                 {(homeTab === 'movie' ? movieRow : shows).slice(0, 12).map((item) => (
                   <div
                     key={`${homeTab}-${item.id}`}
-                    className="poster-card hover-card rounded-lg overflow-hidden transition-transform hover:shadow-lg hover:brightness-110"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => goDetail(item.id, homeTab)}
+                    onKeyDown={(e) => e.key === 'Enter' && goDetail(item.id, homeTab)}
+                    className="poster-card hover-card rounded-lg overflow-hidden transition-transform hover:shadow-lg hover:brightness-110 cursor-pointer"
                   >
                     <img
                       src={item.poster_path ? `${POSTER_URL}${item.poster_path}` : '/placeholder-poster.jpg'}
@@ -358,7 +366,10 @@ export default function Board() {
                 {watchHistory.slice(0, 12).map((h) => (
                   <div
                     key={h.id}
-                    className="poster-card hover-card rounded-lg overflow-hidden transition-transform hover:shadow-lg hover:brightness-110"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => { setSelectedMedia({ id: h.mediaId, type: h.mediaType }); setCurrentPage('detail') }}
+                    className="poster-card hover-card rounded-lg overflow-hidden transition-transform hover:shadow-lg hover:brightness-110 cursor-pointer"
                   >
                     {h.posterPath ? (
                       <img
@@ -390,7 +401,10 @@ export default function Board() {
                 {recommended.slice(0, 12).map((item) => (
                   <div
                     key={`${item.media_type}-${item.id}`}
-                    className="poster-card hover-card rounded-lg overflow-hidden transition-transform hover:shadow-lg hover:brightness-110"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => goDetail(item.id, item.media_type === 'tv' || item.first_air_date ? 'tv' : 'movie')}
+                    className="poster-card hover-card rounded-lg overflow-hidden transition-transform hover:shadow-lg hover:brightness-110 cursor-pointer"
                   >
                     <img
                       src={item.poster_path ? `${POSTER_URL}${item.poster_path}` : '/placeholder-poster.jpg'}
