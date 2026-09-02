@@ -47,7 +47,7 @@ function Shelf({ title, items, onOpen, viewAll }: { title: string; items: any[];
             onClick={() => onOpen(item)}
           >
             {imgSrc(item)
-              ? <img src={imgSrc(item)} alt="" referrerPolicy="no-referrer" loading="lazy" />
+              ? <img src={imgSrc(item)} alt="" referrerPolicy="no-referrer" loading="lazy" onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none'; el.parentElement?.classList.add('has-fallback') }} />
               : <div className="poster-fallback">{titleOf(item)}</div>}
             <div className="poster-overlay">
               <div className="poster-meta-title">{titleOf(item)}</div>
@@ -194,11 +194,6 @@ export default function Board() {
       {hero && (
         <section className="hero">
           <div className="hero-backdrop fade-in" style={{ backgroundImage: hero.backdrop_path ? `url(${BACKDROP_URL}${hero.backdrop_path})` : undefined }} />
-          <div className="hero-wall" aria-hidden>
-            {trending.filter((t) => t.poster_path).slice(0, 18).map((t) => (
-              <img key={t.id} src={`${POSTER_URL}${t.poster_path}`} alt="" referrerPolicy="no-referrer" />
-            ))}
-          </div>
           <div className="hero-overlay" />
           <div className="hero-content">
             <div className="hero-copy fade-in">
