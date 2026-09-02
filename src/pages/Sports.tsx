@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Trophy, Radio, ExternalLink, Loader2, Activity, Flag, Volleyball, Target, Gauge, Swords, Medal, Siren, Dumbbell, Skull, Bike, Sparkles, PlayCircle, X, Search, Filter } from 'lucide-react'
 import { sportsApi, badgeUrl, posterUrl, type SportCategory, type SportMatch, type SportStream } from '../api/sports'
+import { iptvEnhancedApi } from '../api/iptv-enhanced'
 import { useStore } from '../store'
 import { cn } from '../lib/utils'
 
@@ -39,6 +40,8 @@ export default function Sports() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
+  const [engine, setEngine] = useState<'streamed' | 'metegol'>('streamed')
+  const [metegol, setMetegol] = useState<any[]>([])
 
   const filteredMatches = useMemo(() => {
     if (!searchQuery.trim()) return matches
@@ -52,6 +55,9 @@ export default function Sports() {
   }, [matches, searchQuery])
 
   useEffect(() => {
+    iptvEnhancedApi.getMetegolEvents().then(setMetegol).catch(() => {
+      fetch('./data/metegol.json').then((r) => r.json()).then((d) => setMetegol(d.events || [])).catch(() => setMetegol([]))
+    })
     sportsApi.getSports().then(setSports).catch(() => setSports([]))
     sportsApi
       .getLive()
@@ -106,6 +112,9 @@ export default function Sports() {
   }
 
   function playEmbed(url: string) {
+    setMultiView(false)
+    setActiveMatch(null)
+    setStreams(null)
     setCurrentStreamUrl(url)
     setCurrentPage('player')
   }
@@ -127,30 +136,20 @@ export default function Sports() {
 
   return (
     <div className="p-6 md:p-8 page-fade-enter max-w-6xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-12 h-12 rounded-2xl bg-[#FF1493]/15 border border-[#FF1493]/25 flex items-center justify-center overflow-hidden">
-          <div className="flex flex-col items-center leading-none py-2">
-            <Trophy className="w-5 h-5 text-[#FF1493]" />
-            <span className="text-[8px] font-black text-[#FF1493] mt-0.5 tracking-tight">MFY</span>
-          </div>
-        </div>
+      <div className="flex items-end justify-between gap-4 mb-5">
         <div>
-          <h2 className="text-lg font-semibold text-white tracking-tight">Sports</h2>
-          <p className="text-[11px] text-white/30">Live & upcoming · Streamed.pk API</p>
+          <p className="text-[11px] tracking-[0.2em] text-[#FF1493] font-bold">MFY SPORTS</p>
+          <h2 className="text-3xl font-bold text-white"># Sports</h2>
+        </div>
+        <div className="flex gap-2">
+          {(['streamed', 'metegol'] as const).map((e) => (
+            <button key={e} type="button" onClick={() => setEngine(e)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold', engine === e ? 'bg-[#FF1493] text-white' : 'bg-white/10 text-white/45')}>
+              {e === 'streamed' ? 'Streamed' : 'Metegol'}
+            </button>
+          ))}
         </div>
       </div>
-
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-12 h-12 rounded-2xl bg-[#FF1493]/15 border border-[#FF1493]/25 flex items-center justify-center overflow-hidden">
-          <div className="flex flex-col items-center leading-none py-2">
-            <Trophy className="w-5 h-5 text-[#FF1493]" />
-            <span className="text-[8px] font-black text-[#FF1493] mt-0.5 tracking-tight">MFY</span>
-          </div>
-        </div>
-        <div>
-          <h2 className="text-lg font-semibold text-white tracking-tight">Sports</h2>
-          <p className="text-[11px] text-white/30">Live & upcoming · Streamed.pk API</p>
-        </div>
         <div className="flex-1" />
         <button
           type="button"
@@ -205,7 +204,34 @@ export default function Sports() {
         })}
       </div>
 
-      {live.length > 0 && (
+      {engine === 'metegol' && (
+        <section className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Radio className="w-3.5 h-3.5 text-[#FF1493]" />
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#FF1493]">Metegol</span>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
+            {metegol.map((e: any) => (
+              <button
+                key={e.id}
+                type="button"
+                className="text-left rounded-xl border border-white/10 bg-white/[0.03] p-3 hover:border-[#FF1493]/40"
+                onClick={() => {
+                  const url = e.streams?.[0]?.url
+                  if (url) playEmbed(url)
+                }}
+              >
+                <p className="text-[10px] text-red-400 font-bold">LIVE</p>
+                <p className="text-sm text-white font-medium">{e.title}</p>
+                <p className="text-[11px] text-white/40">{e.competition} · {e.sport}</p>
+              </button>
+            ))}
+          </div>
+          {metegol.length === 0 && <p className="text-sm text-white/30">No Metegol events loaded.</p>}
+        </section>
+      )}
+
+      {engine === 'streamed' && live.length > 0 && (
         <section className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <Radio className="w-3.5 h-3.5 text-red-400" />
