@@ -23,16 +23,16 @@ export default function Movies() {
   }
 
   useEffect(() => {
-    tmdb.getPopular('movie').then((d) => setPopular(d?.results || [])).catch(() => setPopular([]))
+    Promise.all([1, 2, 3].map((n) => tmdb.discoverMovies({ page: String(n), sort_by: 'popularity.desc' }).catch(() => ({ results: [] })))).then((all) => {
+      const list = all.flatMap((d: any) => d?.results || [])
+      const seen = new Set()
+      setPopular(list.filter((x: any) => x && !seen.has(x.id) && seen.add(x.id)))
+    })
     tmdb.getNowPlaying().then((d) => setNow(d?.results || [])).catch(() => setNow([]))
     Promise.all(
       GENRES.map(async (g) => {
-        try {
-          const d = await tmdb.discoverMovies({ with_genres: String(g.id), page: '1', sort_by: 'popularity.desc' })
-          return [g.id, d?.results || []] as const
-        } catch {
-          return [g.id, []] as const
-        }
+        const pages = await Promise.all([1, 2].map((n) => tmdb.discoverMovies({ with_genres: String(g.id), page: String(n), sort_by: 'popularity.desc' }).catch(() => ({ results: [] }))))
+        return [g.id, pages.flatMap((d: any) => d?.results || [])] as const
       })
     ).then((pairs) => setRows(Object.fromEntries(pairs)))
   }, [])

@@ -196,6 +196,18 @@ function addDesktopShortcut() {
 }
 
 app.whenReady().then(() => {
+  const chromeUA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+  app.userAgentFallback = chromeUA
+  const { session } = require('electron')
+  session.defaultSession.setUserAgent(chromeUA)
+  session.defaultSession.webRequest.onHeadersReceived((details: any, callback: any) => {
+    const headers = { ...(details.responseHeaders || {}) }
+    for (const key of Object.keys(headers)) {
+      const k = key.toLowerCase()
+      if (k === 'x-frame-options' || k === 'content-security-policy') delete headers[key]
+    }
+    callback({ responseHeaders: headers })
+  })
   createWindow()
   createTray()
   setupAutoUpdater()

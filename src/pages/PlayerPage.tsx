@@ -310,6 +310,7 @@ const s = await tmdb.getSeasonDetail(selectedMedia.id as number, nextSeason.seas
             src={streamUrl}
             style={{ width: '100%', height: '100%', background: '#000' }}
             allowpopups="true"
+            useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
             webpreferences="allowRunningInsecureContent, javascript=yes"
           />
         )}

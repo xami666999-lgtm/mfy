@@ -36,8 +36,8 @@ export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId:
   }
   if (source === 'zangetsu') return `https://zangetsu.moe/watch/${tmdbId}${type === 'tv' ? `/${e}` : ''}`
   if (source === 'miruro') return `https://www.miruro.tv/watch?id=${tmdbId}${type === 'tv' ? `&ep=${e}` : ''}`
-  if (type === 'movie') return `https://vidsrc.xyz/embed/movie/${tmdbId}`
-  return `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}`
+  if (type === 'movie') return `https://vidsrc.me/embed/movie/${tmdbId}`
+  return `https://vidsrc.me/embed/tv/${tmdbId}/${s}-${e}`
 }
 
 export function isPlayerEmbed(url: string): boolean {

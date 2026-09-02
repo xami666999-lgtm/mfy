@@ -23,7 +23,11 @@ export default function TvShows() {
   }
 
   useEffect(() => {
-    tmdb.getPopular('tv').then((d) => setPopular(d?.results || [])).catch(() => setPopular([]))
+    Promise.all([1,2,3].map((n) => tmdb.discoverTV({ page: String(n), sort_by: 'popularity.desc' }).catch(() => ({ results: [] })))).then((all) => {
+      const list = all.flatMap((d: any) => d?.results || [])
+      const seen = new Set()
+      setPopular(list.filter((x: any) => x && !seen.has(x.id) && seen.add(x.id)))
+    })
     tmdb.getOnTheAir().then((d) => setAiring(d?.results || [])).catch(() => setAiring([]))
     Promise.all(
       GENRES.map(async (g) => {
