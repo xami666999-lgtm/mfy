@@ -80,8 +80,8 @@ a:focus-visible,
 .titlebar-button.close:hover { background: #d92b46; color: #fff; }
 
 .mfy-navbar {
-  height: auto; min-height: 72px;
-  display: flex; align-items: center; gap: 16px; padding: 8px 16px; flex-wrap: wrap;
+  height: 56px; min-height: 56px;
+  display: flex; align-items: center; gap: 10px; padding: 0 12px; flex-wrap: nowrap; overflow: hidden;
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
@@ -93,17 +93,17 @@ a:focus-visible,
 .brand:hover { opacity: 0.92; }
 .brand img { width: 38px; height: 38px; border-radius: 10px; object-fit: cover; box-shadow: 0 0 18px var(--mfy-pink-glow); }
 .brand span { font-size: 18px; font-weight: 800; letter-spacing: -0.03em; }
-.nav-tabs { display: flex; align-items: center; gap: 2px; flex: 1; flex-wrap: wrap; min-height: 48px; overflow: visible; max-width: none; }
+.nav-tabs { display: flex; align-items: center; gap: 0; flex: 1; flex-wrap: nowrap; height: 56px; overflow-x: auto; overflow-y: hidden; max-width: none; scrollbar-width: none; }
 .nav-tabs::-webkit-scrollbar { display: none; }
 .nav-tab span { white-space: nowrap; }
 .nav-tab {
-  position: relative; height: 100%; padding: 0 14px;
-  display: inline-flex; align-items: center; gap: 8px;
+  position: relative; height: 56px; padding: 0 9px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; gap: 5px;
   color: var(--mfy-text-muted); background: transparent;
-  font-size: 14px; font-weight: 500; letter-spacing: -0.01em;
+  font-size: 12px; font-weight: 500; letter-spacing: -0.01em; white-space: nowrap;
   transition: color var(--transition-fast);
 }
-.nav-tab svg { width: 18px; height: 18px; stroke-width: 1.7; }
+.nav-tab svg { width: 14px; height: 14px; stroke-width: 1.7; }
 .nav-tab:hover { color: #fff; }
 .nav-tab.active { color: var(--mfy-pink); }
 .nav-tab.active::after {
@@ -111,7 +111,7 @@ a:focus-visible,
   height: 2px; border-radius: 99px; background: var(--mfy-pink);
   box-shadow: 0 0 12px var(--mfy-pink-glow);
 }
-.navbar-spacer { flex: 1; }
+.navbar-spacer { display: none; }
 .profile-button {
   width: 40px; height: 40px; border-radius: 50%; padding: 2px;
   background: linear-gradient(135deg, var(--mfy-pink), var(--mfy-cyan));
