@@ -1,47 +1,31 @@
 import { useEffect, useState } from 'react'
+import { tmdb } from '../api/tmdb'
 import { anilist } from '../api/anilist'
-import { openAnime } from '../api/animeOpen'
 import { useStore } from '../store'
 import { MediaShelf } from '../components/MediaShelf'
 import { OFFLINE_ANIME } from '../data/offlineCatalog'
 
-const GENRES = ['Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror', 'Mecha', 'Mystery', 'Romance', 'Sci-Fi', 'Slice of Life', 'Sports', 'Supernatural', 'Thriller']
-
 export default function Anime() {
   const { setSelectedMedia, setCurrentPage } = useStore()
-  const [popular, setPopular] = useState<any[]>(OFFLINE_ANIME)
-  const [upcoming, setUpcoming] = useState<any[]>(OFFLINE_ANIME.slice().reverse())
-  const [rows, setRows] = useState<Record<string, any[]>>({})
+  const [popular, setPopular] = useState<any[]>(OFFLINE_ANIME || [])
+  const [upcoming, setUpcoming] = useState<any[]>([])
+  const [action, setAction] = useState<any[]>([])
+  const [fantasy, setFantasy] = useState<any[]>([])
 
   function open(item: any) {
-    openAnime(item, (id, type) => {
-      setSelectedMedia({ id, type })
-      setCurrentPage('detail')
-    })
+    setSelectedMedia({ id: item.id, type: item.media_type === 'movie' ? 'movie' : 'tv' })
+    setCurrentPage('detail')
   }
 
   useEffect(() => {
-    ;(async () => {
-      const local = await fetch('./data/anime.json').then((r) => r.json()).catch(() => ({ anime: [] }))
-      if (local.anime?.length) setPopular(local.anime)
-      try {
-        const p = await anilist.getPopular('ANIME', 1, 40)
-        if (p?.media?.length) setPopular(p.media)
-      } catch {}
-      try {
-        const u = await anilist.getTrending('ANIME', 1, 24)
-        if (u?.media?.length) setUpcoming(u.media)
-      } catch {}
-      const extra: Record<string, any[]> = {}
-      for (const g of GENRES) {
-        try {
-          extra[g] = (await anilist.getByGenre(g, 'ANIME', 1, 18)).media || []
-        } catch {
-          extra[g] = []
-        }
-      }
-      setRows(extra)
-    })()
+    const jp = { with_origin_country: 'JP', with_genres: '16', sort_by: 'popularity.desc', page: '1' }
+    tmdb.discoverTV(jp).then((d) => { if (d?.results?.length) setPopular(d.results) }).catch(() => {})
+    tmdb.discoverTV({ ...jp, sort_by: 'first_air_date.desc' }).then((d) => setUpcoming(d?.results || [])).catch(() => {})
+    tmdb.discoverTV({ with_origin_country: 'JP', with_genres: '16,10759', sort_by: 'popularity.desc', page: '1' }).then((d) => setAction(d?.results || [])).catch(() => {})
+    tmdb.discoverTV({ with_origin_country: 'JP', with_genres: '16,10765', sort_by: 'popularity.desc', page: '1' }).then((d) => setFantasy(d?.results || [])).catch(() => {})
+    anilist.getPopular('ANIME', 1, 30).then((p) => {
+      if (!popular.length && p?.media?.length) setPopular(p.media)
+    }).catch(() => {})
   }, [])
 
   return (
@@ -51,9 +35,8 @@ export default function Anime() {
         <p className="text-xs text-[#FF1493] mb-5">Same rows as Home</p>
         <MediaShelf title="Popular Anime" items={popular} onOpen={open} />
         <MediaShelf title="Upcoming Anime" items={upcoming} onOpen={open} />
-        {GENRES.map((g) => (
-          <MediaShelf key={g} title={g} items={rows[g] || []} onOpen={open} />
-        ))}
+        <MediaShelf title="Action" items={action} onOpen={open} />
+        <MediaShelf title="Sci-Fi & Fantasy" items={fantasy} onOpen={open} />
       </div>
     </div>
   )

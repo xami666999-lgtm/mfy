@@ -61,7 +61,7 @@ function Shelf({ title, items, onOpen, viewAll }: { title: string; items: any[];
 }
 
 export default function Board() {
-  const { tmdbApiKey, setCurrentPage, setSelectedMedia, addToWatchlist, isInWatchlist, removeFromWatchlist, watchHistory, favorites } = useStore()
+  const { tmdbApiKey, setCurrentPage, setSelectedMedia, setSelectedProviderId, addToWatchlist, isInWatchlist, removeFromWatchlist, watchHistory, favorites } = useStore()
   const [trending, setTrending] = useState<any[]>([])
   const [movies, setMovies] = useState<any[]>([])
   const [shows, setShows] = useState<any[]>([])
@@ -218,7 +218,7 @@ export default function Board() {
           <div className="media-row-header"><h2 className="media-row-title">Browse by provider</h2></div>
           <div className="scroll-row" style={{alignItems:'center'}}>
             {streamingServices.map((s) => (
-              <button key={s.id} type="button" className="flex-shrink-0 w-28 h-16 rounded-xl bg-white/5 border border-white/10 grid place-items-center p-2" onClick={() => setCurrentPage('movies')} title={s.name}>
+              <button key={s.id} type="button" className="flex-shrink-0 w-28 h-16 rounded-xl bg-white/5 border border-white/10 grid place-items-center p-2" onClick={() => { setSelectedProviderId(s.id); setCurrentPage('provider') }} title={s.name}>
                 <img src={s.logo} alt={s.name} className="max-h-10 max-w-full object-contain" />
               </button>
             ))}

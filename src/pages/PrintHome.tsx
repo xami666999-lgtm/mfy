@@ -6,12 +6,12 @@ import { OFFLINE_MANGA } from '../data/offlineCatalog'
 
 async function openLib(q: string) {
   try {
-    const r = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=24`)
+    const r = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=30`)
     const d = await r.json()
-    return (d.docs || []).map((m: any) => ({
+    return (d.docs || []).filter((m: any) => m.cover_i).map((m: any) => ({
       id: m.key,
       title: m.title,
-      image: m.cover_i ? `https://covers.openlibrary.org/b/id/${m.cover_i}-L.jpg` : '',
+      image: `https://covers.openlibrary.org/b/id/${m.cover_i}-L.jpg`,
     }))
   } catch {
     return []
@@ -20,24 +20,18 @@ async function openLib(q: string) {
 
 export default function PrintHome({ kind }: { kind: 'manga' | 'comics' }) {
   const { setCurrentPage } = useStore()
-  const genres = kind === 'comics'
-    ? ['Marvel', 'DC', 'Image', 'Star Wars', 'Superhero', 'Horror', 'Sci-Fi', 'Indie']
-    : ['Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror', 'Mystery', 'Romance', 'Sci-Fi', 'Slice of Life']
-  const [popular, setPopular] = useState<any[]>(OFFLINE_MANGA)
+  const [popular, setPopular] = useState<any[]>(OFFLINE_MANGA || [])
   const [rows, setRows] = useState<Record<string, any[]>>({})
+  const genres = kind === 'comics'
+    ? ['Marvel', 'DC', 'Image', 'Star Wars']
+    : ['Action', 'Fantasy', 'Romance', 'Horror']
 
   useEffect(() => {
     ;(async () => {
-      const local = await fetch('./data/manga.json').then((r) => r.json()).catch(() => ({ manga: [] }))
-      if (local.manga?.length) setPopular(local.manga)
       try {
         if (kind === 'comics') {
-          const [al, ol] = await Promise.all([
-            anilist.search('Marvel', 'MANGA', 1, 24).then((r) => r.media).catch(() => []),
-            openLib('marvel dc comics'),
-          ])
-          const merged = [...(al || []), ...ol]
-          if (merged.length) setPopular(merged)
+          const ol = await openLib('marvel dc comic')
+          if (ol.length) setPopular(ol)
         } else {
           const p = await anilist.getPopular('MANGA', 1, 40)
           if (p?.media?.length) setPopular(p.media)
@@ -45,25 +39,18 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' }) {
       } catch {}
       const extra: Record<string, any[]> = {}
       for (const g of genres) {
-        try {
-          extra[g] = kind === 'comics'
-            ? await openLib(`${g} comic`)
-            : (await anilist.search(g, 'MANGA', 1, 16)).media || []
-        } catch {
-          extra[g] = []
-        }
+        extra[g] = kind === 'comics' ? await openLib(`${g} comic`) : ((await anilist.search(g, 'MANGA', 1, 16).catch(() => ({ media: [] }))).media || [])
       }
       setRows(extra)
     })()
   }, [kind])
 
   const title = kind === 'comics' ? 'Comics' : 'Manga'
-
   return (
     <div className="board page-fade-enter">
       <div className="board-content px-6 pt-6">
         <h1 className="text-2xl font-bold text-white mb-1">{title}</h1>
-        <p className="text-xs text-[#FF1493] mb-5">Same rows as Home</p>
+        <p className="text-xs text-[#FF1493] mb-5">{popular.length} titles</p>
         <MediaShelf title={`Popular ${title}`} items={popular} onOpen={() => setCurrentPage(kind)} />
         {genres.map((g) => (
           <MediaShelf key={g} title={g} items={rows[g] || []} onOpen={() => setCurrentPage(kind)} />
