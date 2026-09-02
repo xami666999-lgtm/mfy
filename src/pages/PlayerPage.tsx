@@ -305,27 +305,12 @@ const s = await tmdb.getSeasonDetail(selectedMedia.id as number, nextSeason.seas
         )}
         {error && <div className="player-error" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'red', padding: 24, textAlign: 'center' }}>{error}</div>}
         {loaded && !error && isPlayerEmbedUrl(streamUrl) && (
-          <iframe
-            ref={iframeRef}
+          // @ts-expect-error Electron webview
+          <webview
             src={streamUrl}
-            title="Stream"
-            style={{ width: '100%', height: '100%', border: 'none', background: '#000' }}
-            allow="autoplay; fullscreen; encrypted-media"
-            allowFullScreen
-            onError={handleIframeError}
-            loading="lazy"
-            referrerPolicy="origin"
-            onLoad={() => {
-              // Check if iframe loaded properly
-              try {
-                const iframeDoc = iframeRef.current?.contentDocument
-                if (iframeDoc && iframeDoc.body.innerText.includes('Opss') || iframeDoc?.body.innerText.includes('lost')) {
-                  handleIframeError()
-                }
-              } catch (e) {
-                // Cross-origin, can't check content
-              }
-            }}
+            style={{ width: '100%', height: '100%', background: '#000' }}
+            allowpopups="true"
+            webpreferences="allowRunningInsecureContent, javascript=yes"
           />
         )}
         {loaded && !error && !isPlayerEmbedUrl(streamUrl) && (

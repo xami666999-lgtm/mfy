@@ -529,7 +529,7 @@ onKeyDown={(e) => {
       {showTrailer && trailerKey && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowTrailer(false)}>
           <div className="w-[800px] aspect-video rounded-xl overflow-hidden border border-white/[0.1]" onClick={(e) => e.stopPropagation()}>
-            <iframe width="100%" height="100%" src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&rel=0`} frameBorder="0" allow="autoplay; encrypted-media" allowFullScreen />
+            <iframe width="100%" height="100%" src={`https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&rel=0`} frameBorder="0" allow="autoplay; encrypted-media" allowFullScreen />
           </div>
         </div>
       )}
