@@ -4,7 +4,13 @@
  * Based on serializd-py: https://github.com/Velocidensity/serializd-py
  */
 
-const SERIALIZD_BASE = 'https://api.serializd.com/v1'
+const SERIALIZD_BASE = 'https://serializd.onrender.com/api'
+const SERIALIZD_HEADERS = {
+  'Content-Type': 'application/json',
+  Origin: 'https://www.serializd.com',
+  Referer: 'https://www.serializd.com',
+  'X-Requested-With': 'serializd_vercel',
+}
 
 export interface SerializdUser {
   id: number
@@ -89,20 +95,24 @@ export const serializdApi = {
   accessToken: null as string | null,
 
   async login(email: string, password: string): Promise<LoginResponse> {
-    const res = await fetch(`${SERIALIZD_BASE}/auth/login`, {
+    const res = await fetch(`${SERIALIZD_BASE}/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: SERIALIZD_HEADERS,
       body: JSON.stringify({ email, password }),
     })
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
-      throw new SerializdError(err.detail || 'Login failed', res.status)
+      throw new SerializdError(err.detail || err.message || 'Login failed', res.status)
     }
 
     const data = await res.json()
-    this.accessToken = data.access_token
-    return data
+    this.accessToken = data.token || data.access_token
+    return {
+      access_token: this.accessToken || '',
+      token_type: 'Bearer',
+      user: data.user || { id: 0, email, username: String(email).split('@')[0], created_at: '' },
+    }
   },
 
   async checkToken(token?: string): Promise<ValidateAuthTokenResponse> {

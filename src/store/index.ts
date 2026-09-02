@@ -33,7 +33,7 @@ interface AppState {
   setAuthenticated: (v: boolean) => void
   profiles: UserProfile[]
   setProfiles: (profiles: UserProfile[]) => void
-  addProfile: (name: string, avatar?: string) => string
+  addProfile: (name: string, avatar?: string, email?: string) => string
   removeProfile: (id: string) => void
   setProfileAvatar: (id: string, avatar: string) => void
   switchProfile: (id: string) => void
@@ -177,12 +177,13 @@ export const useStore = create<AppState>((set, get) => ({
     set({ profiles })
     persist('profiles', profiles)
   },
-  addProfile: (name, avatar) => {
+  addProfile: (name, avatar, email) => {
     const profile: UserProfile = {
       id: uid(),
       name: name.trim() || 'Profile',
       avatar: avatar || '/icon.png',
       createdAt: new Date().toISOString(),
+      email: email?.trim().toLowerCase() || undefined,
     }
     const profiles = [...get().profiles, profile]
     set({ profiles, currentProfile: profile })

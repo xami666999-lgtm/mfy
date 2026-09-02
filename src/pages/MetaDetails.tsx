@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ArrowLeft, Play, Star, Clock, Calendar, Heart, Plus, Share2, List, Check, Cast } from 'lucide-react'
 import { tmdb, POSTER_URL, BACKDROP_URL, PROFILE_URL, STILL_URL } from '../api/tmdb'
 import { fetchOmdbByImdbId } from '../api/omdb'
+import { fetchRottenTomatoes } from '../api/rottentomatoes'
 import { fetchMdblistRatings, type MdblistRating } from '../api/mdblist'
 import { vidyUrl } from '../api/vidy'
 import { useStore } from '../store'
@@ -20,6 +21,7 @@ export default function MetaDetails() {
   const [resolving, setResolving] = useState(false)
   const [streamError, setStreamError] = useState('')
   const [omdb, setOmdb] = useState<{ imdbRating: string | null; rottenTomatoes: string | null; imdbVotes: string | null } | null>(null)
+  const [rtExtra, setRtExtra] = useState<{ critics: string | null; audience: string | null } | null>(null)
   const [imdbId, setImdbId] = useState<string | null>(null)
   const [mdblistRatings, setMdblistRatings] = useState<MdblistRating[] | null>(null)
   const [listOpen, setListOpen] = useState(false)
@@ -29,6 +31,12 @@ export default function MetaDetails() {
     if (!selectedMedia) return
     load()
   }, [selectedMedia])
+
+  useEffect(() => {
+    const title = detail?.title || detail?.name
+    if (!title) return
+    fetchRottenTomatoes(String(title)).then(setRtExtra).catch(() => setRtExtra(null))
+  }, [detail?.id, detail?.title, detail?.name])
 
   async function load() {
     if (!selectedMedia) return
@@ -277,9 +285,14 @@ export default function MetaDetails() {
                   IMDb {omdb?.imdbRating || Number(detail.vote_average).toFixed(1)}
                 </span>
               )}
-              {omdb?.rottenTomatoes && (
+              {(omdb?.rottenTomatoes || rtExtra?.critics) && (
                 <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-[#fa320a]/15 border border-[#fa320a]/40 text-[11px] font-bold text-[#ff6b4a]">
-                  RT {omdb.rottenTomatoes}
+                  RT {omdb?.rottenTomatoes || rtExtra?.critics}
+                </span>
+              )}
+              {rtExtra?.audience && (
+                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-[#fa320a]/10 border border-[#fa320a]/25 text-[11px] font-bold text-[#ff8a6a]">
+                  Audience {rtExtra.audience}
                 </span>
               )}
               {mdblistRatings && mdblistRatings.length > 0 && (

@@ -392,6 +392,20 @@ const anilistApi = {
     return data.Character || null
   },
 
+  searchStaff: async (search: string, page = 1, perPage = 12): Promise<any[]> => {
+    const queryStr = `
+      query ($search: String, $page: Int, $perPage: Int) {
+        Page(page: $page, perPage: $perPage) {
+          staff(search: $search, sort: [SEARCH_MATCH, FAVOURITES_DESC]) {
+            id name { full native } image { large } primaryOccupations
+          }
+        }
+      }
+    `
+    const data = await anilistFetch<{ Page: { staff: any[] } }>(queryStr, { search, page, perPage })
+    return data.Page?.staff || []
+  },
+
   /**
    * Get staff details
    */

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { Search as SearchIcon, X, Filter, Clock, TrendingUp } from 'lucide-react'
-import { tmdb, POSTER_URL } from '../api/tmdb'
+import { tmdb, POSTER_URL, PROFILE_URL } from '../api/tmdb'
+import { anilist } from '../api/anilist'
 import { useStore } from '../store'
 import { cn } from '../lib/utils'
 
@@ -30,6 +31,7 @@ const HISTORY_KEY = 'mfy-search-history'
 export default function Search() {
   const { searchQuery, setSearchQuery, setCurrentPage, setSelectedMedia } = useStore()
   const [results, setResults] = useState<any[]>([])
+  const [people, setPeople] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [typeFilter, setTypeFilter] = useState<'all' | 'movie' | 'tv'>('all')
   const [year, setYear] = useState('')
@@ -61,6 +63,7 @@ export default function Search() {
   useEffect(() => {
     if (!searchQuery.trim()) {
       setResults([])
+      setPeople([])
       return
     }
     const t = setTimeout(async () => {
@@ -71,7 +74,24 @@ export default function Search() {
         else if (typeFilter === 'tv') d = await tmdb.searchTV(searchQuery)
         else d = await tmdb.searchMulti(searchQuery)
 
+        const [personRes, staff] = await Promise.all([
+          tmdb.searchPerson(searchQuery).catch(() => ({ results: [] })),
+          anilist.searchStaff(searchQuery, 1, 8).catch(() => []),
+        ])
+        setPeople([
+          ...(personRes?.results || []).map((p: any) => ({
+            id: p.id, source: 'tmdb', name: p.name,
+            image: p.profile_path ? `${PROFILE_URL}${p.profile_path}` : '',
+            job: p.known_for_department,
+          })),
+          ...(staff || []).map((s: any) => ({
+            id: s.id, source: 'anilist', name: s.name?.full || s.name?.native,
+            image: s.image?.large, job: (s.primaryOccupations || []).join(' · ') || 'Anime / manga',
+          })),
+        ].slice(0, 16))
+
         let list = (d?.results || []).filter((r: any) => {
+          if (r.media_type === 'person') return false
           if (typeFilter === 'all') return r.media_type === 'movie' || r.media_type === 'tv' || r.title || r.name
           return true
         })
@@ -229,6 +249,38 @@ export default function Search() {
           {Array.from({ length: 10 }).map((_, i) => (
             <div key={i} className="skeleton aspect-[2/3] rounded-xl" />
           ))}
+        </div>
+      )}
+
+      {!loading && people.length > 0 && (
+        <div className="w-full max-w-5xl mb-8">
+          <h3 className="text-[11px] uppercase tracking-widest text-white/35 mb-3">People</h3>
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {people.map((p) => (
+              <button
+                key={`${p.source}-${p.id}`}
+                type="button"
+                className="w-[88px] flex-shrink-0 text-left"
+                onClick={() => {
+                  if (p.source === 'tmdb') {
+                    tmdb.getPersonDetail(p.id).then((d: any) => {
+                      const work = (d?.combined_credits?.cast || d?.movie_credits?.cast || [])[0]
+                      if (work) {
+                        setSelectedMedia({ id: work.id, type: work.media_type === 'tv' || work.first_air_date ? 'tv' : 'movie' })
+                        setCurrentPage('detail')
+                      }
+                    }).catch(() => {})
+                  } else setCurrentPage('anime')
+                }}
+              >
+                <div className="w-16 h-16 rounded-full overflow-hidden bg-white/[0.06] mx-auto mb-1.5">
+                  {p.image ? <img src={p.image} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full grid place-items-center text-white/30 text-xs">{(p.name || '?')[0]}</div>}
+                </div>
+                <p className="text-[10px] text-white text-center truncate">{p.name}</p>
+                <p className="text-[9px] text-white/35 text-center truncate">{p.job}</p>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

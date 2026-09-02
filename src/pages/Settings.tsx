@@ -19,6 +19,9 @@ export default function Settings() {
   const [jellyfinUrl, setJellyfinUrl] = useState(store.jellyfinUrl)
   const [jellyfinKey, setJellyfinKey] = useState(store.jellyfinApiKey)
   const [omdbKey, setOmdbKey] = useState(store.omdbApiKey)
+  const [rtRapidKey, setRtRapidKey] = useState(() => {
+    try { return localStorage.getItem('mfy-rt-rapid-key') || '' } catch { return '' }
+  })
   const [mdblistKey, setMdblistKey] = useState(store.mdblistApiKey)
   const [subtitleKey, setSubtitleKey] = useState(store.opensubtitlesKey)
   const [saved, setSaved] = useState(false)
@@ -197,6 +200,16 @@ export default function Settings() {
         <Section title="API Keys">
           <Input label="TMDB API Key" value={tmdbKey} onChange={setTmdbKey} placeholder="Your TMDB API key" link="https://www.themoviedb.org/settings/api" />
           <Input label="OMDb API Key" value={omdbKey} onChange={setOmdbKey} placeholder="Optional — IMDb + Rotten Tomatoes scores" link="https://www.omdbapi.com/apikey.aspx" />
+          <Input
+            label="RapidAPI Rotten Tomatoes key"
+            value={rtRapidKey}
+            onChange={(v: string) => {
+              setRtRapidKey(v)
+              try { localStorage.setItem('mfy-rt-rapid-key', v.trim()) } catch {}
+            }}
+            placeholder="x-rapidapi-key"
+            type="password"
+          />
           <Input label="MDBList API Key" value={mdblistKey} onChange={setMdblistKey} placeholder="Optional — aggregated ratings (IMDb, Trakt, Metacritic, RT, Letterboxd)" link="https://mdblist.com/apikey" />
           <Input label="OpenSubtitles API Key" value={subtitleKey} onChange={setSubtitleKey} placeholder="Optional — auto-downloads English subtitles in the player" link="https://opensubtitles.com" />
 

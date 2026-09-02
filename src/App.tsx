@@ -25,6 +25,7 @@ import Anime from './pages/Anime'
 import Sports from './pages/Sports'
 import Iptv from './pages/Iptv'
 import LoginGate from './components/LoginGate'
+import RemoteHelp from './components/RemoteHelp'
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true)
@@ -202,6 +203,7 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
 
   return (
     <div className="h-screen flex flex-col bg-[#08080e]">
+      <RemoteHelp />
       {!introSeen && <Intro onDone={() => { setShowIntro(false); setIntroSeen(true) }} />}
       {updateInfo && !updateDismissed && currentPage !== 'player' && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#14101a] border border-[#FF1493]/30 shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
