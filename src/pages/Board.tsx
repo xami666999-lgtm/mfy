@@ -903,6 +903,10 @@ loadGenres().catch(() => {})
 
   return (
     <div className="board page-fade-enter">
+      <div className="mx-5 mt-3 mb-1 flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-[#FF1493]/35 bg-[#FF1493]/10">
+        <span className="text-xs font-bold text-[#FF1493]">MFY v1.2.47</span>
+        <span className="text-[11px] text-white/60">Search Oda or Nolan · press ? for keys</span>
+      </div>
       {error && <div className="error-banner mx-5 mt-4">{error}</div>}
 
       {hero ? (
