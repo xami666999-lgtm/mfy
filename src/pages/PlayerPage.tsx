@@ -314,7 +314,7 @@ const s = await tmdb.getSeasonDetail(selectedMedia.id as number, nextSeason.seas
             allowFullScreen
             onError={handleIframeError}
             loading="lazy"
-            referrerPolicy="no-referrer"
+            referrerPolicy="origin"
             onLoad={() => {
               // Check if iframe loaded properly
               try {
