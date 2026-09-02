@@ -319,6 +319,21 @@ export default function Settings() {
           <Input label="Jellyfin API Key" value={jellyfinKey} onChange={setJellyfinKey} placeholder="Optional local media library key" type="password" />
         </Section>
 
+        <Section title="Desktop">
+          <button
+            type="button"
+            className="h-10 px-4 rounded-xl bg-[#FF1493] text-white text-sm font-semibold"
+            onClick={async () => {
+              const api = (window as any).electronAPI
+              const ok = await api?.createDesktopShortcut?.()
+              alert(ok ? 'MFY shortcut added to your desktop.' : 'Could not add shortcut. Right-click MFY.exe → Send to → Desktop.')
+            }}
+          >
+            Add MFY to desktop
+          </button>
+          <p className="text-[11px] text-white/35 mt-2">Puts MFY.lnk on the Windows desktop.</p>
+        </Section>
+
         <Section title="Playback">
           <Toggle label="Auto-resume" description="Remember where you left off" checked={true} />
           <Toggle label="Auto-download subtitles" description="Find subtitles automatically" checked={true} />

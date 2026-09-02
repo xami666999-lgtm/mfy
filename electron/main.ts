@@ -220,21 +220,19 @@ ipcMain.handle('window-is-maximized', () => mainWindow?.isMaximized() ?? false)
   // Create desktop shortcut
   ipcMain.handle('createDesktopShortcut', async () => {
     try {
-      const { app, shell } = require('electron')
       const path = require('path')
-      const fs = require('fs')
       const exePath = process.execPath
       const desktopDir = app.getPath('desktop')
       const shortcutPath = path.join(desktopDir, 'MFY.lnk')
-      if (!fs.existsSync(shortcutPath)) {
-        await shell.writeShortcutLink({
-          target: exePath,
-          args: '',
-          description: 'MFY - Movies For You',
-          cwd: path.dirname(exePath),
-        }, shortcutPath)
-      }
-      return true
+      const ok = shell.writeShortcutLink(shortcutPath, 'replace', {
+        target: exePath,
+        args: '',
+        description: 'MFY - Movies For You',
+        cwd: path.dirname(exePath),
+        icon: exePath,
+        iconIndex: 0,
+      })
+      return ok
     } catch (e) {
       console.error('Failed to create desktop shortcut:', e)
       return false
