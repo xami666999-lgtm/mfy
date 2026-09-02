@@ -912,6 +912,11 @@ loadGenres().catch(() => {})
             className="hero-backdrop fade-in"
             style={{ backgroundImage: hero.backdrop_path ? `url(${BACKDROP_URL}${hero.backdrop_path})` : undefined }}
           />
+          <div className="hero-wall" aria-hidden>
+            {trending.filter((t: any) => t.poster_path).slice(0, 18).map((t: any) => (
+              <img key={t.id} src={`${POSTER_URL}${t.poster_path}`} alt="" />
+            ))}
+          </div>
           <div className="hero-overlay" />
           <div className="hero-content">
             <div className="hero-copy fade-in">
@@ -1067,7 +1072,24 @@ loadGenres().catch(() => {})
           <Row title="Recommended For You" items={recommended} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} />
         )}
 
-        <Row title="Upcoming Releases" items={upcoming} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('movies')} />
+        {airingAnime.length > 0 && (
+          <section className="media-row">
+            <div className="media-row-header">
+              <h2 className="media-row-title">Upcoming Anime</h2>
+              <button className="media-row-action" type="button" onClick={() => setCurrentPage('anime')}>View All</button>
+            </div>
+            <div className="scroll-row">
+              {airingAnime.slice(0, 16).map((a: any) => (
+                <button key={a.id} type="button" className="poster-card" style={{ width: 150 }} onClick={() => setCurrentPage('anime')}>
+                  {a.coverImage || a.image ? <img src={a.coverImage || a.image} alt="" /> : <div className="poster-fallback">{a.title}</div>}
+                  <div className="poster-overlay">
+                    <div className="poster-meta-title">{a.title}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
         <Row title="Season Highlights" items={topRatedTv.length ? [...onTheAir, ...topRatedTv].slice(0, 16) : collection} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} viewAll={() => setCurrentPage('tv')} />
 
         {/* Extra shelves every streaming app has */}
