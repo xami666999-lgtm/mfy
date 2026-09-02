@@ -58,7 +58,15 @@ export default function Sports() {
     iptvEnhancedApi.getMetegolEvents().then(setMetegol).catch(() => {
       fetch('./data/metegol.json').then((r) => r.json()).then((d) => setMetegol(d.events || [])).catch(() => setMetegol([]))
     })
-    sportsApi.getSports().then(setSports).catch(() => setSports([]))
+    sportsApi.getSports().then(setSports).catch(() => setSports([
+      { id: 'football', name: 'Football' },
+      { id: 'basketball', name: 'Basketball' },
+      { id: 'american-football', name: 'American Football' },
+      { id: 'baseball', name: 'Baseball' },
+      { id: 'hockey', name: 'Hockey' },
+      { id: 'tennis', name: 'Tennis' },
+      { id: 'fight', name: 'Fight' },
+    ]))
     sportsApi
       .getLive()
       .then((m) => setLive((Array.isArray(m) ? m : []).map((x) => ({ ...x, live: true }))))

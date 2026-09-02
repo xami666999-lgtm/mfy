@@ -52,7 +52,14 @@ export function posterUrl(poster?: string) {
 }
 
 async function getJson<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`)
+  const url = `${BASE}${path}`
+  const api = (globalThis as any).electronAPI || (typeof window !== 'undefined' ? (window as any).electronAPI : null)
+  if (api?.fetchText) {
+    const r = await api.fetchText(url, 15000)
+    if (r?.ok && r.text) return JSON.parse(r.text) as T
+    throw new Error(r?.error || 'Sports fetch failed')
+  }
+  const res = await fetch(url)
   if (!res.ok) throw new Error(`Sports API ${res.status}`)
   return res.json() as Promise<T>
 }

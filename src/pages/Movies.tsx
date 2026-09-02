@@ -1,171 +1,52 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { tmdb, POSTER_URL } from '../api/tmdb'
+import { useEffect, useState } from 'react'
+import { tmdb } from '../api/tmdb'
 import { useStore } from '../store'
-import { cn } from '../lib/utils'
+import { MediaShelf } from '../components/MediaShelf'
 
 const GENRES = [
-  { id: 0, name: 'All' },
-  { id: 28, name: 'Action' },
-  { id: 12, name: 'Adventure' },
-  { id: 16, name: 'Animation' },
-  { id: 35, name: 'Comedy' },
-  { id: 80, name: 'Crime' },
-  { id: 99, name: 'Documentary' },
-  { id: 18, name: 'Drama' },
-  { id: 10751, name: 'Family' },
-  { id: 14, name: 'Fantasy' },
-  { id: 36, name: 'History' },
-  { id: 27, name: 'Horror' },
-  { id: 10402, name: 'Music' },
-  { id: 9648, name: 'Mystery' },
-  { id: 10749, name: 'Romance' },
-  { id: 878, name: 'Sci-Fi' },
-  { id: 10770, name: 'TV Movie' },
-  { id: 53, name: 'Thriller' },
-  { id: 10752, name: 'War' },
-  { id: 37, name: 'Western' },
+  { id: 28, name: 'Action' }, { id: 12, name: 'Adventure' }, { id: 16, name: 'Animation' },
+  { id: 35, name: 'Comedy' }, { id: 80, name: 'Crime' }, { id: 18, name: 'Drama' },
+  { id: 14, name: 'Fantasy' }, { id: 27, name: 'Horror' }, { id: 10749, name: 'Romance' },
+  { id: 878, name: 'Sci-Fi' }, { id: 53, name: 'Thriller' },
 ]
 
 export default function Movies() {
   const { setSelectedMedia, setCurrentPage } = useStore()
-  const [genre, setGenre] = useState(0)
-  const [sort, setSort] = useState('popularity.desc')
-  const [items, setItems] = useState<any[]>([])
-  const [page, setPage] = useState(1)
-  const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [hasNext, setHasNext] = useState(false)
-  const sentinelRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    let c = false
-    ;(async () => {
-      setLoading(true)
-      try {
-        const params: Record<string, string> = { sort_by: sort, page: String(page) }
-        if (genre > 0) params.with_genres = String(genre)
-        const d = await tmdb.discoverMovies(params)
-        if (!c) {
-          setItems(d?.results || [])
-          setHasNext(Boolean(d?.total_pages && d.total_pages > page))
-        }
-      } catch {
-        if (!c) setItems([])
-      }
-      if (!c) setLoading(false)
-    })()
-    return () => {
-      c = true
-    }
-  }, [genre, sort, page === 1])
-
-  const loadMore = useCallback(async () => {
-    if (loadingMore || !hasNext) return
-    setLoadingMore(true)
-    const next = page + 1
-    try {
-      const params: Record<string, string> = { sort_by: sort, page: String(next) }
-      if (genre > 0) params.with_genres = String(genre)
-      const d = await tmdb.discoverMovies(params)
-      const list = d?.results || []
-      setItems((prev) => [...prev, ...list])
-      setHasNext(Boolean(d?.total_pages && d.total_pages > next))
-      setPage(next)
-    } catch {}
-    setLoadingMore(false)
-  }, [loadingMore, hasNext, page, sort, genre])
-
-  useEffect(() => {
-    const el = sentinelRef.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) loadMore()
-      },
-      { rootMargin: '600px' }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [loadMore, loading])
+  const [popular, setPopular] = useState<any[]>([])
+  const [now, setNow] = useState<any[]>([])
+  const [rows, setRows] = useState<Record<number, any[]>>({})
 
   function open(item: any) {
     setSelectedMedia({ id: item.id, type: 'movie' })
     setCurrentPage('detail')
   }
 
-  function posterFallback(e: any) {
-    const el = e.currentTarget
-    el.onerror = null
-    el.style.display = 'none'
-    if (el.parentElement) el.parentElement.classList.add('has-fallback')
-  }
+  useEffect(() => {
+    tmdb.getPopular('movie').then((d) => setPopular(d?.results || [])).catch(() => setPopular([]))
+    tmdb.getNowPlaying().then((d) => setNow(d?.results || [])).catch(() => setNow([]))
+    Promise.all(
+      GENRES.map(async (g) => {
+        try {
+          const d = await tmdb.discoverMovies({ with_genres: String(g.id), page: '1', sort_by: 'popularity.desc' })
+          return [g.id, d?.results || []] as const
+        } catch {
+          return [g.id, []] as const
+        }
+      })
+    ).then((pairs) => setRows(Object.fromEntries(pairs)))
+  }, [])
 
   return (
-    <div className="p-6 md:p-8 page-fade-enter">
-      <div className="flex flex-wrap items-center gap-4 mb-5">
-        <h2 className="text-lg font-semibold text-white tracking-tight">Movies</h2>
-        <div className="flex-1" />
-        <select
-          value={sort}
-          onChange={(e) => { setSort(e.target.value); setPage(1) }}
-          className="h-7 px-2 rounded-md bg-white/[0.04] border border-white/[0.06] text-[11px] text-white/50 focus:outline-none"
-        >
-          <option value="popularity.desc">Popularity</option>
-          <option value="vote_average.desc">Rating</option>
-          <option value="release_date.desc">Newest</option>
-        </select>
-      </div>
-
-      <div className="flex gap-1.5 mb-5 flex-wrap">
+    <div className="board page-fade-enter">
+      <div className="board-content px-6 pt-6">
+        <h1 className="text-2xl font-bold text-white mb-1">Movies</h1>
+        <p className="text-xs text-[#FF1493] mb-5">Same rows as Home</p>
+        <MediaShelf title="Popular Movies" items={popular} onOpen={open} />
+        <MediaShelf title="Now Playing" items={now} onOpen={open} />
         {GENRES.map((g) => (
-          <button
-            key={g.id}
-            onClick={() => { setGenre(g.id); setPage(1) }}
-            className={cn(
-              'px-3 py-1 rounded-full text-[11px] font-medium border transition-all',
-              genre === g.id ? 'bg-white/10 text-white border-white/20' : 'bg-transparent text-white/30 border-white/[0.06] hover:text-white/50 hover:border-white/10'
-            )}
-          >
-            {g.name}
-          </button>
+          <MediaShelf key={g.id} title={g.name} items={rows[g.id] || []} onOpen={open} />
         ))}
       </div>
-
-      {loading ? (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 2xl:grid-cols-7 gap-3">
-          {Array.from({ length: 21 }).map((_, i) => (
-            <div key={i} className="skeleton aspect-[2/3] rounded-xl" />
-          ))}
-        </div>
-      ) : items.length ? (
-        <>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 2xl:grid-cols-7 gap-3">
-            {items.map((item) => (
-              <div key={item.id} className="poster-card aspect-[2/3]" role="button" tabIndex={0} onClick={() => open(item)}>
-                {item.poster_path ? (
-                  <img src={`${POSTER_URL}${item.poster_path}`} alt={item.title} loading="lazy" onError={posterFallback} />
-                ) : (
-                  <div className="w-full h-full bg-white/[0.04] flex items-center justify-center text-white/15 text-[10px] text-center px-2">{item.title}</div>
-                )}
-                {item.vote_average > 0 && (
-                  <div className="imdb-badge">
-                    <span className="imdb-badge-label">IMDb</span>
-                    <span className="imdb-badge-score">{Number(item.vote_average).toFixed(1)}</span>
-                  </div>
-                )}
-                <div className="poster-overlay">
-                  <div className="poster-meta-title">{item.title}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div ref={sentinelRef} className="h-16 flex items-center justify-center">
-            {loadingMore && <div className="skeleton skeleton-text w-24" />}
-          </div>
-        </>
-      ) : (
-        <p className="text-sm text-white/30 py-12 text-center">No movies found for this filter.</p>
-      )}
     </div>
   )
 }
