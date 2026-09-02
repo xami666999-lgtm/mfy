@@ -3,6 +3,7 @@ import { tmdb } from '../api/tmdb'
 import { anilist } from '../api/anilist'
 import { useStore } from '../store'
 import { MediaShelf } from '../components/MediaShelf'
+import PageHero from '../components/PageHero'
 import { OFFLINE_ANIME } from '../data/offlineCatalog'
 
 export default function Anime() {
@@ -30,9 +31,8 @@ export default function Anime() {
 
   return (
     <div className="board page-fade-enter">
+      <PageHero item={popular[0]} kicker="ANIME" onPlay={() => popular[0] && open(popular[0])} />
       <div className="board-content px-6 pt-6">
-        <h1 className="text-2xl font-bold text-white mb-1">Anime</h1>
-        <p className="text-xs text-[#FF1493] mb-5">Same rows as Home</p>
         <MediaShelf title="Popular Anime" items={popular} onOpen={open} />
         <MediaShelf title="Upcoming Anime" items={upcoming} onOpen={open} />
         <MediaShelf title="Action" items={action} onOpen={open} />

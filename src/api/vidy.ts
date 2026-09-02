@@ -1,5 +1,5 @@
 /**
- * Vidy player (https://vidy.st) — an iframe streaming player for movies, TV
+ * Vidy player (https://vidsrc.xyz) — an iframe streaming player for movies, TV
  * shows and anime. Alternative to torrent streams that needs no WebTorrent.
  *
  * Routes:
@@ -8,14 +8,14 @@
  *   /anime/{anilistId}/{episode}
  */
 
-const VIDY_BASE = 'https://vidy.st'
+const VIDY_BASE = 'https://vidsrc.xyz/embed'
 
 /** Build a Vidy embed URL for a movie / TV show (TMDB ids) */
 export function vidyUrl(type: 'movie' | 'tv', tmdbId: number | string, season?: number, episode?: number): string {
-  if (type === 'movie') return `${VIDY_BASE}/movie/${tmdbId}`
+  if (type === 'movie') return `https://vidsrc.xyz/embed/movie/${tmdbId}`
   const s = season ?? 1
   const e = episode ?? 1
-  return `${VIDY_BASE}/tv/${tmdbId}/${s}/${e}`
+  return `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}`
 }
 
 /** Build a Vidy embed URL for an anime (AniList id) */
@@ -36,8 +36,8 @@ export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId:
   }
   if (source === 'zangetsu') return `https://zangetsu.moe/watch/${tmdbId}${type === 'tv' ? `/${e}` : ''}`
   if (source === 'miruro') return `https://www.miruro.tv/watch?id=${tmdbId}${type === 'tv' ? `&ep=${e}` : ''}`
-  if (type === 'movie') return `${VIDY_BASE}/movie/${tmdbId}`
-  return `${VIDY_BASE}/tv/${tmdbId}/${s}/${e}`
+  if (type === 'movie') return `https://vidsrc.xyz/embed/movie/${tmdbId}`
+  return `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}`
 }
 
 export function isPlayerEmbed(url: string): boolean {

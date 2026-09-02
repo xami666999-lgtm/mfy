@@ -1,8 +1,15 @@
 import { POSTER_URL } from '../api/tmdb'
 
+function proxy(url: string) {
+  if (!url) return ''
+  if (/image\.tmdb\.org|anilist\.co|ytimg\.com|openlibrary\.org|weserv\.nl/.test(url)) return url
+  return `https://images.weserv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ''))}`
+}
+
 export function imgSrc(item: any) {
   if (item.poster_path) return `${POSTER_URL}${item.poster_path}`
-  return item.coverImage?.large || item.coverImage?.medium || item.coverImage || item.image || item.artwork || ''
+  const raw = item.coverImage?.large || item.coverImage?.medium || (typeof item.coverImage === 'string' ? item.coverImage : '') || item.image || item.artwork || ''
+  return proxy(String(raw || ''))
 }
 
 export function titleOf(item: any) {

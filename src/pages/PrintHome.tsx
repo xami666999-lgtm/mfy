@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { anilist } from '../api/anilist'
 import { useStore } from '../store'
 import { MediaShelf } from '../components/MediaShelf'
+import PageHero from '../components/PageHero'
 import { OFFLINE_MANGA } from '../data/offlineCatalog'
 
 async function openLib(q: string) {
@@ -48,6 +49,7 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' }) {
   const title = kind === 'comics' ? 'Comics' : 'Manga'
   return (
     <div className="board page-fade-enter">
+      <PageHero item={popular[0]} kicker={title.toUpperCase()} onPlay={() => {}} />
       <div className="board-content px-6 pt-6">
         <h1 className="text-2xl font-bold text-white mb-1">{title}</h1>
         <p className="text-xs text-[#FF1493] mb-5">{popular.length} titles</p>

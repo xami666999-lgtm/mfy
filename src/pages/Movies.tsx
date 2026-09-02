@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { tmdb } from '../api/tmdb'
 import { useStore } from '../store'
 import { MediaShelf } from '../components/MediaShelf'
+import PageHero from '../components/PageHero'
 
 const GENRES = [
   { id: 28, name: 'Action' }, { id: 12, name: 'Adventure' }, { id: 16, name: 'Animation' },
@@ -38,9 +39,8 @@ export default function Movies() {
 
   return (
     <div className="board page-fade-enter">
+      <PageHero item={popular[0] || now[0]} kicker="MOVIE" onPlay={() => (popular[0] || now[0]) && open(popular[0] || now[0])} />
       <div className="board-content px-6 pt-6">
-        <h1 className="text-2xl font-bold text-white mb-1">Movies</h1>
-        <p className="text-xs text-[#FF1493] mb-5">Same rows as Home</p>
         <MediaShelf title="Popular Movies" items={popular} onOpen={open} />
         <MediaShelf title="Now Playing" items={now} onOpen={open} />
         {GENRES.map((g) => (
