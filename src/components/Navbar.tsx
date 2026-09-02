@@ -26,7 +26,7 @@ export default function Navbar() {
       <button onClick={() => setCurrentPage('home')} className="brand" aria-label="MFY Board" type="button">
         <img src="./icon.png" alt="MFY" />
         <span>MFY</span>
-        <span className="text-[10px] text-[#FF1493] font-bold ml-1">1.2.61</span>
+        <span className="text-[10px] text-[#FF1493] font-bold ml-1">1.2.63</span>
       </button>
       <nav className="nav-tabs">
         {tabs.map((tab) => {

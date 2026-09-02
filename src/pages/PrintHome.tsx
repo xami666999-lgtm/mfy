@@ -1,55 +1,53 @@
 import { useEffect, useState } from 'react'
 import { anilist } from '../api/anilist'
 import { useStore } from '../store'
-import { CategoryChips, HeroBanner, PosterShelf, type ShelfItem } from '../components/ShelfHome'
+import { MediaShelf } from '../components/MediaShelf'
 
-function cards(media: any[]): ShelfItem[] {
-  return (media || []).map((m) => ({
-    id: m.id || m.key,
-    title: m.title?.english || m.title?.romaji || m.title || 'Title',
-    image: m.coverImage?.large || m.coverImage || m.image || (m.cover_i ? `https://covers.openlibrary.org/b/id/${m.cover_i}-L.jpg` : ''),
-    sub: (m.genres || m.author_name || []).slice?.(0, 2)?.join?.(' · ') || m.format,
-  }))
-}
-
-async function openLib(q: string): Promise<ShelfItem[]> {
-  const r = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=24`)
-  const d = await r.json()
-  return cards(d.docs || [])
+async function openLib(q: string) {
+  try {
+    const r = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=24`)
+    const d = await r.json()
+    return (d.docs || []).map((m: any) => ({
+      id: m.key,
+      title: m.title,
+      image: m.cover_i ? `https://covers.openlibrary.org/b/id/${m.cover_i}-L.jpg` : '',
+    }))
+  } catch {
+    return []
+  }
 }
 
 export default function PrintHome({ kind }: { kind: 'manga' | 'comics' }) {
   const { setCurrentPage } = useStore()
   const genres = kind === 'comics'
-    ? ['Popular', 'Marvel', 'DC', 'Image', 'Star Wars', 'Superhero', 'Horror', 'Sci-Fi', 'Indie']
-    : ['Popular', 'Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror', 'Mystery', 'Romance', 'Sci-Fi', 'Slice of Life', 'Sports', 'Supernatural', 'Thriller']
-  const [chip, setChip] = useState('Popular')
-  const [popular, setPopular] = useState<ShelfItem[]>([])
-  const [rows, setRows] = useState<Record<string, ShelfItem[]>>({})
+    ? ['Marvel', 'DC', 'Image', 'Star Wars', 'Superhero', 'Horror', 'Sci-Fi', 'Indie']
+    : ['Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror', 'Mystery', 'Romance', 'Sci-Fi', 'Slice of Life']
+  const [popular, setPopular] = useState<any[]>([])
+  const [rows, setRows] = useState<Record<string, any[]>>({})
 
   useEffect(() => {
     ;(async () => {
       const local = await fetch('./data/manga.json').then((r) => r.json()).catch(() => ({ manga: [] }))
-      if (local.manga?.length) setPopular(cards(local.manga))
+      if (local.manga?.length) setPopular(local.manga)
       try {
         if (kind === 'comics') {
           const [al, ol] = await Promise.all([
-            anilist.search('Marvel', 'MANGA', 1, 24).then((r) => cards(r.media)).catch(() => []),
-            openLib('marvel comics').catch(() => []),
+            anilist.search('Marvel', 'MANGA', 1, 24).then((r) => r.media).catch(() => []),
+            openLib('marvel dc comics'),
           ])
-          const merged = [...al, ...ol]
-          if (merged.length) setPopular(merged.slice(0, 40))
+          const merged = [...(al || []), ...ol]
+          if (merged.length) setPopular(merged)
         } else {
           const p = await anilist.getPopular('MANGA', 1, 40)
-          if (p?.media?.length) setPopular(cards(p.media))
+          if (p?.media?.length) setPopular(p.media)
         }
       } catch {}
-      const extra: Record<string, ShelfItem[]> = {}
-      for (const g of genres.filter((x) => x !== 'Popular').slice(0, 8)) {
+      const extra: Record<string, any[]> = {}
+      for (const g of genres) {
         try {
           extra[g] = kind === 'comics'
             ? await openLib(`${g} comic`)
-            : cards((await anilist.search(g, 'MANGA', 1, 16)).media)
+            : (await anilist.search(g, 'MANGA', 1, 16)).media || []
         } catch {
           extra[g] = []
         }
@@ -58,21 +56,18 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' }) {
     })()
   }, [kind])
 
-  const shown = chip === 'Popular' ? popular : (rows[chip] || popular)
   const title = kind === 'comics' ? 'Comics' : 'Manga'
 
   return (
-    <div className="page-fade-enter pb-10">
-      <HeroBanner item={shown[0]} kicker={title.toUpperCase()} onPlay={() => setCurrentPage(kind)} />
-      <div className="px-5 pt-5">
-        <h1 className="text-2xl font-bold text-white">{title}</h1>
-        <p className="text-xs text-white/35 mb-3">Same layout as Home</p>
+    <div className="board page-fade-enter">
+      <div className="board-content px-6 pt-6">
+        <h1 className="text-2xl font-bold text-white mb-1">{title}</h1>
+        <p className="text-xs text-[#FF1493] mb-5">Same rows as Home</p>
+        <MediaShelf title={`Popular ${title}`} items={popular} onOpen={() => setCurrentPage(kind)} />
+        {genres.map((g) => (
+          <MediaShelf key={g} title={g} items={rows[g] || []} onOpen={() => setCurrentPage(kind)} />
+        ))}
       </div>
-      <CategoryChips labels={genres} active={chip} onPick={setChip} />
-      <PosterShelf title={chip} items={shown} onOpen={() => setCurrentPage(kind)} />
-      {chip === 'Popular' && Object.entries(rows).map(([name, items]) => (
-        <PosterShelf key={name} title={name} items={items} onOpen={() => setCurrentPage(kind)} />
-      ))}
     </div>
   )
 }

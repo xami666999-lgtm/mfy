@@ -136,11 +136,20 @@ export default function Sports() {
   }
 
   return (
-    <div className="p-6 md:p-8 page-fade-enter max-w-6xl mx-auto">
+    <div className="page-fade-enter min-h-full bg-[#0b0f14] text-white flex">
+      <aside className="w-52 flex-shrink-0 bg-[#0a0e12] border-r border-white/10 p-3 hidden md:block">
+        <p className="text-[10px] tracking-[0.25em] text-[#FF1493] font-bold mb-3">MFY SPORTS</p>
+        {sports.map((s) => (
+          <button key={s.id} type="button" onClick={() => setSportId(s.id)} className={cn('w-full text-left px-3 py-2 rounded-md text-sm mb-0.5', sportId === s.id ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white')}>
+            {s.name || s.id}
+          </button>
+        ))}
+      </aside>
+      <div className="flex-1 p-5 min-w-0">
       <div className="flex items-end justify-between gap-4 mb-5">
         <div>
-          <p className="text-[11px] tracking-[0.2em] text-[#FF1493] font-bold">MFY SPORTS</p>
-          <h2 className="text-3xl font-bold text-white"># Sports</h2>
+          <p className="text-[11px] tracking-[0.2em] text-[#22c55e] font-bold">LIVE</p>
+          <h2 className="text-3xl font-bold text-white">{sportId.replace(/-/g, ' ')}</h2>
         </div>
         <div className="flex gap-2">
           {(['streamed', 'metegol'] as const).map((e) => (
@@ -391,6 +400,7 @@ export default function Sports() {
       </div>
     </>
     )}
+      </div>
     </div>
   )
 }
@@ -410,16 +420,12 @@ function MatchCard({
     <button
       type="button"
       onClick={onOpen}
-      className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] text-left transition-all"
+      className="flex items-center gap-3 p-4 rounded-xl bg-[#121820] border border-white/10 hover:border-[#22c55e]/50 text-left transition-all w-full"
     >
-      {match.poster ? (
-        <img src={posterUrl(match.poster)} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0 bg-white/5" />
-      ) : (
-        <div className="w-14 h-14 rounded-lg bg-white/5 flex items-center justify-center gap-1 flex-shrink-0 overflow-hidden">
-          {home?.badge && <img src={badgeUrl(home.badge)} alt="" className="w-6 h-6 object-contain" />}
-          {away?.badge && <img src={badgeUrl(away.badge)} alt="" className="w-6 h-6 object-contain" />}
-        </div>
-      )}
+      <div className="w-16 h-16 rounded-lg bg-black/40 flex items-center justify-center gap-1 flex-shrink-0 overflow-hidden">
+        {home?.badge && <img src={badgeUrl(home.badge)} alt="" className="w-7 h-7 object-contain" />}
+        {away?.badge && <img src={badgeUrl(away.badge)} alt="" className="w-7 h-7 object-contain" />}
+      </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <div className="text-xs font-medium text-white/85 truncate">{match.title}</div>
