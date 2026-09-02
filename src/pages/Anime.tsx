@@ -3,12 +3,13 @@ import { anilist } from '../api/anilist'
 import { openAnime } from '../api/animeOpen'
 import { useStore } from '../store'
 import { MediaShelf } from '../components/MediaShelf'
+import { OFFLINE_ANIME } from '../data/offlineCatalog'
 
 const GENRES = ['Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror', 'Mecha', 'Mystery', 'Romance', 'Sci-Fi', 'Slice of Life', 'Sports', 'Supernatural', 'Thriller']
 
 export default function Anime() {
   const { setSelectedMedia, setCurrentPage } = useStore()
-  const [popular, setPopular] = useState<any[]>([])
+  const [popular, setPopular] = useState<any[]>(OFFLINE_ANIME)
   const [rows, setRows] = useState<Record<string, any[]>>({})
 
   function open(item: any) {

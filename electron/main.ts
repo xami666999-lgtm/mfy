@@ -242,6 +242,27 @@ ipcMain.handle('window-is-maximized', () => mainWindow?.isMaximized() ?? false)
 // Open external URL
 ipcMain.on('open-external', (_event, url: string) => shell.openExternal(url))
 
+ipcMain.handle('fetch-json', async (_event, url: string, init?: { method?: string; headers?: Record<string, string>; body?: string; timeoutMs?: number }) => {
+  const timeout = init?.timeoutMs || 15000
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeout)
+  try {
+    const res = await fetch(url, {
+      method: init?.method || 'GET',
+      headers: init?.headers,
+      body: init?.body,
+      signal: controller.signal,
+    })
+    const text = await res.text()
+    if (!res.ok) return { ok: false, error: `HTTP ${res.status}`, text }
+    try { return { ok: true, json: JSON.parse(text) } } catch { return { ok: true, text } }
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'fetch failed' }
+  } finally {
+    clearTimeout(timer)
+  }
+})
+
 // Fetch text via Node (bypasses renderer CORS) — used for IPTV playlists
 ipcMain.handle('fetch-text', async (_event, url: string, timeoutMs?: number) => {
   const timeout = timeoutMs || 15000

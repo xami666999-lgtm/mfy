@@ -12,25 +12,28 @@ interface AniListResponse<T> {
 }
 
 async function anilistFetch<T>(query: string, variables?: Record<string, any>): Promise<T> {
-  const res = await fetch(ANILIST_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-    body: JSON.stringify({ query, variables }),
-  })
-
-  if (!res.ok) {
-    throw new Error(`AniList API error: ${res.status} ${res.statusText}`)
+  const payload = JSON.stringify({ query, variables })
+  const api = typeof window !== 'undefined' ? (window as any).electronAPI : null
+  let json: AniListResponse<T>
+  if (api?.fetchJson) {
+    const r = await api.fetchJson(ANILIST_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: payload,
+      timeoutMs: 15000,
+    })
+    if (!r?.ok) throw new Error(r?.error || 'AniList proxy failed')
+    json = r.json
+  } else {
+    const res = await fetch(ANILIST_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: payload,
+    })
+    if (!res.ok) throw new Error(`AniList API error: ${res.status}`)
+    json = await res.json()
   }
-
-  const json: AniListResponse<T> = await res.json()
-
-  if (json.errors) {
-    throw new Error(json.errors.map(e => e.message).join(', '))
-  }
-
+  if (json.errors) throw new Error(json.errors.map((e) => e.message).join(', '))
   return json.data as T
 }
 

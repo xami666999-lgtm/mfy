@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { anilist } from '../api/anilist'
 import { useStore } from '../store'
 import { MediaShelf } from '../components/MediaShelf'
+import { OFFLINE_MANGA } from '../data/offlineCatalog'
 
 async function openLib(q: string) {
   try {
@@ -22,7 +23,7 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' }) {
   const genres = kind === 'comics'
     ? ['Marvel', 'DC', 'Image', 'Star Wars', 'Superhero', 'Horror', 'Sci-Fi', 'Indie']
     : ['Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror', 'Mystery', 'Romance', 'Sci-Fi', 'Slice of Life']
-  const [popular, setPopular] = useState<any[]>([])
+  const [popular, setPopular] = useState<any[]>(OFFLINE_MANGA)
   const [rows, setRows] = useState<Record<string, any[]>>({})
 
   useEffect(() => {

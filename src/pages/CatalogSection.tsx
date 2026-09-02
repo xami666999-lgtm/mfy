@@ -3,6 +3,7 @@ import { Search } from 'lucide-react'
 import { anilist } from '../api/anilist'
 import { noutubeApi } from '../api/noutube'
 import { useStore } from '../store'
+import { OFFLINE_BOOKS } from '../data/offlineCatalog'
 
 type Kind = 'manga' | 'novels' | 'comics' | 'books' | 'youtube' | 'music'
 
@@ -120,8 +121,9 @@ export default function CatalogSection({ kind, title }: { kind: Kind; title: str
         }
       } else if (kind === 'music') {
         setItems(await itunesSongs(query.trim() || label))
-      } else if (kind === 'books') {
-        setItems(await openLibrary(query.trim() || label))
+       } else if (kind === 'books') {
+        setItems(OFFLINE_BOOKS)
+        try { const live = await openLibrary(query.trim() || label); if (live.length) setItems(live) } catch {}
       } else if (kind === 'comics') {
         const term = query.trim() || `${label} comic`
         const [ol, al] = await Promise.all([

@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // CORS-free text fetch (IPTV playlists)
   fetchText: (url: string, timeoutMs?: number) => ipcRenderer.invoke('fetch-text', url, timeoutMs),
+  fetchJson: (url: string, init?: { method?: string; headers?: Record<string, string>; body?: string; timeoutMs?: number }) => ipcRenderer.invoke('fetch-json', url, init),
 
   // Dialog
   selectFolder: () => ipcRenderer.invoke('select-folder'),
