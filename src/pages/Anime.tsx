@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { tmdb } from '../api/tmdb'
 import { anilist } from '../api/anilist'
+import { jikan } from '../api/jikan'
 import { useStore } from '../store'
 import { MediaShelf } from '../components/MediaShelf'
 import PageHero from '../components/PageHero'
@@ -32,6 +33,8 @@ export default function Anime() {
     anilist.getPopular('ANIME', 1, 40).then((p) => {
       if (p?.media?.length) setPopular((prev) => prev.length > 12 ? prev : p.media)
     }).catch(() => {})
+    jikan.topAnime(1).then((list) => { if (list.length) setPopular((prev) => prev.length >= 20 ? prev : list) }).catch(() => {})
+    jikan.seasonNow().then((list) => { if (list.length) setUpcoming(list) }).catch(() => {})
   }, [])
 
   return (

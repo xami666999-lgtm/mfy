@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { tmdb } from '../api/tmdb'
+import { jikan } from '../api/jikan'
 import { useStore } from '../store'
 import { MediaShelf } from '../components/MediaShelf'
 import PageHero from '../components/PageHero'
@@ -29,6 +30,10 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' }) {
       const seen = new Set()
       const uniq = bag.filter((x) => !seen.has(x.id) && seen.add(x.id))
       setPopular(uniq)
+      try {
+        const j = kind === 'comics' ? await jikan.searchManga('marvel', 1) : await jikan.topManga(1)
+        if (j.length) setPopular((prev) => prev.length ? prev : j)
+      } catch {}
       const extra: Record<string, any[]> = {}
       for (const q of queries) {
         extra[q] = (await tmdb.searchMulti(q).catch(() => ({ results: [] })))?.results?.filter((r: any) => r.poster_path) || []

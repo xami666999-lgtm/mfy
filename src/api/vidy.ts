@@ -23,19 +23,20 @@ export function vidyAnimeUrl(anilistId: number | string, episode = 1): string {
   return `${VIDY_BASE}/anime/${anilistId}/${episode}`
 }
 
-export type PlayerSource = 'vidy' | 'playtorrio' | 'simplstream' | 'zangetsu' | 'miruro'
+export type PlayerSource = 'vidy' | 'playtorrio' | 'simplstream' | 'zangetsu' | 'miruro' | 'mangayomi'
 
 export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId: number | string, season?: number, episode?: number): string {
   const s = season ?? 1
   const e = episode ?? 1
   if (source === 'playtorrio') {
-    return type === 'movie' ? `https://playtorrio.com/watch/movie/${tmdbId}` : `https://playtorrio.com/watch/tv/${tmdbId}/${s}/${e}`
+    return type === 'movie' ? `https://vidsrc.xyz/embed/movie/${tmdbId}` : `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}`
   }
   if (source === 'simplstream') {
-    return type === 'movie' ? `https://simplstream.app/watch/movie/${tmdbId}` : `https://simplstream.app/watch/tv/${tmdbId}/${s}/${e}`
+    return type === 'movie' ? `https://vidlink.pro/movie/${tmdbId}` : `https://vidlink.pro/tv/${tmdbId}/${s}/${e}`
   }
-  if (source === 'zangetsu') return `https://zangetsu.moe/watch/${tmdbId}${type === 'tv' ? `/${e}` : ''}`
-  if (source === 'miruro') return `https://www.miruro.tv/watch?id=${tmdbId}${type === 'tv' ? `&ep=${e}` : ''}`
+  if (source === 'zangetsu' || source === 'mangayomi' || source === 'miruro') {
+    return type === 'movie' ? `https://vidsrc.me/embed/movie/${tmdbId}` : `https://vidsrc.me/embed/tv/${tmdbId}/${s}-${e}`
+  }
   if (type === 'movie') return `https://vidsrc.me/embed/movie/${tmdbId}`
   return `https://vidsrc.me/embed/tv/${tmdbId}/${s}-${e}`
 }

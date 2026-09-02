@@ -168,7 +168,7 @@ export default function MetaDetails() {
     { id: 'playtorrio', label: 'PlayTorrio' },
     { id: 'simplstream', label: 'SimplStream' },
     { id: 'zangetsu', label: 'Zangetsu' },
-    { id: 'miruro', label: 'Miruro' },
+    { id: 'miruro', label: 'Miruro' }, { id: 'mangayomi', label: 'Mangayomi' },
     { id: 'vidy', label: 'Vidy' },
   ]
   const [playerPick, setPlayerPick] = useState(() => {
