@@ -1,35 +1,26 @@
 import { useEffect, useState } from 'react'
 import { Play, Search, Heart } from 'lucide-react'
-import { eclipseApi } from '../api/eclipse'
-import { useStore } from '../store'
 
 type Track = { id: string; title: string; artist: string; album?: string; image?: string; url?: string }
 
 const NAV = ['Home', 'Search', 'Your Library', 'Liked']
-const CHIPS = ['Eclipse charts', 'Pop', 'Hip-Hop', 'Rock', 'R&B', 'Electronic', 'Anime openings']
+const CHIPS = ['Top hits', 'Pop', 'Hip-Hop', 'Rock', 'R&B', 'Electronic', 'Anime openings']
 
-function mapEclipse(d: any): Track[] {
-  const rows = d?.tracks || d?.results || []
-  return rows.map((t: any, i: number) => ({
-    id: String(t.id || t.trackId || i),
-    title: t.title || t.name || t.trackName,
-    artist: t.artist || t.artistName || t.artists?.[0]?.name || 'Unknown',
-    album: t.album || t.collectionName,
-    image: t.artwork || t.image || t.cover || String(t.artworkUrl100 || '').replace('100x100bb', '600x600bb'),
-    url: t.url || t.previewUrl,
-  }))
+function art(url?: string) {
+  if (!url) return ''
+  if (url.includes('weserv.nl')) return url
+  return `https://images.weserv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ''))}&w=400&h=400&fit=cover`
 }
 
 async function itunes(term: string): Promise<Track[]> {
   const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=40`
   const api = typeof window !== 'undefined' ? (window as any).electronAPI : null
-  let d: any
+  let d: any = {}
   if (api?.fetchJson) {
     const r = await api.fetchJson(url)
     d = r?.json || {}
   } else {
-    const r = await fetch(url)
-    d = await r.json()
+    d = await (await fetch(url)).json()
   }
   return (d.results || []).map((s: any) => ({
     id: String(s.trackId),
@@ -42,7 +33,6 @@ async function itunes(term: string): Promise<Track[]> {
 }
 
 export default function MusicPage() {
-  const { setCurrentStreamUrl, setCurrentPage } = useStore()
   const [tab, setTab] = useState('Home')
   const [q, setQ] = useState('')
   const [tracks, setTracks] = useState<Track[]>([])
@@ -50,22 +40,9 @@ export default function MusicPage() {
   const [audioUrl, setAudioUrl] = useState('')
 
   async function load(term: string) {
-    const fallback = await itunes(term === 'Home' || term === 'Eclipse charts' ? 'top hits 2024' : term)
-    if (fallback.length) {
-      setTracks(fallback)
-      setNow((cur) => cur || fallback[0] || null)
-    }
-    try {
-      const d = await eclipseApi.getTrending('tracks', 1, 40)
-      let list = mapEclipse(d)
-      if (term && term !== 'Home' && term !== 'Eclipse charts') {
-        try { list = mapEclipse(await eclipseApi.search(term, 'tracks', 1, 40)) } catch {}
-      }
-      if (list.length) {
-        setTracks(list)
-        setNow((cur) => cur || list[0] || null)
-      }
-    } catch {}
+    const list = await itunes(term === 'Home' || term === 'Top hits' ? 'top hits 2024' : term).catch(() => [])
+    setTracks(list)
+    if (list[0]) setNow((cur) => cur || list[0])
   }
 
   useEffect(() => { load('Home') }, [])
@@ -76,14 +53,14 @@ export default function MusicPage() {
   }
 
   return (
-    <div className="flex min-h-full bg-gradient-to-b from-[#1a0b14] to-[#0b0b10] text-white">
-      <aside className="w-56 flex-shrink-0 bg-black/40 p-4">
-        <p className="text-[10px] tracking-[0.28em] text-[#FF1493] font-bold mb-5">MFY</p>
+    <div className="flex min-h-full bg-gradient-to-b from-[#2a0d18] to-[#0b0b10] text-white">
+      <aside className="w-52 flex-shrink-0 bg-black/50 p-4">
+        <p className="text-[10px] tracking-[0.28em] text-[#FF1493] font-bold mb-5">MFY MUSIC</p>
         {NAV.map((n) => (
-          <button key={n} type="button" onClick={() => { setTab(n); if (n === 'Home') load('Home') }} className={`w-full text-left h-10 px-3 rounded-lg text-sm mb-1 ${tab === n ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white'}`}>{n}</button>
+          <button key={n} type="button" onClick={() => { setTab(n); if (n === 'Home') load('Home') }} className={`w-full text-left h-10 px-3 rounded-lg text-sm mb-1 ${tab === n ? 'bg-[#FF1493]/20 text-white' : 'text-white/50 hover:text-white'}`}>{n}</button>
         ))}
       </aside>
-      <div className="flex-1 p-6 overflow-y-auto">
+      <div className="flex-1 p-6 overflow-y-auto pb-28">
         <form className="flex gap-2 mb-5" onSubmit={(e) => { e.preventDefault(); load(q || 'Home') }}>
           <div className="flex-1 flex items-center gap-2 h-11 px-4 rounded-full bg-white text-black">
             <Search className="w-4 h-4" />
@@ -92,28 +69,44 @@ export default function MusicPage() {
         </form>
         <div className="flex gap-2 mb-6 flex-wrap">
           {CHIPS.map((c) => (
-            <button key={c} type="button" onClick={() => load(c)} className="h-8 px-3 rounded-full bg-white/10 text-xs hover:bg-white/20">{c}</button>
+            <button key={c} type="button" onClick={() => load(c)} className="h-8 px-3 rounded-full bg-white/10 text-xs hover:bg-[#FF1493]/30">{c}</button>
           ))}
         </div>
         {now && (
           <div className="flex gap-5 mb-8 items-end">
-            {now.image && <img src={now.image} alt="" referrerPolicy="no-referrer" className="w-44 h-44 rounded-md object-cover shadow-2xl" />}
+            {art(now.image) ? (
+              <img src={art(now.image)} alt="" className="w-44 h-44 rounded-md object-cover shadow-2xl bg-white/10" />
+            ) : (
+              <div className="w-44 h-44 rounded-md bg-[#FF1493]/30 grid place-items-center text-3xl font-black">{now.title[0]}</div>
+            )}
             <div>
-              <p className="text-[11px] font-bold tracking-widest">PLAYLIST</p>
+              <p className="text-[11px] font-bold tracking-widest text-[#FF1493]">PLAYLIST</p>
               <h2 className="text-4xl font-black mt-1">{now.title}</h2>
               <p className="text-white/60 mt-2">{now.artist}</p>
               <div className="flex gap-2 mt-4">
-                <button type="button" className="h-12 w-12 rounded-full bg-[#1db954] grid place-items-center" onClick={() => play(now)}><Play fill="black" className="text-black" /></button>
+                <button type="button" className="h-12 w-12 rounded-full bg-[#FF1493] grid place-items-center" onClick={() => play(now)}><Play fill="white" className="text-white" /></button>
                 <Heart className="w-6 h-6 text-white/40 self-center" />
               </div>
             </div>
           </div>
         )}
-        
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+          {tracks.slice(0, 12).map((t) => (
+            <button key={`g-${t.id}`} type="button" onClick={() => play(t)} className="text-left">
+              {art(t.image) ? (
+                <img src={art(t.image)} alt="" className="w-full aspect-square rounded-lg object-cover bg-white/10" />
+              ) : (
+                <div className="w-full aspect-square rounded-lg bg-white/10 grid place-items-center">{t.title[0]}</div>
+              )}
+              <p className="text-sm mt-2 truncate">{t.title}</p>
+              <p className="text-[11px] text-white/40 truncate">{t.artist}</p>
+            </button>
+          ))}
+        </div>
         {tracks.map((t, i) => (
           <button key={t.id} type="button" onClick={() => play(t)} className="w-full flex items-center gap-3 px-2 py-2 rounded-md hover:bg-white/5 text-left">
             <span className="w-6 text-white/30 text-xs">{i + 1}</span>
-            {t.image && <img src={t.image} alt="" referrerPolicy="no-referrer" className="w-10 h-10 rounded object-cover" />}
+            {art(t.image) ? <img src={art(t.image)} alt="" className="w-10 h-10 rounded object-cover bg-white/10" /> : <div className="w-10 h-10 rounded bg-white/10" />}
             <span className="flex-1 min-w-0">
               <span className="block text-sm truncate">{t.title}</span>
               <span className="block text-[11px] text-white/40 truncate">{t.artist}</span>
@@ -122,12 +115,12 @@ export default function MusicPage() {
           </button>
         ))}
       </div>
-        {audioUrl && (
-          <div className="fixed bottom-0 left-0 right-0 z-40 bg-black/90 border-t border-white/10 px-4 py-3">
-            <p className="text-xs text-white/50 mb-1">{now?.title} — {now?.artist}</p>
-            <audio src={audioUrl} autoPlay controls className="w-full" />
-          </div>
-        )}
+      {audioUrl && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-black/95 border-t border-white/10 px-4 py-3">
+          <p className="text-xs text-[#FF1493] mb-1">{now?.title} — {now?.artist}</p>
+          <audio src={audioUrl} autoPlay controls className="w-full" />
+        </div>
+      )}
     </div>
   )
 }
