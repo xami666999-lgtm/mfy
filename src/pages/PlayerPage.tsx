@@ -50,7 +50,7 @@ export default function PlayerPage() {
     const direct = currentStreamUrl && (
       !selectedMedia ||
       selectedMedia.type === 'iptv' ||
-      /youtube|m3u8|\.mp4|metegol|embed\/|itunes/.test(currentStreamUrl)
+      /youtube|youtu\.be|nadeko|yewtu|invidious|m3u8|\.mp4|\.m4a|metegol|embed\/|itunes/.test(currentStreamUrl)
     )
     if (direct && currentStreamUrl) {
       setStreamUrl(currentStreamUrl)
@@ -75,7 +75,7 @@ export default function PlayerPage() {
   }, [selectedMedia, playerSource, currentStreamUrl])
 
   const handleIframeError = () => {
-    // Try fallback source if current one fails
+    if (/youtube|nadeko|yewtu|invidious|itunes|m3u8/.test(streamUrl || currentStreamUrl || '')) return
     const sources = getFallbackSources(
       selectedMedia?.type === 'movie' ? 'movie' : 'tv',
       selectedMedia?.id,

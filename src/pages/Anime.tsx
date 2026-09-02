@@ -32,17 +32,16 @@ export default function Anime() {
 
   useEffect(() => {
     ;(async () => {
+      const local = await fetch('./data/anime.json').then((r) => r.json()).catch(() => ({ anime: [] }))
+      if (local.anime?.length) setPopular(cards(local.anime))
       try {
         const p = await anilist.getPopular('ANIME', 1, 30)
-        setPopular(cards(p.media))
-      } catch {
-        const local = await fetch('./data/anime.json').then((r) => r.json()).catch(() => ({ anime: [] }))
-        setPopular(cards(local.anime || []))
-      }
+        if (p?.media?.length) setPopular(cards(p.media))
+      } catch {}
       const extra: Record<string, ShelfItem[]> = {}
       for (const g of GENRES.filter((x) => x !== 'Popular').slice(0, 8)) {
         try {
-          extra[g] = cards((await (anilist as any).getByGenre(g, 1, 16)).media)
+          extra[g] = cards((await anilist.getByGenre(g, 'ANIME', 1, 16)).media)
         } catch {
           extra[g] = []
         }

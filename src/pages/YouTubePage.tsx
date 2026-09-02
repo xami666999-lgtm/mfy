@@ -25,7 +25,7 @@ async function feed(q: string): Promise<Vid[]> {
 }
 
 export default function YouTubePage() {
-  const { setCurrentStreamUrl, setCurrentPage } = useStore()
+  const { setCurrentStreamUrl, setCurrentPage, setSelectedMedia } = useStore()
   const [q, setQ] = useState('')
   const [chip, setChip] = useState('Home')
   const [items, setItems] = useState<Vid[]>([])
@@ -41,8 +41,8 @@ export default function YouTubePage() {
       <div className="h-14 px-4 flex items-center gap-3 border-b border-white/10">
         <Menu className="w-5 h-5 text-white/70" />
         <div className="flex items-center gap-1 font-bold text-lg">
-          <span className="w-8 h-5 rounded-sm bg-[#ff0000] grid place-items-center text-[10px]">▶</span>
-          NouTube
+          <span className="w-8 h-5 rounded-sm bg-[#FF1493] grid place-items-center text-[10px] font-black">M</span>
+          MFY
         </div>
         <form className="flex-1 max-w-2xl mx-auto flex" onSubmit={(e) => { e.preventDefault(); setLoading(true); feed(q || chip).then(setItems).finally(() => setLoading(false)) }}>
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" className="flex-1 h-10 px-4 rounded-l-full bg-[#121212] border border-white/15 text-sm outline-none" />
@@ -65,7 +65,7 @@ export default function YouTubePage() {
       {loading && <p className="px-4 text-sm text-white/40">Loading…</p>}
       <div className="px-4 pb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {items.map((v) => (
-          <button key={v.videoId} type="button" className="text-left" onClick={() => { setCurrentStreamUrl(`https://www.youtube.com/embed/${v.videoId}`); setCurrentPage('player') }}>
+          <button key={v.videoId} type="button" className="text-left" onClick={() => { setCurrentStreamUrl(`https://inv.nadeko.net/embed/${v.videoId}`); setSelectedMedia(null); setCurrentPage('player') }}>
             <div className="aspect-video rounded-xl overflow-hidden bg-[#222]">
               <img src={`https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
             </div>

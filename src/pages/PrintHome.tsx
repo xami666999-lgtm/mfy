@@ -29,21 +29,21 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' }) {
 
   useEffect(() => {
     ;(async () => {
+      const local = await fetch('./data/manga.json').then((r) => r.json()).catch(() => ({ manga: [] }))
+      if (local.manga?.length) setPopular(cards(local.manga))
       try {
         if (kind === 'comics') {
           const [al, ol] = await Promise.all([
             anilist.search('Marvel', 'MANGA', 1, 24).then((r) => cards(r.media)).catch(() => []),
             openLib('marvel comics').catch(() => []),
           ])
-          setPopular([...al, ...ol].slice(0, 40))
+          const merged = [...al, ...ol]
+          if (merged.length) setPopular(merged.slice(0, 40))
         } else {
           const p = await anilist.getPopular('MANGA', 1, 40)
-          setPopular(cards(p.media))
+          if (p?.media?.length) setPopular(cards(p.media))
         }
-      } catch {
-        const local = await fetch('./data/manga.json').then((r) => r.json()).catch(() => ({ manga: [] }))
-        setPopular(cards(local.manga || []))
-      }
+      } catch {}
       const extra: Record<string, ShelfItem[]> = {}
       for (const g of genres.filter((x) => x !== 'Popular').slice(0, 8)) {
         try {

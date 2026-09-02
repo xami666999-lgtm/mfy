@@ -152,7 +152,7 @@ export default function Board() {
       }),
     ])
     for (const name of ANIME_GENRES.slice(0, 8)) {
-      try { ga[name] = ((await (anilist as any).getByGenre(name, 1, 12))?.media) || [] }
+      try { ga[name] = ((await anilist.getByGenre(name, 'ANIME', 1, 12))?.media) || [] }
       catch { ga[name] = [] }
     }
     setGenreMovie(gm)
@@ -223,7 +223,7 @@ export default function Board() {
         <Shelf title="Top 10 on MFY" items={movies.slice(0, 10)} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
         <Shelf title="Trending Today" items={trending} onOpen={goDetail} />
         <Shelf title="Now Playing" items={nowPlaying} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
-        <Shelf title="Airing Now · TV" items={onTheAir} onOpen={(i) => goDetail(i, 'tv')} viewAll={() => setCurrentPage('tv')} />
+        <Shelf title="Airing Now" items={onTheAir} onOpen={(i) => goDetail(i, 'tv')} viewAll={() => setCurrentPage('tv')} />
         {recommended.length > 0 && <Shelf title="Recommended For You" items={recommended} onOpen={goDetail} />}
         <Shelf title="Popular Movies" items={movies} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
         <Shelf title="Popular TV" items={shows} onOpen={(i) => goDetail(i, 'tv')} viewAll={() => setCurrentPage('tv')} />
@@ -236,7 +236,7 @@ export default function Board() {
           <Shelf key={`m-${g.id}`} title={`Movies · ${g.name}`} items={genreMovie[g.id] || []} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
         ))}
         {TV_GENRES.map((g) => (
-          <Shelf key={`t-${g.id}`} title={`TV · ${g.name}`} items={genreTv[g.id] || []} onOpen={(i) => goDetail(i, 'tv')} viewAll={() => setCurrentPage('tv')} />
+          <Shelf key={`t-${g.id}`} title={`Series · ${g.name}`} items={genreTv[g.id] || []} onOpen={(i) => goDetail(i, 'tv')} viewAll={() => setCurrentPage('tv')} />
         ))}
         {ANIME_GENRES.slice(0, 8).map((g) => (
           <Shelf key={`a-${g}`} title={`Anime · ${g}`} items={genreAnime[g] || []} onOpen={() => setCurrentPage('anime')} viewAll={() => setCurrentPage('anime')} />

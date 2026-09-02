@@ -42,7 +42,7 @@ export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId:
 
 export function isPlayerEmbed(url: string): boolean {
   if (!url) return false
-  return /vidy\.st|playtorrio|simplstream|zangetsu|miruro|youtube|embed/.test(url)
+  return /vidy\.st|playtorrio|simplstream|zangetsu|miruro|youtube|youtu\.be|nadeko|yewtu|invidious|embed/.test(url)
 }
 
 export function getFallbackSources(type: 'movie' | 'tv', tmdbId: number | string | undefined, season?: number, episode?: number): { source: PlayerSource; url: string }[] {

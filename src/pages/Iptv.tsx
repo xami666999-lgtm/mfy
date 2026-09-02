@@ -49,9 +49,11 @@ function parseM3U(text: string): Channel[] {
 
 const SAMPLE_PLAYLISTS: { name: string; url: string; category: 'general' | 'countries' | 'categories' | 'iptvgen' }[] = [
   { name: 'iptv-org (all)', url: 'https://iptv-org.github.io/iptv/index.m3u', category: 'general' },
-  { name: 'iptv-org (countries)', url: 'https://iptv-org.github.io/iptv/countries.m3u', category: 'countries' },
-  { name: 'iptv-org (categories)', url: 'https://iptv-org.github.io/iptv/categories.m3u', category: 'categories' },
-  { name: 'iptv-org (auto)', url: 'https://iptv-org.github.io/iptv/auto.m3u', category: 'general' },
+  { name: 'iptv-org countries', url: 'https://iptv-org.github.io/iptv/index.country.m3u', category: 'countries' },
+  { name: 'iptv-org categories', url: 'https://iptv-org.github.io/iptv/index.category.m3u', category: 'categories' },
+  { name: 'iptv-org US', url: 'https://iptv-org.github.io/iptv/countries/us.m3u', category: 'countries' },
+  { name: 'iptv-org UK', url: 'https://iptv-org.github.io/iptv/countries/uk.m3u', category: 'countries' },
+  { name: 'PlayTorrio IPTV', url: 'https://iptv-org.github.io/iptv/index.m3u', category: 'general' },
   { name: 'free-tv (all)', url: 'https://raw.githubusercontent.com/free-tv/iptv/master/index.m3u', category: 'general' },
   { name: 'free-tv (countries)', url: 'https://raw.githubusercontent.com/free-tv/iptv/master/countries.m3u', category: 'countries' },
   { name: 'free-tv (categories)', url: 'https://raw.githubusercontent.com/free-tv/iptv/master/categories.m3u', category: 'categories' },
@@ -116,6 +118,10 @@ export default function Iptv() {
     }
     setLoading(false)
   }, [url])
+
+  useEffect(() => {
+    load('https://iptv-org.github.io/iptv/index.m3u')
+  }, [])
 
   const importFile = async () => {
     const api = (window as any).electronAPI

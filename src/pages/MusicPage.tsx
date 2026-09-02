@@ -39,32 +39,32 @@ export default function MusicPage() {
   const [q, setQ] = useState('')
   const [tracks, setTracks] = useState<Track[]>([])
   const [now, setNow] = useState<Track | null>(null)
+  const [audioUrl, setAudioUrl] = useState('')
 
   async function load(term: string) {
+    const fallback = await itunes(term === 'Home' || term === 'Eclipse charts' ? 'top hits 2024' : term)
+    if (fallback.length) {
+      setTracks(fallback)
+      setNow((cur) => cur || fallback[0] || null)
+    }
     try {
       const d = await eclipseApi.getTrending('tracks', 1, 40)
       let list = mapEclipse(d)
       if (term && term !== 'Home' && term !== 'Eclipse charts') {
         try { list = mapEclipse(await eclipseApi.search(term, 'tracks', 1, 40)) } catch {}
       }
-      if (!list.length) list = await itunes(term === 'Home' || term === 'Eclipse charts' ? 'top hits' : term)
-      setTracks(list)
-      setNow((cur) => cur || list[0] || null)
-    } catch {
-      const list = await itunes(term || 'top hits')
-      setTracks(list)
-      setNow(list[0] || null)
-    }
+      if (list.length) {
+        setTracks(list)
+        setNow((cur) => cur || list[0] || null)
+      }
+    } catch {}
   }
 
   useEffect(() => { load('Home') }, [])
 
   function play(t: Track) {
     setNow(t)
-    if (t.url) {
-      setCurrentStreamUrl(t.url)
-      setCurrentPage('player')
-    }
+    if (t.url) setAudioUrl(t.url)
   }
 
   return (
@@ -100,6 +100,9 @@ export default function MusicPage() {
               </div>
             </div>
           </div>
+        )}
+        {audioUrl && (
+          <audio src={audioUrl} autoPlay controls className="w-full mt-4 mb-2" />
         )}
         {tracks.map((t, i) => (
           <button key={t.id} type="button" onClick={() => play(t)} className="w-full flex items-center gap-3 px-2 py-2 rounded-md hover:bg-white/5 text-left">
