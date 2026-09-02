@@ -172,7 +172,7 @@ export default function MetaDetails() {
     { id: 'vidy', label: 'Vidy' },
   ]
   const [playerPick, setPlayerPick] = useState(() => {
-    try { return localStorage.getItem('mfy-player-engine') || 'playtorrio' } catch { return 'playtorrio' }
+    try { return localStorage.getItem('mfy-player-engine') || 'vidy' } catch { return 'vidy' }
   })
 
   async function handlePlay() {

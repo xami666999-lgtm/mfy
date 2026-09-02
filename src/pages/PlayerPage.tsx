@@ -43,7 +43,7 @@ export default function PlayerPage() {
 
   const [autoNextBusy, setAutoNextBusy] = useState(false)
   const [playerSource, setPlayerSource] = useState<PlayerSource>(() => {
-    try { return (localStorage.getItem('mfy-player-engine') as PlayerSource) || 'playtorrio' } catch { return 'playtorrio' }
+    try { return (localStorage.getItem('mfy-player-engine') as PlayerSource) || 'vidy' } catch { return 'vidy' }
   })
 
   useEffect(() => {
