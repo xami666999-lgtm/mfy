@@ -46,6 +46,7 @@ export default function Board() {
   const [movies, setMovies] = useState<any[]>([])
   const [shows, setShows] = useState<any[]>([])
   const [anime, setAnime] = useState<any[]>([])
+  const [manga, setManga] = useState<any[]>([])
   const [heroIdx, setHeroIdx] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -130,7 +131,19 @@ export default function Board() {
         const a = await anilist.getTrending(1, 20)
         setAnime(a?.media || [])
       } catch {
-        setAnime([])
+        try {
+          const local = await fetch('./data/anime.json').then((r) => r.json())
+          setAnime(local.anime || [])
+        } catch { setAnime([]) }
+      }
+      try {
+        const mg = await anilist.getPopular('MANGA', 1, 24)
+        setManga(mg?.media || [])
+      } catch {
+        try {
+          const local = await fetch('./data/manga.json').then((r) => r.json())
+          setManga(local.manga || [])
+        } catch { setManga([]) }
       }
     } catch (e) {
       setError('Could not load catalog. Check your TMDB API key in Settings.')
@@ -444,14 +457,31 @@ export default function Board() {
           {anime.length > 0 && (
             <section className="section">
               <div className="section-header">
-                <h2 className="section-title">Upcoming Anime</h2>
+                <h2 className="section-title">Anime</h2>
                 <button className="btn btn-link section-link" type="button" onClick={() => setCurrentPage('anime')}>View All</button>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {anime.slice(0, 12).map((item: any) => (
                   <button key={item.id} type="button" className="text-left" onClick={() => setCurrentPage('anime')}>
                     <img src={item.coverImage?.large || item.coverImage?.medium} alt="" referrerPolicy="no-referrer" className="w-full aspect-[2/3] object-cover rounded-lg" />
-                    <p className="text-sm text-white truncate mt-1">{item.title?.english || item.title?.romaji}</p>
+                    <p className="text-sm text-white truncate mt-1">{item.title?.english || item.title?.romaji || item.title}</p>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {manga.length > 0 && (
+            <section className="section">
+              <div className="section-header">
+                <h2 className="section-title">Manga</h2>
+                <button className="btn btn-link section-link" type="button" onClick={() => setCurrentPage('manga')}>View All</button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {manga.slice(0, 12).map((item: any) => (
+                  <button key={`mg-${item.id}`} type="button" className="text-left" onClick={() => setCurrentPage('manga')}>
+                    <img src={item.coverImage?.large || item.coverImage || item.image} alt="" referrerPolicy="no-referrer" className="w-full aspect-[2/3] object-cover rounded-lg" />
+                    <p className="text-sm text-white truncate mt-1">{item.title?.english || item.title?.romaji || item.title}</p>
                   </button>
                 ))}
               </div>
