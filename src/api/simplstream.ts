@@ -82,7 +82,12 @@ export const simplstreamApi = {
   },
 
   getTrending: async (type?: 'movie' | 'series', timeWindow: 'day' | 'week' = 'week', page = 1): Promise<{ results: any[]; totalPages: number }> => {
-    return simplstreamFetch('/trending', { type, time_window: timeWindow, page })
+    try {
+      return await simplstreamFetch('/trending', { type, time_window: timeWindow, page })
+    } catch {
+      const d = await fetch('./data/simplstream.json').then((r) => r.json())
+      return { results: d.torrents || [], totalPages: 1 }
+    }
   },
 
   getPopular: async (type?: 'movie' | 'series', page = 1): Promise<{ results: any[]; totalPages: number }> => {

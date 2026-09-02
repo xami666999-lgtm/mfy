@@ -81,7 +81,12 @@ export const noutubeApi = {
    * Get trending videos
    */
   getTrending: async (page = 1): Promise<NouTubeSearchResult> => {
-    return noutubeFetch<NouTubeSearchResult>('/trending', { page })
+    try {
+      return await noutubeFetch<NouTubeSearchResult>('/trending', { page })
+    } catch {
+      const d = await fetch('./data/noutube.json').then((r) => r.json())
+      return { videos: d.videos || [], continuation: undefined } as any
+    }
   },
 
   /**
@@ -140,7 +145,12 @@ export const noutubeApi = {
    * Get trending music
    */
   getTrendingMusic: async (page = 1): Promise<NouTubeSearchResult> => {
-    return noutubeFetch<NouTubeSearchResult>('/music/trending', { page })
+    try {
+      return await noutubeFetch<NouTubeSearchResult>('/music/trending', { page })
+    } catch {
+      const d = await fetch('./data/noutube.json').then((r) => r.json())
+      return { videos: d.videos || [] } as any
+    }
   },
 
   /**

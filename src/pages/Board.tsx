@@ -17,6 +17,7 @@ import { mangayomiApi, MangayomiManga } from '../api/mangayomi'
 import { zangetsuApi, ZangetsuAnime } from '../api/zangetsu'
 import { simplstreamApi, SimplStreamMedia } from '../api/simplstream'
 import { useStore } from '../store'
+import HomeCatalogs from '../components/HomeCatalogs'
 import { cn } from '../lib/utils'
 import { SkeletonPoster, SkeletonHero } from '../components/Skeleton'
 
@@ -904,7 +905,7 @@ loadGenres().catch(() => {})
   return (
     <div className="board page-fade-enter">
       <div className="mx-5 mt-3 mb-1 flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-[#FF1493]/35 bg-[#FF1493]/10">
-        <span className="text-xs font-bold text-[#FF1493]">MFY v1.2.47</span>
+        <span className="text-xs font-bold text-[#FF1493]">MFY v1.2.48</span>
         <span className="text-[11px] text-white/60">Search Oda or Nolan · press ? for keys</span>
       </div>
       {error && <div className="error-banner mx-5 mt-4">{error}</div>}
@@ -962,6 +963,7 @@ loadGenres().catch(() => {})
       )}
 
       <div className="board-content">
+        <HomeCatalogs />
         <ProviderGrid />
 
         <FranchiseGrid />

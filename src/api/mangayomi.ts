@@ -66,7 +66,12 @@ export const mangayomiApi = {
   },
 
   getPopular: async (page = 1, perPage = 20): Promise<{ manga: any[]; hasNextPage: boolean }> => {
-    return mangayomiFetch(`/api/manga/popular?page=${page}&limit=${perPage}`)
+    try {
+      return await mangayomiFetch(`/api/manga/popular?page=${page}&limit=${perPage}`)
+    } catch {
+      const d = await fetch('./data/mangayomi.json').then((r) => r.json()).catch(() => fetch('./data/manga.json').then((r) => r.json()))
+      return { manga: d.manga || [], hasNextPage: false }
+    }
   },
 
   getLatestUpdates: async (page = 1, perPage = 20): Promise<{ manga: any[]; hasNextPage: boolean }> => {

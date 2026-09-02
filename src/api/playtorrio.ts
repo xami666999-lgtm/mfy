@@ -90,7 +90,13 @@ export const playtorrioApi = {
    * Get trending
    */
   getTrending: async (type?: 'movie' | 'series' | 'anime', timeWindow: 'day' | 'week' = 'week', page = 1): Promise<{ results: PlayTorrioMedia[]; totalPages: number }> => {
-    return playtorrioFetch<{ results: PlayTorrioMedia[]; totalPages: number }>('/trending', { type, time_window: timeWindow, page })
+    try {
+      return await playtorrioFetch<{ results: PlayTorrioMedia[]; totalPages: number }>('/trending', { type, time_window: timeWindow, page })
+    } catch {
+      const d = await fetch('./data/torrents.json').then((r) => r.json())
+      const results = (d.torrents || []).filter((t: any) => !type || t.type === type || (type === 'series' && t.type === 'series'))
+      return { results, totalPages: 1 }
+    }
   },
 
   /**

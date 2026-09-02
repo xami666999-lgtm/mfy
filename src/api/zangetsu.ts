@@ -75,7 +75,12 @@ export const zangetsuApi = {
   },
 
   getPopular: async (page = 1): Promise<{ data: any[]; hasNextPage: boolean }> => {
-    return zangetsuFetch(`/api/anime/popular`, { page })
+    try {
+      return await zangetsuFetch(`/api/anime/popular`, { page })
+    } catch {
+      const d = await fetch('./data/zangetsu.json').then((r) => r.json())
+      return { data: d.anime || [], hasNextPage: false }
+    }
   },
 
   getAiring: async (page = 1): Promise<{ data: any[]; hasNextPage: boolean }> => {

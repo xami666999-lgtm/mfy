@@ -147,8 +147,13 @@ export const iptvEnhancedApi = {
    * Get all channels from iptv-org main playlist
    */
   getAllChannels: async (): Promise<IPTVChannel[]> => {
-    const text = await fetch(`${IPTV_ORG_BASE}/index.m3u`).then(r => r.text())
-    return parseM3U(text)
+    try {
+      const text = await fetch(`${IPTV_ORG_BASE}/index.m3u`).then(r => r.text())
+      return parseM3U(text)
+    } catch {
+      const d = await fetch('./data/iptv-channels.json').then((r) => r.json()).catch(() => ({ channels: [] }))
+      return d.channels || []
+    }
   },
 
   /**
@@ -237,7 +242,6 @@ export const iptvEnhancedApi = {
       const data = await metegolFetch<{ events: MetegolEvent[] }>('/api/events', params)
       return data.events || []
     } catch {
-      // Fallback to local Stremio addon if available
       try {
         const res = await fetch('http://localhost:7000/catalog/series/metegol.json')
         if (res.ok) {
@@ -245,7 +249,12 @@ export const iptvEnhancedApi = {
           return data.metas || []
         }
       } catch {}
-      return []
+      try {
+        const d = await fetch('./data/metegol.json').then((r) => r.json())
+        return d.events || []
+      } catch {
+        return []
+      }
     }
   },
 

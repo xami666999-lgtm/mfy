@@ -97,7 +97,12 @@ export const eclipseApi = {
    * Get trending tracks
    */
   getTrending: async (type: 'tracks' | 'artists' | 'albums' = 'tracks', page = 1, limit = 20): Promise<EclipseSearchResult> => {
-    return eclipseFetch<EclipseSearchResult>(`/trending/${type}`, { page, limit })
+    try {
+      return await eclipseFetch<EclipseSearchResult>(`/trending/${type}`, { page, limit })
+    } catch {
+      const d = await fetch('./data/eclipse-music.json').then((r) => r.json())
+      return { tracks: d.tracks || [] } as any
+    }
   },
 
   /**
