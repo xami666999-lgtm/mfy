@@ -4,7 +4,7 @@ import { tmdb, POSTER_URL, BACKDROP_URL, PROFILE_URL, STILL_URL } from '../api/t
 import { fetchOmdbByImdbId } from '../api/omdb'
 import { fetchRottenTomatoes } from '../api/rottentomatoes'
 import { fetchMdblistRatings, type MdblistRating } from '../api/mdblist'
-import { vidyUrl } from '../api/vidy'
+import { vidyUrl, getPlayerUrl } from '../api/vidy'
 import { useStore } from '../store'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 
@@ -177,7 +177,8 @@ export default function MetaDetails() {
 
   async function handlePlay() {
     if (!selectedMedia || !detail || selectedMedia.type === 'iptv') return
-    const url = vidyUrl(selectedMedia.type === 'movie' ? 'movie' : 'tv', selectedMedia.id as number, activeSeason, selectedMedia.episode)
+    const kind = selectedMedia.type === 'movie' ? 'movie' : 'tv'
+    const url = getPlayerUrl(playerPick as any, kind, selectedMedia.id as number, activeSeason, selectedMedia.episode)
     setSelectedMedia({ ...selectedMedia, season: activeSeason, episode: selectedMedia.episode })
     setCurrentStreamUrl(url)
     setCurrentPage('player')

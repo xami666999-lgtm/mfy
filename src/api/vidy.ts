@@ -23,24 +23,30 @@ export function vidyAnimeUrl(anilistId: number | string, episode = 1): string {
   return `${VIDY_BASE}/anime/${anilistId}/${episode}`
 }
 
-export type PlayerSource = 'vidy'
+export type PlayerSource = 'vidy' | 'playtorrio' | 'simplstream' | 'zangetsu' | 'miruro'
 
 export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId: number | string, season?: number, episode?: number): string {
-  // vidy
-  if (type === 'movie') return `${VIDY_BASE}/movie/${tmdbId}`
   const s = season ?? 1
   const e = episode ?? 1
+  if (source === 'playtorrio') {
+    return type === 'movie' ? `https://playtorrio.com/watch/movie/${tmdbId}` : `https://playtorrio.com/watch/tv/${tmdbId}/${s}/${e}`
+  }
+  if (source === 'simplstream') {
+    return type === 'movie' ? `https://simplstream.app/watch/movie/${tmdbId}` : `https://simplstream.app/watch/tv/${tmdbId}/${s}/${e}`
+  }
+  if (source === 'zangetsu') return `https://zangetsu.moe/watch/${tmdbId}${type === 'tv' ? `/${e}` : ''}`
+  if (source === 'miruro') return `https://www.miruro.tv/watch?id=${tmdbId}${type === 'tv' ? `&ep=${e}` : ''}`
+  if (type === 'movie') return `${VIDY_BASE}/movie/${tmdbId}`
   return `${VIDY_BASE}/tv/${tmdbId}/${s}/${e}`
 }
 
 export function isPlayerEmbed(url: string): boolean {
-  return Boolean(url && url.includes('vidy.st'))
+  if (!url) return false
+  return /vidy\.st|playtorrio|simplstream|zangetsu|miruro|youtube|embed/.test(url)
 }
 
-/** Fallback sources for a given media */
 export function getFallbackSources(type: 'movie' | 'tv', tmdbId: number | string | undefined, season?: number, episode?: number): { source: PlayerSource; url: string }[] {
   if (!tmdbId) return []
-  return [
-    { source: 'vidy', url: `https://vidy.st/${type === 'movie' ? 'movie' : 'tv'}/${tmdbId}${type === 'tv' ? `/${season ?? 1}/${episode ?? 1}` : ''}` },
-  ]
+  const sources: PlayerSource[] = ['playtorrio', 'simplstream', 'vidy', 'zangetsu', 'miruro']
+  return sources.map((source) => ({ source, url: getPlayerUrl(source, type, tmdbId, season, episode) }))
 }

@@ -42,10 +42,24 @@ export default function PlayerPage() {
   const trackRef = useRef<HTMLTrackElement>(null)
 
   const [autoNextBusy, setAutoNextBusy] = useState(false)
-  const [playerSource, setPlayerSource] = useState<PlayerSource>('vidy')
+  const [playerSource, setPlayerSource] = useState<PlayerSource>(() => {
+    try { return (localStorage.getItem('mfy-player-engine') as PlayerSource) || 'playtorrio' } catch { return 'playtorrio' }
+  })
 
   useEffect(() => {
-    if (!selectedMedia) return
+    const direct = currentStreamUrl && (
+      !selectedMedia ||
+      selectedMedia.type === 'iptv' ||
+      /youtube|m3u8|\.mp4|metegol|embed\/|itunes/.test(currentStreamUrl)
+    )
+    if (direct && currentStreamUrl) {
+      setStreamUrl(currentStreamUrl)
+      setLoaded(true)
+      setLoading(false)
+      setError('')
+      return
+    }
+    if (!selectedMedia || selectedMedia.type === 'iptv') return
     const url = getPlayerUrl(
       playerSource,
       selectedMedia.type === 'movie' ? 'movie' : 'tv',
@@ -58,7 +72,7 @@ export default function PlayerPage() {
     setLoaded(true)
     setLoading(false)
     setError('')
-  }, [selectedMedia, playerSource])
+  }, [selectedMedia, playerSource, currentStreamUrl])
 
   const handleIframeError = () => {
     // Try fallback source if current one fails
@@ -254,7 +268,11 @@ const s = await tmdb.getSeasonDetail(selectedMedia.id as number, nextSeason.seas
             <span style={{ fontSize: 10, color: 'white/60' }}>Source:</span>
             <select
               value={playerSource}
-              onChange={(e) => setPlayerSource(e.target.value as PlayerSource)}
+              onChange={(e) => {
+                const v = e.target.value as PlayerSource
+                setPlayerSource(v)
+                try { localStorage.setItem('mfy-player-engine', v) } catch {}
+              }}
               style={{
                 background: 'rgba(255,255,255,0.1)',
                 border: 'none',
@@ -266,6 +284,10 @@ const s = await tmdb.getSeasonDetail(selectedMedia.id as number, nextSeason.seas
                 appearance: 'none'
               }}
             >
+              <option value="playtorrio">PlayTorrio</option>
+              <option value="simplstream">SimplStream</option>
+              <option value="zangetsu">Zangetsu</option>
+              <option value="miruro">Miruro</option>
               <option value="vidy">Vidy</option>
             </select>
             <Zap size={12} style={{ color: '#FFD24C' }} />

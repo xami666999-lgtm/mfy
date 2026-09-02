@@ -26,7 +26,7 @@ const SPORT_META: Record<string, { icon: any; color: string }> = {
 const DEFAULT_SPORT = 'football'
 
 export default function Sports() {
-  const { setCurrentStreamUrl, setCurrentPage } = useStore()
+  const { setCurrentStreamUrl, setCurrentPage, setSelectedMedia } = useStore()
   const [sports, setSports] = useState<SportCategory[]>([])
   const [sportId, setSportId] = useState(DEFAULT_SPORT)
   const [matches, setMatches] = useState<SportMatch[]>([])
@@ -115,6 +115,7 @@ export default function Sports() {
     setMultiView(false)
     setActiveMatch(null)
     setStreams(null)
+    setSelectedMedia(null)
     setCurrentStreamUrl(url)
     setCurrentPage('player')
   }

@@ -41,7 +41,7 @@ export default function Anime() {
       try {
         let d: { media: any[]; pageInfo: any }
         if (genre === 'All') {
-          d = await (anilist.getPopular as any)('ANIME', page, 24)
+          d = await (anilist.getPopular as any)('ANIME', page, 50)
         } else {
           d = await (anilist.getByGenre as any)(genre, page, 24)
         }
@@ -50,7 +50,12 @@ export default function Anime() {
           setHasNext(Boolean(d?.pageInfo?.hasNextPage))
         }
       } catch {
-        if (!c) setItems([])
+        try {
+          const local = await fetch('./data/anime.json').then((r) => r.json())
+          if (!c) setItems(local.anime || [])
+        } catch {
+          if (!c) setItems([])
+        }
       }
       if (!c) setLoading(false)
     })()
