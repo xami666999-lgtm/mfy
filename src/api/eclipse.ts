@@ -61,28 +61,35 @@ export interface EclipseSearchResult {
   playlists: EclipsePlaylist[]
 }
 
+async function itunesTracks(term: string): Promise<EclipseTrack[]> {
+  const r = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=40`)
+  const d = await r.json()
+  return (d.results || []).map((s: any) => ({
+    id: String(s.trackId),
+    title: s.trackName,
+    artist: s.artistName,
+    album: s.collectionName,
+    duration: Math.round((s.trackTimeMillis || 0) / 1000),
+    artwork: String(s.artworkUrl100 || '').replace('100x100bb', '600x600bb'),
+    url: s.previewUrl || '',
+    source: 'apple' as const,
+  }))
+}
+
 async function eclipseFetch<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
-  const url = new URL(`${ECLIPSE_BASE}${endpoint}`)
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        url.searchParams.append(key, String(value))
-      }
-    })
-  }
-
-  const res = await fetch(url.toString(), {
-    headers: {
-      'Accept': 'application/json',
-      'User-Agent': 'MFY/1.0',
-    },
-  })
-
-  if (!res.ok) {
-    throw new Error(`Eclipse Music API error: ${res.status} ${res.statusText}`)
-  }
-
-  return res.json()
+  try {
+    const url = new URL(`${ECLIPSE_BASE}${endpoint}`)
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) url.searchParams.append(key, String(value))
+      })
+    }
+    const res = await fetch(url.toString(), { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(4000) })
+    if (res.ok) return res.json()
+  } catch {}
+  const term = String(params?.q || params?.query || 'top hits')
+  const tracks = await itunesTracks(term)
+  return { tracks, artists: [], albums: [], playlists: [] } as T
 }
 
 export const eclipseApi = {

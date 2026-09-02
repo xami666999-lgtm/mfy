@@ -4,7 +4,8 @@
  * A privacy-friendly YouTube frontend
  */
 
-const NOUTUBE_BASE = 'https://api.noutube.xyz' // API endpoint
+const NOUTUBE_BASE = 'https://api.noutube.xyz'
+const INVIDIOUS = ['https://inv.nadeko.net', 'https://yewtu.be', 'https://invidious.flokinet.to']
 
 export interface NouTubeVideo {
   videoId: string
@@ -45,28 +46,58 @@ export interface NouTubeSearchResult {
   continuation?: string
 }
 
+function mapInv(v: any): NouTubeVideo {
+  return {
+    videoId: v.videoId,
+    title: v.title,
+    author: v.author,
+    authorId: v.authorId,
+    authorUrl: v.authorUrl,
+    videoThumbnails: v.videoThumbnails?.length
+      ? v.videoThumbnails
+      : [{ quality: 'high', url: `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`, width: 480, height: 360 }],
+    description: v.description || '',
+    viewCount: v.viewCount || 0,
+    published: v.published || 0,
+    publishedText: v.publishedText || '',
+    lengthSeconds: v.lengthSeconds || 0,
+    duration: String(v.lengthSeconds || ''),
+    liveNow: Boolean(v.liveNow),
+    premium: false,
+    isFamilyFriendly: true,
+    allowedRegions: [],
+  }
+}
+
+async function fromInvidious(endpoint: string, params?: Record<string, any>): Promise<any> {
+  const q = params?.q || params?.query
+  const path = endpoint.includes('search') || q
+    ? `/api/v1/search?q=${encodeURIComponent(q || 'music')}&type=video`
+    : '/api/v1/trending'
+  for (const base of INVIDIOUS) {
+    try {
+      const res = await fetch(base + path, { signal: AbortSignal.timeout(6000) })
+      if (!res.ok) continue
+      const rows = await res.json()
+      const videos = (Array.isArray(rows) ? rows : []).filter((v: any) => v.videoId).map(mapInv)
+      if (videos.length) return { videos }
+    } catch {}
+  }
+  throw new Error('NouTube backends unavailable')
+}
+
 async function noutubeFetch<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
-  const url = new URL(`${NOUTUBE_BASE}${endpoint}`)
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        url.searchParams.append(key, String(value))
-      }
-    })
-  }
-
-  const res = await fetch(url.toString(), {
-    headers: {
-      'Accept': 'application/json',
-      'User-Agent': 'MFY/1.0',
-    },
-  })
-
-  if (!res.ok) {
-    throw new Error(`NouTube API error: ${res.status} ${res.statusText}`)
-  }
-
-  return res.json()
+  try {
+    const url = new URL(`${NOUTUBE_BASE}${endpoint}`)
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) url.searchParams.append(key, String(value))
+      })
+    }
+    const res = await fetch(url.toString(), { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(4000) })
+    if (res.ok) return res.json()
+  } catch {}
+  return fromInvidious(endpoint, params)
 }
 
 export const noutubeApi = {

@@ -29,6 +29,7 @@ import RemoteHelp from './components/RemoteHelp'
 import CatalogSection from './pages/CatalogSection'
 import YouTubePage from './pages/YouTubePage'
 import MusicPage from './pages/MusicPage'
+import PrintHome from './pages/PrintHome'
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true)
@@ -252,8 +253,8 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
         {currentPage === 'anime' && <Anime />}
         {currentPage === 'sports' && <Sports />}
         {currentPage === 'iptv' && <Iptv />}
-        {currentPage === 'manga' && <CatalogSection kind="manga" title="Manga & Novels" />}
-        {currentPage === 'comics' && <CatalogSection kind="comics" title="Comics" />}
+        {currentPage === 'manga' && <PrintHome kind="manga" />}
+        {currentPage === 'comics' && <PrintHome kind="comics" />}
         {currentPage === 'books' && <CatalogSection kind="books" title="Books" />}
         {currentPage === 'youtube' && <YouTubePage />}
         {currentPage === 'music' && <MusicPage />}

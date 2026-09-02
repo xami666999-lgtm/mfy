@@ -1,193 +1,70 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { anilist } from '../api/anilist'
 import { openAnime } from '../api/animeOpen'
 import { useStore } from '../store'
-import { cn } from '../lib/utils'
+import { CategoryChips, HeroBanner, PosterShelf, type ShelfItem } from '../components/ShelfHome'
 
-const GENRES = [
-  { id: 0, name: 'All' },
-  { id: 1, name: 'Action' },
-  { id: 2, name: 'Adventure' },
-  { id: 3, name: 'Comedy' },
-  { id: 4, name: 'Drama' },
-  { id: 5, name: 'Fantasy' },
-  { id: 6, name: 'Horror' },
-  { id: 7, name: 'Mecha' },
-  { id: 8, name: 'Music' },
-  { id: 9, name: 'Mystery' },
-  { id: 10, name: 'Romance' },
-  { id: 11, name: 'Sci-Fi' },
-  { id: 12, name: 'Slice of Life' },
-  { id: 13, name: 'Sports' },
-  { id: 14, name: 'Supernatural' },
-  { id: 15, name: 'Thriller' },
-]
+const GENRES = ['Popular', 'Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror', 'Mecha', 'Mystery', 'Romance', 'Sci-Fi', 'Slice of Life', 'Sports', 'Supernatural', 'Thriller']
+
+function cards(media: any[]): ShelfItem[] {
+  return (media || []).map((m) => ({
+    id: m.id,
+    title: m.title?.english || m.title?.romaji || m.title || 'Anime',
+    image: m.coverImage?.large || m.coverImage?.medium || m.image,
+    backdrop: m.bannerImage,
+    sub: (m.genres || []).slice?.(0, 2)?.join?.(' · '),
+    raw: m,
+  })) as any
+}
 
 export default function Anime() {
   const { setSelectedMedia, setCurrentPage } = useStore()
-  const [genre, setGenre] = useState('All')
-  const [sort, setSort] = useState('POPULARITY_DESC')
-  const [items, setItems] = useState<any[]>([])
-  const [page, setPage] = useState(1)
-  const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [hasNext, setHasNext] = useState(false)
-  const sentinelRef = useRef<HTMLDivElement>(null)
+  const [chip, setChip] = useState('Popular')
+  const [popular, setPopular] = useState<ShelfItem[]>([])
+  const [rows, setRows] = useState<Record<string, ShelfItem[]>>({})
 
-  useEffect(() => {
-    let c = false
-    ;(async () => {
-      setLoading(true)
-      try {
-        let d: { media: any[]; pageInfo: any }
-        if (genre === 'All') {
-          d = await (anilist.getPopular as any)('ANIME', page, 50)
-        } else {
-          d = await (anilist.getByGenre as any)(genre, page, 24)
-        }
-        if (!c) {
-          setItems(d?.media || [])
-          setHasNext(Boolean(d?.pageInfo?.hasNextPage))
-        }
-      } catch {
-        try {
-          const local = await fetch('./data/anime.json').then((r) => r.json())
-          if (!c) setItems(local.anime || [])
-        } catch {
-          if (!c) setItems([])
-        }
-      }
-      if (!c) setLoading(false)
-    })()
-    return () => {
-      c = true
-    }
-  }, [genre, sort, page === 1])
-
-  const loadMore = useCallback(async () => {
-    if (loadingMore || !hasNext) return
-    setLoadingMore(true)
-    const next = page + 1
-    try {
-      let d: { media: any[]; pageInfo: any }
-      if (genre === 'All') {
-        d = await (anilist.getPopular as any)('ANIME', next, 24)
-      } else {
-        d = await (anilist.getByGenre as any)(genre, next, 24)
-      }
-      const list = d?.media || []
-      setItems((prev) => [...prev, ...list])
-      setHasNext(Boolean(d?.pageInfo?.hasNextPage))
-      setPage(next)
-    } catch {}
-    setLoadingMore(false)
-  }, [loadingMore, hasNext, page, genre, sort])
-
-  useEffect(() => {
-    const el = sentinelRef.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) loadMore()
-      },
-      { rootMargin: '600px' }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [loadMore, loading])
-
-  function open(item: any) {
-    openAnime(item, (id, type) => {
+  function open(item: ShelfItem) {
+    openAnime((item as any).raw || item, (id, type) => {
       setSelectedMedia({ id, type })
       setCurrentPage('detail')
     })
   }
 
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const p = await anilist.getPopular('ANIME', 1, 30)
+        setPopular(cards(p.media))
+      } catch {
+        const local = await fetch('./data/anime.json').then((r) => r.json()).catch(() => ({ anime: [] }))
+        setPopular(cards(local.anime || []))
+      }
+      const extra: Record<string, ShelfItem[]> = {}
+      for (const g of GENRES.filter((x) => x !== 'Popular').slice(0, 8)) {
+        try {
+          extra[g] = cards((await (anilist as any).getByGenre(g, 1, 16)).media)
+        } catch {
+          extra[g] = []
+        }
+      }
+      setRows(extra)
+    })()
+  }, [])
+
+  const shown = chip === 'Popular' ? popular : (rows[chip] || popular)
+
   return (
-    <div className="page-fade-enter">
-      {items[0]?.bannerImage && (
-        <section className="hero mx-5 mt-4" style={{ height: 280 }}>
-          <div className="hero-backdrop" style={{ backgroundImage: `url(${items[0].bannerImage})` }} />
-          <div className="hero-overlay" />
-          <div className="hero-content">
-            <div className="hero-copy">
-              <div className="hero-kicker">ANIME</div>
-              <h1>{items[0].title?.english || items[0].title?.romaji}</h1>
-              <div className="hero-actions">
-                <button className="hero-play" type="button" onClick={() => open(items[0])}>Watch now</button>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-      <div className="p-6 md:p-8">
-      <div className="flex flex-wrap items-center gap-4 mb-5">
-        <h2 className="text-lg font-semibold text-white tracking-tight">Anime</h2>
-        <div className="flex-1" />
-        <select
-          value={sort}
-          onChange={(e) => { setSort(e.target.value); setPage(1) }}
-          className="h-7 px-2 rounded-md bg-white/[0.04] border border-white/[0.06] text-[11px] text-white/50 focus:outline-none"
-        >
-          <option value="POPULARITY_DESC">Popularity</option>
-          <option value="SCORE_DESC">Rating</option>
-          <option value="TRENDING_DESC">Trending</option>
-        </select>
+    <div className="page-fade-enter pb-10">
+      <HeroBanner item={shown[0]} kicker="ANIME" onPlay={() => shown[0] && open(shown[0])} />
+      <div className="px-5 pt-5">
+        <h1 className="text-2xl font-bold text-white">Anime</h1>
+        <p className="text-xs text-white/35 mb-3">Same layout as Home · AniList</p>
       </div>
-
-      <div className="flex gap-1.5 mb-5 flex-wrap">
-        {GENRES.map((g) => (
-          <button
-            key={g.id}
-            onClick={() => { setGenre(g.name); setPage(1) }}
-            className={cn(
-              'px-3 py-1 rounded-full text-[11px] font-medium border transition-all',
-              genre === g.name ? 'bg-white/10 text-white border-white/20' : 'bg-transparent text-white/30 border-white/[0.06] hover:text-white/50 hover:border-white/10'
-            )}
-          >
-            {g.name}
-          </button>
-        ))}
-      </div>
-
-      {loading ? (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 2xl:grid-cols-7 gap-3">
-          {Array.from({ length: 24 }).map((_, i) => (
-            <div key={i} className="skeleton aspect-[2/3] rounded-xl" />
-          ))}
-        </div>
-      ) : items.length ? (
-        <>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 2xl:grid-cols-7 gap-3">
-            {items.map((item: any) => (
-              <div key={item.id} className="poster-card aspect-[2/3]" role="button" tabIndex={0} onClick={() => open(item)}>
-                {item.coverImage?.large ? (
-                  <img src={item.coverImage.large} alt={item.title?.english || item.title?.romaji} loading="lazy" onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none'; el.parentElement?.classList.add('has-fallback') }} />
-                ) : (
-                  <div className="w-full h-full bg-white/[0.04] flex items-center justify-center text-white/15 text-[10px] text-center px-2">
-                    {item.title?.english || item.title?.romaji}
-                  </div>
-                )}
-                {item.averageScore != null && item.averageScore > 0 && (
-                  <div className="imdb-badge">
-                    <span className="imdb-badge-label">SCORE</span>
-                    <span className="imdb-badge-score">{(item.averageScore / 10).toFixed(1)}</span>
-                  </div>
-                )}
-                <div className="poster-overlay">
-                  <div className="poster-meta-title">{item.title?.english || item.title?.romaji}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div ref={sentinelRef} className="h-16 flex items-center justify-center">
-            {loadingMore && <div className="skeleton skeleton-text w-24" />}
-          </div>
-        </>
-      ) : (
-        <p className="text-sm text-white/30 py-12 text-center">No anime found for this filter.</p>
-      )}
-      </div>
+      <CategoryChips labels={GENRES} active={chip} onPick={setChip} />
+      <PosterShelf title={chip} items={shown} onOpen={open} />
+      {chip === 'Popular' && Object.entries(rows).map(([name, items]) => (
+        <PosterShelf key={name} title={name} items={items} onOpen={open} />
+      ))}
     </div>
   )
 }

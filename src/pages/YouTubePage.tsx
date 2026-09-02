@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Search, Bell, Menu } from 'lucide-react'
+import { noutubeApi } from '../api/noutube'
 import { useStore } from '../store'
 
 const INVIDIOUS = ['https://inv.nadeko.net', 'https://yewtu.be']
@@ -8,23 +9,18 @@ const CHIPS = ['Home', 'Music', 'Gaming', 'News', 'Live', 'Anime', 'Movies', 'Sp
 type Vid = { videoId: string; title: string; author: string; views?: string }
 
 async function feed(q: string): Promise<Vid[]> {
-  const path = q === 'Home'
-    ? '/api/v1/trending'
-    : `/api/v1/search?q=${encodeURIComponent(q)}&type=video`
-  for (const base of INVIDIOUS) {
-    try {
-      const r = await fetch(base + path, { signal: AbortSignal.timeout(7000) })
-      if (!r.ok) continue
-      const rows = await r.json()
-      const list = Array.isArray(rows) ? rows : []
-      return list.filter((v: any) => v.videoId).slice(0, 48).map((v: any) => ({
+  try {
+    const d = q === 'Home' ? await noutubeApi.getTrending(1) : await noutubeApi.search(q, 1)
+    const videos = (d as any).videos || []
+    if (videos.length) {
+      return videos.slice(0, 48).map((v: any) => ({
         videoId: v.videoId,
         title: v.title,
         author: v.author,
-        views: v.viewCountText || (v.viewCount ? `${Number(v.viewCount).toLocaleString()} views` : ''),
+        views: v.viewCount ? `${Number(v.viewCount).toLocaleString()} views` : '',
       }))
-    } catch {}
-  }
+    }
+  } catch {}
   return []
 }
 
@@ -46,7 +42,7 @@ export default function YouTubePage() {
         <Menu className="w-5 h-5 text-white/70" />
         <div className="flex items-center gap-1 font-bold text-lg">
           <span className="w-8 h-5 rounded-sm bg-[#ff0000] grid place-items-center text-[10px]">▶</span>
-          MFY Tube
+          NouTube
         </div>
         <form className="flex-1 max-w-2xl mx-auto flex" onSubmit={(e) => { e.preventDefault(); setLoading(true); feed(q || chip).then(setItems).finally(() => setLoading(false)) }}>
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" className="flex-1 h-10 px-4 rounded-l-full bg-[#121212] border border-white/15 text-sm outline-none" />
