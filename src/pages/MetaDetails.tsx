@@ -176,7 +176,12 @@ export default function MetaDetails() {
   })
 
   async function handlePlay() {
-    if (!selectedMedia || !detail || selectedMedia.type === 'iptv') return
+    if (!selectedMedia || selectedMedia.type === 'iptv') return
+    if (selectedMedia.type === 'manga' || selectedMedia.type === 'comics' || selectedMedia.type === 'book') {
+      setCurrentPage('manga-detail')
+      return
+    }
+    if (!detail) return
     const kind = selectedMedia.type === 'movie' ? 'movie' : 'tv'
     const url = getPlayerUrl(playerPick as any, kind, selectedMedia.id as number, activeSeason, selectedMedia.episode)
     setSelectedMedia({ ...selectedMedia, season: activeSeason, episode: selectedMedia.episode })

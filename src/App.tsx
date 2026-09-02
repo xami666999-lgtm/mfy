@@ -30,6 +30,7 @@ import CatalogSection from './pages/CatalogSection'
 import YouTubePage from './pages/YouTubePage'
 import MusicPage from './pages/MusicPage'
 import PrintHome from './pages/PrintHome'
+import MangaReader from './pages/MangaReader'
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true)
@@ -255,6 +256,7 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
         {currentPage === 'iptv' && <Iptv />}
         {currentPage === 'manga' && <PrintHome kind="manga" />}
         {currentPage === 'comics' && <PrintHome kind="comics" />}
+        {currentPage === 'manga-detail' && <MangaReader />}
         {currentPage === 'books' && <CatalogSection kind="books" title="Books" />}
         {currentPage === 'youtube' && <YouTubePage />}
         {currentPage === 'music' && <MusicPage />}

@@ -24,8 +24,8 @@ interface AppState {
   currentPage: Page
   setCurrentPage: (page: Page) => void
 
-  selectedMedia: { id: number | string; type: 'movie' | 'tv' | 'iptv'; season?: number; episode?: number; channel?: any } | null
-  setSelectedMedia: (media: { id: number | string; type: 'movie' | 'tv' | 'iptv'; season?: number; episode?: number; channel?: any } | null) => void
+  selectedMedia: { id: number | string; type: 'movie' | 'tv' | 'iptv' | 'manga' | 'comics' | 'book'; season?: number; episode?: number; channel?: any } | null
+  setSelectedMedia: (media: { id: number | string; type: 'movie' | 'tv' | 'iptv' | 'manga' | 'comics' | 'book'; season?: number; episode?: number; channel?: any } | null) => void
 
   currentProfile: UserProfile | null
   setCurrentProfile: (profile: UserProfile | null) => void

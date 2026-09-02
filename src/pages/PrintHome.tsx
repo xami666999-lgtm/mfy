@@ -15,9 +15,9 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' }) {
     : ['One Piece', 'Naruto', 'Attack on Titan', 'Demon Slayer', 'Jujutsu Kaisen', 'Dragon Ball']
 
   function open(item: any) {
-    if (!item?.id || typeof item.id !== 'number') return
-    setSelectedMedia({ id: item.id, type: item.media_type === 'movie' ? 'movie' : 'tv' })
-    setCurrentPage('detail')
+    const name = item.title?.english || item.title?.romaji || item.title || item.name || String(item.id)
+    setSelectedMedia({ id: item.id || name, type: kind, title: name } as any)
+    setCurrentPage('manga-detail')
   }
 
   useEffect(() => {

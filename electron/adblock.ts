@@ -69,6 +69,11 @@ const AD_DOMAINS = [
   'advertising.com',
   'matichtv.com',
   'h5ast.stream',
+  'ad-maven.com',
+  'adexchangegate.com',
+  'tsyndicate.com',
+  'juicyads.com',
+  'mgid.com',
 ]
 
 const AD_PATTERNS = [
