@@ -39,6 +39,9 @@ export default function Settings() {
   const [serializdStatus, setSerializdStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [serializdError, setSerializdError] = useState('')
   const [showSerializdPassword, setShowSerializdPassword] = useState(false)
+  const [anilistUser, setAnilistUser] = useState(() => {
+    try { return localStorage.getItem('mfy-anilist-username') || '' } catch { return '' }
+  })
 
   const api = (window as any).electronAPI
 
@@ -310,6 +313,21 @@ export default function Settings() {
                 </p>
               </div>
             )}
+          </div>
+
+          <div className="pt-4 border-t border-white/[0.06]">
+            <h4 className="text-sm font-medium text-white/60 mb-3">AniList (Anime & manga tracker)</h4>
+            <Input
+              label="AniList username"
+              value={anilistUser}
+              onChange={(v: string) => {
+                setAnilistUser(v)
+                try { localStorage.setItem('mfy-anilist-username', v.trim()) } catch {}
+              }}
+              placeholder="Your AniList username"
+              link="https://anilist.co"
+            />
+            <p className="text-[11px] text-white/30 -mt-1 mb-3">Used to match your list the same way Serializd is used for shows.</p>
           </div>
 
           <Input label="AIOStreams URL" value={aiosUrl} onChange={setAiosUrl} placeholder="http://localhost:3000 (when ready)" />
