@@ -101,9 +101,7 @@ export default function MusicPage() {
             </div>
           </div>
         )}
-        {audioUrl && (
-          <audio src={audioUrl} autoPlay controls className="w-full mt-4 mb-2" />
-        )}
+        
         {tracks.map((t, i) => (
           <button key={t.id} type="button" onClick={() => play(t)} className="w-full flex items-center gap-3 px-2 py-2 rounded-md hover:bg-white/5 text-left">
             <span className="w-6 text-white/30 text-xs">{i + 1}</span>
@@ -116,6 +114,12 @@ export default function MusicPage() {
           </button>
         ))}
       </div>
+        {audioUrl && (
+          <div className="fixed bottom-0 left-0 right-0 z-40 bg-black/90 border-t border-white/10 px-4 py-3">
+            <p className="text-xs text-white/50 mb-1">{now?.title} — {now?.artist}</p>
+            <audio src={audioUrl} autoPlay controls className="w-full" />
+          </div>
+        )}
     </div>
   )
 }

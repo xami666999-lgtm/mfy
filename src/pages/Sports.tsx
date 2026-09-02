@@ -41,6 +41,7 @@ export default function Sports() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
   const [engine, setEngine] = useState<'streamed' | 'metegol'>('streamed')
+  const [watchUrl, setWatchUrl] = useState('')
   const [metegol, setMetegol] = useState<any[]>([])
 
   const filteredMatches = useMemo(() => {
@@ -123,9 +124,7 @@ export default function Sports() {
     setMultiView(false)
     setActiveMatch(null)
     setStreams(null)
-    setSelectedMedia(null)
-    setCurrentStreamUrl(url)
-    setCurrentPage('player')
+    setWatchUrl(url)
   }
 
   function formatDate(ms: number) {
@@ -154,6 +153,11 @@ export default function Sports() {
         ))}
       </aside>
       <div className="flex-1 p-5 min-w-0">
+      {watchUrl && (
+        <div className="aspect-video mb-5 rounded-xl overflow-hidden bg-black">
+          <iframe title="Sports" src={watchUrl} className="w-full h-full" allow="autoplay; fullscreen" allowFullScreen />
+        </div>
+      )}
       <div className="flex items-end justify-between gap-4 mb-5">
         <div>
           <p className="text-[11px] tracking-[0.2em] text-[#22c55e] font-bold">LIVE</p>

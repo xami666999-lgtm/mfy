@@ -30,6 +30,7 @@ export default function YouTubePage() {
   const [chip, setChip] = useState('Home')
   const [items, setItems] = useState<Vid[]>([])
   const [loading, setLoading] = useState(true)
+  const [watchId, setWatchId] = useState('')
 
   useEffect(() => {
     setLoading(true)
@@ -63,9 +64,16 @@ export default function YouTubePage() {
         ))}
       </div>
       {loading && <p className="px-4 text-sm text-white/40">Loading…</p>}
+      {watchId && (
+        <div className="px-4 mb-4">
+          <div className="aspect-video rounded-xl overflow-hidden bg-black">
+            <iframe title="MFY Tube" src={`https://www.youtube-nocookie.com/embed/${watchId}?autoplay=1`} className="w-full h-full" allow="autoplay; fullscreen" allowFullScreen />
+          </div>
+        </div>
+      )}
       <div className="px-4 pb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {items.map((v) => (
-          <button key={v.videoId} type="button" className="text-left" onClick={() => { setCurrentStreamUrl(`https://inv.nadeko.net/embed/${v.videoId}`); setSelectedMedia(null); setCurrentPage('player') }}>
+          <button key={v.videoId} type="button" className="text-left" onClick={() => setWatchId(v.videoId)}>
             <div className="aspect-video rounded-xl overflow-hidden bg-[#222]">
               <img src={`https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
             </div>

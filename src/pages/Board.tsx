@@ -4,6 +4,7 @@ import { tmdb, POSTER_URL, BACKDROP_URL } from '../api/tmdb'
 import { anilist } from '../api/anilist'
 import { useStore } from '../store'
 import { SkeletonPoster, SkeletonHero } from '../components/Skeleton'
+import { streamingServices } from '../api/streaming'
 
 const MOVIE_GENRES = [
   { id: 28, name: 'Action' }, { id: 12, name: 'Adventure' }, { id: 16, name: 'Animation' },
@@ -213,6 +214,16 @@ export default function Board() {
       )}
 
       <div className="board-content px-5 pt-6">
+        <section className="media-row">
+          <div className="media-row-header"><h2 className="media-row-title">Browse by provider</h2></div>
+          <div className="scroll-row" style={{alignItems:'center'}}>
+            {streamingServices.map((s) => (
+              <button key={s.id} type="button" className="flex-shrink-0 w-28 h-16 rounded-xl bg-white/5 border border-white/10 grid place-items-center p-2" onClick={() => setCurrentPage('movies')} title={s.name}>
+                <img src={s.logo} alt={s.name} className="max-h-10 max-w-full object-contain" />
+              </button>
+            ))}
+          </div>
+        </section>
         {watchHistory.length > 0 && (
           <Shelf
             title="Continue Watching"
@@ -227,19 +238,12 @@ export default function Board() {
         {recommended.length > 0 && <Shelf title="Recommended For You" items={recommended} onOpen={goDetail} />}
         <Shelf title="Popular Movies" items={movies} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
         <Shelf title="Popular TV" items={shows} onOpen={(i) => goDetail(i, 'tv')} viewAll={() => setCurrentPage('tv')} />
-        <Shelf title="Anime" items={anime} onOpen={() => setCurrentPage('anime')} viewAll={() => setCurrentPage('anime')} />
-        <Shelf title="Upcoming Anime" items={anime.slice().reverse()} onOpen={() => setCurrentPage('anime')} viewAll={() => setCurrentPage('anime')} />
-        <Shelf title="Manga" items={manga} onOpen={() => setCurrentPage('manga')} viewAll={() => setCurrentPage('manga')} />
-        <Shelf title="Comics" items={comics} onOpen={() => setCurrentPage('comics')} viewAll={() => setCurrentPage('comics')} />
 
         {MOVIE_GENRES.map((g) => (
           <Shelf key={`m-${g.id}`} title={`Movies · ${g.name}`} items={genreMovie[g.id] || []} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
         ))}
         {TV_GENRES.map((g) => (
           <Shelf key={`t-${g.id}`} title={`Series · ${g.name}`} items={genreTv[g.id] || []} onOpen={(i) => goDetail(i, 'tv')} viewAll={() => setCurrentPage('tv')} />
-        ))}
-        {ANIME_GENRES.slice(0, 8).map((g) => (
-          <Shelf key={`a-${g}`} title={`Anime · ${g}`} items={genreAnime[g] || []} onOpen={() => setCurrentPage('anime')} viewAll={() => setCurrentPage('anime')} />
         ))}
       </div>
     </div>

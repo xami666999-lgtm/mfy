@@ -10,6 +10,7 @@ const GENRES = ['Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror', '
 export default function Anime() {
   const { setSelectedMedia, setCurrentPage } = useStore()
   const [popular, setPopular] = useState<any[]>(OFFLINE_ANIME)
+  const [upcoming, setUpcoming] = useState<any[]>(OFFLINE_ANIME.slice().reverse())
   const [rows, setRows] = useState<Record<string, any[]>>({})
 
   function open(item: any) {
@@ -26,6 +27,10 @@ export default function Anime() {
       try {
         const p = await anilist.getPopular('ANIME', 1, 40)
         if (p?.media?.length) setPopular(p.media)
+      } catch {}
+      try {
+        const u = await anilist.getTrending('ANIME', 1, 24)
+        if (u?.media?.length) setUpcoming(u.media)
       } catch {}
       const extra: Record<string, any[]> = {}
       for (const g of GENRES) {
@@ -45,6 +50,7 @@ export default function Anime() {
         <h1 className="text-2xl font-bold text-white mb-1">Anime</h1>
         <p className="text-xs text-[#FF1493] mb-5">Same rows as Home</p>
         <MediaShelf title="Popular Anime" items={popular} onOpen={open} />
+        <MediaShelf title="Upcoming Anime" items={upcoming} onOpen={open} />
         {GENRES.map((g) => (
           <MediaShelf key={g} title={g} items={rows[g] || []} onOpen={open} />
         ))}
