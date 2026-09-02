@@ -21,8 +21,16 @@ function mapEclipse(d: any): Track[] {
 }
 
 async function itunes(term: string): Promise<Track[]> {
-  const r = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=40`)
-  const d = await r.json()
+  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=40`
+  const api = typeof window !== 'undefined' ? (window as any).electronAPI : null
+  let d: any
+  if (api?.fetchJson) {
+    const r = await api.fetchJson(url)
+    d = r?.json || {}
+  } else {
+    const r = await fetch(url)
+    d = await r.json()
+  }
   return (d.results || []).map((s: any) => ({
     id: String(s.trackId),
     title: s.trackName,
