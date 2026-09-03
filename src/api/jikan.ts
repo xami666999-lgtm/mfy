@@ -22,6 +22,7 @@ function card(row: any) {
     name: row.title_english || row.title,
     image: img,
     coverImage: img,
+    poster_path: img,
     score: row.score,
     genres: (row.genres || []).map((g: any) => g.name),
     overview: row.synopsis,

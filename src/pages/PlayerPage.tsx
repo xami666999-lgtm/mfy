@@ -42,6 +42,8 @@ export default function PlayerPage() {
   const [subtitleUrl, setSubtitleUrl] = useState('')
   const [subtitleLabel, setSubtitleLabel] = useState('')
   const [subtitleOffset, setSubtitleOffset] = useState(0)
+  const [subSize, setSubSize] = useState(0.65)
+  const [subBg, setSubBg] = useState(true)
   const trackRef = useRef<HTMLTrackElement>(null)
 
   const [autoNextBusy, setAutoNextBusy] = useState(false)
@@ -106,6 +108,19 @@ export default function PlayerPage() {
   })
 
   const handleIframeError = () => {}
+
+  useEffect(() => {
+    const w = document.querySelector('webview') as any
+    if (!w?.addEventListener) return
+    const apply = () => {
+      try {
+        w.insertCSS(`video::cue { font-size: ${subSize}em !important; line-height: 1.2; background: ${subBg ? 'rgba(0,0,0,0.75)' : 'transparent'} !important; color: #fff; }`)
+      } catch {}
+    }
+    w.addEventListener('dom-ready', apply)
+    apply()
+    return () => { try { w.removeEventListener('dom-ready', apply) } catch {} }
+  }, [subSize, subBg, streamUrl])
 
   useEffect(() => {
     const v = videoRef.current
@@ -379,6 +394,8 @@ export default function PlayerPage() {
                 {s === 'playtorrio' ? 'Auto' : s === 'simplstream' ? '1080' : s === 'vidy' ? 'Vidy' : s === 'zangetsu' ? 'Zangetsu' : s === 'miruro' ? 'Miruro' : 'Manga'}
               </button>
             ))}
+            <button type="button" onClick={() => setSubSize((n) => (n <= 0.55 ? 0.9 : 0.55))} style={{ background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>Subs {subSize <= 0.6 ? 'S' : 'M'}</button>
+            <button type="button" onClick={() => setSubBg((v) => !v)} style={{ background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>Sub bg {subBg ? 'on' : 'off'}</button>
             <button type="button" onClick={toggleFullscreen} style={{ background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>{fullscreen ? 'Exit' : 'Full'}</button>
           </div>
         )}
