@@ -80,21 +80,18 @@ export default function PlayerPage() {
     setError('')
   }, [selectedMedia, playerSource, currentStreamUrl])
 
-  useEffect(() => {
-    if (!streamUrl || !selectedMedia || selectedMedia.type === 'iptv') return
-    const t = setTimeout(() => {
-      const kind = selectedMedia.type === 'movie' ? 'movie' : 'tv'
-      const list = getFallbackSources(kind, selectedMedia.id, selectedMedia.season, selectedMedia.episode)
-      const next = list.find((s) => s.source !== playerSource && !failTried.current.includes(s.source))
-      if (next) {
-        markSource(playerSource, false)
-        failTried.current.push(playerSource)
-        setPlayerSource(next.source)
-        setCurrentStreamUrl(next.url)
-      }
-    }, autoNextBusy ? 15000 : 8000)
-    return () => clearTimeout(t)
-  }, [streamUrl, playerSource, selectedMedia])
+  function tryNextSource() {
+    if (!selectedMedia || selectedMedia.type === 'iptv') return
+    const kind = selectedMedia.type === 'movie' ? 'movie' : 'tv'
+    const list = getFallbackSources(kind, selectedMedia.id, selectedMedia.season, selectedMedia.episode)
+    const next = list.find((s) => s.source !== playerSource && !failTried.current.includes(s.source))
+    if (!next) return
+    markSource(playerSource, false)
+    failTried.current.push(playerSource)
+    setPlayerSource(next.source)
+    setCurrentStreamUrl(next.url)
+    try { localStorage.setItem('mfy-player-engine', next.source) } catch {}
+  }
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -367,6 +364,7 @@ export default function PlayerPage() {
               <option value="miruro">Miruro</option>
               <option value="vidy">Vidy</option>
             </select>
+            <button type="button" onClick={tryNextSource} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 6, padding: '6px 10px', color: 'white', fontSize: 11, cursor: 'pointer' }}>Switch source</button>
             <Zap size={12} style={{ color: '#FFD24C' }} />
           </div>
           <button className="player-icon-button" onClick={toggleFullscreen} style={{ background: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white' }}><Maximize size={18} /></button>
@@ -385,6 +383,7 @@ export default function PlayerPage() {
           // @ts-expect-error Electron webview
           <webview
             src={streamUrl}
+            partition="persist:mfy"
             style={{ width: '100%', height: '100%', background: '#000' }}
             allowpopups="true"
             useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"

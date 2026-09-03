@@ -67,7 +67,7 @@ export default function AppleRail() {
           <div className="w-8 h-8 rounded-full bg-[#FF1493] grid place-items-center text-xs font-black">{(currentProfile?.name || 'M')[0]}</div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold truncate">{currentProfile?.name || 'MFY'}</p>
-            <p className="text-[10px] text-white/35">1.2.94</p>
+            <p className="text-[10px] text-white/35">1.2.95</p>
           </div>
           <button type="button" className="h-8 w-8 rounded-full hover:bg-white/10 grid place-items-center" title="Hide sidebar ([)" onClick={() => toggle(true)}>
             <PanelLeftClose size={16} />
