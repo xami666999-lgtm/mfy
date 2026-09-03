@@ -2,7 +2,17 @@ import { useEffect, useState } from 'react'
 import { jikan } from '../api/jikan'
 import { anilist } from '../api/anilist'
 import { fireflyManga } from '../api/fireflyManga'
+import { OFFLINE_MANGA } from '../data/offlineCatalog'
 import { useStore } from '../store'
+
+function offlineCards() {
+  return (OFFLINE_MANGA || []).map((m: any) => ({
+    ...m,
+    image: m.coverImage || m.image,
+    poster_path: m.coverImage || m.image,
+    media_type: 'manga',
+  }))
+}
 import { MediaShelf } from '../components/MediaShelf'
 import PageHero from '../components/PageHero'
 
@@ -26,7 +36,7 @@ function aniCard(m: any) {
 
 export default function PrintHome({ kind }: { kind: 'manga' | 'comics' | 'novels' }) {
   const { setSelectedMedia, setCurrentPage } = useStore()
-  const [popular, setPopular] = useState<any[]>([])
+  const [popular, setPopular] = useState<any[]>(offlineCards())
   const [rows, setRows] = useState<Record<string, any[]>>({})
   const title = kind === 'comics' ? 'Comics' : kind === 'novels' ? 'Novels' : 'Manga'
 
@@ -84,7 +94,8 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' | 'novels
         'Light novels': light,
         'FireFly latest': ff,
       }
-      setPopular((top.length ? top : ani).filter((x: any) => x.image || x.coverImage || x.poster_path))
+      const livePop = (top.length ? top : ani).filter((x: any) => x.image || x.coverImage || x.poster_path)
+      setPopular(livePop.length ? livePop : offlineCards())
       const titles = ['One Piece', 'Naruto', 'Berserk', 'Vagabond', 'Chainsaw Man', 'Jujutsu Kaisen']
       for (const q of titles) {
         extra[q] = await jikan.searchManga(q, 1).catch(() => [])

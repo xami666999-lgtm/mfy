@@ -6,7 +6,11 @@ import { useStore } from '../store'
  * searching TMDB for the anime's title and opening the best movie/series match.
  */
 export async function openAnime(item: any, onOpen: (id: number, type: 'movie' | 'tv') => void) {
-  const q = (item.title?.english || item.title?.romaji || item.title?.native || '').trim()
+  const q = (
+    typeof item.title === 'string'
+      ? item.title
+      : (item.title?.english || item.title?.romaji || item.title?.native || item.name || '')
+  ).trim()
   if (!q) return
   try {
     const res = await tmdb.searchMulti(q)

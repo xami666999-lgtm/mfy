@@ -6,6 +6,7 @@ import { useStore } from '../store'
 import { MediaShelf } from '../components/MediaShelf'
 import PageHero from '../components/PageHero'
 import { OFFLINE_ANIME } from '../data/offlineCatalog'
+import { openAnime } from '../api/animeOpen'
 
 export default function Anime() {
   const { setSelectedMedia, setCurrentPage } = useStore()
@@ -16,8 +17,17 @@ export default function Anime() {
   const [calendar, setCalendar] = useState<any[]>([])
 
   function open(item: any) {
-    setSelectedMedia({ id: item.id, type: item.media_type === 'movie' ? 'movie' : 'tv', isAnime: true, title: item.title || item.name } as any)
-    setCurrentPage('detail')
+    const title = typeof item.title === 'string' ? item.title : (item.title?.english || item.title?.romaji || item.name)
+    const tmdbPoster = String(item.poster_path || '').startsWith('/')
+    if (tmdbPoster) {
+      setSelectedMedia({ id: item.id, type: item.media_type === 'movie' ? 'movie' : 'tv', isAnime: true, title } as any)
+      setCurrentPage('detail')
+      return
+    }
+    openAnime({ ...item, title: { english: title } }, (id, type) => {
+      setSelectedMedia({ id, type, isAnime: true, title } as any)
+      setCurrentPage('detail')
+    })
   }
 
   useEffect(() => {

@@ -53,18 +53,30 @@ export default function MetaDetails() {
       }
       // TypeScript type narrowing: after iptv check, type is 'movie' | 'tv'
       const mediaId = selectedMedia.id as number
+      let d: any = null
       if (selectedMedia.type === 'movie') {
-        const d = await tmdb.getMovieDetail(mediaId)
-        setDetail(d)
-        setTrailerKey(d?.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')?.key || null)
+        d = await tmdb.getMovieDetail(mediaId)
       } else {
-        const d = await tmdb.getTVDetail(mediaId)
+        d = await tmdb.getTVDetail(mediaId)
+      }
+      if (!d?.id) {
+        const q = String((selectedMedia as any).title || (selectedMedia as any).name || '')
+        if (q && !/^\d+$/.test(q)) {
+          const s = await tmdb.searchMulti(q)
+          const hit = (s?.results || []).find((r: any) => r.media_type === 'tv' || r.media_type === 'movie')
+          if (hit) {
+            d = hit.media_type === 'movie' ? await tmdb.getMovieDetail(hit.id) : await tmdb.getTVDetail(hit.id)
+            setSelectedMedia({ ...selectedMedia, id: hit.id, type: hit.media_type === 'movie' ? 'movie' : 'tv' })
+          }
+        }
+      }
+      if (d) {
         setDetail(d)
         setTrailerKey(d?.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')?.key || null)
-        if (d?.seasons?.length) {
+        if (d.seasons?.length) {
           const sNum = d.seasons.find((s: any) => s.season_number > 0)?.season_number || 0
           setActiveSeason(sNum)
-          tmdb.getSeasonDetail(mediaId, sNum).then(setSeasonData).catch(() => {})
+          tmdb.getSeasonDetail(d.id, sNum).then(setSeasonData).catch(() => {})
         }
       }
     } catch {}
