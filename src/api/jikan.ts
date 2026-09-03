@@ -50,4 +50,8 @@ export const jikan = {
     const d = await getJson('/seasons/now?limit=25')
     return (d.data || []).map(card)
   },
+  seasonUpcoming: async () => {
+    const d = await getJson('/seasons/upcoming?limit=25')
+    return (d.data || []).map(card)
+  },
 }

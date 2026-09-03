@@ -9,8 +9,20 @@ function proxy(url: string) {
 }
 
 export function imgSrc(item: any) {
-  if (item.poster_path) return `${POSTER_URL}${item.poster_path}`
-  const raw = item.coverImage?.large || item.coverImage?.medium || (typeof item.coverImage === 'string' ? item.coverImage : '') || item.image || item.artwork || ''
+  const path = item.poster_path
+  if (path && String(path).startsWith('http')) return proxy(String(path))
+  if (path) return `${POSTER_URL}${path}`
+  const raw =
+    item.coverImage?.extraLarge ||
+    item.coverImage?.large ||
+    item.coverImage?.medium ||
+    (typeof item.coverImage === 'string' ? item.coverImage : '') ||
+    item.images?.jpg?.large_image_url ||
+    item.images?.jpg?.image_url ||
+    item.image ||
+    item.artwork ||
+    item.poster ||
+    ''
   return proxy(String(raw || ''))
 }
 

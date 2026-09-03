@@ -23,7 +23,11 @@ export default function Anime() {
   useEffect(() => {
     const jp = { with_origin_country: 'JP', with_genres: '16', sort_by: 'popularity.desc', page: '1' }
     tmdb.discoverTV(jp).then((d) => { if (d?.results?.length) setPopular(d.results) }).catch(() => {})
-    tmdb.discoverTV({ ...jp, sort_by: 'first_air_date.desc' }).then((d) => setUpcoming(d?.results || [])).catch(() => {})
+    tmdb.discoverTV({
+      ...jp,
+      sort_by: 'first_air_date.asc',
+      'first_air_date.gte': new Date().toISOString().slice(0, 10),
+    }).then((d) => setUpcoming((d?.results || []).filter((x: any) => x.poster_path))).catch(() => {})
     const cats: Record<string, string> = {
       Action: '16,10759', Comedy: '16,35', Drama: '16,18', Romance: '16,10749',
       Crime: '16,80', Mystery: '16,9648', Family: '16,10751', SciFi: '16,10765',
@@ -36,7 +40,12 @@ export default function Anime() {
       if (p?.media?.length) setPopular((prev) => prev.length > 12 ? prev : p.media)
     }).catch(() => {})
     jikan.topAnime(1).then((list) => { if (list.length) setPopular((prev) => prev.length >= 20 ? prev : list) }).catch(() => {})
-    jikan.seasonNow().then((list) => { if (list.length) setUpcoming(list) }).catch(() => {})
+    jikan.seasonUpcoming().then((list) => {
+      if (list.length) setUpcoming((prev) => {
+        const seen = new Set(prev.map((x) => String(x.id)))
+        return [...prev, ...list.filter((x) => x.image && !seen.has(String(x.id)))]
+      })
+    }).catch(() => {})
     tmdb.getOnTheAir().then((d) => setCalendar((d?.results || []).filter((x: any) => (x.origin_country || []).includes('JP') || (x.genre_ids || []).includes(16)))).catch(() => {})
   }, [])
 
