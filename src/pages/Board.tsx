@@ -6,6 +6,7 @@ import { useStore } from '../store'
 import { SkeletonPoster, SkeletonHero } from '../components/Skeleton'
 import { streamingServices } from '../api/streaming'
 import { PosterMarks } from '../components/PosterMarks'
+import { getPlayerUrl } from '../api/vidy'
 
 const MOVIE_GENRES = [
   { id: 28, name: 'Action' }, { id: 12, name: 'Adventure' }, { id: 16, name: 'Animation' },
@@ -66,7 +67,7 @@ function Shelf({ title, items, onOpen, viewAll }: { title: string; items: any[];
 }
 
 export default function Board() {
-  const { tmdbApiKey, setCurrentPage, setSelectedMedia, setSelectedProviderId, addToWatchlist, isInWatchlist, removeFromWatchlist, watchHistory, favorites } = useStore()
+  const { tmdbApiKey, setCurrentPage, setSelectedMedia, setSelectedProviderId, setCurrentStreamUrl, addToWatchlist, isInWatchlist, removeFromWatchlist, watchHistory, favorites } = useStore()
   const [hideWatched, setHideWatched] = useState(false)
   const [railOpen, setRailOpen] = useState(true)
   const [railQ, setRailQ] = useState('')
@@ -224,7 +225,12 @@ export default function Board() {
               <h1>{titleOf(hero)}</h1>
               <p>{hero.overview || 'Watch something tonight.'}</p>
               <div className="hero-actions">
-                <button className="hero-play" type="button" onClick={() => goDetail(hero)}><Play fill="currentColor" size={16} /> Play</button>
+                <button className="hero-play" type="button" onClick={() => {
+                  const t = hero.media_type === 'tv' || hero.first_air_date ? 'tv' : 'movie'
+                  setSelectedMedia({ id: hero.id, type: t })
+                  setCurrentStreamUrl(getPlayerUrl((localStorage.getItem('mfy-player-engine') as any) || 'vidy', t, hero.id, 1, 1))
+                  setCurrentPage('player')
+                }}><Play fill="currentColor" size={16} /> Play</button>
                 <button className="hero-secondary" type="button" onClick={() => toggleList(hero)}>
                   {isInWatchlist(hero.id, hero.media_type === 'tv' ? 'tv' : 'movie') ? <><Check size={16} /> In My List</> : <><Plus size={16} /> Add to List</>}
                 </button>

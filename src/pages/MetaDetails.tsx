@@ -63,37 +63,31 @@ export default function MetaDetails() {
         if (d?.seasons?.length) {
           const sNum = d.seasons.find((s: any) => s.season_number > 0)?.season_number || 0
           setActiveSeason(sNum)
-          const sd = await tmdb.getSeasonDetail(mediaId, sNum)
-          setSeasonData(sd)
+          tmdb.getSeasonDetail(mediaId, sNum).then(setSeasonData).catch(() => {})
         }
       }
     } catch {}
+    setLoading(false)
     try {
       if (selectedMedia && selectedMedia.type !== 'iptv') {
         const ext = await tmdb.getExternalIds(selectedMedia.type, selectedMedia.id as number)
         const iid = ext?.imdb_id || null
         setImdbId(iid)
-        if (iid) {
-          const ratings = await fetchOmdbByImdbId(iid)
-          setOmdb(ratings)
-        } else {
-          setOmdb(null)
-        }
+        if (iid) fetchOmdbByImdbId(iid).then(setOmdb).catch(() => setOmdb(null))
+        else setOmdb(null)
       }
     } catch {
       setOmdb(null)
     }
     try {
       if (selectedMedia && selectedMedia.type !== 'iptv' && mdblistApiKey) {
-        const data = await fetchMdblistRatings(selectedMedia.type, selectedMedia.id as number)
-        setMdblistRatings(data?.ratings || null)
+        fetchMdblistRatings(selectedMedia.type, selectedMedia.id as number).then((data) => setMdblistRatings(data?.ratings || null)).catch(() => setMdblistRatings(null))
       } else {
         setMdblistRatings(null)
       }
     } catch {
       setMdblistRatings(null)
     }
-    setLoading(false)
   }
 
   async function changeSeason(num: number) {
@@ -185,7 +179,6 @@ export default function MetaDetails() {
       setCurrentPage('manga-detail')
       return
     }
-    if (!detail) return
     const kind = selectedMedia.type === 'movie' ? 'movie' : 'tv'
     const url = getPlayerUrl(playerPick as any, kind, selectedMedia.id as number, activeSeason, selectedMedia.episode)
     setSelectedMedia({ ...selectedMedia, season: activeSeason, episode: selectedMedia.episode })
@@ -392,7 +385,11 @@ export default function MetaDetails() {
             <div className="flex flex-wrap items-center gap-2.5">
               <button
                 type="button"
-                onClick={() => setPickOpen(true)}
+                onClick={() => {
+                  setPickOpen(true)
+                  try { localStorage.setItem('mfy-player-engine', playerPick) } catch {}
+                  handlePlay()
+                }}
                 disabled={resolving}
                 className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all disabled:opacity-60 shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
               >

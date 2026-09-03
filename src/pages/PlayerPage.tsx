@@ -92,7 +92,7 @@ export default function PlayerPage() {
         setPlayerSource(next.source)
         setCurrentStreamUrl(next.url)
       }
-    }, 10000)
+    }, 4000)
     return () => clearTimeout(t)
   }, [streamUrl, playerSource, selectedMedia])
 

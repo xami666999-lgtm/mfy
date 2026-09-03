@@ -62,6 +62,7 @@ function createWindow() {
 
 mainWindow.once('ready-to-show', () => {
     mainWindow?.show()
+    mainWindow?.focus()
   })
 
   // Re-trigger the intro splash whenever the window becomes visible
@@ -257,7 +258,7 @@ ipcMain.handle('window-is-maximized', () => mainWindow?.isMaximized() ?? false)
 ipcMain.on('open-external', (_event, url: string) => shell.openExternal(url))
 
 ipcMain.handle('fetch-json', async (_event, url: string, init?: { method?: string; headers?: Record<string, string>; body?: string; timeoutMs?: number }) => {
-  const timeout = init?.timeoutMs || 15000
+  const timeout = init?.timeoutMs || 8000
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeout)
   try {

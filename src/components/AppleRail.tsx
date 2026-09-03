@@ -31,7 +31,7 @@ export default function AppleRail() {
           <div className="w-8 h-8 rounded-full bg-[#FF1493] grid place-items-center text-xs font-black">{(currentProfile?.name || 'M')[0]}</div>
           <div className="min-w-0">
             <p className="text-sm font-semibold truncate">{currentProfile?.name || 'MFY'}</p>
-            <p className="text-[10px] text-white/35">1.2.86</p>
+            <p className="text-[10px] text-white/35">1.2.87</p>
           </div>
         </div>
         <form className="px-1 mb-2" onSubmit={(e) => { e.preventDefault(); if (q.trim()) { try { sessionStorage.setItem('mfy-q', q.trim()) } catch {} ; setCurrentPage('search') } }}>
