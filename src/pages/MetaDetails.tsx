@@ -3,6 +3,7 @@ import { ArrowLeft, Play, Star, Clock, Calendar, Heart, Plus, Share2, List, Chec
 import { tmdb, POSTER_URL, BACKDROP_URL, PROFILE_URL, STILL_URL } from '../api/tmdb'
 import { fetchOmdbByImdbId } from '../api/omdb'
 import { fetchRottenTomatoes } from '../api/rottentomatoes'
+import QualityBadges from '../components/QualityBadges'
 import { fetchMdblistRatings, type MdblistRating } from '../api/mdblist'
 import { vidyUrl, getPlayerUrl } from '../api/vidy'
 import { useStore } from '../store'
@@ -359,6 +360,10 @@ export default function MetaDetails() {
                 </button>
               )}
             </div>
+            <QualityBadges
+              year={(detail.release_date || detail.first_air_date || '').slice(0, 4)}
+              haystack={[detail.title, detail.name, detail.tagline, ...(detail.genres||[]).map((g:any)=>g.name)].join(' ')}
+            />
 
             {detail.overview && (
               <p className="text-[13px] text-white/70 leading-relaxed line-clamp-4 max-w-lg mb-6 drop-shadow-sm">
