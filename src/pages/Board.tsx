@@ -216,11 +216,11 @@ export default function Board() {
       {error && <div className="error-banner mx-5 mt-4">{error}</div>}
 
       {hero && (
-        <section className="hero" style={{ minHeight: '100vh' }}>
+        <section className="hero" style={{ minHeight: '78vh', paddingBottom: 140 }}>
           <div className="hero-backdrop fade-in" style={{ backgroundImage: hero.backdrop_path ? `url(${BACKDROP_URL}${hero.backdrop_path})` : undefined }} />
           <div className="hero-overlay" />
           <div className="hero-content">
-            <div className="hero-copy fade-in pl-80">
+            <div className="hero-copy fade-in" style={{ paddingBottom: 8 }}>
               <div className="hero-kicker">{hero.media_type === 'tv' ? 'SERIES' : 'MOVIE'}</div>
               <h1>{titleOf(hero)}</h1>
               <p>{hero.overview || 'Watch something tonight.'}</p>
@@ -238,9 +238,9 @@ export default function Board() {
               </div>
             </div>
           </div>
-          <div className="absolute bottom-6 left-6 right-6 flex gap-3 overflow-x-auto">
-            {trending.slice(0, 8).map((item: any) => (
-              <button key={item.id} type="button" onClick={() => goDetail(item)} className="shrink-0 w-44 h-24 rounded-xl overflow-hidden border border-white/20">
+          <div className="absolute left-6 right-6 flex gap-3 overflow-x-auto z-10" style={{ bottom: 20 }}>
+            {trending.slice(0, 10).map((item: any, i: number) => (
+              <button key={item.id} type="button" onClick={() => setHeroIdx(i)} className={`shrink-0 w-44 h-24 rounded-xl overflow-hidden border ${i === heroIdx ? 'border-white' : 'border-white/20'}`}>
                 {item.backdrop_path ? <img src={`${BACKDROP_URL}${item.backdrop_path}`} alt="" className="w-full h-full object-cover" /> : <span className="text-xs">{titleOf(item)}</span>}
               </button>
             ))}
@@ -257,6 +257,17 @@ export default function Board() {
             if (pick) { setSelectedMedia({ id: pick.id, type: pick.media_type === 'tv' || pick.name ? 'tv' : 'movie' }); setCurrentPage('detail') }
           }}>Surprise Me</button>
         </div>
+        <section className="media-row">
+          <div className="media-row-header"><h2 className="media-row-title">Providers</h2></div>
+          <div className="scroll-row">
+            {streamingServices.map((s) => (
+              <button key={s.id} type="button" className="shrink-0 h-16 px-5 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3 hover:bg-white/10" onClick={() => { setSelectedProviderId(s.id); setCurrentPage('provider') }}>
+                <img src={s.logo} alt="" className="w-8 h-8 object-contain" />
+                <span className="text-sm">{s.name}</span>
+              </button>
+            ))}
+          </div>
+        </section>
         {watchHistory.length > 0 && (
           <Shelf
             title="Continue Watching"

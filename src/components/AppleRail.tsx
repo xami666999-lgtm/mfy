@@ -67,7 +67,7 @@ export default function AppleRail() {
           <div className="w-8 h-8 rounded-full bg-[#FF1493] grid place-items-center text-xs font-black">{(currentProfile?.name || 'M')[0]}</div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold truncate">{currentProfile?.name || 'MFY'}</p>
-            <p className="text-[10px] text-white/35">1.2.89</p>
+            <p className="text-[10px] text-white/35">1.2.90</p>
           </div>
           <button type="button" className="h-8 w-8 rounded-full hover:bg-white/10 grid place-items-center" title="Hide sidebar ([)" onClick={() => toggle(true)}>
             <PanelLeftClose size={16} />
@@ -88,13 +88,6 @@ export default function AppleRail() {
           >
             <Icon size={16} />
             {label}
-          </button>
-        ))}
-        <p className="text-[10px] text-white/30 px-3 pt-3 pb-1">Channels</p>
-        {streamingServices.map((s) => (
-          <button key={s.id} type="button" className="flex items-center gap-2 h-9 px-3 rounded-full text-white/70 text-xs hover:bg-white/10" onClick={() => { setSelectedProviderId(s.id); setCurrentPage('provider') }}>
-            <img src={s.logo} alt="" className="w-5 h-5 object-contain" />
-            {s.name}
           </button>
         ))}
         <button type="button" className="mt-auto text-[11px] text-[#FF1493] px-3 py-2" onClick={() => setBug(true)}>Bug</button>
