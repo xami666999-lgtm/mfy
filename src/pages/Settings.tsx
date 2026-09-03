@@ -185,6 +185,7 @@ export default function Settings() {
     <div className="p-8 max-w-2xl">
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-lg font-semibold text-white tracking-tight">Settings</h2>
+        <a className="text-xs text-[#FF1493]" href="https://github.com/xami666999-lgtm/mfy/issues/new" target="_blank" rel="noreferrer">Report a bug on GitHub</a>
         <div className="flex items-center gap-2">
           <button onClick={checkUpdates} className="flex items-center gap-2 h-8 px-3 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-medium text-white/60 hover:bg-white/[0.08] transition-all">
             <RefreshCw className="w-3.5 h-3.5" />
