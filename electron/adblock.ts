@@ -88,9 +88,19 @@ const AD_PATTERNS = [
   /\/popunders?\.php/i,
 ]
 
-export function setupAdBlocker() {
-  const ses = session.defaultSession
+const EXTRA = [
+  'highperformancecpmgate.com', 'highcpmgate.com', 'clickadu.com', 'onclickalgo.com',
+  'popcash.net', 'popunder.net', 'ad-maven.com', 'adexchangegate.com', 'tsyndicate.com',
+  'bet365.com', 'bet365affiliates.com', 'trafficstars.com', 'hilltopads.net',
+  'adsterra.com', 'juicyads.com', 'exoclick.com', 'propellerads.com', 'popads.net',
+]
 
+export function setupAdBlocker() {
+  for (const d of EXTRA) {
+    if (!AD_DOMAINS.includes(d)) AD_DOMAINS.push(d)
+  }
+  const sessions = [session.defaultSession, session.fromPartition('persist:mfy')]
+  for (const ses of sessions) {
   ses.webRequest.onBeforeRequest({ urls: ['*://*/*'] }, (details, callback) => {
     const url = details.url
     const hostname = extractHostname(url)
@@ -108,9 +118,6 @@ export function setupAdBlocker() {
     const blocked: string[] = ['notifications', 'clipboard-sanitized-write', 'geolocation', 'midi', 'serial']
     return !blocked.includes(permission)
   })
-
-  return () => {
-    ses.webRequest.onBeforeRequest(null)
   }
 }
 

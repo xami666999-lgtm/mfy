@@ -270,23 +270,16 @@ export default function PlayerPage() {
   }
 
   async function toggleFullscreen() {
-    if (isPlayerEmbedUrl(streamUrl)) {
-      const iframe = iframeRef.current
-      if (!iframe) return
-      if (document.fullscreenElement === iframe) {
-        await document.exitFullscreen()
-      } else {
-        await iframe.requestFullscreen()
-      }
-    } else {
-      const root = videoRef.current?.parentElement?.parentElement
-      if (!root) return
-      if (document.fullscreenElement === root) {
-        await document.exitFullscreen()
-      } else {
-        await root.requestFullscreen()
-      }
+    const api = (window as any).electronAPI
+    if (api?.fullscreen) {
+      api.fullscreen()
+      setFullscreen((v) => !v)
+      return
     }
+    const root = document.querySelector('.player-stage') as HTMLElement | null
+    if (!root) return
+    if (document.fullscreenElement) await document.exitFullscreen()
+    else await root.requestFullscreen()
   }
 
   async function togglePip(video: HTMLVideoElement | null) {
@@ -389,7 +382,8 @@ export default function PlayerPage() {
             src={streamUrl}
             partition="persist:mfy"
             style={{ width: '100%', height: '100%', background: '#000' }}
-            allowpopups="true"
+            allowpopups="false"
+            allowfullscreen="true"
             useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
             webpreferences="allowRunningInsecureContent, javascript=yes"
           />
@@ -398,6 +392,17 @@ export default function PlayerPage() {
           <video ref={videoRef} playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }} />
         )}
 
+        {loaded && !error && isPlayerEmbedUrl(streamUrl) && (
+          <div style={{ position: 'absolute', bottom: 12, right: 12, zIndex: 30, display: 'flex', gap: 8 }}>
+            {(['playtorrio', 'simplstream', 'zangetsu', 'miruro'] as PlayerSource[]).map((s) => (
+              <button key={s} type="button" onClick={() => { setPlayerSource(s); try { localStorage.setItem('mfy-player-engine', s) } catch {} }}
+                style={{ background: playerSource === s ? '#FF1493' : 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', fontSize: 11, cursor: 'pointer' }}>
+                {s === 'playtorrio' ? 'Auto' : s === 'simplstream' ? '1080' : s === 'zangetsu' ? 'Anime' : 'Sub'}
+              </button>
+            ))}
+            <button type="button" onClick={toggleFullscreen} style={{ background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>{fullscreen ? 'Exit' : 'Full'}</button>
+          </div>
+        )}
         {showUI && loaded && !error && !isPlayerEmbedUrl(streamUrl) && (
           <div className={cn('player-controls', showUI ? 'visible' : 'hidden')} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 20, padding: '16px 24px 24px', background: 'linear-gradient(0deg, rgba(0,0,0,0.95) 0%, transparent 100%)', pointerEvents: 'auto' }}>
             <div className="player-progress" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); seek(((e.clientX - r.left) / r.width) * dur) }} style={{ cursor: 'pointer', height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 2, marginBottom: 12 }}>
