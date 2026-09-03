@@ -17,6 +17,8 @@ function aniCard(m: any) {
     coverImage: m.coverImage,
     image: m.coverImage?.large,
     overview: m.description,
+    averageScore: m.averageScore,
+    score: m.averageScore ? m.averageScore/10 : 0,
     media_type: 'manga',
   }
 }
