@@ -463,7 +463,7 @@ export default function MetaDetails() {
 className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/8 border border-white/12 text-sm text-white/70 hover:text-white transition-all"
                 >
                 <Plus className="w-4 h-4" />
-                {selectedMedia && selectedMedia.type !== 'iptv' && isInWatchlist(selectedMedia.id as number, selectedMedia.type) ? 'In List' : 'My List'}
+                {selectedMedia && selectedMedia.type !== 'iptv' && isInWatchlist(selectedMedia.id as number, selectedMedia.type) ? 'In Library' : 'Library'}
               </button>
               <button
                 type="button"
@@ -484,7 +484,7 @@ className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/8 bord
                   )}
                 >
                   <List className="w-4 h-4" />
-                  Add to list
+                  Add to library
                 </button>
                 {listOpen && (
                   <div className="absolute z-50 right-0 top-full mt-2 w-56 rounded-xl bg-[#1a1a1f] border border-white/10 shadow-2xl p-2 page-fade-enter">

@@ -17,7 +17,7 @@ const tabs = [
   { id: 'sports', label: 'Sports', icon: Trophy },
   { id: 'iptv', label: 'IPTV', icon: Radio },
   { id: 'search', label: 'Search', icon: Search },
-  { id: 'library', label: 'My List', icon: Bookmark },
+  { id: 'library', label: 'Library', icon: Bookmark },
   { id: 'settings', label: 'Settings', icon: Settings },
 ]
 
@@ -29,7 +29,7 @@ export default function Navbar() {
       <button onClick={() => setCurrentPage('home')} className="brand" aria-label="MFY Board" type="button">
         <img src="./icon.png" alt="MFY" />
         <span>MFY</span>
-        <span className="text-[10px] text-[#FF1493] font-bold ml-1">1.3.8</span>
+        <span className="text-[10px] text-[#FF1493] font-bold ml-1">1.3.9</span>
       </button>
       <nav className="nav-tabs">
         {tabs.map((tab) => {

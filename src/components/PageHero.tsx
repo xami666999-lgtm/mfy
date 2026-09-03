@@ -1,6 +1,7 @@
-import { Play, Plus } from 'lucide-react'
+import { Play, Plus, Check } from 'lucide-react'
 import { BACKDROP_URL } from '../api/tmdb'
 import { titleOf, imgSrc } from './MediaShelf'
+import { useStore } from '../store'
 
 export default function PageHero({
   item,
@@ -11,8 +12,11 @@ export default function PageHero({
   kicker: string
   onPlay: () => void
 }) {
+  const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useStore()
   if (!item) return null
   const bg = item.backdrop_path ? `${BACKDROP_URL}${item.backdrop_path}` : imgSrc(item)
+  const type = (item.media_type === 'tv' || item.first_air_date || item.name) ? 'tv' : 'movie'
+  const inLib = item.id ? isInWatchlist(item.id, type) : false
   return (
     <section className="hero" style={{ minHeight: "70vh" }}>
       <div className="hero-backdrop" style={{ backgroundImage: bg ? `url(${bg})` : undefined }} />
@@ -26,8 +30,16 @@ export default function PageHero({
             <button className="hero-play" type="button" onClick={onPlay}>
               <Play fill="currentColor" size={16} /> Play
             </button>
-            <button className="hero-secondary" type="button">
-              <Plus size={16} /> Add to List
+            <button
+              className="hero-secondary"
+              type="button"
+              onClick={() => {
+                if (!item.id) return
+                if (inLib) removeFromWatchlist(item.id, type)
+                else addToWatchlist({ mediaId: item.id, mediaType: type, title: titleOf(item), posterPath: item.poster_path || null, addedAt: new Date().toISOString() })
+              }}
+            >
+              {inLib ? <><Check size={16} /> In Library</> : <><Plus size={16} /> Add to Library</>}
             </button>
           </div>
         </div>

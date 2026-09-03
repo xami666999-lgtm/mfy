@@ -247,7 +247,7 @@ export default function Board() {
                   setCurrentPage('player')
                 }}><Play fill="currentColor" size={16} /> Play</button>
                 <button className="hero-secondary" type="button" onClick={() => toggleList(hero)}>
-                  {isInWatchlist(hero.id, hero.media_type === 'tv' ? 'tv' : 'movie') ? <><Check size={16} /> In My List</> : <><Plus size={16} /> Add to List</>}
+                  {isInWatchlist(hero.id, hero.media_type === 'tv' ? 'tv' : 'movie') ? <><Check size={16} /> In Library</> : <><Plus size={16} /> Add to Library</>}
                 </button>
                 <button className="hero-info" type="button" onClick={() => goDetail(hero)} aria-label="Info"><Info size={16} /></button>
               </div>
