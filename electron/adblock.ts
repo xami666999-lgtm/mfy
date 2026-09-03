@@ -103,7 +103,7 @@ export function setupAdBlocker() {
   for (const d of EXTRA) {
     if (!AD_DOMAINS.includes(d)) AD_DOMAINS.push(d)
   }
-  const sessions = [session.defaultSession, session.fromPartition('persist:mfy')]
+  const sessions = [session.defaultSession, session.fromPartition('persist:mfy'), session.fromPartition('persist:mfy-yt')]
   for (const ses of sessions) {
   ses.webRequest.onBeforeRequest({ urls: ['*://*/*'] }, (details, callback) => {
     const url = details.url
