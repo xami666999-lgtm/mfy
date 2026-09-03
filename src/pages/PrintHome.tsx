@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { jikan } from '../api/jikan'
 import { anilist } from '../api/anilist'
 import { fireflyManga } from '../api/fireflyManga'
-import { OFFLINE_MANGA } from '../data/offlineCatalog'
+import { OFFLINE_MANGA, OFFLINE_COMICS } from '../data/offlineCatalog'
 import { useStore } from '../store'
 
 function offlineCards() {
@@ -11,6 +11,28 @@ function offlineCards() {
     image: m.coverImage || m.image,
     poster_path: m.coverImage || m.image,
     media_type: 'manga',
+  }))
+}
+
+function offlineComics() {
+  return (OFFLINE_COMICS || []).map((m: any) => ({
+    ...m,
+    image: m.image,
+    poster_path: m.poster_path || m.image,
+    media_type: 'comics',
+  }))
+}
+
+async function openLibrary(q: string) {
+  const r = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=24`)
+  const d = await r.json()
+  return (d.docs || []).filter((b: any) => b.cover_i).map((b: any) => ({
+    id: String(b.key),
+    title: b.title,
+    name: b.title,
+    image: `https://covers.openlibrary.org/b/id/${b.cover_i}-L.jpg`,
+    poster_path: `https://covers.openlibrary.org/b/id/${b.cover_i}-L.jpg`,
+    media_type: 'comics',
   }))
 }
 import { MediaShelf } from '../components/MediaShelf'
@@ -36,7 +58,7 @@ function aniCard(m: any) {
 
 export default function PrintHome({ kind }: { kind: 'manga' | 'comics' | 'novels' }) {
   const { setSelectedMedia, setCurrentPage } = useStore()
-  const [popular, setPopular] = useState<any[]>(offlineCards())
+  const [popular, setPopular] = useState<any[]>(kind === 'comics' ? offlineComics() : offlineCards())
   const [rows, setRows] = useState<Record<string, any[]>>({})
   const title = kind === 'comics' ? 'Comics' : kind === 'novels' ? 'Novels' : 'Manga'
 
@@ -68,15 +90,15 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' | 'novels
         return
       }
       if (kind === 'comics') {
-        const names = ['Marvel', 'DC Comics', 'Spider-Man', 'Batman', 'One Punch', 'Berserk']
-        const extra: Record<string, any[]> = {}
-        for (const q of names) {
-          extra[q] = await jikan.searchManga(q, 1).catch(() => [])
-          await sleep(400)
-        }
+        setPopular(offlineComics())
+        const names = ['Marvel comics', 'DC comics', 'Spider-Man comic', 'Batman comic', 'X-Men comic', 'Watchmen']
+        const extra: Record<string, any[]> = { 'MFY comics': offlineComics() }
+        const bags = await Promise.all(names.map((q) => openLibrary(q).catch(() => [])))
+        names.forEach((q, i) => { extra[q] = bags[i] })
+        const flat = bags.flat()
         if (!live) return
         setRows(extra)
-        setPopular(Object.values(extra).flat().filter((x) => x.image).slice(0, 24))
+        setPopular(flat.length ? flat.slice(0, 24) : offlineComics())
         return
       }
       const [top, ani, novels, light, ff] = await Promise.all([
