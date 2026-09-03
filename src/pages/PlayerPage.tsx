@@ -285,6 +285,11 @@ const s = await tmdb.getSeasonDetail(selectedMedia.id as number, nextSeason.seas
   }
 
   function goBack() {
+    if (selectedMedia?.type === 'iptv' || /metegol|streamed|sport/i.test(streamUrl || '')) {
+      setSelectedMedia(null)
+      setCurrentPage('sports')
+      return
+    }
     setShowRate(true)
   }
 

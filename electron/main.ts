@@ -187,7 +187,7 @@ function addDesktopShortcut() {
       args: '',
       description: 'MFY - Movies For You',
       cwd: path.dirname(exePath),
-      icon: exePath,
+      icon: path.join(process.resourcesPath || path.dirname(exePath), 'mfy.ico'),
       iconIndex: 0,
     })
   } catch {

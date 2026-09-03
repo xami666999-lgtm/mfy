@@ -112,16 +112,23 @@ export default function Sports() {
     }
     setResolving(true)
     try {
-      let found: SportStream[] = []
-      for (const s of sources) {
-        const list = await sportsApi.getStreams(s.source, s.id)
-        if (Array.isArray(list) && list.length) {
-          found = list
-          break
-        }
+      const jobs = sources.slice(0, 3).map((s) => sportsApi.getStreams(s.source, s.id).then((list) => (Array.isArray(list) ? list : [])).catch(() => [] as SportStream[]))
+      const first = await Promise.race([
+        Promise.any(jobs.map(async (j) => {
+          const list = await j
+          if (list[0]?.embedUrl) return list
+          throw new Error('empty')
+        })),
+        new Promise<SportStream[]>((resolve) => setTimeout(() => resolve([]), 3500)),
+      ])
+      if (first[0]?.embedUrl) {
+        playEmbed(first[0].embedUrl)
+        setResolving(false)
+        return
       }
-      setStreams(found)
-      if (!found.length) setStreamError('No live embeds available for this match right now.')
+      const all = (await Promise.all(jobs)).flat()
+      setStreams(all)
+      if (!all.length) setStreamError('No live embeds available for this match right now.')
     } catch {
       setStreamError('Could not load streams.')
     }
@@ -162,8 +169,11 @@ export default function Sports() {
       </aside>
       <div className="flex-1 p-5 min-w-0">
       {watchUrl && (
-        <div className="aspect-video mb-5 rounded-xl overflow-hidden bg-black">
-          <iframe title="Sports" src={watchUrl} className="w-full h-full" allow="autoplay; fullscreen" allowFullScreen />
+        <div className="mb-5">
+          <button type="button" className="h-9 px-3 mb-2 rounded-full bg-white text-black text-sm font-semibold" onClick={() => setWatchUrl('')}>Back</button>
+          <div className="aspect-video rounded-xl overflow-hidden bg-black">
+            <iframe title="Sports" src={watchUrl} className="w-full h-full" allow="autoplay; fullscreen" allowFullScreen />
+          </div>
         </div>
       )}
       <div className="flex items-end justify-between gap-4 mb-5">

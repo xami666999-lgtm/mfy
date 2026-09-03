@@ -1,6 +1,6 @@
 {
   "name": "mfy",
-  "version": "1.2.85",
+  "version": "1.2.86",
   "description": "MFY - Movies For You",
   "main": "dist-electron/main.js",
   "author": "xami666999-lgtm",
@@ -79,6 +79,12 @@
         "owner": "xami666999-lgtm",
         "repo": "mfy",
         "releaseType": "release"
+      }
+    ],
+    "extraResources": [
+      {
+        "from": "public/icons/mfy.ico",
+        "to": "mfy.ico"
       }
     ]
   },

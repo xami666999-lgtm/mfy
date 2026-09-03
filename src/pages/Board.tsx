@@ -219,7 +219,7 @@ export default function Board() {
           <div className="hero-backdrop fade-in" style={{ backgroundImage: hero.backdrop_path ? `url(${BACKDROP_URL}${hero.backdrop_path})` : undefined }} />
           <div className="hero-overlay" />
           <div className="hero-content">
-            <div className="hero-copy fade-in">
+            <div className="hero-copy fade-in pl-80">
               <div className="hero-kicker">{hero.media_type === 'tv' ? 'SERIES' : 'MOVIE'}</div>
               <h1>{titleOf(hero)}</h1>
               <p>{hero.overview || 'Watch something tonight.'}</p>
