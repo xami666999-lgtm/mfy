@@ -220,7 +220,12 @@ export default function MetaDetails() {
       </div>
     </div>
   )
-  if (!detail) return null
+  if (!detail) return (
+    <div className="p-10 text-white">
+      <button type="button" className="text-[#FF1493] mb-4" onClick={() => setCurrentPage('home')}>← Home</button>
+      <p className="text-white/60">Couldn’t open this title. Go home and try again.</p>
+    </div>
+  )
 
   const title = detail.title || detail.name || ''
   const year = (detail.release_date || detail.first_air_date || '').slice(0, 4)

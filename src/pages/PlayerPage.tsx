@@ -102,6 +102,7 @@ export default function PlayerPage() {
       if (e.key === 'ArrowLeft') seek(progress - 10)
       if (e.key === 'f' || e.key === 'F') toggleFullscreen()
       if (e.key === 'n' || e.key === 'N') setShowRate(true)
+      if (e.key === 'Escape') goBack()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -284,12 +285,19 @@ export default function PlayerPage() {
     } catch (e) { console.warn('PiP failed', e) }
   }
 
+  function leavePlayer(page: 'detail' | 'home' | 'sports' | 'anime' | 'movies' | 'tv') {
+    try { (window as any).electronAPI?.exitFullscreen?.() } catch {}
+    try { if (document.fullscreenElement) document.exitFullscreen() } catch {}
+    setShowRate(false)
+    setCurrentStreamUrl('')
+    setCurrentPage(page)
+  }
+
   function goBack() {
-    if (selectedMedia?.type === 'iptv' || /metegol|streamed|sport/i.test(streamUrl || '')) {
-      setCurrentPage('sports')
-      return
-    }
-    setCurrentPage('detail')
+    const sport = selectedMedia?.type === 'iptv' || /metegol|streamed|sport/i.test(streamUrl || '')
+    if (sport) { leavePlayer('sports'); return }
+    if (selectedMedia?.id) { leavePlayer('detail'); return }
+    leavePlayer('home')
   }
 
   function finishRate(score?: number, note?: string) {
@@ -309,7 +317,7 @@ export default function PlayerPage() {
       }).catch(() => {})
     }
     setShowRate(false)
-    setCurrentPage(selectedMedia ? 'detail' : 'home')
+    leavePlayer(selectedMedia?.id ? 'detail' : 'home')
   }
 
   const title = selectedMedia ? `${selectedMedia.type === 'movie' ? 'Movie' : 'Series'} ${selectedMedia.id}` : 'MFY Player'

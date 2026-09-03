@@ -238,6 +238,9 @@ ipcMain.on('window-fullscreen', () => {
   if (!mainWindow) return
   mainWindow.setFullScreen(!mainWindow.isFullScreen())
 })
+ipcMain.on('window-exit-fullscreen', () => {
+  mainWindow?.setFullScreen(false)
+})
 ipcMain.on('window-close', () => mainWindow?.close())
 ipcMain.handle('window-is-maximized', () => mainWindow?.isMaximized() ?? false)
 
