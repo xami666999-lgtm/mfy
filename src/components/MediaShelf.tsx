@@ -1,6 +1,7 @@
 import { POSTER_URL } from '../api/tmdb'
 import { PosterMarks } from './PosterMarks'
 import { useStore } from '../store'
+import { watchPercent } from '../lib/watchProgress'
 
 function proxy(url: string) {
   if (!url) return ''
@@ -77,7 +78,7 @@ export function MediaShelf({
             ) : (
               <div className="poster-fallback">{titleOf(item)}</div>
             )}
-            <PosterMarks item={{ ...item, progressPct: hist.find((h) => String(h.mediaId) === String(item.id)) ? Math.round(((hist.find((h) => String(h.mediaId) === String(item.id))?.progress || 1) / Math.max(hist.find((h) => String(h.mediaId) === String(item.id))?.duration || 1, 1)) * 100) : item.progressPct }} />
+            <PosterMarks item={{ ...item, progressPct: item.progressPct ?? watchPercent(hist.find((h) => String(h.mediaId) === String(item.id))) }} />
             <div className="poster-overlay">
               <div className="poster-meta-title">{titleOf(item)}</div>
             </div>

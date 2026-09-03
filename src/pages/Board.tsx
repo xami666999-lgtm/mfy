@@ -7,6 +7,7 @@ import { SkeletonPoster, SkeletonHero } from '../components/Skeleton'
 import { streamingServices } from '../api/streaming'
 import { PosterMarks } from '../components/PosterMarks'
 import { getPlayerUrl } from '../api/vidy'
+import { isFinished, watchPercent } from '../lib/watchProgress'
 
 function readHomeCache() {
   try {
@@ -285,7 +286,10 @@ export default function Board() {
         {watchHistory.length > 0 && (
           <Shelf
             title="Continue Watching"
-            items={watchHistory.slice(0, 16).map((h: any) => ({ id: h.mediaId, title: h.title, poster_path: h.posterPath, media_type: h.mediaType, season: h.season, episode: h.episode, progressLabel: h.season ? `S${h.season} E${h.episode || 1}` : 'Resume', progress: h.progress, duration: h.duration, vote_average: 0 }))}
+            items={watchHistory.filter((h: any) => !isFinished(h)).slice(0, 16).map((h: any) => {
+              const pct = watchPercent(h)
+              return { id: h.mediaId, title: h.title, poster_path: h.posterPath, media_type: h.mediaType, season: h.season, episode: h.episode, progressLabel: `${h.season ? `S${h.season}E${h.episode || 1} · ` : ''}${pct > 0 ? `${pct}%` : 'Resume'}`, progress: h.progress, duration: h.duration, progressPct: pct, vote_average: 0 }
+            })}
             onOpen={(h) => { setSelectedMedia({ id: h.id, type: h.media_type, season: h.season, episode: h.episode }); setCurrentPage('detail') }}
           />
         )}

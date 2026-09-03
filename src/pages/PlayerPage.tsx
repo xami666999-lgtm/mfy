@@ -157,7 +157,13 @@ export default function PlayerPage() {
     return () => document.removeEventListener('fullscreenchange', onFullscreen)
   }, [])
 
+  useEffect(() => {
+    const id = setInterval(() => { saveProgress().catch(() => {}) }, 20000)
+    return () => clearInterval(id)
+  }, [selectedMedia?.id, selectedMedia?.episode, playerSource])
+
   async function handleEnded() {
+    saveProgress(true).catch(() => {})
     if (autoplayNext && selectedMedia?.type === 'tv' && !autoNextBusy) {
       setAutoNextBusy(true)
       try {
@@ -285,7 +291,33 @@ export default function PlayerPage() {
     } catch (e) { console.warn('PiP failed', e) }
   }
 
+  async function saveProgress(forceDone = false) {
+    if (!selectedMedia || selectedMedia.type === 'iptv') return
+    let p = progress
+    let d = dur
+    try {
+      const w = document.querySelector('webview') as any
+      const got = await w?.executeJavaScript?.(`(() => { const v = document.querySelector('video'); if (!v) return null; return { p: v.currentTime || 0, d: v.duration || 0 } })()`)
+      if (got && Number(got.d) > 1) { p = Number(got.p); d = Number(got.d) }
+    } catch {}
+    if (forceDone && d > 30) p = d
+    upsertHistory({
+      id: `${selectedMedia.id}-${selectedMedia.type}-${selectedMedia.season || 0}-${selectedMedia.episode || 0}`,
+      mediaId: selectedMedia.id,
+      mediaType: selectedMedia.type === 'movie' ? 'movie' : 'tv',
+      title: String((selectedMedia as any).title || (selectedMedia as any).name || selectedMedia.id),
+      posterPath: (selectedMedia as any).poster_path || null,
+      progress: p,
+      duration: d,
+      season: selectedMedia.season,
+      episode: selectedMedia.episode,
+      watchedAt: new Date().toISOString(),
+      profileId: useStore.getState().currentProfile?.id || 'default',
+    })
+  }
+
   function leavePlayer(page: 'detail' | 'home' | 'sports' | 'anime' | 'movies' | 'tv') {
+    saveProgress().catch(() => {})
     try { (window as any).electronAPI?.exitFullscreen?.() } catch {}
     try { if (document.fullscreenElement) document.exitFullscreen() } catch {}
     setShowRate(false)
