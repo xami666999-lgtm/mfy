@@ -220,6 +220,7 @@ export const tmdb = {
     tmdbFetch(`/discover/${mediaType}`, {
       with_watch_providers: String(providerId),
       watch_region: 'US',
+      with_watch_monetization_types: 'flatrate',
       sort_by: 'popularity.desc',
       page: String(page),
     }, {

@@ -13,7 +13,7 @@ export default function ProviderBrowse() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!service || !tmdbApiKey) {
+    if (!service) {
       setItems([])
       setLoading(false)
       return
@@ -30,7 +30,7 @@ export default function ProviderBrowse() {
       if (!cancelled) setLoading(false)
     })()
     return () => { cancelled = true }
-  }, [service, tab, tmdbApiKey])
+  }, [service, tab])
 
   function back() {
     setSelectedProviderId(null)

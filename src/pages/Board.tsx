@@ -199,11 +199,26 @@ export default function Board() {
   }
 
   return (
-    <div className="board page-fade-enter">
+    <div className="board page-fade-enter flex min-h-full">
+      <aside className="hidden md:flex w-56 shrink-0 flex-col gap-1 p-3 bg-black/55 backdrop-blur-xl border-r border-white/5">
+        <p className="text-[10px] tracking-[0.28em] text-[#FF1493] font-bold px-3 py-3">MFY</p>
+        <button type="button" className="text-left h-10 px-3 rounded-xl bg-white text-black text-sm font-semibold" onClick={() => setCurrentPage('home')}>Home</button>
+        <button type="button" className="text-left h-10 px-3 rounded-xl text-white/70 text-sm hover:bg-white/10" onClick={() => setCurrentPage('search')}>Search</button>
+        <button type="button" className="text-left h-10 px-3 rounded-xl text-white/70 text-sm hover:bg-white/10" onClick={() => setCurrentPage('sports')}>Sport</button>
+        <button type="button" className="text-left h-10 px-3 rounded-xl text-white/70 text-sm hover:bg-white/10" onClick={() => setCurrentPage('library')}>Library</button>
+        <p className="text-[10px] text-white/30 px-3 pt-4 pb-1">Channels</p>
+        {streamingServices.map((s) => (
+          <button key={s.id} type="button" className="flex items-center gap-2 h-9 px-3 rounded-lg text-white/70 text-xs hover:bg-white/10" onClick={() => { setSelectedProviderId(s.id); setCurrentPage('provider') }}>
+            <img src={s.logo} alt="" className="w-5 h-5 object-contain" />
+            {s.name}
+          </button>
+        ))}
+      </aside>
+      <div className="flex-1 min-w-0">
       {error && <div className="error-banner mx-5 mt-4">{error}</div>}
 
       {hero && (
-        <section className="hero">
+        <section className="hero" style={{ minHeight: '72vh' }}>
           <div className="hero-backdrop fade-in" style={{ backgroundImage: hero.backdrop_path ? `url(${BACKDROP_URL}${hero.backdrop_path})` : undefined }} />
           <div className="hero-overlay" />
           <div className="hero-content">
@@ -220,20 +235,17 @@ export default function Board() {
               </div>
             </div>
           </div>
-        </section>
-      )}
-
-      <div className="board-content px-5 pt-6">
-        <section className="media-row">
-          <div className="media-row-header"><h2 className="media-row-title">Browse by provider</h2></div>
-          <div className="scroll-row" style={{alignItems:'center'}}>
-            {streamingServices.map((s) => (
-              <button key={s.id} type="button" className="flex-shrink-0 w-28 h-16 rounded-xl bg-white/5 border border-white/10 grid place-items-center p-2" onClick={() => { setSelectedProviderId(s.id); setCurrentPage('provider') }} title={s.name}>
-                <img src={s.logo} alt={s.name} className="max-h-10 max-w-full object-contain" />
+          <div className="absolute bottom-6 left-6 right-6 flex gap-3 overflow-x-auto">
+            {trending.slice(0, 8).map((item: any) => (
+              <button key={item.id} type="button" onClick={() => goDetail(item)} className="shrink-0 w-44 h-24 rounded-xl overflow-hidden border border-white/20">
+                {item.backdrop_path ? <img src={`${BACKDROP_URL}${item.backdrop_path}`} alt="" className="w-full h-full object-cover" /> : <span className="text-xs">{titleOf(item)}</span>}
               </button>
             ))}
           </div>
         </section>
+      )}
+
+      <div className="board-content px-5 pt-6">
         <div className="flex gap-2 px-6 mb-2">
           <button type="button" className={`h-8 px-3 rounded-full text-xs ${hideWatched ? 'bg-[#FF1493]' : 'bg-white/10'}`} onClick={() => setHideWatched((v) => !v)}>Hide watched</button>
           <button type="button" className="h-8 px-3 rounded-full text-xs bg-white/10" onClick={() => {
@@ -266,6 +278,7 @@ export default function Board() {
         {TV_GENRES.map((g) => (
           <Shelf key={`t-${g.id}`} title={`Series · ${g.name}`} items={genreTv[g.id] || []} onOpen={(i) => goDetail(i, 'tv')} viewAll={() => setCurrentPage('tv')} />
         ))}
+      </div>
       </div>
     </div>
   )
