@@ -21,6 +21,22 @@ let tray: Tray | null = null
 
 const isDev = !app.isPackaged
 
+app.setAppUserModelId('com.mfy.app')
+const gotTheLock = app.requestSingleInstanceLock()
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      createWindow()
+      return
+    }
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.show()
+    mainWindow.focus()
+  })
+}
+
 function resolveIcon(...parts: string[]) {
   const candidates = [
     path.join(__dirname, '..', 'dist', ...parts),
@@ -34,6 +50,12 @@ function resolveIcon(...parts: string[]) {
 }
 
 function createWindow() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.show()
+    mainWindow.focus()
+    return
+  }
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
