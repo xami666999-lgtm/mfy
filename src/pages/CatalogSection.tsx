@@ -92,7 +92,7 @@ export default function CatalogSection({ kind, title }: { kind: Kind; title: str
 
   const chips =
     kind === 'comics' ? ['Popular', 'Marvel', 'DC', 'Image', 'Star Wars', 'Superhero', 'Horror', 'Sci-Fi', 'Indie']
-      : kind === 'books' ? ['Bestsellers', 'Fantasy', 'Sci-Fi', 'Romance', 'Comics', 'Mystery', 'History']
+      : kind === 'books' ? ['Bestsellers', 'Fantasy', 'Sci-Fi', 'Romance', 'Mystery', 'History']
       : kind === 'manga' || kind === 'novels' ? ['Popular', 'Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror', 'Mystery', 'Romance', 'Sci-Fi', 'Slice of Life', 'Sports', 'Supernatural', 'Thriller', 'Mecha']
       : kind === 'youtube' ? ['Trending', 'Music', 'Trailers', 'Anime']
       : ['Top songs', 'Pop', 'Hip-Hop', 'Rock', 'Anime']
@@ -165,7 +165,11 @@ export default function CatalogSection({ kind, title }: { kind: Kind; title: str
     if (item.preview) {
       setCurrentStreamUrl(item.preview)
       setCurrentPage('player')
+      return
     }
+    const { setSelectedMedia } = useStore.getState()
+    setSelectedMedia({ id: item.id as any, type: kind === 'books' ? 'book' : 'manga', title: item.title } as any)
+    setCurrentPage('manga-detail')
   }
 
   const wide = kind === 'youtube' || kind === 'music'

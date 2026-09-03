@@ -29,8 +29,7 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' | 'novels
 
   function open(item: any) {
     const name = item.title?.english || item.title?.romaji || item.title || item.name || String(item.id)
-    const type = kind === 'novels' || item.media_type === 'book' ? 'book' : kind === 'comics' ? 'comics' : 'manga'
-    setSelectedMedia({ id: item.id || name, type, title: name } as any)
+    setSelectedMedia({ id: item.id || name, type: 'manga', title: name } as any)
     setCurrentPage('manga-detail')
   }
 

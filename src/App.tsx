@@ -254,7 +254,6 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
         {currentPage === 'sports' && <Sports />}
         {currentPage === 'iptv' && <Iptv />}
         {currentPage === 'manga' && <PrintHome kind="manga" />}
-        {currentPage === 'novels' && <PrintHome kind="novels" />}
         {currentPage === 'comics' && <PrintHome kind="comics" />}
         {currentPage === 'manga-detail' && <MangaReader />}
         {currentPage === 'books' && <CatalogSection kind="books" title="Books" />}
