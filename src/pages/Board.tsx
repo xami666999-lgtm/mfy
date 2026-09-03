@@ -5,6 +5,7 @@ import { anilist } from '../api/anilist'
 import { useStore } from '../store'
 import { SkeletonPoster, SkeletonHero } from '../components/Skeleton'
 import { streamingServices } from '../api/streaming'
+import { PosterMarks } from '../components/PosterMarks'
 
 const MOVIE_GENRES = [
   { id: 28, name: 'Action' }, { id: 12, name: 'Adventure' }, { id: 16, name: 'Animation' },
@@ -50,6 +51,7 @@ function Shelf({ title, items, onOpen, viewAll }: { title: string; items: any[];
             {imgSrc(item)
               ? <img src={imgSrc(item)} alt="" referrerPolicy="no-referrer" loading="lazy" onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none'; el.parentElement?.classList.add('has-fallback') }} />
               : <div className="poster-fallback">{titleOf(item)}</div>}
+            <PosterMarks item={item} />
             <div className="poster-overlay">
               <div className="poster-meta-title">{titleOf(item)}</div>
               {(item.season || item.episode || item.progressLabel) && (
@@ -69,6 +71,9 @@ export default function Board() {
   const [mcu, setMcu] = useState<any[]>([])
   const [ghibli, setGhibli] = useState<any[]>([])
   const [shorties, setShorties] = useState<any[]>([])
+  const [a24, setA24] = useState<any[]>([])
+  const [pixar, setPixar] = useState<any[]>([])
+  const [kids, setKids] = useState<any[]>([])
   const [trending, setTrending] = useState<any[]>([])
   const [movies, setMovies] = useState<any[]>([])
   const [shows, setShows] = useState<any[]>([])
@@ -123,6 +128,9 @@ export default function Board() {
       tmdb.discoverMovies({ with_companies: '420', sort_by: 'popularity.desc', page: '1' }).then((d) => setMcu(d?.results || [])).catch(() => {})
       tmdb.discoverMovies({ with_companies: '10342', sort_by: 'popularity.desc', page: '1' }).then((d) => setGhibli(d?.results || [])).catch(() => {})
       tmdb.discoverMovies({ 'with_runtime.lte': '100', sort_by: 'popularity.desc', page: '1' }).then((d) => setShorties(d?.results || [])).catch(() => {})
+      tmdb.discoverMovies({ with_companies: '41077', sort_by: 'popularity.desc', page: '1' }).then((d) => setA24(d?.results || [])).catch(() => {})
+      tmdb.discoverMovies({ with_companies: '3', sort_by: 'popularity.desc', page: '1' }).then((d) => setPixar(d?.results || [])).catch(() => {})
+      tmdb.discoverMovies({ with_genres: '10751', sort_by: 'popularity.desc', page: '1' }).then((d) => setKids(d?.results || [])).catch(() => {})
     } catch {
       setError('Could not load catalog. Add a TMDB key in Settings.')
     }
@@ -257,13 +265,16 @@ export default function Board() {
         {watchHistory.length > 0 && (
           <Shelf
             title="Continue Watching"
-            items={watchHistory.slice(0, 16).map((h: any) => ({ id: h.mediaId, title: h.title, poster_path: h.posterPath, media_type: h.mediaType, season: h.season, episode: h.episode, progressLabel: h.season ? `S${h.season} E${h.episode || 1}` : 'Resume' }))}
+            items={watchHistory.slice(0, 16).map((h: any) => ({ id: h.mediaId, title: h.title, poster_path: h.posterPath, media_type: h.mediaType, season: h.season, episode: h.episode, progressLabel: h.season ? `S${h.season} E${h.episode || 1}` : 'Resume', progress: h.progress, duration: h.duration, vote_average: 0 }))}
             onOpen={(h) => { setSelectedMedia({ id: h.id, type: h.media_type, season: h.season, episode: h.episode }); setCurrentPage('detail') }}
           />
         )}
         <Shelf title="MCU" items={mcu} onOpen={(i) => goDetail(i, 'movie')} />
         <Shelf title="Studio Ghibli" items={ghibli} onOpen={(i) => goDetail(i, 'movie')} />
         <Shelf title="One sitting" items={shorties} onOpen={(i) => goDetail(i, 'movie')} />
+        <Shelf title="A24" items={a24} onOpen={(i) => goDetail(i, 'movie')} />
+        <Shelf title="Pixar" items={pixar} onOpen={(i) => goDetail(i, 'movie')} />
+        <Shelf title="Kids" items={kids} onOpen={(i) => goDetail(i, 'movie')} />
         <Shelf title="Top 10 on MFY" items={movies.slice(0, 10)} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
         <Shelf title="Trending Today" items={trending} onOpen={goDetail} />
         <Shelf title="Now Playing" items={nowPlaying} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />

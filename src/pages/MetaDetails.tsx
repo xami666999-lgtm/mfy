@@ -167,15 +167,17 @@ export default function MetaDetails() {
 
 
   const PLAYERS = [
-    { id: 'playtorrio', label: 'PlayTorrio' },
-    { id: 'simplstream', label: 'SimplStream' },
-    { id: 'zangetsu', label: 'Zangetsu' },
-    { id: 'miruro', label: 'Miruro' }, { id: 'mangayomi', label: 'Mangayomi' },
-    { id: 'vidy', label: 'Vidy' },
+    { id: 'playtorrio', label: 'PlayTorrio', q: '4K · HDR · Atmos' },
+    { id: 'simplstream', label: 'SimplStream', q: '1080p · HDR' },
+    { id: 'zangetsu', label: 'Zangetsu', q: '1080p · Sub/Dub' },
+    { id: 'miruro', label: 'Miruro', q: '1080p · Anime' },
+    { id: 'mangayomi', label: 'Mangayomi', q: 'Reader / 1080p' },
+    { id: 'vidy', label: 'Vidy', q: '1080p · 720p' },
   ]
   const [playerPick, setPlayerPick] = useState(() => {
     try { return localStorage.getItem('mfy-player-engine') || 'vidy' } catch { return 'vidy' }
   })
+  const [pickOpen, setPickOpen] = useState(false)
 
   async function handlePlay() {
     if (!selectedMedia || selectedMedia.type === 'iptv') return
@@ -390,10 +392,7 @@ export default function MetaDetails() {
             <div className="flex flex-wrap items-center gap-2.5">
               <button
                 type="button"
-                onClick={() => {
-                  try { localStorage.setItem('mfy-player-engine', playerPick) } catch {}
-                  handlePlay()
-                }}
+                onClick={() => setPickOpen(true)}
                 disabled={resolving}
                 className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all disabled:opacity-60 shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
               >
@@ -401,6 +400,20 @@ export default function MetaDetails() {
                 {resolving ? 'Finding…' : 'Play'}
               </button>
               <button type="button" className="h-11 px-4 rounded-full bg-white/10 text-xs" onClick={() => { reportBroken(detail?.title || detail?.name || 'title', playerPick); alert('Reported. Next Play will try another source.') }}>Report broken</button>
+              {pickOpen && (
+                <div className="w-full mt-3 rounded-2xl bg-black/55 border border-white/10 p-3 space-y-2">
+                  {PLAYERS.map((p) => (
+                    <button key={p.id} type="button" className="w-full flex items-center justify-between h-10 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-left" onClick={() => {
+                      setPlayerPick(p.id)
+                      try { localStorage.setItem('mfy-player-engine', p.id) } catch {}
+                      handlePlay()
+                    }}>
+                      <span className="text-sm">{p.label}</span>
+                      <span className="text-[10px] text-[#FF1493]">{p.q}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => {
