@@ -6,6 +6,7 @@ import { vidyUrl, getPlayerUrl, isPlayerEmbed, getFallbackSources, PlayerSource 
 import { useStore } from '../store'
 import RateModal from '../components/RateModal'
 import { syncRating, isAnimeItem } from '../lib/trackers'
+import { markSource } from '../lib/playerStatus'
 
 function isPlayerEmbedUrl(url: string) {
   return isPlayerEmbed(url)
@@ -45,6 +46,8 @@ export default function PlayerPage() {
 
   const [autoNextBusy, setAutoNextBusy] = useState(false)
   const [showRate, setShowRate] = useState(false)
+  const [countdown, setCountdown] = useState(0)
+  const failTried = useRef<string[]>([])
   const [playerSource, setPlayerSource] = useState<PlayerSource>(() => {
     try { return (localStorage.getItem('mfy-player-engine') as PlayerSource) || 'vidy' } catch { return 'vidy' }
   })
@@ -76,6 +79,35 @@ export default function PlayerPage() {
     setLoading(false)
     setError('')
   }, [selectedMedia, playerSource, currentStreamUrl])
+
+  useEffect(() => {
+    if (!streamUrl || !selectedMedia || selectedMedia.type === 'iptv') return
+    const t = setTimeout(() => {
+      const kind = selectedMedia.type === 'movie' ? 'movie' : 'tv'
+      const list = getFallbackSources(kind, selectedMedia.id, selectedMedia.season, selectedMedia.episode)
+      const next = list.find((s) => s.source !== playerSource && !failTried.current.includes(s.source))
+      if (next) {
+        markSource(playerSource, false)
+        failTried.current.push(playerSource)
+        setPlayerSource(next.source)
+        setCurrentStreamUrl(next.url)
+      }
+    }, 10000)
+    return () => clearTimeout(t)
+  }, [streamUrl, playerSource, selectedMedia])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (e.code === 'Space') { e.preventDefault(); togglePlay() }
+      if (e.key === 'ArrowRight') seek(progress + 10)
+      if (e.key === 'ArrowLeft') seek(progress - 10)
+      if (e.key === 'f' || e.key === 'F') toggleFullscreen()
+      if (e.key === 'n' || e.key === 'N') setShowRate(true)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
 
   const handleIframeError = () => {
     if (/youtube|nadeko|yewtu|invidious|itunes|m3u8/.test(streamUrl || currentStreamUrl || '')) return
@@ -256,7 +288,7 @@ const s = await tmdb.getSeasonDetail(selectedMedia.id as number, nextSeason.seas
     setShowRate(true)
   }
 
-  function finishRate(score?: number) {
+  function finishRate(score?: number, note?: string) {
     if (score && selectedMedia) {
       const anime = isAnimeItem(selectedMedia)
       const type = anime ? 'anime' : selectedMedia.type === 'movie' ? 'movie' : 'tv'
@@ -269,6 +301,7 @@ const s = await tmdb.getSeasonDetail(selectedMedia.id as number, nextSeason.seas
         season: selectedMedia.season,
         episode: selectedMedia.episode,
         serializdOn: !!st.serializdSyncEnabled && !anime,
+        note,
       }).catch(() => {})
     }
     setShowRate(false)
@@ -281,7 +314,7 @@ const s = await tmdb.getSeasonDetail(selectedMedia.id as number, nextSeason.seas
   return (
     <>
     {showRate && (
-        <RateModal title={title} kind={isAnimeItem(selectedMedia) ? 'anime' : (selectedMedia?.type === 'movie' ? 'movie' : 'tv')} onSubmit={(s) => finishRate(s)} onSkip={() => finishRate()} />
+        <RateModal title={title} kind={isAnimeItem(selectedMedia) ? 'anime' : (selectedMedia?.type === 'movie' ? 'movie' : 'tv')} onSubmit={(s, n) => finishRate(s, n)} onSkip={() => finishRate()} />
       )}
     <div className="mfy-player" onMouseMove={onMouseMove} style={{ background: '#000', minHeight: '100vh' }}>
       <div className={cn('player-topbar', showUI ? 'visible' : 'hidden')} style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>

@@ -52,6 +52,9 @@ function Shelf({ title, items, onOpen, viewAll }: { title: string; items: any[];
               : <div className="poster-fallback">{titleOf(item)}</div>}
             <div className="poster-overlay">
               <div className="poster-meta-title">{titleOf(item)}</div>
+              {(item.season || item.episode || item.progressLabel) && (
+                <div className="text-[10px] text-[#FF1493]">{item.progressLabel || `S${item.season || 1} E${item.episode || 1}`}</div>
+              )}
             </div>
           </button>
         ))}
@@ -62,6 +65,10 @@ function Shelf({ title, items, onOpen, viewAll }: { title: string; items: any[];
 
 export default function Board() {
   const { tmdbApiKey, setCurrentPage, setSelectedMedia, setSelectedProviderId, addToWatchlist, isInWatchlist, removeFromWatchlist, watchHistory, favorites } = useStore()
+  const [hideWatched, setHideWatched] = useState(false)
+  const [mcu, setMcu] = useState<any[]>([])
+  const [ghibli, setGhibli] = useState<any[]>([])
+  const [shorties, setShorties] = useState<any[]>([])
   const [trending, setTrending] = useState<any[]>([])
   const [movies, setMovies] = useState<any[]>([])
   const [shows, setShows] = useState<any[]>([])
@@ -113,6 +120,9 @@ export default function Board() {
       setShows(s?.results || [])
       setNowPlaying(np?.results?.slice(0, 16) || [])
       setOnTheAir(ota?.results?.slice(0, 16) || [])
+      tmdb.discoverMovies({ with_companies: '420', sort_by: 'popularity.desc', page: '1' }).then((d) => setMcu(d?.results || [])).catch(() => {})
+      tmdb.discoverMovies({ with_companies: '10342', sort_by: 'popularity.desc', page: '1' }).then((d) => setGhibli(d?.results || [])).catch(() => {})
+      tmdb.discoverMovies({ 'with_runtime.lte': '100', sort_by: 'popularity.desc', page: '1' }).then((d) => setShorties(d?.results || [])).catch(() => {})
     } catch {
       setError('Could not load catalog. Add a TMDB key in Settings.')
     }
@@ -224,13 +234,24 @@ export default function Board() {
             ))}
           </div>
         </section>
+        <div className="flex gap-2 px-6 mb-2">
+          <button type="button" className={`h-8 px-3 rounded-full text-xs ${hideWatched ? 'bg-[#FF1493]' : 'bg-white/10'}`} onClick={() => setHideWatched((v) => !v)}>Hide watched</button>
+          <button type="button" className="h-8 px-3 rounded-full text-xs bg-white/10" onClick={() => {
+            const pool = [...movies, ...shows, ...trending].filter(Boolean)
+            const pick = pool[Math.floor(Math.random() * pool.length)]
+            if (pick) { setSelectedMedia({ id: pick.id, type: pick.media_type === 'tv' || pick.name ? 'tv' : 'movie' }); setCurrentPage('detail') }
+          }}>Surprise Me</button>
+        </div>
         {watchHistory.length > 0 && (
           <Shelf
             title="Continue Watching"
-            items={watchHistory.slice(0, 16).map((h: any) => ({ id: h.mediaId, title: h.title, poster_path: h.posterPath, media_type: h.mediaType }))}
-            onOpen={(h) => { setSelectedMedia({ id: h.id, type: h.media_type }); setCurrentPage('detail') }}
+            items={watchHistory.slice(0, 16).map((h: any) => ({ id: h.mediaId, title: h.title, poster_path: h.posterPath, media_type: h.mediaType, season: h.season, episode: h.episode, progressLabel: h.season ? `S${h.season} E${h.episode || 1}` : 'Resume' }))}
+            onOpen={(h) => { setSelectedMedia({ id: h.id, type: h.media_type, season: h.season, episode: h.episode }); setCurrentPage('detail') }}
           />
         )}
+        <Shelf title="MCU" items={mcu} onOpen={(i) => goDetail(i, 'movie')} />
+        <Shelf title="Studio Ghibli" items={ghibli} onOpen={(i) => goDetail(i, 'movie')} />
+        <Shelf title="One sitting" items={shorties} onOpen={(i) => goDetail(i, 'movie')} />
         <Shelf title="Top 10 on MFY" items={movies.slice(0, 10)} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
         <Shelf title="Trending Today" items={trending} onOpen={goDetail} />
         <Shelf title="Now Playing" items={nowPlaying} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />

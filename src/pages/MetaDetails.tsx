@@ -6,6 +6,7 @@ import { fetchRottenTomatoes } from '../api/rottentomatoes'
 import { fetchMdblistRatings, type MdblistRating } from '../api/mdblist'
 import { vidyUrl, getPlayerUrl } from '../api/vidy'
 import { useStore } from '../store'
+import { sourceDot, reportBroken } from '../lib/playerStatus'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 
 export default function MetaDetails() {
@@ -376,6 +377,7 @@ export default function MetaDetails() {
                   }}
                   className={`h-7 px-2.5 rounded-full text-[10px] font-semibold ${playerPick === p.id ? 'bg-[#FF1493] text-white' : 'bg-white/10 text-white/50'}`}
                 >
+                  <span className="inline-block w-1.5 h-1.5 rounded-full mr-1" style={{background: sourceDot(p.id)==='green'?'#22c55e':sourceDot(p.id)==='red'?'#ef4444':'#64748b'}} />
                   {p.label}
                 </button>
               ))}
@@ -393,6 +395,7 @@ export default function MetaDetails() {
                 <Play className="w-4 h-4" fill="black" />
                 {resolving ? 'Finding…' : 'Play'}
               </button>
+              <button type="button" className="h-11 px-4 rounded-full bg-white/10 text-xs" onClick={() => { reportBroken(detail?.title || detail?.name || 'title', playerPick); alert('Reported. Next Play will try another source.') }}>Report broken</button>
               <button
                 type="button"
                 onClick={() => {

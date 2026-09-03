@@ -12,6 +12,8 @@ export default function Anime() {
   const [popular, setPopular] = useState<any[]>(OFFLINE_ANIME || [])
   const [upcoming, setUpcoming] = useState<any[]>([])
   const [rows, setRows] = useState<Record<string, any[]>>({})
+  const [audio, setAudio] = useState<'all' | 'sub' | 'dub'>('all')
+  const [calendar, setCalendar] = useState<any[]>([])
 
   function open(item: any) {
     setSelectedMedia({ id: item.id, type: item.media_type === 'movie' ? 'movie' : 'tv', isAnime: true } as any)
@@ -35,13 +37,20 @@ export default function Anime() {
     }).catch(() => {})
     jikan.topAnime(1).then((list) => { if (list.length) setPopular((prev) => prev.length >= 20 ? prev : list) }).catch(() => {})
     jikan.seasonNow().then((list) => { if (list.length) setUpcoming(list) }).catch(() => {})
+    tmdb.getOnTheAir().then((d) => setCalendar((d?.results || []).filter((x: any) => (x.origin_country || []).includes('JP') || (x.genre_ids || []).includes(16)))).catch(() => {})
   }, [])
 
   return (
     <div className="board page-fade-enter">
       <PageHero item={popular[0]} kicker="ANIME" onPlay={() => popular[0] && open(popular[0])} />
       <div className="board-content px-6 pt-6">
-        <MediaShelf title="Popular Anime" items={popular} onOpen={open} />
+        <div className="flex gap-2 mb-4">
+          {(['all', 'sub', 'dub'] as const).map((a) => (
+            <button key={a} type="button" className={`h-8 px-3 rounded-full text-xs ${audio === a ? 'bg-[#FF1493]' : 'bg-white/10'}`} onClick={() => setAudio(a)}>{a.toUpperCase()}</button>
+          ))}
+        </div>
+        <MediaShelf title="Airing calendar" items={calendar} onOpen={open} />
+        <MediaShelf title="Popular Anime" items={audio === 'dub' ? popular.filter((x) => (x.original_language || '') === 'en') : audio === 'sub' ? popular.filter((x) => (x.original_language || 'ja') !== 'en') : popular} onOpen={open} />
         <MediaShelf title="Upcoming Anime" items={upcoming} onOpen={open} />
         {Object.entries(rows).map(([name, list]) => (
           <MediaShelf key={name} title={name} items={list} onOpen={open} />

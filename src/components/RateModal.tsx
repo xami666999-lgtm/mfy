@@ -8,10 +8,11 @@ export default function RateModal({
 }: {
   title: string
   kind: 'movie' | 'tv' | 'anime' | 'manga'
-  onSubmit: (score: number) => void
+  onSubmit: (score: number, note: string) => void
   onSkip: () => void
 }) {
   const [score, setScore] = useState(8)
+  const [note, setNote] = useState('')
   return (
     <div className="fixed inset-0 z-[80] bg-black/70 grid place-items-center p-4">
       <div className="w-full max-w-md rounded-2xl bg-[#140810] border border-white/10 p-6 text-white">
@@ -23,8 +24,9 @@ export default function RateModal({
             <button key={n} type="button" onClick={() => setScore(n)} className={`w-8 h-8 rounded-lg text-sm font-bold ${score === n ? 'bg-[#FF1493]' : 'bg-white/10'}`}>{n}</button>
           ))}
         </div>
+        <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note for Serializd / yourself" className="w-full mb-4 h-20 rounded-xl bg-white/5 border border-white/10 p-3 text-sm" />
         <div className="flex gap-2">
-          <button type="button" className="flex-1 h-11 rounded-xl bg-[#FF1493] font-bold" onClick={() => onSubmit(score)}>Save</button>
+          <button type="button" className="flex-1 h-11 rounded-xl bg-[#FF1493] font-bold" onClick={() => onSubmit(score, note)}>Save</button>
           <button type="button" className="h-11 px-4 rounded-xl bg-white/10" onClick={onSkip}>Skip</button>
         </div>
       </div>

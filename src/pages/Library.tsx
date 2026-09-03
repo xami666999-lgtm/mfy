@@ -26,7 +26,13 @@ export default function Library() {
   const [editingList, setEditingList] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
 
-  function openItem(mediaId: number | string, mediaType: 'movie' | 'tv' | 'iptv') {
+  function isFresh(item: any) {
+  if (item.mediaType !== 'tv' && item.media_type !== 'tv') return false
+  const t = Date.parse(item.watchedAt || item.addedAt || '')
+  return Number.isFinite(t) && Date.now() - t > 3 * 86400000
+}
+
+function openItem(mediaId: number | string, mediaType: 'movie' | 'tv' | 'iptv') {
     setSelectedMedia({ id: mediaId, type: mediaType })
     setCurrentPage('detail')
   }
@@ -321,7 +327,7 @@ export default function Library() {
                   <div className="w-12 h-[72px] rounded-md bg-white/[0.06]" />
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-white truncate">{h.title}</div>
+                  <div className="text-sm font-medium text-white truncate">{h.title} {isFresh(h) && <span className="text-[10px] text-[#FF1493] ml-1">NEW</span>}</div>
                   <div className="text-[11px] text-white/35 mt-0.5">
                     {h.mediaType}
                     {h.season != null && ` · S${h.season}E${h.episode}`}

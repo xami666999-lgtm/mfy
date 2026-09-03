@@ -43,17 +43,25 @@ export default function Sports() {
   const [engine, setEngine] = useState<'streamed' | 'metegol'>('streamed')
   const [watchUrl, setWatchUrl] = useState('')
   const [metegol, setMetegol] = useState<any[]>([])
+  const [when, setWhen] = useState<'live' | 'upcoming' | 'finished'>('live')
 
   const filteredMatches = useMemo(() => {
-    if (!searchQuery.trim()) return matches
-    const q = searchQuery.toLowerCase()
-    return matches.filter(m =>
-      m.title.toLowerCase().includes(q) ||
-      m.category.toLowerCase().includes(q) ||
-      m.teams?.home?.name?.toLowerCase().includes(q) ||
-      m.teams?.away?.name?.toLowerCase().includes(q)
-    )
-  }, [matches, searchQuery])
+    const now = Date.now()
+    let list = matches
+    if (when === 'live') list = matches.filter((m) => m.live) 
+    else if (when === 'upcoming') list = matches.filter((m) => !m.live && Number(m.date) * (String(m.date).length < 13 ? 1000 : 1) > now)
+    else list = matches.filter((m) => !m.live && Number(m.date) * (String(m.date).length < 13 ? 1000 : 1) <= now)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      list = list.filter(m =>
+        m.title.toLowerCase().includes(q) ||
+        m.category.toLowerCase().includes(q) ||
+        m.teams?.home?.name?.toLowerCase().includes(q) ||
+        m.teams?.away?.name?.toLowerCase().includes(q)
+      )
+    }
+    return list
+  }, [matches, searchQuery, when])
 
   useEffect(() => {
     iptvEnhancedApi.getMetegolEvents().then(setMetegol).catch(() => {
@@ -164,6 +172,9 @@ export default function Sports() {
           <h2 className="text-3xl font-bold text-white">{sportId.replace(/-/g, ' ')}</h2>
         </div>
         <div className="flex gap-2">
+          {(['live', 'upcoming', 'finished'] as const).map((w) => (
+            <button key={w} type="button" onClick={() => setWhen(w)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold', when === w ? 'bg-white text-black' : 'bg-white/10 text-white/45')}>{w}</button>
+          ))}
           {(['streamed', 'metegol'] as const).map((e) => (
             <button key={e} type="button" onClick={() => setEngine(e)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold', engine === e ? 'bg-[#FF1493] text-white' : 'bg-white/10 text-white/45')}>
               {e === 'streamed' ? 'Streamed' : 'Metegol'}

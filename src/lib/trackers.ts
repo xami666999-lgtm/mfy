@@ -21,8 +21,16 @@ export async function syncRating(opts: {
   season?: number
   episode?: number
   serializdOn: boolean
+  note?: string
 }) {
   const notes: string[] = []
+  if (opts.note) {
+    try {
+      const rows = JSON.parse(localStorage.getItem('mfy-reviews') || '[]')
+      rows.unshift({ title: opts.title, type: opts.type, score: opts.score, note: opts.note, at: new Date().toISOString() })
+      localStorage.setItem('mfy-reviews', JSON.stringify(rows.slice(0, 100)))
+    } catch {}
+  }
   if (opts.serializdOn && (opts.type === 'movie' || opts.type === 'tv')) {
     try {
       const id = Number(opts.tmdbId)

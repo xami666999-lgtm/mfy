@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Play, Search, Heart } from 'lucide-react'
+import { Play, Search, Heart, SkipBack, SkipForward } from 'lucide-react'
 
 type Track = { id: string; title: string; artist: string; album?: string; image?: string; url?: string }
 
@@ -50,6 +50,12 @@ export default function MusicPage() {
   function play(t: Track) {
     setNow(t)
     if (t.url) setAudioUrl(t.url)
+  }
+  function skip(dir: number) {
+    if (!now) return
+    const i = tracks.findIndex((x) => x.id === now.id)
+    const n = tracks[(i + dir + tracks.length) % tracks.length]
+    if (n) play(n)
   }
 
   return (
@@ -117,8 +123,12 @@ export default function MusicPage() {
       </div>
       {audioUrl && (
         <div className="fixed bottom-0 left-0 right-0 z-40 bg-black/95 border-t border-white/10 px-4 py-3">
-          <p className="text-xs text-[#FF1493] mb-1">{now?.title} — {now?.artist}</p>
-          <audio src={audioUrl} autoPlay controls className="w-full" />
+          <div className="flex items-center gap-3 mb-1">
+            <button type="button" onClick={() => skip(-1)}><SkipBack size={16} /></button>
+            <p className="text-xs text-[#FF1493] flex-1">{now?.title} — {now?.artist}</p>
+            <button type="button" onClick={() => skip(1)}><SkipForward size={16} /></button>
+          </div>
+          <audio src={audioUrl} autoPlay controls className="w-full" onEnded={() => skip(1)} />
         </div>
       )}
     </div>
