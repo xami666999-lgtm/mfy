@@ -94,10 +94,10 @@ export default function Library() {
 
   return (
     <div className="board page-fade-enter">
-      <div className="px-8 pt-8 pb-4">
+      <div className="mx-6 mt-6 mb-2 rounded-[28px] px-8 pt-10 pb-8" style={{ background: 'linear-gradient(135deg,#2b0618 0%,#12040c 55%,#050810 100%)', border: '1px solid rgba(255,20,147,0.25)' }}>
         <p className="text-[11px] tracking-[0.28em] text-[#FF1493] font-bold">LIBRARY</p>
-        <h1 className="text-4xl font-black text-white mt-1">Your titles</h1>
-        <p className="text-sm text-white/40 mt-1">Saved, favorites, history, collections</p>
+        <h1 className="text-5xl font-black text-white mt-2">Your titles</h1>
+        <p className="text-sm text-white/45 mt-2">Saved · favorites · history · collections</p>
         <div className="flex gap-2 mt-5 flex-wrap">
           {tabs.map((t) => {
             const Icon = t.icon

@@ -38,8 +38,13 @@ const TV_GENRES = [
 const ANIME_GENRES = ['Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror', 'Mecha', 'Mystery', 'Romance', 'Sci-Fi', 'Slice of Life', 'Sports', 'Supernatural', 'Thriller']
 
 function imgSrc(item: any) {
-  if (item.poster_path) return `${POSTER_URL}${item.poster_path}`
-  return item.coverImage?.large || item.coverImage?.medium || item.coverImage || item.image || ''
+  const path = item.poster_path
+  if (path && String(path).startsWith('http')) return `https://wsrv.nl/?url=${encodeURIComponent(String(path).replace(/^https?:\/\//, ''))}&w=400`
+  if (path) return `${POSTER_URL}${path}`
+  const raw = item.coverImage?.large || item.coverImage?.medium || (typeof item.coverImage === 'string' ? item.coverImage : '') || item.image || ''
+  if (!raw) return ''
+  if (String(raw).includes('image.tmdb.org')) return String(raw)
+  return `https://wsrv.nl/?url=${encodeURIComponent(String(raw).replace(/^https?:\/\//, ''))}&w=400`
 }
 function titleOf(item: any) {
   return item.title?.english || item.title?.romaji || item.title || item.name || ''

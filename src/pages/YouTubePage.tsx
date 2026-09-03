@@ -21,6 +21,22 @@ async function feed(q: string): Promise<Vid[]> {
       }))
     }
   } catch {}
+  const api = typeof window !== 'undefined' ? (window as any).electronAPI : null
+  const hosts = ['https://inv.nadeko.net', 'https://yewtu.be', 'https://invidious.flokinet.to']
+  const path = !q || q === 'Home' ? '/api/v1/trending' : `/api/v1/search?q=${encodeURIComponent(q)}&type=video`
+  for (const h of hosts) {
+    try {
+      const r = api?.fetchJson ? await api.fetchJson(h + path, { timeoutMs: 10000 }) : { json: await (await fetch(h + path)).json() }
+      const rows = Array.isArray(r?.json) ? r.json : (r?.json?.videos || [])
+      const mapped = rows.filter((v: any) => v.videoId).map((v: any) => ({
+        videoId: v.videoId,
+        title: v.title,
+        author: v.author,
+        views: v.viewCount ? `${Number(v.viewCount).toLocaleString()} views` : '',
+      }))
+      if (mapped.length) return mapped.slice(0, 48)
+    } catch {}
+  }
   return []
 }
 

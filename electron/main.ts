@@ -99,6 +99,9 @@ mainWindow.once('ready-to-show', () => {
   mainWindow.webContents.setWindowOpenHandler(() => {
     return { action: 'deny' }
   })
+  app.on('web-contents-created', (_evt, contents) => {
+    contents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  })
 
   mainWindow.webContents.on('will-navigate', (event, url) => {
     if (url !== mainWindow?.webContents.getURL()) {

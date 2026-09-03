@@ -12,24 +12,40 @@ function art(url?: string) {
   return `https://images.weserv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ''))}&w=400&h=400&fit=cover`
 }
 
-async function itunes(term: string): Promise<Track[]> {
-  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=40`
+async function jsonGet(url: string) {
   const api = typeof window !== 'undefined' ? (window as any).electronAPI : null
-  let d: any = {}
   if (api?.fetchJson) {
-    const r = await api.fetchJson(url)
-    d = r?.json || {}
-  } else {
-    d = await (await fetch(url)).json()
+    const r = await api.fetchJson(url, { timeoutMs: 12000 })
+    return r?.json || {}
   }
-  return (d.results || []).map((s: any) => ({
-    id: String(s.trackId),
-    title: s.trackName,
-    artist: s.artistName,
-    album: s.collectionName,
-    image: String(s.artworkUrl100 || '').replace('100x100bb', '600x600bb'),
-    url: s.previewUrl,
-  }))
+  return (await fetch(url)).json()
+}
+
+async function itunes(term: string): Promise<Track[]> {
+  try {
+    const d = await jsonGet(`https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=40`)
+    const rows = (d.results || []).map((s: any) => ({
+      id: String(s.trackId),
+      title: s.trackName,
+      artist: s.artistName,
+      album: s.collectionName,
+      image: String(s.artworkUrl100 || '').replace('100x100bb', '600x600bb'),
+      url: s.previewUrl,
+    }))
+    if (rows.length) return rows
+  } catch {}
+  try {
+    const d = await jsonGet(`https://api.deezer.com/search?q=${encodeURIComponent(term)}&limit=40`)
+    return (d.data || []).map((s: any) => ({
+      id: String(s.id),
+      title: s.title,
+      artist: s.artist?.name,
+      album: s.album?.title,
+      image: s.album?.cover_medium || s.album?.cover,
+      url: s.preview,
+    }))
+  } catch {}
+  return []
 }
 
 export default function MusicPage() {

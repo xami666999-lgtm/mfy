@@ -93,6 +93,10 @@ const EXTRA = [
   'popcash.net', 'popunder.net', 'ad-maven.com', 'adexchangegate.com', 'tsyndicate.com',
   'bet365.com', 'bet365affiliates.com', 'trafficstars.com', 'hilltopads.net',
   'adsterra.com', 'juicyads.com', 'exoclick.com', 'propellerads.com', 'popads.net',
+  'onclickmega.com', 'onclicksuper.com', 'ad-score.com', 'ad-delivery.net',
+  'pretty-view.com', 'pretty-view.online', 'cdn.ad', 'adblade.com',
+  'adsco.re', 'adsterra.io', 'profitablegatecpm.com', 'offpageads.com',
+  'realsrv.com', 'exosrv.com', 'abruptroad.com', 'histats.com',
 ]
 
 export function setupAdBlocker() {

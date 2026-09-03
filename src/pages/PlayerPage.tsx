@@ -415,6 +415,7 @@ export default function PlayerPage() {
         {loaded && !error && isPlayerEmbedUrl(streamUrl) && (
           // @ts-expect-error Electron webview
           <webview
+            key={streamUrl}
             src={streamUrl}
             partition="persist:mfy"
             style={{ width: '100%', height: '100%', background: '#000' }}
