@@ -66,12 +66,16 @@ export default function PlayerPage() {
       return
     }
     if (!selectedMedia || selectedMedia.type === 'iptv') return
+    const anime = isAnimeItem(selectedMedia)
+    const src: PlayerSource = anime && !['zangetsu', 'miruro', 'mangayomi'].includes(playerSource) ? 'zangetsu' : playerSource
+    if (src !== playerSource) setPlayerSource(src)
     const url = getPlayerUrl(
-      playerSource,
+      src,
       selectedMedia.type === 'movie' ? 'movie' : 'tv',
       selectedMedia.id,
       selectedMedia.season,
-      selectedMedia.episode
+      selectedMedia.episode,
+      anime
     )
     setStreamUrl(url)
     setCurrentStreamUrl(url)
@@ -169,7 +173,7 @@ export default function PlayerPage() {
         const next = eps.find((e: any) => e.episode_number === curEpisode + 1)
         if (next) {
           setSelectedMedia({ id: selectedMedia.id, type: 'tv', season: curSeason, episode: next.episode_number })
-          const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, curSeason, next.episode_number)
+          const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, curSeason, next.episode_number, isAnimeItem(selectedMedia))
           setCurrentStreamUrl(url)
           setLoaded(true)
           setAutoNextBusy(false)
@@ -183,7 +187,7 @@ export default function PlayerPage() {
           const first = s?.episodes?.[0]
           if (first) {
             setSelectedMedia({ id: selectedMedia.id, type: 'tv', season: nextSeason.season_number, episode: first.episode_number })
-            const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, nextSeason.season_number, first.episode_number)
+            const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, nextSeason.season_number, first.episode_number, isAnimeItem(selectedMedia))
             setCurrentStreamUrl(url)
             setLoaded(true)
             setAutoNextBusy(false)
@@ -230,7 +234,7 @@ export default function PlayerPage() {
           const first = s?.episodes?.[0]
           if (first) {
             setSelectedMedia({ id: selectedMedia.id, type: 'tv', season: nextSeason.season_number, episode: first.episode_number })
-            const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, nextSeason.season_number, first.episode_number)
+            const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, nextSeason.season_number, first.episode_number, isAnimeItem(selectedMedia))
             setCurrentStreamUrl(url)
             setCurrentPage('player')
           }

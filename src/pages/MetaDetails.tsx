@@ -6,6 +6,7 @@ import { fetchRottenTomatoes } from '../api/rottentomatoes'
 import QualityBadges from '../components/QualityBadges'
 import { fetchMdblistRatings, type MdblistRating } from '../api/mdblist'
 import { vidyUrl, getPlayerUrl } from '../api/vidy'
+import { isAnimeItem } from '../lib/trackers'
 import { useStore } from '../store'
 import { sourceDot, reportBroken } from '../lib/playerStatus'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
@@ -169,7 +170,7 @@ export default function MetaDetails() {
     { id: 'vidy', label: 'Vidy', q: '1080p · 720p' },
   ]
   const [playerPick, setPlayerPick] = useState(() => {
-    try { return localStorage.getItem('mfy-player-engine') || 'vidy' } catch { return 'vidy' }
+    try { return localStorage.getItem('mfy-player-engine') || 'zangetsu' } catch { return 'zangetsu' }
   })
   const [pickOpen, setPickOpen] = useState(false)
 
@@ -180,7 +181,9 @@ export default function MetaDetails() {
       return
     }
     const kind = selectedMedia.type === 'movie' ? 'movie' : 'tv'
-    const url = getPlayerUrl(playerPick as any, kind, selectedMedia.id as number, activeSeason, selectedMedia.episode)
+    const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
+    const pick = anime && !['zangetsu', 'miruro', 'mangayomi'].includes(playerPick) ? 'zangetsu' : playerPick
+    const url = getPlayerUrl(pick as any, kind, selectedMedia.id as number, activeSeason, selectedMedia.episode || 1, anime)
     setSelectedMedia({ ...selectedMedia, season: activeSeason, episode: selectedMedia.episode })
     setCurrentStreamUrl(url)
     try {

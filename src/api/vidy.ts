@@ -25,17 +25,18 @@ export function vidyAnimeUrl(anilistId: number | string, episode = 1): string {
 
 export type PlayerSource = 'vidy' | 'playtorrio' | 'simplstream' | 'zangetsu' | 'miruro' | 'mangayomi'
 
-export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId: number | string, season?: number, episode?: number): string {
+export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId: number | string, season?: number, episode?: number, anime = false): string {
   const s = season ?? 1
   const e = episode ?? 1
+  if (anime || source === 'zangetsu' || source === 'miruro' || source === 'mangayomi') {
+    if (source === 'miruro') return `https://vidsrc.xyz/embed/anime/${tmdbId}/${e}`
+    return `https://vidsrc.cc/v2/embed/anime/${tmdbId}/${e}`
+  }
   if (source === 'playtorrio') {
     return type === 'movie' ? `https://vidsrc.xyz/embed/movie/${tmdbId}` : `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}`
   }
   if (source === 'simplstream') {
     return type === 'movie' ? `https://vidlink.pro/movie/${tmdbId}` : `https://vidlink.pro/tv/${tmdbId}/${s}/${e}`
-  }
-  if (source === 'zangetsu' || source === 'mangayomi' || source === 'miruro') {
-    return type === 'movie' ? `https://vidsrc.me/embed/movie/${tmdbId}` : `https://vidsrc.me/embed/tv/${tmdbId}/${s}-${e}`
   }
   if (type === 'movie') return `https://vidsrc.me/embed/movie/${tmdbId}`
   return `https://vidsrc.me/embed/tv/${tmdbId}/${s}-${e}`
