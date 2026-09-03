@@ -332,12 +332,30 @@ ipcMain.handle('set-setup-complete', () => store.set('setupComplete', true))
 
 // Manual update check from renderer
 ipcMain.handle('check-for-updates', async () => {
-  if (!autoUpdater || isDev) return { ok: false, reason: 'dev-or-unavailable' }
+  const current = app.getVersion()
   try {
-    const result = await autoUpdater.checkForUpdates()
-    return { ok: true, updateInfo: result?.updateInfo || null }
+    const res = await fetch('https://api.github.com/repos/xami666999-lgtm/mfy/releases/latest', {
+      headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'MFY' },
+    })
+    if (!res.ok) throw new Error('GitHub ' + res.status)
+    const data: any = await res.json()
+    const tag = String(data.tag_name || '').replace(/^v/, '')
+    const asset = (data.assets || []).find((a: any) => /win\.zip$/i.test(a.name)) || (data.assets || [])[0]
+    const latest = tag || current
+    const newer = latest.localeCompare(current, undefined, { numeric: true, sensitivity: 'base' }) > 0
+    if (autoUpdater && !isDev) {
+      try { await autoUpdater.checkForUpdates() } catch {}
+    }
+    return {
+      ok: true,
+      current,
+      latest,
+      newer,
+      url: asset?.browser_download_url || data.html_url,
+      name: asset?.name || data.name,
+    }
   } catch (err: any) {
-    return { ok: false, reason: err?.message || 'unknown' }
+    return { ok: false, current, reason: err?.message || 'unknown' }
   }
 })
 

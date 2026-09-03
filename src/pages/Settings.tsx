@@ -370,6 +370,20 @@ export default function Settings() {
             Add MFY to desktop
           </button>
           <p className="text-[11px] text-white/35 mt-2">Puts MFY.lnk on the Windows desktop.</p>
+          <button
+            type="button"
+            className="h-10 px-4 mt-3 rounded-xl bg-white text-black text-sm font-semibold"
+            onClick={async () => {
+              const api = (window as any).electronAPI
+              const r = await api?.checkForUpdates?.()
+              if (!r?.ok) { alert('Could not check updates.'); return }
+              if (!r.newer) { alert(`You are on ${r.current}. That is the latest.`); return }
+              if (r.url) api.openExternal(r.url)
+              alert(`Update ${r.latest} is out. Download started / opened. Unzip over MFY and reopen.`)
+            }}
+          >
+            Check for updates
+          </button>
         </Section>
 
         <Section title="Playback">
