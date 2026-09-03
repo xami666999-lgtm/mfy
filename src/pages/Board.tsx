@@ -68,6 +68,8 @@ function Shelf({ title, items, onOpen, viewAll }: { title: string; items: any[];
 export default function Board() {
   const { tmdbApiKey, setCurrentPage, setSelectedMedia, setSelectedProviderId, addToWatchlist, isInWatchlist, removeFromWatchlist, watchHistory, favorites } = useStore()
   const [hideWatched, setHideWatched] = useState(false)
+  const [railOpen, setRailOpen] = useState(true)
+  const [railQ, setRailQ] = useState('')
   const [mcu, setMcu] = useState<any[]>([])
   const [ghibli, setGhibli] = useState<any[]>([])
   const [shorties, setShorties] = useState<any[]>([])
@@ -208,17 +210,23 @@ export default function Board() {
 
   return (
     <div className="board page-fade-enter flex min-h-full">
-      <aside className="hidden md:flex w-56 shrink-0 flex-col gap-1 p-3 bg-black/55 backdrop-blur-xl border-r border-white/5">
-        <p className="text-[10px] tracking-[0.28em] text-[#FF1493] font-bold px-3 py-3">MFY</p>
-        <button type="button" className="text-left h-10 px-3 rounded-xl bg-white text-black text-sm font-semibold" onClick={() => setCurrentPage('home')}>Home</button>
-        <button type="button" className="text-left h-10 px-3 rounded-xl text-white/70 text-sm hover:bg-white/10" onClick={() => setCurrentPage('search')}>Search</button>
-        <button type="button" className="text-left h-10 px-3 rounded-xl text-white/70 text-sm hover:bg-white/10" onClick={() => setCurrentPage('sports')}>Sport</button>
-        <button type="button" className="text-left h-10 px-3 rounded-xl text-white/70 text-sm hover:bg-white/10" onClick={() => setCurrentPage('library')}>Library</button>
-        <p className="text-[10px] text-white/30 px-3 pt-4 pb-1">Channels</p>
+      <aside className={`flex flex-col gap-1 p-3 bg-black/60 backdrop-blur-2xl border-r border-white/10 transition-all ${railOpen ? 'w-64' : 'w-16'}`}>
+        <button type="button" className="text-left px-2 py-2 text-[#FF1493] text-xs font-bold" onClick={() => setRailOpen((v) => !v)}>{railOpen ? 'MFY ▸ hide' : 'MFY'}</button>
+        {railOpen && (
+          <form onSubmit={(e) => { e.preventDefault(); if (railQ.trim()) { try { sessionStorage.setItem('mfy-q', railQ.trim()) } catch {} ; setCurrentPage('search') } }}>
+            <input value={railQ} onChange={(e) => setRailQ(e.target.value)} placeholder="Search" className="w-full h-9 mb-2 rounded-xl bg-white/10 px-3 text-sm" />
+          </form>
+        )}
+        {[
+          ['home','Home'],['movies','Movies'],['tv','TV'],['anime','Anime'],['manga','Manga'],['comics','Comics'],['books','Books'],['youtube','YouTube'],['music','Music'],['sports','Sport'],['iptv','IPTV'],['library','Library'],['settings','Settings'],
+        ].map(([id,label]) => (
+          <button key={id} type="button" className={`text-left h-9 px-3 rounded-xl text-sm ${id==='home' ? 'bg-white text-black font-semibold' : 'text-white/75 hover:bg-white/10'}`} onClick={() => setCurrentPage(id as any)}>{railOpen ? label : label[0]}</button>
+        ))}
+        {railOpen && <p className="text-[10px] text-white/30 px-3 pt-3">Channels</p>}
         {streamingServices.map((s) => (
           <button key={s.id} type="button" className="flex items-center gap-2 h-9 px-3 rounded-lg text-white/70 text-xs hover:bg-white/10" onClick={() => { setSelectedProviderId(s.id); setCurrentPage('provider') }}>
             <img src={s.logo} alt="" className="w-5 h-5 object-contain" />
-            {s.name}
+            {railOpen ? s.name : ''}
           </button>
         ))}
       </aside>

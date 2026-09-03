@@ -41,6 +41,13 @@ export default function Search() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
+    try {
+      const q = sessionStorage.getItem('mfy-q')
+      if (q) {
+        setSearchQuery(q)
+        sessionStorage.removeItem('mfy-q')
+      }
+    } catch {}
     inputRef.current?.focus()
   }, [])
 

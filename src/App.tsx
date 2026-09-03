@@ -234,7 +234,7 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
       {currentPage !== 'player' && (
         <>
           <TitleBar />
-          <Navbar />
+          {currentPage !== 'home' && <Navbar />}
         </>
       )}
       <main className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
