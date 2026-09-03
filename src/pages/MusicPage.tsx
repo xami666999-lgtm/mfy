@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { Play, Pause, Search, Heart, SkipBack, SkipForward, ListMusic } from 'lucide-react'
+import { Play, Pause, Search, Heart, SkipBack, SkipForward, Shuffle, Repeat, Plus } from 'lucide-react'
 
-type Track = { id: string; title: string; artist: string; album?: string; image?: string; url?: string; videoId?: string }
+type Track = { id: string; title: string; artist: string; album?: string; image?: string; url?: string }
 
-const NAV = ['Dashboard', 'Search', 'Queue', 'Favorites']
 const INVIDIOUS = ['https://inv.nadeko.net', 'https://yewtu.be', 'https://invidious.flokinet.to']
 
 async function jsonGet(url: string) {
@@ -19,7 +18,7 @@ async function searchTracks(term: string): Promise<Track[]> {
   const q = term || 'top hits'
   const out: Track[] = []
   try {
-    const d = await jsonGet(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=24`)
+    const d = await jsonGet(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=30`)
     for (const s of d.results || []) {
       out.push({
         id: 'it-' + s.trackId,
@@ -32,7 +31,7 @@ async function searchTracks(term: string): Promise<Track[]> {
     }
   } catch {}
   try {
-    const d = await jsonGet(`https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=24`)
+    const d = await jsonGet(`https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=30`)
     for (const s of d.data || []) {
       out.push({
         id: 'dz-' + s.id,
@@ -45,17 +44,28 @@ async function searchTracks(term: string): Promise<Track[]> {
     }
   } catch {}
   try {
+    const d = await jsonGet(`https://discoveryprovider.audius.co/v1/tracks/search?query=${encodeURIComponent(q)}&app_name=mfy`)
+    for (const s of d.data || []) {
+      out.push({
+        id: 'au-' + s.id,
+        title: s.title,
+        artist: s.user?.name,
+        image: s.artwork?.['480x480'] || s.artwork?.['150x150'],
+        url: `https://discoveryprovider.audius.co/v1/tracks/${s.id}/stream?app_name=mfy`,
+      })
+    }
+  } catch {}
+  try {
     for (const h of INVIDIOUS) {
       const d = await jsonGet(`${h}/api/v1/search?q=${encodeURIComponent(q + ' official audio')}&type=video`)
       const rows = Array.isArray(d) ? d : []
       if (!rows.length) continue
-      for (const v of rows.slice(0, 16)) {
+      for (const v of rows.slice(0, 12)) {
         out.push({
           id: 'yt-' + v.videoId,
           title: v.title,
           artist: v.author,
           image: `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`,
-          videoId: v.videoId,
           url: `${h}/latest_version?id=${v.videoId}&itag=140`,
         })
       }
@@ -64,11 +74,18 @@ async function searchTracks(term: string): Promise<Track[]> {
   } catch {}
   const seen = new Set<string>()
   return out.filter((t) => {
-    const k = (t.title + t.artist).toLowerCase()
+    const k = `${t.title}|${t.artist}`.toLowerCase()
     if (seen.has(k)) return false
     seen.add(k)
     return true
   })
+}
+
+function fmt(n: number) {
+  if (!Number.isFinite(n) || n < 0) return '0:00'
+  const m = Math.floor(n / 60)
+  const s = Math.floor(n % 60)
+  return `${m}:${String(s).padStart(2, '0')}`
 }
 
 export default function MusicPage() {
@@ -81,6 +98,10 @@ export default function MusicPage() {
   })
   const [now, setNow] = useState<Track | null>(null)
   const [playing, setPlaying] = useState(false)
+  const [shuffle, setShuffle] = useState(false)
+  const [repeat, setRepeat] = useState(false)
+  const [tcur, setTcur] = useState(0)
+  const [tdur, setTdur] = useState(0)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => { searchTracks('top hits 2025').then(setTracks) }, [])
@@ -90,9 +111,10 @@ export default function MusicPage() {
     try { localStorage.setItem('mfy-music-favs', JSON.stringify(next.slice(0, 80))) } catch {}
   }
 
-  function play(t: Track) {
+  function play(t: Track, list?: Track[]) {
     setNow(t)
-    setQueue((q0) => [t, ...q0.filter((x) => x.id !== t.id)].slice(0, 40))
+    const base = list || (queue.length ? queue : tracks)
+    setQueue([t, ...base.filter((x) => x.id !== t.id)].slice(0, 50))
     const el = audioRef.current
     if (!el) return
     el.src = t.url || ''
@@ -100,76 +122,97 @@ export default function MusicPage() {
   }
 
   function skip(dir: number) {
-    if (!now) return
     const list = queue.length ? queue : tracks
-    const i = list.findIndex((x) => x.id === now.id)
-    const n = list[(i + dir + list.length) % list.length]
-    if (n) play(n)
+    if (!list.length) return
+    if (shuffle) {
+      play(list[Math.floor(Math.random() * list.length)], list)
+      return
+    }
+    const i = Math.max(0, list.findIndex((x) => x.id === now?.id))
+    play(list[(i + dir + list.length) % list.length], list)
   }
 
   const shown = tab === 'Favorites' ? favs : tab === 'Queue' ? queue : tracks
 
   return (
-    <div className="flex min-h-full bg-[#1a0b12] text-white">
-      <aside className="w-52 flex-shrink-0 bg-black/70 p-4">
-        <p className="text-[10px] tracking-[0.28em] text-[#FF1493] font-bold mb-1">MFY MUSIC</p>
-        <p className="text-[10px] text-white/30 mb-5">Nuclear layout</p>
-        {NAV.map((n) => (
-          <button key={n} type="button" onClick={() => setTab(n)} className={`w-full text-left h-10 px-3 rounded-lg text-sm mb-1 ${tab === n ? 'bg-[#FF1493]/25 text-white' : 'text-white/50 hover:text-white'}`}>{n}</button>
+    <div className="flex min-h-full bg-[#14060c] text-white">
+      <aside className="w-52 flex-shrink-0 bg-black/80 p-4">
+        <p className="text-[10px] tracking-[0.28em] text-[#FF1493] font-bold">MFY MUSIC</p>
+        <p className="text-[10px] text-white/30 mb-5">Nuclear-style player</p>
+        {['Dashboard', 'Search', 'Queue', 'Favorites'].map((n) => (
+          <button key={n} type="button" onClick={() => setTab(n)} className={`w-full text-left h-10 px-3 rounded-lg text-sm mb-1 ${tab === n ? 'bg-[#FF1493]/25' : 'text-white/50 hover:text-white'}`}>{n}</button>
         ))}
       </aside>
       <div className="flex-1 p-6 overflow-y-auto pb-28">
         <form className="flex gap-2 mb-6" onSubmit={(e) => { e.preventDefault(); searchTracks(q || 'top hits').then(setTracks); setTab('Search') }}>
           <div className="flex-1 flex items-center gap-2 h-11 px-4 rounded-full bg-white text-black">
             <Search className="w-4 h-4" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search artists, albums, tracks" className="flex-1 bg-transparent text-sm outline-none" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search any song or artist" className="flex-1 bg-transparent text-sm outline-none" />
           </div>
         </form>
         <div className="flex items-end gap-5 mb-8">
-          <div className="w-36 h-36 rounded-lg overflow-hidden bg-white/10 shrink-0">
+          <div className="w-40 h-40 rounded-xl overflow-hidden bg-white/10 shrink-0 shadow-2xl">
             {now?.image && <img src={now.image} alt="" className="w-full h-full object-cover" />}
           </div>
           <div>
             <p className="text-[11px] tracking-[0.2em] text-[#FF1493] font-bold">NOW PLAYING</p>
-            <h1 className="text-3xl font-black">{now?.title || 'MFY Music'}</h1>
-            <p className="text-white/50">{now?.artist || 'Search and play from free sources'}</p>
+            <h1 className="text-4xl font-black mt-1">{now?.title || 'MFY Music'}</h1>
+            <p className="text-white/50 mt-1">{now?.artist || 'Free sources · iTunes · Deezer · Audius · YouTube'}</p>
           </div>
         </div>
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           {shown.map((t, i) => (
             <div key={t.id} className={`flex items-center gap-3 px-3 h-14 rounded-lg hover:bg-white/5 ${now?.id === t.id ? 'bg-[#FF1493]/15' : ''}`}>
               <span className="w-6 text-xs text-white/30">{i + 1}</span>
-              <button type="button" onClick={() => play(t)} className="w-10 h-10 rounded overflow-hidden bg-white/10 shrink-0">
+              <button type="button" onClick={() => play(t, shown)} className="w-10 h-10 rounded overflow-hidden bg-white/10 shrink-0">
                 {t.image ? <img src={t.image} alt="" className="w-full h-full object-cover" /> : <Play size={14} className="m-auto" />}
               </button>
-              <button type="button" className="flex-1 text-left min-w-0" onClick={() => play(t)}>
+              <button type="button" className="flex-1 text-left min-w-0" onClick={() => play(t, shown)}>
                 <p className="text-sm truncate">{t.title}</p>
-                <p className="text-xs text-white/40 truncate">{t.artist}</p>
+                <p className="text-xs text-white/40 truncate">{t.artist}{t.album ? ` · ${t.album}` : ''}</p>
               </button>
               <button type="button" onClick={() => persistFavs(favs.some((f) => f.id === t.id) ? favs.filter((f) => f.id !== t.id) : [t, ...favs])} className={favs.some((f) => f.id === t.id) ? 'text-[#FF1493]' : 'text-white/30'}>
                 <Heart size={14} fill={favs.some((f) => f.id === t.id) ? 'currentColor' : 'none'} />
               </button>
-              <button type="button" className="text-white/30" onClick={() => setQueue((qq) => [...qq, t])}><ListMusic size={14} /></button>
+              <button type="button" className="text-white/30" onClick={() => setQueue((qq) => [...qq, t])}><Plus size={14} /></button>
             </div>
           ))}
         </div>
       </div>
-      <div className="fixed bottom-0 left-0 right-0 h-20 bg-black/90 border-t border-white/10 flex items-center px-5 gap-4 z-20">
+      <div className="fixed bottom-0 left-0 right-0 h-[76px] bg-[#0a0a0d]/95 border-t border-white/10 flex items-center px-5 gap-4 z-20">
         <div className="w-12 h-12 rounded bg-white/10 overflow-hidden">{now?.image && <img src={now.image} alt="" className="w-full h-full object-cover" />}</div>
-        <div className="w-44 min-w-0">
+        <div className="w-48 min-w-0">
           <p className="text-sm truncate">{now?.title || 'Nothing playing'}</p>
           <p className="text-xs text-white/40 truncate">{now?.artist || ''}</p>
         </div>
-        <div className="flex-1 flex items-center justify-center gap-4">
-          <button type="button" onClick={() => skip(-1)}><SkipBack size={18} /></button>
-          <button type="button" className="w-11 h-11 rounded-full bg-[#FF1493] grid place-items-center" onClick={() => {
-            const el = audioRef.current
-            if (!el) return
-            if (playing) { el.pause(); setPlaying(false) } else { el.play(); setPlaying(true) }
-          }}>{playing ? <Pause size={16} /> : <Play size={16} fill="white" />}</button>
-          <button type="button" onClick={() => skip(1)}><SkipForward size={18} /></button>
+        <div className="flex-1">
+          <div className="flex items-center justify-center gap-4 mb-1">
+            <button type="button" className={shuffle ? 'text-[#FF1493]' : 'text-white/50'} onClick={() => setShuffle((v) => !v)}><Shuffle size={14} /></button>
+            <button type="button" onClick={() => skip(-1)}><SkipBack size={18} /></button>
+            <button type="button" className="w-10 h-10 rounded-full bg-[#FF1493] grid place-items-center" onClick={() => {
+              const el = audioRef.current
+              if (!el) return
+              if (playing) { el.pause(); setPlaying(false) } else { el.play(); setPlaying(true) }
+            }}>{playing ? <Pause size={16} /> : <Play size={16} fill="white" />}</button>
+            <button type="button" onClick={() => skip(1)}><SkipForward size={18} /></button>
+            <button type="button" className={repeat ? 'text-[#FF1493]' : 'text-white/50'} onClick={() => setRepeat((v) => !v)}><Repeat size={14} /></button>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] text-white/40">
+            <span>{fmt(tcur)}</span>
+            <input type="range" min={0} max={tdur || 1} value={tcur} className="flex-1 accent-[#FF1493]" onChange={(e) => {
+              const v = Number(e.target.value)
+              if (audioRef.current) audioRef.current.currentTime = v
+              setTcur(v)
+            }} />
+            <span>{fmt(tdur)}</span>
+          </div>
         </div>
-        <audio ref={audioRef} onEnded={() => skip(1)} />
+        <audio
+          ref={audioRef}
+          onTimeUpdate={(e) => setTcur((e.target as HTMLAudioElement).currentTime)}
+          onLoadedMetadata={(e) => setTdur((e.target as HTMLAudioElement).duration || 0)}
+          onEnded={() => { if (repeat && now) play(now); else skip(1) }}
+        />
       </div>
     </div>
   )
