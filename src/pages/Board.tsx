@@ -8,6 +8,17 @@ import { streamingServices } from '../api/streaming'
 import { PosterMarks } from '../components/PosterMarks'
 import { getPlayerUrl } from '../api/vidy'
 
+function readHomeCache() {
+  try {
+    const d = JSON.parse(sessionStorage.getItem('mfy-home-cache') || 'null')
+    if (!d?.trending?.length) return null
+    if (Date.now() - (d.at || 0) > 20 * 60 * 1000) return null
+    return d
+  } catch { return null }
+}
+
+const HOME_CACHE = readHomeCache()
+
 const MOVIE_GENRES = [
   { id: 28, name: 'Action' }, { id: 12, name: 'Adventure' }, { id: 16, name: 'Animation' },
   { id: 35, name: 'Comedy' }, { id: 80, name: 'Crime' }, { id: 99, name: 'Documentary' },
@@ -77,17 +88,17 @@ export default function Board() {
   const [a24, setA24] = useState<any[]>([])
   const [pixar, setPixar] = useState<any[]>([])
   const [kids, setKids] = useState<any[]>([])
-  const [trending, setTrending] = useState<any[]>([])
-  const [movies, setMovies] = useState<any[]>([])
-  const [shows, setShows] = useState<any[]>([])
-  const [anime, setAnime] = useState<any[]>([])
-  const [manga, setManga] = useState<any[]>([])
-  const [comics, setComics] = useState<any[]>([])
+  const [trending, setTrending] = useState<any[]>(HOME_CACHE?.trending || [])
+  const [movies, setMovies] = useState<any[]>(HOME_CACHE?.movies || [])
+  const [shows, setShows] = useState<any[]>(HOME_CACHE?.shows || [])
+  const [anime, setAnime] = useState<any[]>(HOME_CACHE?.anime || [])
+  const [manga, setManga] = useState<any[]>(HOME_CACHE?.manga || [])
+  const [comics, setComics] = useState<any[]>(HOME_CACHE?.comics || [])
   const [heroIdx, setHeroIdx] = useState(0)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!(HOME_CACHE?.trending?.length))
   const [error, setError] = useState('')
-  const [nowPlaying, setNowPlaying] = useState<any[]>([])
-  const [onTheAir, setOnTheAir] = useState<any[]>([])
+  const [nowPlaying, setNowPlaying] = useState<any[]>(HOME_CACHE?.nowPlaying || [])
+  const [onTheAir, setOnTheAir] = useState<any[]>(HOME_CACHE?.onTheAir || [])
   const [recommended, setRecommended] = useState<any[]>([])
   const [genreMovie, setGenreMovie] = useState<Record<number, any[]>>({})
   const [genreTv, setGenreTv] = useState<Record<number, any[]>>({})
@@ -113,7 +124,7 @@ export default function Board() {
   }, [favorites, watchHistory])
 
   async function load() {
-    setLoading(true)
+    if (!HOME_CACHE?.trending?.length) setLoading(true)
     setError('')
     try {
       const [t, m, s, np, ota] = await Promise.all([
@@ -123,11 +134,21 @@ export default function Board() {
         tmdb.getNowPlaying(),
         tmdb.getOnTheAir(),
       ])
-      setTrending(t?.results?.slice(0, 12) || [])
-      setMovies(m?.results || [])
-      setShows(s?.results || [])
-      setNowPlaying(np?.results?.slice(0, 16) || [])
-      setOnTheAir(ota?.results?.slice(0, 16) || [])
+      const next = {
+        at: Date.now(),
+        trending: t?.results?.slice(0, 12) || [],
+        movies: m?.results || [],
+        shows: s?.results || [],
+        nowPlaying: np?.results?.slice(0, 16) || [],
+        onTheAir: ota?.results?.slice(0, 16) || [],
+      }
+      setTrending(next.trending)
+      setMovies(next.movies)
+      setShows(next.shows)
+      setNowPlaying(next.nowPlaying)
+      setOnTheAir(next.onTheAir)
+      setLoading(false)
+      try { sessionStorage.setItem('mfy-home-cache', JSON.stringify({ ...HOME_CACHE, ...next })) } catch {}
       tmdb.discoverMovies({ with_companies: '420', sort_by: 'popularity.desc', page: '1' }).then((d) => setMcu(d?.results || [])).catch(() => {})
       tmdb.discoverMovies({ with_companies: '10342', sort_by: 'popularity.desc', page: '1' }).then((d) => setGhibli(d?.results || [])).catch(() => {})
       tmdb.discoverMovies({ 'with_runtime.lte': '100', sort_by: 'popularity.desc', page: '1' }).then((d) => setShorties(d?.results || [])).catch(() => {})
@@ -136,26 +157,19 @@ export default function Board() {
       tmdb.discoverMovies({ with_genres: '10751', sort_by: 'popularity.desc', page: '1' }).then((d) => setKids(d?.results || [])).catch(() => {})
     } catch {
       setError('Could not load catalog. Add a TMDB key in Settings.')
+      setLoading(false)
     }
-    try {
-      const a = await anilist.getTrending(1, 24)
-      setAnime(a?.media || [])
-    } catch {
-      const local = await fetch('./data/anime.json').then((r) => r.json()).catch(() => ({ anime: [] }))
-      setAnime(local.anime || [])
-    }
-    try {
-      const mg = await anilist.getPopular('MANGA', 1, 24)
-      setManga(mg?.media || [])
-    } catch {
-      const local = await fetch('./data/manga.json').then((r) => r.json()).catch(() => ({ manga: [] }))
-      setManga(local.manga || [])
-    }
-    try {
-      const c = await anilist.search('Marvel', 'MANGA', 1, 20)
-      setComics(c.media || [])
-    } catch { setComics([]) }
-    setLoading(false)
+    Promise.all([
+      anilist.getTrending(1, 24).then((a) => setAnime(a?.media || [])).catch(async () => {
+        const local = await fetch('./data/anime.json').then((r) => r.json()).catch(() => ({ anime: [] }))
+        setAnime(local.anime || [])
+      }),
+      anilist.getPopular('MANGA', 1, 24).then((mg) => setManga(mg?.media || [])).catch(async () => {
+        const local = await fetch('./data/manga.json').then((r) => r.json()).catch(() => ({ manga: [] }))
+        setManga(local.manga || [])
+      }),
+      anilist.search('Marvel', 'MANGA', 1, 20).then((c) => setComics(c.media || [])).catch(() => setComics([])),
+    ]).catch(() => {})
     loadGenres().catch(() => {})
   }
 
