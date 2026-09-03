@@ -15,10 +15,13 @@ async function anilistFetch<T>(query: string, variables?: Record<string, any>): 
   const payload = JSON.stringify({ query, variables })
   const api = typeof window !== 'undefined' ? (window as any).electronAPI : null
   let json: AniListResponse<T>
+  const token = typeof localStorage !== 'undefined' ? (localStorage.getItem('mfy-anilist-token') || '') : ''
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', Accept: 'application/json' }
+  if (token) headers.Authorization = `Bearer ${token}`
   if (api?.fetchJson) {
     const r = await api.fetchJson(ANILIST_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers,
       body: payload,
       timeoutMs: 15000,
     })
@@ -27,7 +30,7 @@ async function anilistFetch<T>(query: string, variables?: Record<string, any>): 
   } else {
     const res = await fetch(ANILIST_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers,
       body: payload,
     })
     if (!res.ok) throw new Error(`AniList API error: ${res.status}`)
@@ -449,6 +452,19 @@ const anilistApi = {
     `
     const data = await anilistFetch<{ Studio: any }>(queryStr, { id })
     return data.Studio || null
+  },
+
+  saveScore: async (title: string, score: number, type: 'ANIME' | 'MANGA' = 'ANIME') => {
+    const found = await anilistFetch<{ Media: { id: number } | null }>(
+      `query ($search: String, $type: MediaType) { Media(search: $search, type: $type) { id } }`,
+      { search: title, type }
+    )
+    const id = found?.Media?.id
+    if (!id) throw new Error('AniList title not found')
+    return anilistFetch(
+      `mutation ($id: Int, $score: Float) { SaveMediaListEntry(mediaId: $id, status: COMPLETED, score: $score) { id } }`,
+      { id, score }
+    )
   },
 }
 

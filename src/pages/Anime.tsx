@@ -14,7 +14,7 @@ export default function Anime() {
   const [rows, setRows] = useState<Record<string, any[]>>({})
 
   function open(item: any) {
-    setSelectedMedia({ id: item.id, type: item.media_type === 'movie' ? 'movie' : 'tv' })
+    setSelectedMedia({ id: item.id, type: item.media_type === 'movie' ? 'movie' : 'tv', isAnime: true } as any)
     setCurrentPage('detail')
   }
 

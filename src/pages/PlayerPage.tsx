@@ -4,6 +4,8 @@ import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 import { tmdb, POSTER_URL, BACKDROP_URL } from '../api/tmdb'
 import { vidyUrl, getPlayerUrl, isPlayerEmbed, getFallbackSources, PlayerSource } from '../api/vidy'
 import { useStore } from '../store'
+import RateModal from '../components/RateModal'
+import { syncRating, isAnimeItem } from '../lib/trackers'
 
 function isPlayerEmbedUrl(url: string) {
   return isPlayerEmbed(url)
@@ -42,6 +44,7 @@ export default function PlayerPage() {
   const trackRef = useRef<HTMLTrackElement>(null)
 
   const [autoNextBusy, setAutoNextBusy] = useState(false)
+  const [showRate, setShowRate] = useState(false)
   const [playerSource, setPlayerSource] = useState<PlayerSource>(() => {
     try { return (localStorage.getItem('mfy-player-engine') as PlayerSource) || 'vidy' } catch { return 'vidy' }
   })
@@ -250,6 +253,25 @@ const s = await tmdb.getSeasonDetail(selectedMedia.id as number, nextSeason.seas
   }
 
   function goBack() {
+    setShowRate(true)
+  }
+
+  function finishRate(score?: number) {
+    if (score && selectedMedia) {
+      const anime = isAnimeItem(selectedMedia)
+      const type = anime ? 'anime' : selectedMedia.type === 'movie' ? 'movie' : 'tv'
+      const st = useStore.getState()
+      syncRating({
+        title: String(selectedMedia.id),
+        type,
+        tmdbId: selectedMedia.id,
+        score,
+        season: selectedMedia.season,
+        episode: selectedMedia.episode,
+        serializdOn: !!st.serializdSyncEnabled && !anime,
+      }).catch(() => {})
+    }
+    setShowRate(false)
     setSelectedMedia(null)
     setCurrentPage('detail')
   }
@@ -257,11 +279,18 @@ const s = await tmdb.getSeasonDetail(selectedMedia.id as number, nextSeason.seas
   const title = selectedMedia ? `${selectedMedia.type === 'movie' ? 'Movie' : 'Series'} ${selectedMedia.id}` : 'MFY Player'
 
   return (
+    <>
+    {showRate && (
+        <RateModal title={title} kind={isAnimeItem(selectedMedia) ? 'anime' : (selectedMedia?.type === 'movie' ? 'movie' : 'tv')} onSubmit={(s) => finishRate(s)} onSkip={() => finishRate()} />
+      )}
     <div className="mfy-player" onMouseMove={onMouseMove} style={{ background: '#000', minHeight: '100vh' }}>
       <div className={cn('player-topbar', showUI ? 'visible' : 'hidden')} style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
+        <div className="flex items-center gap-2">
         <button onClick={goBack} className="player-back flex items-center gap-2 text-white/80 hover:text-white" style={{ background: 'rgba(0,0,0,0.5)', padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>
           <ArrowLeft size={16} /> Back
         </button>
+        <button type="button" onClick={() => setShowRate(true)} style={{ background: '#FF1493', padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white' }}>Mark watched</button>
+        </div>
         <div className="player-title text-white font-medium truncate" style={{ maxWidth: 400 }}>{title}</div>
         <div className="player-top-actions flex items-center gap-2">
           <div className="flex items-center gap-1">
@@ -348,6 +377,7 @@ const s = await tmdb.getSeasonDetail(selectedMedia.id as number, nextSeason.seas
         )}
       </div>
     </div>
+    </>
   )
 }
 

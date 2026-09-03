@@ -186,6 +186,22 @@ export default function MetaDetails() {
     const url = getPlayerUrl(playerPick as any, kind, selectedMedia.id as number, activeSeason, selectedMedia.episode)
     setSelectedMedia({ ...selectedMedia, season: activeSeason, episode: selectedMedia.episode })
     setCurrentStreamUrl(url)
+    try {
+      const st = useStore.getState()
+      st.upsertHistory({
+        id: `${selectedMedia.id}-${kind}-${activeSeason || 0}-${selectedMedia.episode || 0}`,
+        mediaId: selectedMedia.id,
+        mediaType: kind,
+        title: (detail as any)?.title || (detail as any)?.name || String(selectedMedia.id),
+        posterPath: (detail as any)?.poster_path || null,
+        progress: 1,
+        duration: 1,
+        season: activeSeason,
+        episode: selectedMedia.episode,
+        watchedAt: new Date().toISOString(),
+        profileId: st.currentProfile?.id || 'default',
+      })
+    } catch {}
     setCurrentPage('player')
   }
 

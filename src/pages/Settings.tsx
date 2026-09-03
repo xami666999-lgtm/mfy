@@ -327,7 +327,26 @@ export default function Settings() {
               placeholder="Your AniList username"
               link="https://anilist.co"
             />
-            <p className="text-[11px] text-white/30 -mt-1 mb-3">Used to match your list the same way Serializd is used for shows.</p>
+            <p className="text-[11px] text-white/30 -mt-1 mb-3">Username is for display. Paste a token to write scores after you rate an episode.</p>
+            <Input
+              label="AniList access token"
+              value={typeof window !== 'undefined' ? (localStorage.getItem('mfy-anilist-token') || '') : ''}
+              onChange={(v: string) => { try { localStorage.setItem('mfy-anilist-token', v.trim()) } catch {} }}
+              placeholder="Bearer token from anilist.co/settings/developer"
+              type="password"
+              link="https://anilist.co/settings/developer"
+            />
+          </div>
+          <div className="pt-4 border-t border-white/[0.06]">
+            <h4 className="text-sm font-medium text-white/60 mb-3">Letterboxd (movies only)</h4>
+            <Input
+              label="Letterboxd username"
+              value={typeof window !== 'undefined' ? (localStorage.getItem('mfy-letterboxd-user') || '') : ''}
+              onChange={(v: string) => { try { localStorage.setItem('mfy-letterboxd-user', v.trim()) } catch {} }}
+              placeholder="Your Letterboxd username"
+              link="https://letterboxd.com"
+            />
+            <p className="text-[11px] text-white/30 -mt-1 mb-3">After you rate a movie, MFY opens the Letterboxd search so you can log it. Serializd is not used for anime.</p>
           </div>
 
           <Input label="AIOStreams URL" value={aiosUrl} onChange={setAiosUrl} placeholder="http://localhost:3000 (when ready)" />
