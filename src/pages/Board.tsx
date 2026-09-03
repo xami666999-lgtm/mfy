@@ -234,7 +234,7 @@ export default function Board() {
       {error && <div className="error-banner mx-5 mt-4">{error}</div>}
 
       {hero && (
-        <section className="hero" style={{ minHeight: '72vh' }}>
+        <section className="hero" style={{ minHeight: '100vh' }}>
           <div className="hero-backdrop fade-in" style={{ backgroundImage: hero.backdrop_path ? `url(${BACKDROP_URL}${hero.backdrop_path})` : undefined }} />
           <div className="hero-overlay" />
           <div className="hero-content">
