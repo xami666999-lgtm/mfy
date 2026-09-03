@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useStore } from '../store'
+import { fireflyManga } from '../api/fireflyManga'
 
 async function md(path: string) {
   const url = `https://api.mangadex.org${path}`
@@ -30,6 +31,7 @@ export default function MangaReader() {
   const [idx, setIdx] = useState(0)
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(true)
+  const [ffId, setFfId] = useState('')
 
   useEffect(() => {
     let live = true
@@ -48,18 +50,40 @@ export default function MangaReader() {
           const s = await md(`/manga?title=${encodeURIComponent(cleanTitle(title) || title)}&limit=8`)
           found = s?.data?.[0]
         }
-        if (!found?.id) { if (live) setErr('No chapters for this title'); return }
-        const feed = await md(`/manga/${found.id}/feed?translatedLanguage[]=en&order[chapter]=asc&limit=100`)
-        let list = feed?.data || []
+        let list: any[] = []
+        if (found?.id) {
+          const feed = await md(`/manga/${found.id}/feed?translatedLanguage[]=en&order[chapter]=asc&limit=100`)
+          list = feed?.data || []
+          if (!list.length) {
+            const any = await md(`/manga/${found.id}/feed?order[chapter]=asc&limit=100`)
+            list = any?.data || []
+          }
+        }
         if (!list.length) {
-          const any = await md(`/manga/${found.id}/feed?order[chapter]=asc&limit=100`)
-          list = any?.data || []
+          const hits = await fireflyManga.search(cleanTitle(title) || title)
+          const pick = hits[0]
+          if (pick?.id) {
+            setFfId(String(pick.id))
+            const ffch = await fireflyManga.chapters(String(pick.id))
+            list = ffch.map((c) => ({ id: c.id, attributes: { chapter: c.number, title: c.title }, ff: true }))
+          }
         }
         if (!live) return
         setChapters(list)
         if (!list.length) setErr('No readable chapters yet')
       } catch {
-        if (live) setErr('Could not load manga')
+        try {
+          const hits = await fireflyManga.search(cleanTitle(title) || title)
+          const pick = hits[0]
+          if (pick?.id && live) {
+            setFfId(String(pick.id))
+            const ffch = await fireflyManga.chapters(String(pick.id))
+            setChapters(ffch.map((c) => ({ id: c.id, attributes: { chapter: c.number, title: c.title }, ff: true })))
+            if (!ffch.length) setErr('No readable chapters yet')
+          } else if (live) setErr('Could not load manga')
+        } catch {
+          if (live) setErr('Could not load manga')
+        }
       } finally {
         if (live) setLoading(false)
       }
@@ -67,11 +91,15 @@ export default function MangaReader() {
     return () => { live = false }
   }, [title])
 
-  async function openChapter(id: string) {
+  async function openChapter(id: string, ff?: boolean) {
     setPages([])
     setIdx(0)
     setErr('')
     try {
+      if (ff || ffId) {
+        const imgs = await fireflyManga.pages(ffId || String(selectedMedia?.id), id)
+        if (imgs.length) { setPages(imgs); return }
+      }
       const at = await md(`/at-home/server/${id}`)
       const base = at.baseUrl
       const hash = at.chapter.hash
@@ -112,7 +140,7 @@ export default function MangaReader() {
       ) : (
         <div className="grid gap-2">
           {chapters.map((c) => (
-            <button key={c.id} type="button" className="text-left px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:border-[#FF1493]/40" onClick={() => openChapter(c.id)}>
+            <button key={c.id} type="button" className="text-left px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:border-[#FF1493]/40" onClick={() => openChapter(c.id, c.ff)}>
               Chapter {c.attributes?.chapter || '?'} {c.attributes?.title ? `· ${c.attributes.title}` : ''}
             </button>
           ))}

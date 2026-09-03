@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { jikan } from '../api/jikan'
 import { anilist } from '../api/anilist'
+import { fireflyManga } from '../api/fireflyManga'
 import { useStore } from '../store'
 import { MediaShelf } from '../components/MediaShelf'
 import PageHero from '../components/PageHero'
@@ -68,11 +69,12 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' | 'novels
         setPopular(Object.values(extra).flat().filter((x) => x.image).slice(0, 24))
         return
       }
-      const [top, ani, novels, light] = await Promise.all([
+      const [top, ani, novels, light, ff] = await Promise.all([
         jikan.topManga(1).catch(() => []),
         anilist.getPopular('MANGA', 1, 40).then((p) => (p?.media || []).map(aniCard)).catch(() => []),
         jikan.topByType('novel', 1).catch(() => []),
         jikan.topByType('lightnovel', 1).catch(() => []),
+        fireflyManga.latest().catch(() => []),
       ])
       if (!live) return
       const extra: Record<string, any[]> = {
@@ -80,6 +82,7 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' | 'novels
         'AniList manga': ani,
         Novels: novels,
         'Light novels': light,
+        'FireFly latest': ff,
       }
       setPopular((top.length ? top : ani).filter((x: any) => x.image || x.coverImage || x.poster_path))
       const titles = ['One Piece', 'Naruto', 'Berserk', 'Vagabond', 'Chainsaw Man', 'Jujutsu Kaisen']
