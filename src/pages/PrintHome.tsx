@@ -21,15 +21,15 @@ function aniCard(m: any) {
   }
 }
 
-export default function PrintHome({ kind }: { kind: 'manga' | 'comics' }) {
+export default function PrintHome({ kind }: { kind: 'manga' | 'comics' | 'novels' }) {
   const { setSelectedMedia, setCurrentPage } = useStore()
   const [popular, setPopular] = useState<any[]>([])
   const [rows, setRows] = useState<Record<string, any[]>>({})
-  const title = kind === 'comics' ? 'Comics' : 'Manga'
+  const title = kind === 'comics' ? 'Comics' : kind === 'novels' ? 'Novels' : 'Manga'
 
   function open(item: any) {
     const name = item.title?.english || item.title?.romaji || item.title || item.name || String(item.id)
-    const type = item.media_type === 'book' ? 'book' : kind === 'comics' ? 'comics' : 'manga'
+    const type = kind === 'novels' || item.media_type === 'book' ? 'book' : kind === 'comics' ? 'comics' : 'manga'
     setSelectedMedia({ id: item.id || name, type, title: name } as any)
     setCurrentPage('manga-detail')
   }
@@ -37,6 +37,24 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' }) {
   useEffect(() => {
     let live = true
     ;(async () => {
+      if (kind === 'novels') {
+        const [novels, light] = await Promise.all([
+          jikan.topByType('novel', 1).catch(() => []),
+          jikan.topByType('lightnovel', 1).catch(() => []),
+        ])
+        if (!live) return
+        const extra: Record<string, any[]> = { Novels: novels, 'Light novels': light }
+        const names = ['Overlord', 'Re:Zero', 'Mushoku Tensei', 'Classroom of the Elite', 'Spice and Wolf', 'Monogatari']
+        for (const q of names) {
+          extra[q] = await jikan.searchManga(q, 1).catch(() => [])
+          await sleep(350)
+          if (!live) return
+          setRows({ ...extra })
+        }
+        setPopular((novels.length ? novels : light).filter((x: any) => x.image || x.coverImage))
+        setRows(extra)
+        return
+      }
       if (kind === 'comics') {
         const names = ['Marvel', 'DC Comics', 'Spider-Man', 'Batman', 'One Punch', 'Berserk']
         const extra: Record<string, any[]> = {}
