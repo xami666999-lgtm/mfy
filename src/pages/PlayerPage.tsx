@@ -53,22 +53,18 @@ export default function PlayerPage() {
   })
 
   useEffect(() => {
-    const direct = currentStreamUrl && (
-      !selectedMedia ||
-      selectedMedia.type === 'iptv' ||
-      /youtube|youtu\.be|nadeko|yewtu|invidious|m3u8|\.mp4|\.m4a|metegol|embed\/|itunes/.test(currentStreamUrl)
-    )
-    if (direct && currentStreamUrl) {
-      setStreamUrl(currentStreamUrl)
-      setLoaded(true)
-      setLoading(false)
-      setError('')
+    if (!selectedMedia || selectedMedia.type === 'iptv') {
+      if (currentStreamUrl) {
+        setStreamUrl(currentStreamUrl)
+        setLoaded(true)
+        setLoading(false)
+      }
       return
     }
-    if (!selectedMedia || selectedMedia.type === 'iptv') return
     const anime = isAnimeItem(selectedMedia)
-    const src: PlayerSource = anime && !['zangetsu', 'miruro', 'mangayomi'].includes(playerSource) ? 'zangetsu' : playerSource
-    if (src !== playerSource) setPlayerSource(src)
+    const src: PlayerSource = anime
+      ? (['zangetsu', 'miruro', 'mangayomi'].includes(playerSource) ? playerSource : 'zangetsu')
+      : playerSource
     const url = getPlayerUrl(
       src,
       selectedMedia.type === 'movie' ? 'movie' : 'tv',
@@ -78,11 +74,10 @@ export default function PlayerPage() {
       anime
     )
     setStreamUrl(url)
-    setCurrentStreamUrl(url)
     setLoaded(true)
     setLoading(false)
     setError('')
-  }, [selectedMedia, playerSource, currentStreamUrl])
+  }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode, selectedMedia?.type, playerSource])
 
   function tryNextSource() {
     if (!selectedMedia || selectedMedia.type === 'iptv') return
@@ -110,23 +105,7 @@ export default function PlayerPage() {
     return () => window.removeEventListener('keydown', onKey)
   })
 
-  const handleIframeError = () => {
-    if (/youtube|nadeko|yewtu|invidious|itunes|m3u8/.test(streamUrl || currentStreamUrl || '')) return
-    const sources = getFallbackSources(
-      selectedMedia?.type === 'movie' ? 'movie' : 'tv',
-      selectedMedia?.id,
-      selectedMedia?.season,
-      selectedMedia?.episode
-    )
-    const currentIndex = sources.findIndex(s => s.source === playerSource)
-    const nextSource = sources[(currentIndex + 1) % sources.length]
-    if (nextSource && nextSource.source !== playerSource) {
-      setPlayerSource(nextSource.source)
-      setError(`Trying ${nextSource.source}...`)
-    } else {
-      setError('Stream not available on any source')
-    }
-  }
+  const handleIframeError = () => {}
 
   useEffect(() => {
     const v = videoRef.current
@@ -394,10 +373,10 @@ export default function PlayerPage() {
 
         {loaded && !error && isPlayerEmbedUrl(streamUrl) && (
           <div style={{ position: 'absolute', bottom: 12, right: 12, zIndex: 30, display: 'flex', gap: 8 }}>
-            {(['playtorrio', 'simplstream', 'zangetsu', 'miruro'] as PlayerSource[]).map((s) => (
+            {(isAnimeItem(selectedMedia) ? (['zangetsu', 'miruro', 'mangayomi'] as PlayerSource[]) : (['playtorrio', 'simplstream', 'vidy'] as PlayerSource[])).map((s) => (
               <button key={s} type="button" onClick={() => { setPlayerSource(s); try { localStorage.setItem('mfy-player-engine', s) } catch {} }}
                 style={{ background: playerSource === s ? '#FF1493' : 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', fontSize: 11, cursor: 'pointer' }}>
-                {s === 'playtorrio' ? 'Auto' : s === 'simplstream' ? '1080' : s === 'zangetsu' ? 'Anime' : 'Sub'}
+                {s === 'playtorrio' ? 'Auto' : s === 'simplstream' ? '1080' : s === 'vidy' ? 'Vidy' : s === 'zangetsu' ? 'Zangetsu' : s === 'miruro' ? 'Miruro' : 'Manga'}
               </button>
             ))}
             <button type="button" onClick={toggleFullscreen} style={{ background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>{fullscreen ? 'Exit' : 'Full'}</button>

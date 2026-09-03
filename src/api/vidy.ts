@@ -29,8 +29,8 @@ export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId:
   const s = season ?? 1
   const e = episode ?? 1
   if (anime || source === 'zangetsu' || source === 'miruro' || source === 'mangayomi') {
-    if (source === 'miruro') return `https://vidsrc.xyz/embed/anime/${tmdbId}/${e}`
-    return `https://vidsrc.cc/v2/embed/anime/${tmdbId}/${e}`
+    if (source === 'miruro') return `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}`
+    return `https://vidsrc.cc/v2/embed/tv/${tmdbId}/${s}/${e}`
   }
   if (source === 'playtorrio') {
     return type === 'movie' ? `https://vidsrc.xyz/embed/movie/${tmdbId}` : `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}`
