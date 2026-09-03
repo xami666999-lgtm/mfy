@@ -9,13 +9,26 @@ export function letterboxdUrl(title: string) {
 export function isAnimeItem(item: any) {
   if (!item) return false
   if (item.kind === 'anime' || item.isAnime) return true
+  const t = String(item.media_type || item.type || item.format || '')
+  if (/anime/i.test(t)) return true
   const g = (item.genres || []).map((x: any) => String(x.name || x).toLowerCase())
   return g.includes('animation') && (item.origin_country || []).includes('JP')
 }
 
+export function isPrintItem(item: any) {
+  const t = String(item?.media_type || item?.type || item?.format || '')
+  return /manga|novel|book|comic/i.test(t)
+}
+
+export function trackerFor(kind: string) {
+  if (kind === 'movie') return 'Letterboxd'
+  if (kind === 'tv') return 'Serializd'
+  return 'AniList'
+}
+
 export async function syncRating(opts: {
   title: string
-  type: 'movie' | 'tv' | 'anime' | 'manga'
+  type: 'movie' | 'tv' | 'anime' | 'manga' | 'novel'
   tmdbId?: number | string
   score: number
   season?: number
@@ -24,6 +37,7 @@ export async function syncRating(opts: {
   note?: string
 }) {
   const notes: string[] = []
+  const title = String(opts.title || '').replace(/^\d+$/, '') || String(opts.title)
   if (opts.note) {
     try {
       const rows = JSON.parse(localStorage.getItem('mfy-reviews') || '[]')
@@ -31,11 +45,13 @@ export async function syncRating(opts: {
       localStorage.setItem('mfy-reviews', JSON.stringify(rows.slice(0, 100)))
     } catch {}
   }
-  if (opts.serializdOn && (opts.type === 'movie' || opts.type === 'tv')) {
+
+  // Serializd — TV series only (never anime / movies)
+  if (opts.serializdOn && opts.type === 'tv') {
     try {
       const id = Number(opts.tmdbId)
       if (id) {
-        if (opts.type === 'tv' && opts.season && opts.episode) {
+        if (opts.season && opts.episode) {
           await serializdApi.logEpisodes(id, opts.season, [opts.episode]).catch(() => serializdApi.logShow(id))
         } else {
           await serializdApi.logShow(id)
@@ -44,16 +60,21 @@ export async function syncRating(opts: {
       }
     } catch {}
   }
-  if (opts.type === 'anime' || opts.type === 'manga') {
+
+  // AniList — anime, manga, novels
+  if (opts.type === 'anime' || opts.type === 'manga' || opts.type === 'novel') {
     try {
-      await anilist.saveScore(opts.title, opts.score, opts.type === 'manga' ? 'MANGA' : 'ANIME')
+      const q = title && !/^\d+$/.test(title) ? title : String(opts.title)
+      await anilist.saveScore(q, opts.score, opts.type === 'anime' ? 'ANIME' : 'MANGA')
       notes.push('AniList')
     } catch {}
   }
+
+  // Letterboxd — movies only
   if (opts.type === 'movie') {
     try {
       const api = (window as any).electronAPI
-      const url = letterboxdUrl(opts.title)
+      const url = letterboxdUrl(title || String(opts.title))
       if (api?.openExternal) api.openExternal(url)
       else window.open(url, '_blank')
       notes.push('Letterboxd')

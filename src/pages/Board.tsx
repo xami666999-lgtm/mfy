@@ -184,7 +184,7 @@ export default function Board() {
 
   function goDetail(item: any, type?: string) {
     const t = type || ((item.media_type === 'tv' || item.first_air_date) ? 'tv' : 'movie')
-    setSelectedMedia({ id: item.id, type: t })
+    setSelectedMedia({ id: item.id, type: t, title: item.title || item.name } as any)
     setCurrentPage('detail')
   }
 

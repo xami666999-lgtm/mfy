@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useStore } from '../store'
 import { fireflyManga } from '../api/fireflyManga'
+import RateModal from '../components/RateModal'
+import { syncRating } from '../lib/trackers'
 
 async function md(path: string) {
   const url = `https://api.mangadex.org${path}`
@@ -32,6 +34,7 @@ export default function MangaReader() {
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(true)
   const [ffId, setFfId] = useState('')
+  const [rateOpen, setRateOpen] = useState(false)
 
   useEffect(() => {
     let live = true
@@ -124,8 +127,22 @@ export default function MangaReader() {
       <button type="button" className="text-sm text-white/50 mb-4 inline-flex items-center gap-2" onClick={() => setCurrentPage('manga')}>
         <ArrowLeft size={16} /> Back
       </button>
-      <h1 className="text-2xl font-bold mb-1">{title}</h1>
-      <p className="text-xs text-[#FF1493] mb-5">MFY Reader · MangaDex</p>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="text-2xl font-bold">{title}</h1>
+        <button type="button" className="text-xs px-3 h-8 rounded-lg bg-[#FF1493]" onClick={() => setRateOpen(true)}>Rate on AniList</button>
+      </div>
+      <p className="text-xs text-[#FF1493] mb-5">MFY Reader · MangaDex / FireFly</p>
+      {rateOpen && (
+        <RateModal
+          title={title}
+          kind={/novel/i.test(String((selectedMedia as any)?.type)) ? 'novel' : 'manga'}
+          onSubmit={(s, n) => {
+            syncRating({ title, type: /novel/i.test(String((selectedMedia as any)?.type)) ? 'novel' : 'manga', score: s, serializdOn: false, note: n }).catch(() => {})
+            setRateOpen(false)
+          }}
+          onSkip={() => setRateOpen(false)}
+        />
+      )}
       {err && <p className="text-red-400 text-sm mb-4">{err}</p>}
       {loading && <p className="text-white/40 text-sm">Loading chapters…</p>}
       {pages.length > 0 ? (

@@ -219,7 +219,7 @@ export default function Settings() {
 
           {/* Serializd Section */}
           <div className="pt-4 border-t border-white/[0.06]">
-            <h4 className="text-sm font-medium text-white/60 mb-3">Serializd (Watch History Sync)</h4>
+            <h4 className="text-sm font-medium text-white/60 mb-3">Serializd (TV series only)</h4>
             {store.serializdToken ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
@@ -252,7 +252,7 @@ export default function Settings() {
                 </div>
                 <Toggle
                   label="Sync watch history & ratings"
-                  description="Automatically sync watched episodes and ratings to Serializd"
+                  description="TV shows only — not movies, not anime"
                   checked={store.serializdSyncEnabled}
                   onChange={store.setSerializdSyncEnabled}
                 />
@@ -317,7 +317,7 @@ export default function Settings() {
           </div>
 
           <div className="pt-4 border-t border-white/[0.06]">
-            <h4 className="text-sm font-medium text-white/60 mb-3">AniList (Anime & manga tracker)</h4>
+            <h4 className="text-sm font-medium text-white/60 mb-3">AniList (anime, manga, novels)</h4>
             <Input
               label="AniList username"
               value={anilistUser}
@@ -347,7 +347,7 @@ export default function Settings() {
               placeholder="Your Letterboxd username"
               link="https://letterboxd.com"
             />
-            <p className="text-[11px] text-white/30 -mt-1 mb-3">After you rate a movie, MFY opens the Letterboxd search so you can log it. Serializd is not used for anime.</p>
+            <p className="text-[11px] text-white/30 -mt-1 mb-3">Movies only. After you rate, MFY opens Letterboxd search. TV → Serializd. Anime / manga / novels → AniList.</p>
           </div>
 
           <Input label="AIOStreams URL" value={aiosUrl} onChange={setAiosUrl} placeholder="http://localhost:3000 (when ready)" />

@@ -303,16 +303,18 @@ export default function PlayerPage() {
   function finishRate(score?: number, note?: string) {
     if (score && selectedMedia) {
       const anime = isAnimeItem(selectedMedia)
-      const type = anime ? 'anime' : selectedMedia.type === 'movie' ? 'movie' : 'tv'
+      const print = /manga|novel|book/i.test(String(selectedMedia.type))
+      const type = anime ? 'anime' : print ? (String(selectedMedia.type).includes('novel') ? 'novel' : 'manga') : selectedMedia.type === 'movie' ? 'movie' : 'tv'
       const st = useStore.getState()
+      const name = String((selectedMedia as any).title || (selectedMedia as any).name || selectedMedia.id)
       syncRating({
-        title: String(selectedMedia.id),
-        type,
+        title: name,
+        type: type as any,
         tmdbId: selectedMedia.id,
         score,
         season: selectedMedia.season,
         episode: selectedMedia.episode,
-        serializdOn: !!st.serializdSyncEnabled && !anime,
+        serializdOn: !!st.serializdSyncEnabled && type === 'tv',
         note,
       }).catch(() => {})
     }

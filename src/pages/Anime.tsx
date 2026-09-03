@@ -16,7 +16,7 @@ export default function Anime() {
   const [calendar, setCalendar] = useState<any[]>([])
 
   function open(item: any) {
-    setSelectedMedia({ id: item.id, type: item.media_type === 'movie' ? 'movie' : 'tv', isAnime: true } as any)
+    setSelectedMedia({ id: item.id, type: item.media_type === 'movie' ? 'movie' : 'tv', isAnime: true, title: item.title || item.name } as any)
     setCurrentPage('detail')
   }
 
