@@ -298,11 +298,10 @@ export default function PlayerPage() {
 
   function goBack() {
     if (selectedMedia?.type === 'iptv' || /metegol|streamed|sport/i.test(streamUrl || '')) {
-      setSelectedMedia(null)
       setCurrentPage('sports')
       return
     }
-    setShowRate(true)
+    setCurrentPage('detail')
   }
 
   function finishRate(score?: number, note?: string) {
@@ -322,8 +321,7 @@ export default function PlayerPage() {
       }).catch(() => {})
     }
     setShowRate(false)
-    setSelectedMedia(null)
-    setCurrentPage('detail')
+    setCurrentPage(selectedMedia ? 'detail' : 'home')
   }
 
   const title = selectedMedia ? `${selectedMedia.type === 'movie' ? 'Movie' : 'Series'} ${selectedMedia.id}` : 'MFY Player'
@@ -386,7 +384,6 @@ export default function PlayerPage() {
         {loaded && !error && isPlayerEmbedUrl(streamUrl) && (
           // @ts-expect-error Electron webview
           <webview
-            key={streamUrl}
             src={streamUrl}
             style={{ width: '100%', height: '100%', background: '#000' }}
             allowpopups="true"

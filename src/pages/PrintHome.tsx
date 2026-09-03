@@ -1,45 +1,78 @@
 import { useEffect, useState } from 'react'
-import { tmdb } from '../api/tmdb'
 import { jikan } from '../api/jikan'
+import { anilist } from '../api/anilist'
 import { useStore } from '../store'
 import { MediaShelf } from '../components/MediaShelf'
 import PageHero from '../components/PageHero'
+
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms))
+}
+
+function aniCard(m: any) {
+  return {
+    id: m.id,
+    title: m.title?.english || m.title?.romaji || m.title,
+    name: m.title?.english || m.title?.romaji,
+    coverImage: m.coverImage,
+    image: m.coverImage?.large,
+    overview: m.description,
+    media_type: 'manga',
+  }
+}
 
 export default function PrintHome({ kind }: { kind: 'manga' | 'comics' }) {
   const { setSelectedMedia, setCurrentPage } = useStore()
   const [popular, setPopular] = useState<any[]>([])
   const [rows, setRows] = useState<Record<string, any[]>>({})
   const title = kind === 'comics' ? 'Comics' : 'Manga'
-  const queries = kind === 'comics'
-    ? ['Marvel', 'DC Comics', 'Spider-Man', 'Batman', 'X-Men', 'Avengers']
-    : ['One Piece', 'Naruto', 'Attack on Titan', 'Demon Slayer', 'Jujutsu Kaisen', 'Dragon Ball']
 
   function open(item: any) {
     const name = item.title?.english || item.title?.romaji || item.title || item.name || String(item.id)
-    setSelectedMedia({ id: item.id || name, type: kind, title: name } as any)
+    const type = item.media_type === 'book' ? 'book' : kind === 'comics' ? 'comics' : 'manga'
+    setSelectedMedia({ id: item.id || name, type, title: name } as any)
     setCurrentPage('manga-detail')
   }
 
   useEffect(() => {
+    let live = true
     ;(async () => {
-      const bag: any[] = []
-      for (const q of queries) {
-        const d = await tmdb.searchMulti(q).catch(() => ({ results: [] }))
-        bag.push(...(d?.results || []).filter((r: any) => r.poster_path))
+      if (kind === 'comics') {
+        const names = ['Marvel', 'DC Comics', 'Spider-Man', 'Batman', 'One Punch', 'Berserk']
+        const extra: Record<string, any[]> = {}
+        for (const q of names) {
+          extra[q] = await jikan.searchManga(q, 1).catch(() => [])
+          await sleep(400)
+        }
+        if (!live) return
+        setRows(extra)
+        setPopular(Object.values(extra).flat().filter((x) => x.image).slice(0, 24))
+        return
       }
-      const seen = new Set()
-      const uniq = bag.filter((x) => !seen.has(x.id) && seen.add(x.id))
-      setPopular(uniq)
-      try {
-        const j = kind === 'comics' ? await jikan.searchManga('marvel', 1) : await jikan.topManga(1)
-        if (j.length) setPopular((prev) => prev.length ? prev : j)
-      } catch {}
-      const extra: Record<string, any[]> = {}
-      for (const q of queries) {
-        extra[q] = (await tmdb.searchMulti(q).catch(() => ({ results: [] })))?.results?.filter((r: any) => r.poster_path) || []
+      const [top, ani, novels, light] = await Promise.all([
+        jikan.topManga(1).catch(() => []),
+        anilist.getPopular('MANGA', 1, 40).then((p) => (p?.media || []).map(aniCard)).catch(() => []),
+        jikan.topByType('novel', 1).catch(() => []),
+        jikan.topByType('lightnovel', 1).catch(() => []),
+      ])
+      if (!live) return
+      const extra: Record<string, any[]> = {
+        'Top manga': top,
+        'AniList manga': ani,
+        Novels: novels,
+        'Light novels': light,
+      }
+      setPopular((top.length ? top : ani).filter((x: any) => x.image || x.coverImage || x.poster_path))
+      const titles = ['One Piece', 'Naruto', 'Berserk', 'Vagabond', 'Chainsaw Man', 'Jujutsu Kaisen']
+      for (const q of titles) {
+        extra[q] = await jikan.searchManga(q, 1).catch(() => [])
+        await sleep(350)
+        if (!live) return
+        setRows({ ...extra })
       }
       setRows(extra)
     })()
+    return () => { live = false }
   }, [kind])
 
   return (
@@ -47,8 +80,8 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' }) {
       <PageHero item={popular[0]} kicker={title.toUpperCase()} onPlay={() => popular[0] && open(popular[0])} />
       <div className="board-content px-6 pt-6">
         <MediaShelf title={`Popular ${title}`} items={popular} onOpen={open} />
-        {queries.map((g) => (
-          <MediaShelf key={g} title={g} items={rows[g] || []} onOpen={open} />
+        {Object.entries(rows).map(([g, list]) => (
+          <MediaShelf key={g} title={g} items={list} onOpen={open} />
         ))}
       </div>
     </div>

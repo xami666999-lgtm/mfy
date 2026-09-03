@@ -25,7 +25,7 @@ function card(row: any) {
     score: row.score,
     genres: (row.genres || []).map((g: any) => g.name),
     overview: row.synopsis,
-    media_type: row.type === 'Movie' ? 'movie' : 'tv',
+    media_type: /novel/i.test(row.type||'') ? 'book' : /manga|manhwa|manhua|one.shot|doujin/i.test(row.type||'') ? 'manga' : (row.type === 'Movie' ? 'movie' : 'tv'),
   }
 }
 
@@ -54,4 +54,9 @@ export const jikan = {
     const d = await getJson('/seasons/upcoming?limit=25')
     return (d.data || []).map(card)
   },
+  topByType: async (type: string, page = 1) => {
+    const d = await getJson(`/top/manga?type=${encodeURIComponent(type)}&page=${page}&limit=25`)
+    return (d.data || []).map(card)
+  },
 }
+
