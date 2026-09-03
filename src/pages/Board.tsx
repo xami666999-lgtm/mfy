@@ -210,26 +210,7 @@ export default function Board() {
 
   return (
     <div className="board page-fade-enter flex min-h-full">
-      <aside className={`flex flex-col gap-1 p-3 bg-black/60 backdrop-blur-2xl border-r border-white/10 transition-all ${railOpen ? 'w-64' : 'w-16'}`}>
-        <button type="button" className="text-left px-2 py-2 text-[#FF1493] text-xs font-bold" onClick={() => setRailOpen((v) => !v)}>{railOpen ? 'MFY ▸ hide' : 'MFY'}</button>
-        {railOpen && (
-          <form onSubmit={(e) => { e.preventDefault(); if (railQ.trim()) { try { sessionStorage.setItem('mfy-q', railQ.trim()) } catch {} ; setCurrentPage('search') } }}>
-            <input value={railQ} onChange={(e) => setRailQ(e.target.value)} placeholder="Search" className="w-full h-9 mb-2 rounded-xl bg-white/10 px-3 text-sm" />
-          </form>
-        )}
-        {[
-          ['home','Home'],['movies','Movies'],['tv','TV'],['anime','Anime'],['manga','Manga'],['comics','Comics'],['books','Books'],['youtube','YouTube'],['music','Music'],['sports','Sport'],['iptv','IPTV'],['library','Library'],['settings','Settings'],
-        ].map(([id,label]) => (
-          <button key={id} type="button" className={`text-left h-9 px-3 rounded-xl text-sm ${id==='home' ? 'bg-white text-black font-semibold' : 'text-white/75 hover:bg-white/10'}`} onClick={() => setCurrentPage(id as any)}>{railOpen ? label : label[0]}</button>
-        ))}
-        {railOpen && <p className="text-[10px] text-white/30 px-3 pt-3">Channels</p>}
-        {streamingServices.map((s) => (
-          <button key={s.id} type="button" className="flex items-center gap-2 h-9 px-3 rounded-lg text-white/70 text-xs hover:bg-white/10" onClick={() => { setSelectedProviderId(s.id); setCurrentPage('provider') }}>
-            <img src={s.logo} alt="" className="w-5 h-5 object-contain" />
-            {railOpen ? s.name : ''}
-          </button>
-        ))}
-      </aside>
+      
       <div className="flex-1 min-w-0">
       {error && <div className="error-banner mx-5 mt-4">{error}</div>}
 

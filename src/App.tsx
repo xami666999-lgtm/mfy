@@ -6,6 +6,7 @@ import { setRuntimeMdblistKey } from './api/mdblist'
 import { useKeyboardNav } from './hooks/useKeyboardNav'
 import TitleBar from './components/TitleBar'
 import Navbar from './components/Navbar'
+import AppleRail from './components/AppleRail'
 import Board from './pages/Board'
 import Discover from './pages/Discover'
 import Search from './pages/Search'
@@ -231,12 +232,9 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
           </button>
         </div>
       )}
-      {currentPage !== 'player' && (
-        <>
-          <TitleBar />
-          {currentPage !== 'home' && <Navbar />}
-        </>
-      )}
+      {currentPage !== 'player' && <TitleBar />}
+      <div className="flex-1 min-h-0 flex">
+      {currentPage !== 'player' && currentPage !== 'detail' && <AppleRail />}
       <main className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
         {currentPage === 'home' && <Board />}
         {currentPage === 'discover' && <Discover />}
@@ -261,6 +259,7 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
         {currentPage === 'youtube' && <YouTubePage />}
         {currentPage === 'music' && <MusicPage />}
       </main>
+      </div>
     </div>
   )
 }

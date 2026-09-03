@@ -14,7 +14,7 @@ export default function PageHero({
   if (!item) return null
   const bg = item.backdrop_path ? `${BACKDROP_URL}${item.backdrop_path}` : imgSrc(item)
   return (
-    <section className="hero">
+    <section className="hero" style={{ minHeight: "70vh" }}>
       <div className="hero-backdrop" style={{ backgroundImage: bg ? `url(${bg})` : undefined }} />
       <div className="hero-overlay" />
       <div className="hero-content">
