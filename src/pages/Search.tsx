@@ -269,15 +269,8 @@ export default function Search() {
                 type="button"
                 className="w-[88px] flex-shrink-0 text-left"
                 onClick={() => {
-                  if (p.source === 'tmdb') {
-                    tmdb.getPersonDetail(p.id).then((d: any) => {
-                      const work = (d?.combined_credits?.cast || d?.movie_credits?.cast || [])[0]
-                      if (work) {
-                        setSelectedMedia({ id: work.id, type: work.media_type === 'tv' || work.first_air_date ? 'tv' : 'movie' })
-                        setCurrentPage('detail')
-                      }
-                    }).catch(() => {})
-                  } else setCurrentPage('anime')
+                  try { sessionStorage.setItem('mfy-person', JSON.stringify({ id: p.id, source: p.source, name: p.name })) } catch {}
+                  setCurrentPage('people')
                 }}
               >
                 <div className="w-16 h-16 rounded-full overflow-hidden bg-white/[0.06] mx-auto mb-1.5">

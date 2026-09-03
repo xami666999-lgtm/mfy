@@ -92,7 +92,7 @@ export default function PlayerPage() {
         setPlayerSource(next.source)
         setCurrentStreamUrl(next.url)
       }
-    }, 4000)
+    }, autoNextBusy ? 15000 : 8000)
     return () => clearTimeout(t)
   }, [streamUrl, playerSource, selectedMedia])
 
@@ -174,24 +174,36 @@ export default function PlayerPage() {
           setSelectedMedia({ id: selectedMedia.id, type: 'tv', season: curSeason, episode: next.episode_number })
           const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, curSeason, next.episode_number)
           setCurrentStreamUrl(url)
-          setCurrentPage('player')
-        } else {
-const d = await tmdb.getTVDetail(selectedMedia.id as number).catch(() => null)
-          const seasons = d?.seasons || []
-          const nextSeason = seasons.find((s: any) => s.season_number === curSeason + 1 && s.episode_count > 0)
-          if (nextSeason) {
-const s = await tmdb.getSeasonDetail(selectedMedia.id as number, nextSeason.season_number).catch(() => null)
-            const first = s?.episodes?.[0]
-            if (first) {
-              setSelectedMedia({ id: selectedMedia.id, type: 'tv', season: nextSeason.season_number, episode: first.episode_number })
-              const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, nextSeason.season_number, first.episode_number)
-              setCurrentStreamUrl(url)
-              setCurrentPage('player')
-            }
+          setLoaded(true)
+          setAutoNextBusy(false)
+          return
+        }
+        const d = await tmdb.getTVDetail(selectedMedia.id as number).catch(() => null)
+        const seasons = d?.seasons || []
+        const nextSeason = seasons.find((s: any) => s.season_number === curSeason + 1 && s.episode_count > 0)
+        if (nextSeason) {
+          const s = await tmdb.getSeasonDetail(selectedMedia.id as number, nextSeason.season_number).catch(() => null)
+          const first = s?.episodes?.[0]
+          if (first) {
+            setSelectedMedia({ id: selectedMedia.id, type: 'tv', season: nextSeason.season_number, episode: first.episode_number })
+            const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, nextSeason.season_number, first.episode_number)
+            setCurrentStreamUrl(url)
+            setLoaded(true)
+            setAutoNextBusy(false)
+            return
           }
         }
-      } catch {}
+        setShowRate(true)
+      } catch {
+        const s = selectedMedia.season || 1
+        const e = (selectedMedia.episode || 1) + 1
+        setSelectedMedia({ id: selectedMedia.id, type: 'tv', season: s, episode: e })
+        setCurrentStreamUrl(getPlayerUrl(playerSource, 'tv', selectedMedia.id, s, e))
+        setLoaded(true)
+      }
       setAutoNextBusy(false)
+    } else if (selectedMedia?.type === 'tv' || selectedMedia?.type === 'movie') {
+      setShowRate(true)
     }
   }
 
@@ -374,6 +386,7 @@ const s = await tmdb.getSeasonDetail(selectedMedia.id as number, nextSeason.seas
         {loaded && !error && isPlayerEmbedUrl(streamUrl) && (
           // @ts-expect-error Electron webview
           <webview
+            key={streamUrl}
             src={streamUrl}
             style={{ width: '100%', height: '100%', background: '#000' }}
             allowpopups="true"

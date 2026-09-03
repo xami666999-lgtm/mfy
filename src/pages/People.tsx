@@ -57,7 +57,19 @@ export default function People() {
     }
   }
 
-  useEffect(() => { run('Eiichiro Oda') }, [])
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('mfy-person')
+      if (raw) {
+        sessionStorage.removeItem('mfy-person')
+        const hit = JSON.parse(raw)
+        setQ(hit.name || q)
+        open({ source: hit.source, id: hit.id, name: hit.name || '' })
+        return
+      }
+    } catch {}
+    run('Eiichiro Oda')
+  }, [])
 
   async function open(hit: Hit) {
     setSource(hit.source)

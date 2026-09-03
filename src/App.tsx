@@ -32,6 +32,7 @@ import YouTubePage from './pages/YouTubePage'
 import MusicPage from './pages/MusicPage'
 import PrintHome from './pages/PrintHome'
 import MangaReader from './pages/MangaReader'
+import People from './pages/People'
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true)
@@ -258,6 +259,7 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
         {currentPage === 'books' && <CatalogSection kind="books" title="Books" />}
         {currentPage === 'youtube' && <YouTubePage />}
         {currentPage === 'music' && <MusicPage />}
+        {currentPage === 'people' && <People />}
       </main>
       </div>
     </div>
