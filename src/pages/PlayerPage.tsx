@@ -63,6 +63,7 @@ export default function PlayerPage() {
   const [autoNextBusy, setAutoNextBusy] = useState(false)
   const [stillWatching, setStillWatching] = useState<null | 'idle' | 'next'>(null)
   const autoNextCount = useRef(0)
+  const startedAt = useRef(Date.now())
   const [showRate, setShowRate] = useState(false)
   const [countdown, setCountdown] = useState(5)
   const [gate, setGate] = useState(true)
@@ -206,7 +207,11 @@ export default function PlayerPage() {
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); goBack() }
     }
     window.addEventListener('keydown', onKey, true)
-    return () => window.removeEventListener('keydown', onKey, true)
+    const off = (window as any).electronAPI?.onPlayerEscape?.(() => goBack())
+    return () => {
+      window.removeEventListener('keydown', onKey, true)
+      try { off?.() } catch {}
+    }
   })
 
   const handleIframeError = () => {}
@@ -219,9 +224,16 @@ export default function PlayerPage() {
         w.insertCSS(`
           html, body { width:100% !important; height:100% !important; margin:0 !important; background:#000 !important; overflow:hidden !important; }
           video, iframe { width:100vw !important; height:100vh !important; max-width:none !important; max-height:none !important; object-fit:${fit === 'full' ? 'contain' : fit} !important; background:#000 !important; }
-          video::cue { font-size: ${subSize}em !important; line-height: 1.2; background: ${subBg ? 'rgba(0,0,0,0.75)' : 'transparent'} !important; color: #fff; }
+          video::cue, ::cue { font-size: ${subSize}em !important; line-height: 1.25; background: ${subBg ? 'rgba(0,0,0,0.55)' : 'transparent'} !important; color: #fff !important; }
         `)
-        w.executeJavaScript(`document.querySelectorAll('video').forEach(v=>{v.style.objectFit='${fit === 'full' ? 'contain' : fit}'; v.style.width='100vw'; v.style.height='100vh';})`)
+        w.executeJavaScript(`document.querySelectorAll('video').forEach(v=>{
+          v.style.objectFit='${fit === 'full' ? 'contain' : fit}';
+          v.style.width='100vw'; v.style.height='100vh';
+          try {
+            const tracks = v.textTracks || []
+            for (let i = 0; i < tracks.length; i++) tracks[i].mode = i === 0 ? 'showing' : 'hidden'
+          } catch {}
+        })`)
       } catch {}
     }
     const resume = () => {
@@ -352,6 +364,7 @@ export default function PlayerPage() {
   }, [selectedMedia?.id, selectedMedia?.episode, playerSource])
 
   useEffect(() => {
+    startedAt.current = Date.now()
     setShowUI(true)
     const id = setTimeout(() => setShowUI(false), 2500)
     return () => clearTimeout(id)
@@ -575,9 +588,14 @@ export default function PlayerPage() {
     try {
       const w = document.querySelector('webview') as any
       const got = await w?.executeJavaScript?.(`(() => { const v = document.querySelector('video'); if (!v) return null; return { p: v.currentTime || 0, d: v.duration || 0 } })()`)
-      if (got && Number(got.p) > 1) { p = Number(got.p); if (Number(got.d) > 1) d = Number(got.d) }
+      if (got && Number(got.p) > 1) { p = Number(got.p); if (Number.isFinite(Number(got.d)) && Number(got.d) > 1) d = Number(got.d) }
     } catch {}
-    if (forceDone && selectedMedia.type !== 'movie') {
+    const sessionSec = (Date.now() - startedAt.current) / 1000
+    const realDur = Number.isFinite(d) && d >= 90
+    const looksLiveClock = realDur && Math.abs(p - d) < 1.5 && sessionSec < 90
+    if (looksLiveClock) return
+    const reallyDone = forceDone || (realDur && sessionSec > 90 && p / d >= 0.92)
+    if (reallyDone && selectedMedia.type !== 'movie') {
       const base = {
         mediaId: String(selectedMedia.id),
         mediaType: 'tv' as const,
@@ -608,7 +626,7 @@ export default function PlayerPage() {
       }
       return
     }
-    if (forceDone && d > 30) p = d
+    if (reallyDone && d > 30) p = d
     const prev = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia.id))
     upsertHistory({
       id: `${selectedMedia.id}-${selectedMedia.type}-${selectedMedia.season || 0}-${selectedMedia.episode || 0}`,
@@ -622,7 +640,7 @@ export default function PlayerPage() {
       episode: selectedMedia.episode,
       watchedAt: new Date().toISOString(),
       profileId: useStore.getState().currentProfile?.id || 'default',
-      completed: forceDone || (d > 30 && p / d >= 0.9),
+      completed: reallyDone,
     })
   }
 
@@ -856,12 +874,10 @@ export default function PlayerPage() {
                 <button type="button" onClick={() => setSubBg((v) => !v)} style={{ color: '#fff', background: 'transparent', border: 'none', padding: 6 }}>{subBg ? 'Sub box on' : 'Sub box off'}</button>
               </div>
             )}
-            <button type="button" title="Sources" onClick={() => setSrcOpen((v) => !v)} style={{ width: 36, height: 36, borderRadius: 8, border: 'none', background: 'rgba(0,0,0,0.55)', color: '#fff', cursor: 'pointer' }}>⋯</button>
-            <button type="button" title="Fit / Crop / Fill" onClick={() => setFit((f) => f === 'contain' ? 'cover' : f === 'cover' ? 'fill' : 'contain')} style={{ minWidth: 52, height: 36, borderRadius: 8, border: 'none', background: '#FF1493', color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
+            <button type="button" title="Sources" onClick={() => setSrcOpen((v) => !v)} style={{ width: 36, height: 36, borderRadius: 8, border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer' }}>⋯</button>
+            <button type="button" title="Subtitles" onClick={() => { setSubtitleEnabled((v) => !v); setSrcOpen(true) }} style={{ width: 36, height: 36, borderRadius: 8, border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>CC</button>
+            <button type="button" title="Fit / Crop / Fill" onClick={() => setFit((f) => f === 'contain' ? 'cover' : f === 'cover' ? 'fill' : 'contain')} style={{ minWidth: 36, height: 36, borderRadius: 8, border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
               {fit === 'cover' ? 'Crop' : fit === 'fill' ? 'Fill' : 'Fit'}
-            </button>
-            <button type="button" title="Fullscreen" onClick={() => toggleFullscreen()} style={{ minWidth: 52, height: 36, borderRadius: 8, border: 'none', background: 'rgba(0,0,0,0.65)', color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
-              {fullscreen ? 'Exit' : 'Full'}
             </button>
           </div>
         )}

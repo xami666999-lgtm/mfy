@@ -33,6 +33,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setSetupComplete: () => ipcRenderer.invoke('set-setup-complete'),
 
   // Auto-update
+  onPlayerEscape: (cb: () => void) => {
+    const listener = () => cb()
+    ipcRenderer.on('mfy-player-escape', listener)
+    return () => ipcRenderer.removeListener('mfy-player-escape', listener)
+  },
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
   installUpdate: () => ipcRenderer.invoke('install-update'),
   onUpdateDownloaded: (cb: (info: any) => void) => {
