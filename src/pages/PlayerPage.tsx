@@ -221,9 +221,22 @@ export default function PlayerPage() {
     const resume = () => {
       apply()
       const at = Number((selectedMedia as any)?.resumeAt || useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id) && h.season === selectedMedia?.season && h.episode === selectedMedia?.episode)?.progress || 0)
-      if (at > 8) {
-        try { w.executeJavaScript(`(() => { const v = document.querySelector('video'); if (v && v.currentTime < ${at - 2}) v.currentTime = ${at}; })()`) } catch {}
-      }
+      try {
+        w.executeJavaScript(`(() => {
+          const kick = () => {
+            document.querySelectorAll('video').forEach((v) => {
+              v.muted = false; v.defaultMuted = false; v.volume = 1;
+              const p = v.play(); if (p && p.catch) p.catch(() => {})
+            })
+            document.querySelectorAll('button, [class], [aria-label]').forEach((el) => {
+              const t = ((el.getAttribute && el.getAttribute('aria-label')) || el.textContent || el.className || '').toString().toLowerCase()
+              if (/unmute|sound on|volume/.test(t) && /mute/.test(t)) el.click()
+            })
+          }
+          kick(); setTimeout(kick, 400); setTimeout(kick, 1200); setTimeout(kick, 2500);
+          ${at > 8 ? `const v = document.querySelector('video'); if (v && v.currentTime < ${at - 2}) v.currentTime = ${at};` : ''}
+        })()`)
+      } catch {}
     }
     w.addEventListener('dom-ready', resume)
     setTimeout(resume, 1500)
@@ -692,7 +705,7 @@ export default function PlayerPage() {
             allowpopups="false"
             allowfullscreen="true"
             useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-            webpreferences="allowRunningInsecureContent, javascript=yes"
+            webpreferences="allowRunningInsecureContent, javascript=yes, autoplayPolicy=no-user-gesture-required"
           />
         )}
         {loaded && !error && !isPlayerEmbedUrl(streamUrl) && (

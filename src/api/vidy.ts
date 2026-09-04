@@ -68,7 +68,8 @@ export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId:
     return type === 'movie' ? `https://vidsrc.me/embed/movie/${tmdbId}` : `https://vidsrc.me/embed/tv/${tmdbId}/${s}/${e}`
   }
   if (source === 'simplstream') {
-    return type === 'movie' ? `https://vidlink.pro/movie/${tmdbId}` : `https://vidlink.pro/tv/${tmdbId}/${s}/${e}`
+    const extra = 'autoPlay=true&muted=false&autoplay=1'
+    return type === 'movie' ? `https://vidlink.pro/movie/${tmdbId}?${extra}` : `https://vidlink.pro/tv/${tmdbId}/${s}/${e}?${extra}`
   }
   if (type === 'movie') return `https://vidsrc.me/embed/movie/${tmdbId}`
   return `https://vidsrc.me/embed/tv/${tmdbId}/${s}/${e}`
