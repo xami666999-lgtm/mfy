@@ -329,14 +329,14 @@ export default function Board() {
           <div className="media-row-header"><h2 className="media-row-title">Franchises</h2></div>
           <div className="scroll-row">
             {[
-              { id: 'marvel', name: 'Marvel' },
-              { id: 'dc', name: 'DC' },
-              { id: 'starwars', name: 'Star Wars' },
-              { id: 'hp', name: 'Harry Potter' },
-              { id: 'nfs', name: 'Need for Speed' },
-              { id: 'nick', name: 'Nickelodeon' },
+              { id: 'marvel', name: 'Marvel', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Marvel_Logo.svg/320px-Marvel_Logo.svg.png' },
+              { id: 'dc', name: 'DC', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/DC_Comics_logo.svg/200px-DC_Comics_logo.svg.png' },
+              { id: 'starwars', name: 'Star Wars', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Star_Wars_Logo.svg/320px-Star_Wars_Logo.svg.png' },
+              { id: 'hp', name: 'Harry Potter', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Harry_Potter_wordmark.svg/320px-Harry_Potter_wordmark.svg.png' },
+              { id: 'nfs', name: 'Need for Speed', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Need_for_Speed_logo.svg/320px-Need_for_Speed_logo.svg.png' },
+              { id: 'nick', name: 'Nickelodeon', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Nickelodeon_2009_logo.svg/320px-Nickelodeon_2009_logo.svg.png' },
             ].map((f) => (
-              <button key={f.id} type="button" className="shrink-0 h-16 px-5 rounded-2xl bg-[#FF1493]/15 border border-[#FF1493]/30 text-sm font-semibold" onClick={() => {
+              <button key={f.id} type="button" className="shrink-0 h-16 px-4 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3 hover:bg-white/10" onClick={() => {
                 if (f.id === 'marvel' || f.id === 'dc' || f.id === 'starwars' || f.id === 'nick') {
                   addonCatalog(f.id as any).then((list) => {
                     const hit = list[0]
@@ -348,7 +348,9 @@ export default function Board() {
                   const hit = d?.results?.[0]
                   if (hit) goDetail(hit, 'movie')
                 })
-              }}>{f.name}</button>
+              }}>
+                <img src={f.logo} alt={f.name} className="h-8 w-auto max-w-[120px] object-contain" />
+              </button>
             ))}
           </div>
         </section>
@@ -363,26 +365,27 @@ export default function Board() {
             onOpen={(h) => { setSelectedMedia({ id: h.id, type: h.media_type, season: h.season, episode: h.episode }); setCurrentPage('detail') }}
           />
         )}
+        <Shelf title="Top 10 Popular Movies" items={(nowPlaying.length ? nowPlaying : movies).slice(0, 10)} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
+        <Shelf title="Top 10 Popular TV Shows" items={(shows.length ? shows : onTheAir).slice(0, 10)} onOpen={(i) => goDetail(i, 'tv')} viewAll={() => setCurrentPage('tv')} />
+        <Shelf title="Trending Today" items={trending} onOpen={goDetail} />
+        <Shelf title="Now Playing" items={nowPlaying} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
+        <Shelf title="Airing Now" items={onTheAir} onOpen={(i) => goDetail(i, 'tv')} viewAll={() => setCurrentPage('tv')} />
+        {recommended.length > 0 && <Shelf title="Recommended For You" items={recommended} onOpen={goDetail} />}
+        <Shelf title="Because you liked" items={tasteRecs} onOpen={(i) => goDetail(i, i.media_type === 'tv' ? 'tv' : 'movie')} />
+        <Shelf title="Popular Movies" items={movies} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
+        <Shelf title="Popular TV" items={shows} onOpen={(i) => goDetail(i, 'tv')} viewAll={() => setCurrentPage('tv')} />
         <Shelf title="Marvel" items={marvelCat.length ? marvelCat : mcu} onOpen={(i) => goDetail(i, i.media_type === 'tv' ? 'tv' : 'movie')} />
         <Shelf title="DC" items={dcCat} onOpen={(i) => goDetail(i, i.media_type === 'tv' ? 'tv' : 'movie')} />
         <Shelf title="Star Wars" items={swCat} onOpen={(i) => goDetail(i, i.media_type === 'tv' ? 'tv' : 'movie')} />
         <Shelf title="Harry Potter" items={hpCat} onOpen={(i) => goDetail(i, 'movie')} />
         <Shelf title="Need for Speed" items={nfsCat} onOpen={(i) => goDetail(i, 'movie')} />
         <Shelf title="Nickelodeon" items={nickCat} onOpen={(i) => goDetail(i, i.media_type === 'tv' ? 'tv' : 'movie')} />
-        <Shelf title="Because you liked" items={tasteRecs} onOpen={(i) => goDetail(i, i.media_type === 'tv' ? 'tv' : 'movie')} />
         <Shelf title="MCU" items={mcu} onOpen={(i) => goDetail(i, 'movie')} />
         <Shelf title="Studio Ghibli" items={ghibli} onOpen={(i) => goDetail(i, 'movie')} />
         <Shelf title="One sitting" items={shorties} onOpen={(i) => goDetail(i, 'movie')} />
         <Shelf title="A24" items={a24} onOpen={(i) => goDetail(i, 'movie')} />
         <Shelf title="Pixar" items={pixar} onOpen={(i) => goDetail(i, 'movie')} />
         <Shelf title="Kids" items={kids} onOpen={(i) => goDetail(i, 'movie')} />
-        <Shelf title="Top 10 on MFY" items={movies.slice(0, 10)} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
-        <Shelf title="Trending Today" items={trending} onOpen={goDetail} />
-        <Shelf title="Now Playing" items={nowPlaying} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
-        <Shelf title="Airing Now" items={onTheAir} onOpen={(i) => goDetail(i, 'tv')} viewAll={() => setCurrentPage('tv')} />
-        {recommended.length > 0 && <Shelf title="Recommended For You" items={recommended} onOpen={goDetail} />}
-        <Shelf title="Popular Movies" items={movies} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
-        <Shelf title="Popular TV" items={shows} onOpen={(i) => goDetail(i, 'tv')} viewAll={() => setCurrentPage('tv')} />
 
         {MOVIE_GENRES.map((g) => (
           <Shelf key={`m-${g.id}`} title={`Movies · ${g.name}`} items={genreMovie[g.id] || []} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
