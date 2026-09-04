@@ -74,6 +74,15 @@ const AD_DOMAINS = [
   'tsyndicate.com',
   'juicyads.com',
   'mgid.com',
+  'popcash.net',
+  'popunder.net',
+  'ad-maven.com',
+  'onclickgenius.com',
+  'onclickmega.com',
+  'onclickprediction.com',
+  'profitableratecpm.com',
+  'highperformanceformat.com',
+  'offpageads.com',
 ]
 
 const AD_PATTERNS = [

@@ -363,6 +363,21 @@ export default function PlayerPage() {
   }, [selectedMedia?.id, selectedMedia?.episode, playerSource])
 
   useEffect(() => {
+    const id = setInterval(async () => {
+      try {
+        const w = document.querySelector('webview') as any
+        const got = await w?.executeJavaScript?.(`(() => { const v = document.querySelector('video'); if (!v) return null; return { p: v.currentTime || 0, d: v.duration || 0, paused: !!v.paused } })()`)
+        if (got) {
+          if (Number(got.p) >= 0) setProgress(Number(got.p))
+          if (Number.isFinite(Number(got.d)) && Number(got.d) > 1) setDur(Number(got.d))
+          setPlaying(!got.paused)
+        }
+      } catch {}
+    }, 400)
+    return () => clearInterval(id)
+  }, [streamUrl])
+
+  useEffect(() => {
     startedAt.current = Date.now()
     setShowUI(true)
     const id = setTimeout(() => setShowUI(false), 2500)
@@ -567,8 +582,19 @@ export default function PlayerPage() {
 
   function togglePlay() {
     const v = videoRef.current
-    if (!v || isPlayerEmbedUrl(streamUrl)) return
-    v.paused ? v.play().catch(() => {}) : v.pause()
+    if (v && !isPlayerEmbedUrl(streamUrl)) {
+      v.paused ? v.play().catch(() => {}) : v.pause()
+      return
+    }
+    try {
+      const w = document.querySelector('webview') as any
+      w?.executeJavaScript?.(`(() => {
+        const v = document.querySelector('video')
+        if (!v) return false
+        if (v.paused) { const p = v.play(); if (p && p.catch) p.catch(() => {}); return true }
+        v.pause(); return false
+      })()`).then((playingNow: boolean) => { if (typeof playingNow === 'boolean') setPlaying(playingNow) }).catch(() => {})
+    } catch {}
   }
 
   function changeRate(r: number) {
@@ -814,7 +840,7 @@ export default function PlayerPage() {
     {showRate && (
         <RateModal title={title} kind={isAnimeItem(selectedMedia) ? 'anime' : (selectedMedia?.type === 'movie' ? 'movie' : 'tv')} onSubmit={(s, n) => finishRate(s, n)} onSkip={() => finishRate()} />
       )}
-        <div className="mfy-player" onMouseMove={onMouseMove} onMouseLeave={hideChrome} style={{ background: '#000', minHeight: '100vh', cursor: showUI ? 'default' : 'none' }}>
+        <div className="mfy-player" onMouseMove={onMouseMove} style={{ background: '#000', minHeight: '100vh', cursor: showUI ? 'default' : 'none' }}>
       <button type="button" onClick={goBack} title="Exit player"
         style={{ position: 'fixed', top: 14, left: 14, zIndex: 400, background: '#FF1493', color: '#fff', border: 'none', borderRadius: 999, padding: '8px 16px', cursor: 'pointer', fontWeight: 800, fontSize: 12, letterSpacing: 0.4, boxShadow: '0 6px 20px rgba(255,20,147,0.35)', opacity: showUI ? 1 : 0.92 }}>
         ← Exit
@@ -861,7 +887,10 @@ export default function PlayerPage() {
         </div>
       </div>}
 
-      <div className="player-stage" onClick={togglePlay} style={{ position: 'relative', width: '100%', height: '100vh', minHeight: '100vh', overflow: 'hidden' }}>
+      <div className="player-stage" style={{ position: 'relative', width: '100%', height: '100vh', minHeight: '100vh', overflow: 'hidden' }}
+        onMouseMove={onMouseMove}
+        onClick={(e) => { if ((e.target as HTMLElement).closest('button, input, a, .mfy-bar')) return; togglePlay() }}
+      >
         {(gate || (!loaded && !error)) && (
           <div style={{
             position: 'absolute', inset: 0, zIndex: 40,
@@ -919,7 +948,7 @@ export default function PlayerPage() {
               background: '#000',
               transform: fit === 'cover' ? 'scale(1.28)' : fit === 'fill' ? 'scaleX(1.12) scaleY(1.18)' : 'scale(1)',
               transformOrigin: 'center center',
-              pointerEvents: showUI ? 'none' : 'auto',
+              pointerEvents: 'none',
             }}
             allowpopups="false"
             allowfullscreen="true"
@@ -931,54 +960,41 @@ export default function PlayerPage() {
           <video ref={videoRef} playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: fit, background: '#000' }} />
         )}
 
-        {showUI && loaded && !error && isPlayerEmbedUrl(streamUrl) && (
-          <div style={{ position: 'absolute', bottom: 18, right: 18, zIndex: 90, display: 'flex', alignItems: 'center', gap: 8, pointerEvents: 'auto' }}>
-            {srcOpen && (
-              <div style={{ position: 'absolute', bottom: 42, left: 0, background: '#120a12', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 8, minWidth: 160 }}>
-                {((isOnePiece(String((selectedMedia as any)?.title||'')) ? (['onepace'] as PlayerSource[]) : (isAnimeItem(selectedMedia) ? ANIME_SOURCES : MOVIE_TV_SOURCES))).map((s) => (
-                  <button key={s} type="button" onClick={() => { setPlayerSource(s); failTried.current = []; setSrcOpen(false); try { localStorage.setItem('mfy-player-engine', s) } catch {} }}
-                    style={{ display: 'block', width: '100%', textAlign: 'left', background: playerSource === s ? '#FF1493' : 'transparent', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', fontSize: 12, cursor: 'pointer' }}>
-                    {sourceNames[s] || s}
-                  </button>
-                ))}
-                <button type="button" onClick={() => setSubSize((n) => Math.max(0.4, +(n - 0.1).toFixed(2)))} style={{ color: '#fff', background: 'transparent', border: 'none', padding: 6 }}>Subs −</button>
-                <button type="button" onClick={() => setSubSize((n) => Math.min(1.4, +(n + 0.1).toFixed(2)))} style={{ color: '#fff', background: 'transparent', border: 'none', padding: 6 }}>Subs +</button>
-                <button type="button" onClick={() => setSubBg((v) => !v)} style={{ color: '#fff', background: 'transparent', border: 'none', padding: 6 }}>{subBg ? 'Sub box on' : 'Sub box off'}</button>
-              </div>
-            )}
-            <button type="button" title="Sources" onClick={() => setSrcOpen((v) => !v)} style={{ width: 36, height: 36, borderRadius: 8, border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer' }}>⋯</button>
-            <button type="button" title="Subtitles" onClick={() => { setSubtitleEnabled((v) => !v); setSrcOpen(true) }} style={{ width: 36, height: 36, borderRadius: 8, border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>CC</button>
-            <button type="button" title="Fit / Crop / Fill" onClick={() => setFit((f) => f === 'contain' ? 'cover' : f === 'cover' ? 'fill' : 'contain')} style={{ minWidth: 36, height: 36, borderRadius: 8, border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
-              {fit === 'cover' ? 'Crop' : fit === 'fill' ? 'Fill' : 'Fit'}
-            </button>
-          </div>
-        )}
-        {showUI && loaded && !error && !isPlayerEmbedUrl(streamUrl) && (
-          <div className={cn('player-controls', showUI ? 'visible' : 'hidden')} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 20, padding: '16px 24px 24px', background: 'linear-gradient(0deg, rgba(0,0,0,0.95) 0%, transparent 100%)', pointerEvents: 'auto' }}>
-            <div className="player-progress" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); seek(((e.clientX - r.left) / r.width) * dur) }} style={{ cursor: 'pointer', height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 2, marginBottom: 12 }}>
-              <div className="player-progress-fill" style={{ height: '100%', background: '#FF1493', borderRadius: 2, transition: 'width 0.1s linear', width: `${dur ? Math.min(100, (progress / dur) * 100) : 0}%` }} />
-            </div>
-            <div className="player-control-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-              <div className="player-left-controls" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button onClick={() => seekBy(-5)} title="Rewind 5s" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><SkipBack size={20} /></button>
-                <button className="player-main-play" onClick={togglePlay} style={{ background: '#FF1493', border: 'none', borderRadius: '50%', padding: 12, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{playing ? <Pause size={24} /> : <Play size={24} />}</button>
-                <button onClick={() => seekBy(5)} title="Forward 5s" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><SkipForward size={20} /></button>
-                {selectedMedia?.type === 'tv' && selectedMedia.season !== undefined && selectedMedia.episode !== undefined && (
-                  <>
-                    <button onClick={() => goToEpisode(selectedMedia.season!, (selectedMedia.episode || 1) - 1)} title="Previous episode" disabled={selectedMedia.episode === 1} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: selectedMedia.episode === 1 ? 0.5 : 1 }}><SkipBack size={18} /></button>
-                    <button onClick={() => goToEpisode(selectedMedia.season!, (selectedMedia.episode || 1) + 1)} title="Next episode" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><SkipForward size={18} /></button>
-                  </>
-                )}
-                <button onClick={() => { const next = !muted; setMuted(next); if (videoRef.current) videoRef.current.muted = next }} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{muted ? <VolumeX size={20} /> : <Volume2 size={20} />}</button>
-                <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : vol} onChange={(e) => { const value = Number(e.target.value); setVol(value); setMuted(value === 0); if (videoRef.current) { videoRef.current.volume = value; videoRef.current.muted = value === 0 } }} style={{ width: 80, accentColor: '#FF1493' }} />
-                <span style={{ color: 'white/70', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>{fmt(progress)} / {fmt(dur)}</span>
-              </div>
-              <div className="player-right-controls" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button title="Playback speed" onClick={() => { const speeds = [1, 1.25, 1.5, 1.75, 2, 0.5, 0.75]; const next = speeds[(speeds.indexOf(rate) + 1) % speeds.length]; changeRate(next) }} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', color: 'white', fontSize: 11, fontWeight: 600 }}>{rate}x</button>
-                <button title="Picture in Picture" onClick={() => togglePip(videoRef.current)} type="button" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Settings2 size={18} /></button>
-                <button onClick={toggleFullscreen} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{fullscreen ? <Minimize size={20} /> : <Maximize size={20} />}</button>
-              </div>
-            </div>
+        {showUI && loaded && !error && (
+          <div className="mfy-bar" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 300, padding: '18px 22px 20px', background: 'linear-gradient(0deg, rgba(0,0,0,0.92) 0%, transparent 100%)', pointerEvents: 'auto' }}
+            onClick={(e) => e.stopPropagation()}>
+            {(() => {
+              const total = expectedSec > 0 ? Math.max(expectedSec, Number.isFinite(dur) ? dur : 0) : (Number.isFinite(dur) ? dur : 0)
+              const left = Math.max(0, total - progress)
+              const pct = total > 0 ? Math.min(100, (progress / total) * 100) : 0
+              return (
+                <>
+                  <div onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); if (total > 0) seek((e.clientX - r.left) / r.width * total) }}
+                    style={{ cursor: 'pointer', height: 5, background: 'rgba(255,255,255,0.18)', borderRadius: 99, marginBottom: 12 }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: '#FF1493', borderRadius: 99 }} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <button type="button" onClick={() => seekBy(-5)} title="-5s" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, color: '#fff', cursor: 'pointer' }}><SkipBack size={18} /></button>
+                      <button type="button" onClick={togglePlay} style={{ background: '#FF1493', border: 'none', borderRadius: '50%', padding: 10, color: '#fff', cursor: 'pointer' }}>{playing ? <Pause size={22} /> : <Play size={22} />}</button>
+                      <button type="button" onClick={() => seekBy(5)} title="+5s" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, color: '#fff', cursor: 'pointer' }}><SkipForward size={18} /></button>
+                      <span style={{ color: '#fff', fontSize: 13, fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                        {fmt(progress)} / {fmt(total || dur)}
+                      </span>
+                      <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
+                        −{fmt(left)}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <button type="button" onClick={() => setSubSize((n) => Math.max(0.4, +(n - 0.1).toFixed(2)))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>CC−</button>
+                      <button type="button" onClick={() => setSubSize((n) => Math.min(1.4, +(n + 0.1).toFixed(2)))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>CC+</button>
+                      <button type="button" onClick={() => setFit((f) => f === 'contain' ? 'cover' : f === 'cover' ? 'fill' : 'contain')} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{fit === 'cover' ? 'Crop' : fit === 'fill' ? 'Fill' : 'Fit'}</button>
+                      <button type="button" onClick={toggleFullscreen} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, color: '#fff', cursor: 'pointer' }}>{fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}</button>
+                    </div>
+                  </div>
+                </>
+              )
+            })()}
           </div>
         )}
       </div>
