@@ -1,26 +1,11 @@
 import { useEffect, useState } from 'react'
-import { jikan } from '../api/jikan'
-import { anilist } from '../api/anilist'
-import { fireflyManga } from '../api/fireflyManga'
-import { OFFLINE_MANGA, OFFLINE_COMICS, OFFLINE_BOOKS } from '../data/offlineCatalog'
+import { mal, MAL_RANKS, MAL_GENRES } from '../api/mal'
 import { useStore } from '../store'
+import { MediaShelf } from '../components/MediaShelf'
+import PageHero from '../components/PageHero'
 
-function offlineCards() {
-  return (OFFLINE_MANGA || []).map((m: any) => ({
-    ...m,
-    image: m.coverImage || m.image,
-    poster_path: m.coverImage || m.image,
-    media_type: 'manga',
-  }))
-}
-
-function offlineComics() {
-  return (OFFLINE_COMICS || []).map((m: any) => ({
-    ...m,
-    image: m.image,
-    poster_path: m.poster_path || m.image,
-    media_type: 'comics',
-  }))
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms))
 }
 
 async function openLibrary(q: string) {
@@ -35,126 +20,98 @@ async function openLibrary(q: string) {
     media_type: 'comics',
   }))
 }
-import { MediaShelf } from '../components/MediaShelf'
-import PageHero from '../components/PageHero'
-
-function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms))
-}
-
-function aniCard(m: any) {
-  return {
-    id: m.id,
-    title: m.title?.english || m.title?.romaji || m.title,
-    name: m.title?.english || m.title?.romaji,
-    coverImage: m.coverImage,
-    image: m.coverImage?.large || m.coverImage?.medium,
-    poster_path: m.coverImage?.large || m.coverImage?.medium,
-    overview: m.description,
-    averageScore: m.averageScore,
-    score: m.averageScore ? m.averageScore/10 : 0,
-    media_type: 'manga',
-  }
-}
 
 export default function PrintHome({ kind }: { kind: 'manga' | 'comics' | 'novels' }) {
   const { setSelectedMedia, setCurrentPage } = useStore()
-  const [popular, setPopular] = useState<any[]>(kind === 'comics' ? offlineComics() : offlineCards())
-  const [rows, setRows] = useState<Record<string, any[]>>({})
+  const [popular, setPopular] = useState<any[]>([])
+  const [publishing, setPublishing] = useState<any[]>([])
+  const [ranks, setRanks] = useState<Record<string, any[]>>({})
+  const [genres, setGenres] = useState<Record<number, any[]>>({})
   const title = kind === 'comics' ? 'Comics' : kind === 'novels' ? 'Novels' : 'Manga'
 
   function open(item: any) {
-    const name = item.title?.english || item.title?.romaji || item.title || item.name || String(item.id)
+    const name = item.title || item.name || String(item.id)
     setSelectedMedia({
       id: item.id || item.mal_id || name,
       type: kind === 'comics' ? 'comics' : kind === 'novels' ? 'novel' : 'manga',
       title: name,
-      poster_path: item.poster_path || item.image || (typeof item.coverImage === 'string' ? item.coverImage : item.coverImage?.large),
-      overview: item.overview || item.description,
+      poster_path: item.poster_path || item.image,
+      overview: item.overview,
     } as any)
     setCurrentPage('manga-detail')
   }
 
   useEffect(() => {
     let live = true
+    setPopular([])
+    setPublishing([])
+    setRanks({})
+    setGenres({})
+
     ;(async () => {
-      if (kind === 'novels') {
-        const seed = (OFFLINE_BOOKS || []).map((b: any) => ({ ...b, poster_path: b.image, media_type: 'novel' }))
-        setPopular(seed)
-        const [novels, light] = await Promise.all([
-          jikan.topByType('novel', 1).catch(() => []),
-          jikan.topByType('lightnovel', 1).catch(() => []),
-        ])
-        if (!live) return
-        const extra: Record<string, any[]> = { Novels: novels.length ? novels : seed, 'Light novels': light }
-        const names = ['Overlord', 'Re:Zero', 'Mushoku Tensei', 'Classroom of the Elite', 'Spice and Wolf', 'Monogatari']
-        for (const q of names) {
-          extra[q] = await jikan.searchManga(q, 1).catch(() => [])
-          await sleep(350)
-          if (!live) return
-          setRows({ ...extra })
-        }
-        setPopular((novels.length ? novels : light).filter((x: any) => x.image || x.coverImage))
-        setRows(extra)
-        return
-      }
       if (kind === 'comics') {
-        setPopular(offlineComics())
         const names = ['Marvel comics', 'DC comics', 'Spider-Man comic', 'Batman comic', 'X-Men comic', 'Watchmen']
-        const extra: Record<string, any[]> = { 'MFY comics': offlineComics() }
         const bags = await Promise.all(names.map((q) => openLibrary(q).catch(() => [])))
-        names.forEach((q, i) => { extra[q] = bags[i] })
-        const flat = bags.flat()
         if (!live) return
-        setRows(extra)
-        setPopular(flat.length ? flat.slice(0, 24) : offlineComics())
+        const extra: Record<string, any[]> = {}
+        names.forEach((q, i) => { extra[q] = bags[i] })
+        setRanks(extra)
+        setPopular(bags.flat().slice(0, 30))
         return
       }
-      const [top1, ani, novels, light, ff] = await Promise.all([
-        jikan.topManga(1).catch(() => []),
-        anilist.getPopular('MANGA', 1, 40).then((p) => (p?.media || []).map(aniCard)).catch(() => []),
-        jikan.topByType('novel', 1).catch(() => []),
-        jikan.topByType('lightnovel', 1).catch(() => []),
-        fireflyManga.latest().catch(() => []),
+
+      if (kind === 'novels') {
+        const novels = await mal.ranking('novels', 50).catch(() => [])
+        if (!live) return
+        setPopular(novels)
+        setRanks({ Novels: novels })
+        const more = ['Overlord', 'Re:Zero', 'Mushoku Tensei', 'Spice and Wolf']
+        for (const q of more) {
+          const list = await mal.search(q).catch(() => [])
+          if (!live) return
+          setRanks((prev) => ({ ...prev, [q]: list }))
+          await sleep(250)
+        }
+        return
+      }
+
+      const [all, publishingNow] = await Promise.all([
+        mal.ranking('all', 100).catch(() => []),
+        mal.publishing().catch(() => []),
       ])
-      const more: any[] = []
-      for (const page of [2, 3, 4]) {
-        const bag = await jikan.topManga(page).catch(() => [])
-        more.push(...bag)
-        await sleep(350)
-        if (!live) return
-      }
-      const top = [...top1, ...more].filter((x: any) => x.media_type !== 'tv' && x.media_type !== 'movie')
       if (!live) return
-      const extra: Record<string, any[]> = {
-        'Top manga': top.length ? top : offlineCards(),
-        'AniList manga': ani,
-        Novels: novels.length ? novels : (OFFLINE_BOOKS || []).map((b: any) => ({ ...b, poster_path: b.image, media_type: 'novel' })),
-        'Light novels': light,
-        'FireFly latest': ff,
-      }
-      const livePop = (top.length ? top : ani).filter((x: any) => x.image || x.coverImage || x.poster_path)
-      setPopular(livePop.length ? livePop : offlineCards())
-      setRows({ ...extra })
-      const titles = ['One Piece', 'Naruto', 'Berserk', 'Vagabond', 'Chainsaw Man', 'Jujutsu Kaisen', 'Bleach', 'Hunter x Hunter', 'Tokyo Ghoul', 'Demon Slayer', 'My Hero Academia', 'Death Note']
-      for (const q of titles) {
-        extra[q] = await jikan.searchManga(q, 1).catch(() => [])
-        await sleep(350)
+      setPopular(all.filter((x) => x.poster_path || x.image))
+      setPublishing(publishingNow.filter((x) => x.poster_path || x.image))
+
+      for (const rank of MAL_RANKS.filter((r) => r.id !== 'all')) {
+        const list = await mal.ranking(rank.id, 50).catch(() => [])
         if (!live) return
-        setRows({ ...extra })
+        setRanks((prev) => ({ ...prev, [rank.name]: list.filter((x) => x.poster_path || x.image) }))
+        await sleep(200)
       }
-      setRows(extra)
+
+      for (const g of MAL_GENRES) {
+        const list = await mal.genre(g.id).catch(() => [])
+        if (!live) return
+        setGenres((prev) => ({ ...prev, [g.id]: list.filter((x) => x.poster_path || x.image) }))
+        await sleep(350)
+      }
     })()
+
     return () => { live = false }
   }, [kind])
 
   return (
     <div className="board page-fade-enter">
-      <PageHero item={popular[0]} kicker={title.toUpperCase()} onPlay={() => popular[0] && open(popular[0])} />
+      <PageHero item={popular[0] || publishing[0]} kicker={title.toUpperCase()} onPlay={() => (popular[0] || publishing[0]) && open(popular[0] || publishing[0])} />
       <div className="board-content px-6 pt-6">
         <MediaShelf title={`Popular ${title}`} items={popular} onOpen={open} />
-        {Object.entries(rows).map(([g, list]) => (
-          <MediaShelf key={g} title={g} items={list} onOpen={open} />
+        {kind === 'manga' && <MediaShelf title="Publishing now" items={publishing} onOpen={open} />}
+        {Object.entries(ranks).map(([name, list]) => (
+          <MediaShelf key={name} title={name} items={list} onOpen={open} />
+        ))}
+        {kind === 'manga' && MAL_GENRES.map((g) => (
+          <MediaShelf key={g.id} title={g.name} items={genres[g.id] || []} onOpen={open} />
         ))}
       </div>
     </div>
