@@ -73,6 +73,10 @@ export default function MangaReader() {
         if (!live) return
         setChapters(list)
         if (!list.length) setErr('No readable chapters yet')
+        else {
+          const first = list[0]
+          openChapter(first.id, first.ff).catch(() => {})
+        }
       } catch {
         try {
           const hits = await fireflyManga.search(cleanTitle(title) || title)
@@ -144,17 +148,6 @@ export default function MangaReader() {
       )}
       {err && <p className="text-red-400 text-sm mb-4">{err}</p>}
       {loading && <p className="text-white/40 text-sm">Loading chapters…</p>}
-      {!loading && !pages.length && (
-        <div className="mt-4 min-h-[70vh] rounded-2xl overflow-hidden bg-black">
-          <iframe
-            title="manga-web"
-            src={`https://mangadex.org/titles?q=${encodeURIComponent(cleanTitle(title) || title)}`}
-            className="w-full"
-            style={{ height: '75vh', border: 0, background: '#000' }}
-            allow="fullscreen"
-          />
-        </div>
-      )}
       {pages.length > 0 ? (
         <div>
           <div className="flex items-center justify-between mb-3">

@@ -268,8 +268,9 @@ export default function MetaDetails() {
   }
 
   function goBack() {
+    const anime = isAnimeItem(selectedMedia as any)
     setSelectedMedia(null)
-    setCurrentPage('home')
+    setCurrentPage(anime ? 'anime' : selectedMedia?.type === 'movie' ? 'movies' : selectedMedia?.type === 'tv' ? 'tv' : 'home')
   }
 
   if (loading) return (
@@ -895,11 +896,7 @@ onKeyDown={(e) => {
                       return
                     }
                     setCurrentStreamUrl(s.url)
-                    if (externalPlayer && externalPlayer !== '' && !isTorrent) {
-                      ;(window as any).electronAPI?.openExternal?.(s.url)
-                    } else {
-                      setCurrentPage('player')
-                    }
+                    setCurrentPage('player')
                   }}
                   className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] text-left transition-all"
                 >

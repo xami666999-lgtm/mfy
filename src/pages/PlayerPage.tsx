@@ -96,17 +96,8 @@ export default function PlayerPage() {
     if (isOnePiece(title)) src = 'onepace'
     else if (anime && !(ANIME_SOURCES as string[]).includes(src) && src !== 'onepace') src = 'zangetsu'
     else if (!anime && !(MOVIE_TV_SOURCES as string[]).includes(src)) src = 'playtorrio'
-    if (src === 'moviebox') {
-      const name = String((selectedMedia as any).title || (selectedMedia as any).name || title || '')
-      const q = name || String(selectedMedia.id)
-      setStreamUrl(`https://moviebox.ph/web/searchResult?keyword=${encodeURIComponent(q)}`)
-      setLoaded(true)
-      setLoading(false)
-      setError('')
-      return
-    }
-    if (src === 'animepahe') {
-      setStreamUrl('https://animepahe.ru/')
+    if (src === 'moviebox' || src === 'animepahe' || src === 'pengu') {
+      setStreamUrl(getPlayerUrl(src, selectedMedia.type === 'movie' ? 'movie' : 'tv', selectedMedia.id, selectedMedia.season, selectedMedia.episode, anime))
       setLoaded(true)
       setLoading(false)
       setError('')
@@ -752,8 +743,8 @@ export default function PlayerPage() {
   function goBack() {
     const sport = selectedMedia?.type === 'iptv' || /metegol|streamed|sport/i.test(streamUrl || '')
     if (sport) { leavePlayer('sports'); return }
-    if (selectedMedia?.id) { leavePlayer('detail'); return }
-    leavePlayer('home')
+    if (selectedMedia) { leavePlayer('detail'); return }
+    leavePlayer('anime')
   }
 
   function finishRate(score?: number, note?: string) {
@@ -978,6 +969,7 @@ export default function PlayerPage() {
                       <button type="button" onClick={() => seekBy(-5)} title="-5s" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, color: '#fff', cursor: 'pointer' }}><SkipBack size={18} /></button>
                       <button type="button" onClick={togglePlay} style={{ background: '#FF1493', border: 'none', borderRadius: '50%', padding: 10, color: '#fff', cursor: 'pointer' }}>{playing ? <Pause size={22} /> : <Play size={22} />}</button>
                       <button type="button" onClick={() => seekBy(5)} title="+5s" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, color: '#fff', cursor: 'pointer' }}><SkipForward size={18} /></button>
+                      <button type="button" onClick={() => seekBy(90)} title="Skip intro" style={{ background: '#FF1493', border: 'none', borderRadius: 8, padding: '8px 10px', color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>Skip intro</button>
                       <span style={{ color: '#fff', fontSize: 13, fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
                         {fmt(progress)} / {fmt(total || dur)}
                       </span>

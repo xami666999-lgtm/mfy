@@ -25,8 +25,8 @@ export function vidyAnimeUrl(anilistId: number | string, episode = 1): string {
 
 export type PlayerSource = 'vidy' | 'playtorrio' | 'simplstream' | 'zangetsu' | 'miruro' | 'mangayomi' | 'mediafusion' | 'flix' | 'nyaa' | 'animeflv' | 'onepace' | 'streamsppv' | 'sportsstreams' | 'moviebox' | 'vixsrc' | 'vidnest' | 'animepahe' | 'pengu' | 'pengu'
 
-export const ANIME_SOURCES: PlayerSource[] = ['zangetsu', 'miruro', 'animepahe', 'playtorrio', 'simplstream', 'vidy', 'vixsrc', 'vidnest', 'moviebox']
-export const MOVIE_TV_SOURCES: PlayerSource[] = ['playtorrio', 'simplstream', 'vidy', 'moviebox', 'vixsrc', 'vidnest']
+export const ANIME_SOURCES: PlayerSource[] = ['zangetsu', 'miruro', 'animepahe', 'playtorrio', 'simplstream', 'vidy', 'vixsrc', 'vidnest', 'moviebox', 'pengu']
+export const MOVIE_TV_SOURCES: PlayerSource[] = ['playtorrio', 'simplstream', 'vidy', 'moviebox', 'vixsrc', 'vidnest', 'pengu']
 
 export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId: number | string, season?: number, episode?: number, anime = false): string {
   const s = season ?? 1
@@ -50,7 +50,10 @@ export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId:
     return `https://vidfast.pro/tv/${tmdbId}/${s}/${e}`
   }
   if (source === 'moviebox') {
-    return `https://moviebox.ph/web/searchResult?keyword=${encodeURIComponent(String(tmdbId))}`
+    return type === 'movie' ? `https://embed.su/embed/movie/${tmdbId}` : `https://embed.su/embed/tv/${tmdbId}/${s}/${e}`
+  }
+  if (source === 'pengu') {
+    return type === 'movie' ? `https://vidsrc.cc/v2/embed/movie/${tmdbId}` : `https://vidsrc.cc/v2/embed/tv/${tmdbId}/${s}/${e}`
   }
   if (source === 'vixsrc') {
     return type === 'movie' ? `https://vixsrc.to/movie/${tmdbId}` : `https://vixsrc.to/tv/${tmdbId}/${s}/${e}`
@@ -59,7 +62,7 @@ export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId:
     return type === 'movie' ? `https://vidnest.fun/movie/${tmdbId}` : `https://vidnest.fun/tv/${tmdbId}/${s}/${e}`
   }
   if (source === 'animepahe') {
-    return `https://animepahe.ru/`
+    return type === 'movie' ? `https://vidsrc.cc/v2/embed/movie/${tmdbId}` : `https://vidsrc.cc/v2/embed/tv/${tmdbId}/${s}/${e}`
   }
   if (source === 'mediafusion') {
     return `mfusion:${type}:${tmdbId}:${s}:${e}`
