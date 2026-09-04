@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { Trophy, Radio, ExternalLink, Loader2, Activity, Flag, Volleyball, Target, Gauge, Swords, Medal, Siren, Dumbbell, Skull, Bike, Sparkles, PlayCircle, X, Search, Filter } from 'lucide-react'
+import { Trophy, Radio, ExternalLink, Loader2, Activity, Flag, Volleyball, Target, Gauge, Swords, Medal, Siren, Dumbbell, Skull, Bike, Sparkles, PlayCircle, X, Search, Filter, SkipBack, SkipForward } from 'lucide-react'
 import { sportsApi, badgeUrl, posterUrl, timStreamsApi, type SportCategory, type SportMatch, type SportStream } from '../api/sports'
 import { iptvEnhancedApi } from '../api/iptv-enhanced'
 import { useStore } from '../store'
@@ -48,6 +48,8 @@ export default function Sports() {
   const [engine, setEngine] = useState<'streamed' | 'metegol' | 'nuvio'>('streamed')
   const [nuvio, setNuvio] = useState<any[]>([])
   const [watchUrl, setWatchUrl] = useState('')
+  const [watchQuality, setWatchQuality] = useState('')
+  const [watchList, setWatchList] = useState<SportStream[]>([])
   const [metegol, setMetegol] = useState<any[]>([])
   const [when, setWhen] = useState<'live' | 'upcoming' | 'finished'>('live')
   const [timLive, setTimLive] = useState<any[]>([])
@@ -181,7 +183,16 @@ export default function Sports() {
     setStreamError(feeds.length ? '' : 'No free feeds for this event.')
   }
 
+  function sportSeek(delta: number) {
+    try {
+      const w = document.querySelector('webview.mfy-sport') as any
+      w?.executeJavaScript?.(`document.querySelectorAll('video').forEach(v => { v.currentTime = Math.max(0, (v.currentTime||0) + (${delta})) })`)
+    } catch {}
+  }
+
   function playEmbed(url: string, title?: string) {
+    if (streams?.length) setWatchList(streams)
+    setWatchQuality(url)
     setActiveMatch(null)
     setStreams(null)
     if (multiView) {
@@ -225,9 +236,25 @@ export default function Sports() {
       <div className="flex-1 p-5 min-w-0">
       {watchUrl && (
         <div className="mb-5">
-          <button type="button" className="h-9 px-3 mb-2 rounded-full bg-white text-black text-sm font-semibold" onClick={() => setWatchUrl('')}>Back</button>
-          <div className="aspect-video rounded-xl overflow-hidden bg-black">
-            <iframe title="Sports" src={watchUrl} className="w-full h-full" allow="autoplay; fullscreen" allowFullScreen />
+          <button type="button" className="h-9 px-3 mb-2 rounded-full bg-white text-black text-sm font-semibold" onClick={() => { setWatchUrl(''); setWatchList([]) }}>Back</button>
+          <div className="aspect-video rounded-xl overflow-hidden bg-black relative">
+            {/* @ts-expect-error Electron webview */}
+            <webview className="mfy-sport" src={watchUrl} partition="persist:mfy" style={{ width: '100%', height: '100%', pointerEvents: 'auto' }} allowpopups="false" />
+            <div className="absolute left-0 right-0 bottom-0 z-20 flex items-center gap-2 px-3 py-2 bg-gradient-to-t from-black/90 to-transparent">
+              <button type="button" className="h-8 px-3 rounded-lg bg-white/10 text-white text-xs" onClick={() => sportSeek(-5)}>−5s</button>
+              <button type="button" className="h-8 px-3 rounded-lg bg-white/10 text-white text-xs" onClick={() => sportSeek(5)}>+5s</button>
+              <select
+                className="ml-auto h-8 rounded-lg bg-[#12121a] text-white text-xs border border-white/15 px-2"
+                value={watchQuality || watchUrl}
+                onChange={(e) => { setWatchQuality(e.target.value); setWatchUrl(e.target.value) }}
+              >
+                {(watchList.length ? watchList : [{ embedUrl: watchUrl, language: 'Auto', hd: true, source: 'Live' } as SportStream]).map((s, i) => (
+                  <option key={`${s.embedUrl}-${i}`} value={s.embedUrl || ''}>
+                    {(s.hd ? 'HD · ' : '') + (s.language || s.source || `Feed ${i + 1}`)}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       )}

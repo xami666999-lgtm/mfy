@@ -1,48 +1,86 @@
 import { useEffect, useRef, useState } from 'react'
 import { Play, Pause, Search, Heart, SkipBack, SkipForward, Shuffle, Repeat, Plus } from 'lucide-react'
 
-type Track = { id: string; title: string; artist: string; album?: string; image?: string; url?: string }
+type Track = { id: string; title: string; artist: string; album?: string; image?: string; url?: string; yt?: string }
 
-const INVIDIOUS = ['https://inv.nadeko.net', 'https://yewtu.be', 'https://invidious.flokinet.to']
+const INVIDIOUS = ['https://inv.nadeko.net', 'https://yewtu.be', 'https://invidious.flokinet.to', 'https://vid.puffyan.us']
+const PIPED = ['https://pipedapi.kavin.rocks', 'https://pipedapi.adminforge.de']
 
 async function jsonGet(url: string) {
   const api = typeof window !== 'undefined' ? (window as any).electronAPI : null
   if (api?.fetchJson) {
-    const r = await api.fetchJson(url, { timeoutMs: 12000 })
+    const r = await api.fetchJson(url, { timeoutMs: 14000 })
     return r?.json || {}
   }
   return (await fetch(url)).json()
 }
 
+async function ytAudio(videoId: string): Promise<string> {
+  for (const h of INVIDIOUS) {
+    try {
+      const d = await jsonGet(`${h}/api/v1/videos/${videoId}`)
+      const audio = (d.adaptiveFormats || d.adaptive_formats || []).find((f: any) => String(f.type || f.mimeType || '').includes('audio'))
+      if (audio?.url) return audio.url
+      return `${h}/latest_version?id=${videoId}&itag=140`
+    } catch {}
+  }
+  for (const h of PIPED) {
+    try {
+      const d = await jsonGet(`${h}/streams/${videoId}`)
+      const a = (d.audioStreams || []).sort((x: any, y: any) => (y.bitrate || 0) - (x.bitrate || 0))[0]
+      if (a?.url) return a.url
+    } catch {}
+  }
+  return ''
+}
+
+async function ytSearch(term: string): Promise<Track[]> {
+  for (const h of INVIDIOUS) {
+    try {
+      const d = await jsonGet(`${h}/api/v1/search?q=${encodeURIComponent(term + ' official audio')}&type=video`)
+      const rows = Array.isArray(d) ? d : []
+      if (!rows.length) continue
+      return rows.slice(0, 20).map((v: any) => ({
+        id: 'yt-' + v.videoId,
+        title: v.title,
+        artist: v.author,
+        image: `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`,
+        yt: v.videoId,
+      }))
+    } catch {}
+  }
+  for (const h of PIPED) {
+    try {
+      const d = await jsonGet(`${h}/search?q=${encodeURIComponent(term)}&filter=music_songs`)
+      const items = d.items || d || []
+      return (Array.isArray(items) ? items : []).slice(0, 20).map((v: any) => ({
+        id: 'yt-' + (v.url || '').replace('/watch?v=', ''),
+        title: v.title,
+        artist: v.uploaderName || v.uploader,
+        image: v.thumbnail,
+        yt: String(v.url || '').replace('/watch?v=', ''),
+      }))
+    } catch {}
+  }
+  return []
+}
+
 async function searchTracks(term: string): Promise<Track[]> {
   const q = term || 'top hits'
+  const [meta, yt] = await Promise.all([
+    jsonGet(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=24`).catch(() => ({})),
+    ytSearch(q),
+  ])
   const out: Track[] = []
-  try {
-    const d = await jsonGet(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=30`)
-    for (const s of d.results || []) {
-      out.push({
-        id: 'it-' + s.trackId,
-        title: s.trackName,
-        artist: s.artistName,
-        album: s.collectionName,
-        image: String(s.artworkUrl100 || '').replace('100x100bb', '600x600bb'),
-        url: s.previewUrl,
-      })
-    }
-  } catch {}
-  try {
-    const d = await jsonGet(`https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=30`)
-    for (const s of d.data || []) {
-      out.push({
-        id: 'dz-' + s.id,
-        title: s.title,
-        artist: s.artist?.name,
-        album: s.album?.title,
-        image: s.album?.cover_medium,
-        url: s.preview,
-      })
-    }
-  } catch {}
+  for (const s of meta.results || []) {
+    out.push({
+      id: 'it-' + s.trackId,
+      title: s.trackName,
+      artist: s.artistName,
+      album: s.collectionName,
+      image: String(s.artworkUrl100 || '').replace('100x100bb', '600x600bb'),
+    })
+  }
   try {
     const d = await jsonGet(`https://discoveryprovider.audius.co/v1/tracks/search?query=${encodeURIComponent(q)}&app_name=mfy`)
     for (const s of d.data || []) {
@@ -55,25 +93,8 @@ async function searchTracks(term: string): Promise<Track[]> {
       })
     }
   } catch {}
-  try {
-    for (const h of INVIDIOUS) {
-      const d = await jsonGet(`${h}/api/v1/search?q=${encodeURIComponent(q + ' official audio')}&type=video`)
-      const rows = Array.isArray(d) ? d : []
-      if (!rows.length) continue
-      for (const v of rows.slice(0, 12)) {
-        out.push({
-          id: 'yt-' + v.videoId,
-          title: v.title,
-          artist: v.author,
-          image: `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`,
-          url: `${h}/latest_version?id=${v.videoId}&itag=140`,
-        })
-      }
-      break
-    }
-  } catch {}
   const seen = new Set<string>()
-  return out.filter((t) => {
+  return [...out, ...yt].filter((t) => {
     const k = `${t.title}|${t.artist}`.toLowerCase()
     if (seen.has(k)) return false
     seen.add(k)
@@ -92,6 +113,7 @@ export default function MusicPage() {
   const [tab, setTab] = useState('Dashboard')
   const [q, setQ] = useState('')
   const [tracks, setTracks] = useState<Track[]>([])
+  const [charts, setCharts] = useState<Track[]>([])
   const [queue, setQueue] = useState<Track[]>([])
   const [favs, setFavs] = useState<Track[]>(() => {
     try { return JSON.parse(localStorage.getItem('mfy-music-favs') || '[]') } catch { return [] }
@@ -100,25 +122,48 @@ export default function MusicPage() {
   const [playing, setPlaying] = useState(false)
   const [shuffle, setShuffle] = useState(false)
   const [repeat, setRepeat] = useState(false)
+  const [busy, setBusy] = useState(false)
   const [tcur, setTcur] = useState(0)
   const [tdur, setTdur] = useState(0)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  useEffect(() => { searchTracks('top hits 2025').then(setTracks) }, [])
+  useEffect(() => {
+    searchTracks('top hits 2025').then((rows) => { setTracks(rows); setCharts(rows) })
+  }, [])
 
   function persistFavs(next: Track[]) {
     setFavs(next)
     try { localStorage.setItem('mfy-music-favs', JSON.stringify(next.slice(0, 80))) } catch {}
   }
 
-  function play(t: Track, list?: Track[]) {
+  async function resolve(t: Track): Promise<string> {
+    if (t.url && /audius|latest_version|googlevideo|audio/i.test(t.url)) return t.url
+    if (t.yt) {
+      const u = await ytAudio(t.yt)
+      if (u) return u
+    }
+    const hits = await ytSearch(`${t.title} ${t.artist}`)
+    const id = hits[0]?.yt
+    if (id) return ytAudio(id)
+    return t.url || ''
+  }
+
+  async function play(t: Track, list?: Track[]) {
     setNow(t)
+    setBusy(true)
     const base = list || (queue.length ? queue : tracks)
     setQueue([t, ...base.filter((x) => x.id !== t.id)].slice(0, 50))
     const el = audioRef.current
-    if (!el) return
-    el.src = t.url || ''
-    el.play().then(() => setPlaying(true)).catch(() => setPlaying(false))
+    try {
+      const src = await resolve(t)
+      if (!el || !src) { setBusy(false); return }
+      el.src = src
+      await el.play()
+      setPlaying(true)
+    } catch {
+      setPlaying(false)
+    }
+    setBusy(false)
   }
 
   function skip(dir: number) {
@@ -132,14 +177,14 @@ export default function MusicPage() {
     play(list[(i + dir + list.length) % list.length], list)
   }
 
-  const shown = tab === 'Favorites' ? favs : tab === 'Queue' ? queue : tracks
+  const shown = tab === 'Favorites' ? favs : tab === 'Queue' ? queue : tab === 'Charts' ? charts : tracks
 
   return (
-    <div className="flex min-h-full bg-[#14060c] text-white">
-      <aside className="w-52 flex-shrink-0 bg-black/80 p-4">
+    <div className="flex min-h-full bg-[#0d0a0c] text-white">
+      <aside className="w-52 flex-shrink-0 bg-black p-4">
         <p className="text-[10px] tracking-[0.28em] text-[#FF1493] font-bold">MFY MUSIC</p>
-        <p className="text-[10px] text-white/30 mb-5">Nuclear-style player</p>
-        {['Dashboard', 'Search', 'Queue', 'Favorites'].map((n) => (
+        <p className="text-[10px] text-white/30 mb-5">Nuclear engine</p>
+        {['Dashboard', 'Search', 'Charts', 'Queue', 'Favorites'].map((n) => (
           <button key={n} type="button" onClick={() => setTab(n)} className={`w-full text-left h-10 px-3 rounded-lg text-sm mb-1 ${tab === n ? 'bg-[#FF1493]/25' : 'text-white/50 hover:text-white'}`}>{n}</button>
         ))}
       </aside>
@@ -155,9 +200,9 @@ export default function MusicPage() {
             {now?.image && <img src={now.image} alt="" className="w-full h-full object-cover" />}
           </div>
           <div>
-            <p className="text-[11px] tracking-[0.2em] text-[#FF1493] font-bold">NOW PLAYING</p>
+            <p className="text-[11px] tracking-[0.2em] text-[#FF1493] font-bold">{busy ? 'LOADING STREAM' : 'NOW PLAYING'}</p>
             <h1 className="text-4xl font-black mt-1">{now?.title || 'MFY Music'}</h1>
-            <p className="text-white/50 mt-1">{now?.artist || 'Free sources · iTunes · Deezer · Audius · YouTube'}</p>
+            <p className="text-white/50 mt-1">{now?.artist || 'YouTube audio · Audius · Nuclear-style sources'}</p>
           </div>
         </div>
         <div className="space-y-0.5">
