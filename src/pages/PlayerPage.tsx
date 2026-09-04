@@ -218,9 +218,16 @@ export default function PlayerPage() {
         w.insertCSS(`video::cue { font-size: ${subSize}em !important; line-height: 1.2; background: ${subBg ? 'rgba(0,0,0,0.75)' : 'transparent'} !important; color: #fff; }`)
       } catch {}
     }
-    w.addEventListener('dom-ready', apply)
-    apply()
-    return () => { try { w.removeEventListener('dom-ready', apply) } catch {} }
+    const resume = () => {
+      apply()
+      const at = Number((selectedMedia as any)?.resumeAt || useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id) && h.season === selectedMedia?.season && h.episode === selectedMedia?.episode)?.progress || 0)
+      if (at > 8) {
+        try { w.executeJavaScript(`(() => { const v = document.querySelector('video'); if (v && v.currentTime < ${at - 2}) v.currentTime = ${at}; })()`) } catch {}
+      }
+    }
+    w.addEventListener('dom-ready', resume)
+    setTimeout(resume, 1500)
+    return () => { try { w.removeEventListener('dom-ready', resume) } catch {} }
   }, [subSize, subBg, streamUrl])
 
   useEffect(() => {
@@ -230,12 +237,17 @@ export default function PlayerPage() {
     v.src = streamUrl
     v.load()
     v.play().catch(() => {})
+    const onMeta = () => {
+      const at = Number((selectedMedia as any)?.resumeAt || useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id))?.progress || 0)
+      if (at > 8 && v.currentTime < 5) v.currentTime = at
+    }
     const onTime = () => { setProgress(v.currentTime || 0); setDur(Number.isFinite(v.duration) ? v.duration : 0) }
     const onPlay = () => setPlaying(true)
     const onPause = () => setPlaying(false)
     const onEnded = () => { setPlaying(false); handleEnded() }
     const onError = () => setError('The stream could not be loaded.')
     v.addEventListener('timeupdate', onTime)
+    v.addEventListener('loadedmetadata', onMeta)
     v.addEventListener('loadedmetadata', onTime)
     v.addEventListener('play', onPlay)
     v.addEventListener('pause', onPause)
@@ -243,6 +255,7 @@ export default function PlayerPage() {
     v.addEventListener('error', onError)
     return () => {
       v.removeEventListener('timeupdate', onTime)
+      v.removeEventListener('loadedmetadata', onMeta)
       v.removeEventListener('loadedmetadata', onTime)
       v.removeEventListener('play', onPlay)
       v.removeEventListener('pause', onPause)
@@ -686,25 +699,24 @@ export default function PlayerPage() {
           <video ref={videoRef} playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: fit, background: '#000' }} />
         )}
 
-        {showUI && loaded && !error && isPlayerEmbedUrl(streamUrl) && (
-          <div style={{ position: 'absolute', bottom: 12, left: 12, right: 12, zIndex: 90, display: 'flex', flexWrap: 'wrap', gap: 6, pointerEvents: 'auto' }}>
-            {((isOnePiece(String((selectedMedia as any)?.title||'')) ? (['onepace'] as PlayerSource[]) : (isAnimeItem(selectedMedia) ? ANIME_SOURCES : MOVIE_TV_SOURCES))).map((s) => (
-              <button key={s} type="button" onClick={() => { setPlayerSource(s); failTried.current = []; try { localStorage.setItem('mfy-player-engine', s) } catch {} }}
-                style={{ background: playerSource === s ? '#FF1493' : 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', fontSize: 11, cursor: 'pointer' }}>
-                {sourceNames[s] || s}
-              </button>
-            ))}
-            <button type="button" onClick={() => setSubSize((n) => Math.max(0.4, +(n - 0.1).toFixed(2)))} style={{ background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>Subs −</button>
-            <button type="button" onClick={() => setSubSize((n) => Math.min(1.4, +(n + 0.1).toFixed(2)))} style={{ background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>Subs +</button>
-            <button type="button" onClick={() => setSubBg(false)} style={{ background: !subBg ? '#FF1493' : 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>No sub bg</button>
-            <button type="button" onClick={() => setSubBg(true)} style={{ background: subBg ? '#FF1493' : 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>Sub bg</button>
-            {(['contain','cover','fill'] as const).map((f) => (
-              <button key={f} type="button" onClick={() => setFit(f)} style={{ background: fit===f ? '#FF1493' : 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>{f}</button>
-            ))}
-            {picks.filter((x)=>/2160|1080|720|4k/i.test(x.quality+x.title)).slice(0,4).map((x) => (
-              <button key={x.url} type="button" onClick={() => setStreamUrl(x.url)} style={{ background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>{/2160|4k/i.test(x.quality+x.title)?'4K':/1080/i.test(x.quality+x.title)?'1080':'720'}</button>
-            ))}
-            <button type="button" onClick={toggleFullscreen} style={{ background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>{fullscreen ? 'Exit' : 'Full'}</button>
+        {loaded && !error && isPlayerEmbedUrl(streamUrl) && (
+          <div style={{ position: 'absolute', bottom: 14, right: 14, zIndex: 90, display: 'flex', alignItems: 'center', gap: 8, pointerEvents: 'auto' }}>
+            {srcOpen && (
+              <div style={{ position: 'absolute', bottom: 42, right: 0, background: '#120a12', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 8, minWidth: 160 }}>
+                {((isOnePiece(String((selectedMedia as any)?.title||'')) ? (['onepace'] as PlayerSource[]) : (isAnimeItem(selectedMedia) ? ANIME_SOURCES : MOVIE_TV_SOURCES))).map((s) => (
+                  <button key={s} type="button" onClick={() => { setPlayerSource(s); failTried.current = []; setSrcOpen(false); try { localStorage.setItem('mfy-player-engine', s) } catch {} }}
+                    style={{ display: 'block', width: '100%', textAlign: 'left', background: playerSource === s ? '#FF1493' : 'transparent', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', fontSize: 12, cursor: 'pointer' }}>
+                    {sourceNames[s] || s}
+                  </button>
+                ))}
+                <button type="button" onClick={() => setSubSize((n) => Math.max(0.4, +(n - 0.1).toFixed(2)))} style={{ color: '#fff', background: 'transparent', border: 'none', padding: 6 }}>Subs −</button>
+                <button type="button" onClick={() => setSubSize((n) => Math.min(1.4, +(n + 0.1).toFixed(2)))} style={{ color: '#fff', background: 'transparent', border: 'none', padding: 6 }}>Subs +</button>
+                <button type="button" onClick={() => setSubBg((v) => !v)} style={{ color: '#fff', background: 'transparent', border: 'none', padding: 6 }}>{subBg ? 'Sub box on' : 'Sub box off'}</button>
+              </div>
+            )}
+            <button type="button" title="Sources" onClick={() => setSrcOpen((v) => !v)} style={{ width: 36, height: 36, borderRadius: 8, border: 'none', background: 'rgba(0,0,0,0.55)', color: '#fff', cursor: 'pointer' }}>⋯</button>
+            <button type="button" title="Fit" onClick={() => setFit((f) => f === 'contain' ? 'cover' : f === 'cover' ? 'fill' : 'contain')} style={{ width: 36, height: 36, borderRadius: 8, border: 'none', background: 'rgba(0,0,0,0.55)', color: '#fff', cursor: 'pointer', fontSize: 10 }}>{fit === 'cover' ? 'Crop' : fit === 'fill' ? 'Fill' : 'Fit'}</button>
+            <button type="button" title="Fullscreen" onClick={toggleFullscreen} style={{ width: 36, height: 36, borderRadius: 8, border: 'none', background: 'rgba(0,0,0,0.55)', color: '#fff', cursor: 'pointer' }}>{fullscreen ? '✕' : '⛶'}</button>
           </div>
         )}
         {showUI && loaded && !error && !isPlayerEmbedUrl(streamUrl) && (

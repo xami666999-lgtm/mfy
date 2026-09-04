@@ -81,6 +81,9 @@ function Shelf({ title, items, onOpen, viewAll, onRemove }: { title: string; ite
             )}
             <div className="poster-overlay">
               <div className="poster-meta-title">{titleOf(item)}</div>
+              {String(item.release_date || item.first_air_date || '').slice(0, 4) && (
+                <div className="text-[10px] text-white/55">{String(item.release_date || item.first_air_date || '').slice(0, 4)}</div>
+              )}
               {(item.season || item.episode || item.progressLabel) && (
                 <div className="text-[10px] text-[#FF1493]">{item.progressLabel || `S${item.season || 1} E${item.episode || 1}`}</div>
               )}
@@ -370,7 +373,10 @@ export default function Board() {
               const extra = cwExtra[String(h.mediaId)] || {}
               return { id: h.mediaId, title: extra.title || h.title, poster_path: h.posterPath || extra.poster, media_type: h.mediaType, season: h.season, episode: h.episode, progressLabel: `${h.season ? `S${h.season}E${h.episode || 1} · ` : ''}${pct > 0 ? `${pct}%` : 'Resume'}`, progress: h.progress, duration: h.duration, progressPct: pct, vote_average: 0 }
             })}
-            onOpen={(h) => { setSelectedMedia({ id: h.id, type: h.media_type, season: h.season, episode: h.episode }); setCurrentPage('detail') }}
+            onOpen={(h) => {
+              setSelectedMedia({ id: h.id, type: h.media_type, season: h.season, episode: h.episode, title: h.title, poster_path: h.poster_path, resumeAt: h.progress } as any)
+              setCurrentPage('player')
+            }}
             onRemove={(h) => removeHistory(h.id, h.media_type)}
             viewAll={() => clearHistory()}
           />

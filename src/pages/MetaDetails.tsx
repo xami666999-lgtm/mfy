@@ -39,6 +39,10 @@ export default function MetaDetails() {
   useEffect(() => {
     if (!selectedMedia) return
     load()
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
+      document.querySelectorAll('.page, .board, main, #root').forEach((el) => { try { (el as HTMLElement).scrollTop = 0 } catch {} })
+    })
   }, [selectedMedia])
 
   useEffect(() => {

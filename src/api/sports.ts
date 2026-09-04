@@ -27,6 +27,7 @@ export interface SportMatch {
   poster?: string
   teams?: { home?: MatchTeam; away?: MatchTeam }
   sources?: MatchSource[]
+  score?: { home?: number | string; away?: number | string }
 }
 
 export interface SportStream {

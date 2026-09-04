@@ -527,34 +527,27 @@ function MatchCard({
 }) {
   const home = match.teams?.home
   const away = match.teams?.away
+  const parsed = String(match.title || '').match(/(\d+)\s*[-–]\s*(\d+)/)
+  const hs = match.score?.home ?? parsed?.[1]
+  const as = match.score?.away ?? parsed?.[2]
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="flex items-center gap-3 p-4 rounded-xl bg-[#121820] border border-white/10 hover:border-[#22c55e]/50 text-left transition-all w-full"
+      className="flex items-center gap-3 p-3 rounded-xl bg-[#0e141c] border border-white/10 hover:border-[#22c55e]/40 text-left transition-all w-full"
     >
-      <div className="w-16 h-16 rounded-lg bg-black/40 flex items-center justify-center gap-1 flex-shrink-0 overflow-hidden">
-        {home?.badge && <img src={badgeUrl(home.badge)} alt="" className="w-7 h-7 object-contain" />}
-        {away?.badge && <img src={badgeUrl(away.badge)} alt="" className="w-7 h-7 object-contain" />}
+      <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
+        <div className="text-xs text-white/80 truncate text-right">{home?.name || match.title.split(/vs|v\s/i)[0]}</div>
+        {home?.badge ? <img src={badgeUrl(home.badge)} alt="" className="w-9 h-9 object-contain" /> : <div className="w-9 h-9 rounded-full bg-white/10" />}
       </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <div className="text-xs font-medium text-white/85 truncate">{match.title}</div>
-          {match.live && (
-            <span className="flex-shrink-0 flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded bg-red-500/15 text-red-400">
-              <span className="relative flex w-1.5 h-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-70" />
-                <span className="relative inline-flex rounded-full w-1.5 h-1.5 bg-red-500" />
-              </span>
-              LIVE
-            </span>
-          )}
-        </div>
-        <div className="text-[10px] text-white/30 mt-0.5">
-          {match.category}
-          {match.date ? ` · ${formatDate(match.date)}` : ''}
-          {match.popular ? ' · Popular' : ''}
-        </div>
+      <div className="flex flex-col items-center w-16 flex-shrink-0">
+        {match.live && <span className="text-[8px] text-red-400 font-bold tracking-widest">LIVE</span>}
+        <div className="text-lg font-bold text-white tabular-nums">{hs != null && as != null ? `${hs} - ${as}` : 'VS'}</div>
+        <div className="text-[9px] text-white/30">{match.date ? formatDate(match.date) : match.category}</div>
+      </div>
+      <div className="flex-1 flex items-center gap-2 min-w-0">
+        {away?.badge ? <img src={badgeUrl(away.badge)} alt="" className="w-9 h-9 object-contain" /> : <div className="w-9 h-9 rounded-full bg-white/10" />}
+        <div className="text-xs text-white/80 truncate">{away?.name || match.title.split(/vs|v\s/i)[1] || ''}</div>
       </div>
     </button>
   )
