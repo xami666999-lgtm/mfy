@@ -60,6 +60,8 @@ export default function PlayerPage() {
   const trackRef = useRef<HTMLTrackElement>(null)
 
   const [autoNextBusy, setAutoNextBusy] = useState(false)
+  const [stillWatching, setStillWatching] = useState<null | 'idle' | 'next'>(null)
+  const autoNextCount = useRef(0)
   const [showRate, setShowRate] = useState(false)
   const [countdown, setCountdown] = useState(0)
   const failTried = useRef<string[]>([])
@@ -246,6 +248,11 @@ export default function PlayerPage() {
   async function handleEnded() {
     saveProgress(true).catch(() => {})
     if (autoplayNext && selectedMedia?.type === 'tv' && !autoNextBusy) {
+      autoNextCount.current += 1
+      if (autoNextCount.current >= 2) {
+        setStillWatching('next')
+        return
+      }
       setAutoNextBusy(true)
       try {
         const curSeason = selectedMedia.season || 1
@@ -351,6 +358,22 @@ export default function PlayerPage() {
     timer.current = setTimeout(() => setShowUI(false), 2200)
   }
 
+  useEffect(() => {
+    let idle: ReturnType<typeof setTimeout>
+    const bump = () => {
+      clearTimeout(idle)
+      idle = setTimeout(() => setStillWatching('idle'), 5 * 60 * 1000)
+    }
+    bump()
+    window.addEventListener('mousemove', bump)
+    window.addEventListener('keydown', bump)
+    return () => {
+      clearTimeout(idle)
+      window.removeEventListener('mousemove', bump)
+      window.removeEventListener('keydown', bump)
+    }
+  }, [selectedMedia?.id, selectedMedia?.episode])
+
   async function toggleFullscreen() {
     const api = (window as any).electronAPI
     if (api?.fullscreen) {
@@ -449,6 +472,25 @@ export default function PlayerPage() {
 
   return (
     <>
+    {stillWatching && (
+      <div className="fixed inset-0 z-[80] bg-black/70 flex items-center justify-center">
+        <div className="rounded-3xl bg-[#120a12] border border-white/15 px-10 py-8 text-center max-w-md">
+          <div className="text-[#FF1493] text-[10px] tracking-[0.35em] mb-3">MFY</div>
+          <h2 className="text-2xl font-semibold text-white mb-2">Are you still watching?</h2>
+          <p className="text-sm text-white/50 mb-6">Playback paused so it does not keep going.</p>
+          <div className="flex justify-center gap-3">
+            <button type="button" className="h-11 px-6 rounded-full bg-white text-black text-sm font-semibold" onClick={() => {
+              const kind = stillWatching
+              autoNextCount.current = 0
+              setStillWatching(null)
+              setAutoNextBusy(false)
+              if (kind === 'next') handleEnded()
+            }}>Continue</button>
+            <button type="button" className="h-11 px-6 rounded-full bg-white/10 text-white text-sm" onClick={() => { setStillWatching(null); leavePlayer('detail') }}>Stop</button>
+          </div>
+        </div>
+      </div>
+    )}
     {showRate && (
         <RateModal title={title} kind={isAnimeItem(selectedMedia) ? 'anime' : (selectedMedia?.type === 'movie' ? 'movie' : 'tv')} onSubmit={(s, n) => finishRate(s, n)} onSkip={() => finishRate()} />
       )}
