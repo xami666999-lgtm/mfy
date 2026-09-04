@@ -714,7 +714,21 @@ onKeyDown={(e) => {
                 {seasonData?.episodes && (
                   <div className="space-y-1.5">
                     {seasonData.episodes.map((ep: any) => (
-                      <div key={ep.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.04] cursor-pointer transition-all group">
+                      <div key={ep.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.04] cursor-pointer transition-all group" onClick={() => {
+                        const kind = selectedMedia?.type === 'movie' ? 'movie' : 'tv'
+                        const anime = isAnimeItem(selectedMedia) || /anime/i.test(String((detail as any)?.genres?.map((g: any) => g.name).join(' ') || ''))
+                        setSelectedMedia({
+                          id: selectedMedia?.id,
+                          type: kind,
+                          season: activeSeason,
+                          episode: ep.episode_number,
+                          title: (detail as any)?.name || (detail as any)?.title,
+                          poster_path: (detail as any)?.poster_path,
+                          name: ep.name,
+                        } as any)
+                        setCurrentStreamUrl(getPlayerUrl('playtorrio', kind, Number(selectedMedia?.id), activeSeason, ep.episode_number, anime))
+                        setCurrentPage('player')
+                      }}>
                         <div className="w-28 h-16 rounded-md overflow-hidden flex-shrink-0 bg-white/[0.03]">
                           {ep.still_path && <img src={`${STILL_URL}${ep.still_path}`} alt={ep.name} className="w-full h-full object-cover" />}
                         </div>

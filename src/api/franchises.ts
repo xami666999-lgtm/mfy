@@ -23,7 +23,7 @@ export const franchises: Franchise[] = [
     name: 'Marvel',
     tagline: 'Marvel Cinematic Universe',
     color: '#ED1D24',
-    logo: './logos/marvel.svg',
+    logo: '/logos/marvel.svg',
     keywords: [180547], // marvel cinematic universe (mcu)
     collections: [86311], // The Avengers Collection
   },
@@ -32,7 +32,7 @@ export const franchises: Franchise[] = [
     name: 'Star Wars',
     tagline: 'A long time ago in a galaxy far, far away…',
     color: '#FFE81F',
-    logo: './logos/star-wars.svg',
+    logo: '/logos/star-wars.svg',
     keywords: [379196], // star wars
     collections: [10], // Star Wars Collection
   },
@@ -41,7 +41,7 @@ export const franchises: Franchise[] = [
     name: 'Harry Potter',
     tagline: 'The wizarding world',
     color: '#B3933F',
-    logo: './logos/harry-potter.svg',
+    logo: '/logos/harry-potter.svg',
     keywords: [377309], // harry potter
     collections: [1241], // Harry Potter Collection
   },
@@ -50,7 +50,7 @@ export const franchises: Franchise[] = [
     name: 'DC',
     tagline: 'DC Universe',
     color: '#0476F4',
-    logo: './logos/dc-white.svg',
+    logo: '/logos/dc-white.svg',
     keywords: [229266, 378944, 377234, 362002], // dceu, batman, superman, wonder woman
     collections: [404770, 421904], // Superman DCU Animated, Batman DCU Animated
   },
@@ -68,7 +68,7 @@ export const franchises: Franchise[] = [
     name: 'Fast & Furious',
     tagline: 'The family',
     color: '#1B6DC1',
-    logo: './logos/fast-furious.png',
+    logo: '/logos/fast-furious.png',
     keywords: [348640], // fast and furious
     collections: [9485], // The Fast and the Furious Collection
   },
@@ -89,6 +89,15 @@ export const franchises: Franchise[] = [
     logo: './logos/star-trek.svg',
     keywords: [327763], // star trek
     collections: [151, 115575], // TOS Collection, Alternate Reality Collection
+  },
+  {
+    id: 'nickelodeon',
+    name: 'Nickelodeon',
+    tagline: 'Kids’ TV and movies',
+    color: '#EA5B0C',
+    logo: '/logos/nickelodeon.svg',
+    keywords: [210624],
+    collections: [],
   },
 ]
 

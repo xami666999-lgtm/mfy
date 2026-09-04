@@ -68,6 +68,8 @@ export default function PlayerPage() {
   const [gate, setGate] = useState(true)
   const [together, setTogether] = useState(false)
   const [meta, setMeta] = useState<{ title: string; overview: string; poster: string; backdrop: string } | null>(null)
+  const [nextUp, setNextUp] = useState<{ season: number; episode: number; name: string; still?: string } | null>(null)
+  const [showNext, setShowNext] = useState(false)
   const failTried = useRef<string[]>([])
   const [playerSource, setPlayerSource] = useState<PlayerSource>(() => {
     try {
@@ -201,10 +203,10 @@ export default function PlayerPage() {
       if (e.key === 'ArrowLeft') seek(progress - 10)
       if (e.key === 'f' || e.key === 'F') toggleFullscreen()
       if (e.key === 'n' || e.key === 'N') setShowRate(true)
-      if (e.key === 'Escape') goBack()
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); goBack() }
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
   })
 
   const handleIframeError = () => {}
@@ -355,8 +357,63 @@ export default function PlayerPage() {
     return () => clearTimeout(id)
   }, [streamUrl])
 
+  useEffect(() => {
+    setShowNext(false)
+    setNextUp(null)
+    if (!selectedMedia || selectedMedia.type === 'movie' || selectedMedia.type === 'iptv') return
+    const id = Number(selectedMedia.id)
+    const season = selectedMedia.season || 1
+    const ep = selectedMedia.episode || 1
+    ;(async () => {
+      const s = await tmdb.getSeasonDetail(id, season).catch(() => null)
+      const hit = (s?.episodes || []).find((e: any) => e.episode_number === ep + 1)
+      if (hit) {
+        setNextUp({ season, episode: hit.episode_number, name: hit.name, still: hit.still_path })
+        return
+      }
+      const d = await tmdb.getTVDetail(id).catch(() => null)
+      const ns = (d?.seasons || []).find((x: any) => x.season_number === season + 1 && x.episode_count > 0)
+      if (!ns) return
+      const s2 = await tmdb.getSeasonDetail(id, ns.season_number).catch(() => null)
+      const first = s2?.episodes?.[0]
+      if (first) setNextUp({ season: ns.season_number, episode: first.episode_number, name: first.name, still: first.still_path })
+    })()
+  }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
+
+  useEffect(() => {
+    const id = setInterval(async () => {
+      if (!nextUp) return
+      let p = progress
+      let d = dur
+      try {
+        const w = document.querySelector('webview') as any
+        const got = await w?.executeJavaScript?.(`(() => { const v = document.querySelector('video'); if (!v) return null; return { p: v.currentTime || 0, d: v.duration || 0 } })()`)
+        if (got && Number(got.d) > 30) { p = Number(got.p); d = Number(got.d) }
+      } catch {}
+      if (d > 60 && d - p <= 30 && d - p >= 0) setShowNext(true)
+    }, 2000)
+    return () => clearInterval(id)
+  }, [nextUp, progress, dur])
+
+  function playNextEpisode() {
+    if (!selectedMedia || !nextUp) return
+    setShowNext(false)
+    setGate(true)
+    setSelectedMedia({
+      ...selectedMedia,
+      type: 'tv',
+      season: nextUp.season,
+      episode: nextUp.episode,
+      title: (selectedMedia as any).title,
+    } as any)
+    const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, nextUp.season, nextUp.episode, isAnimeItem(selectedMedia))
+    setCurrentStreamUrl(url)
+    setLoaded(true)
+  }
+
   async function handleEnded() {
     saveProgress(true).catch(() => {})
+    if (nextUp) { playNextEpisode(); return }
     if (autoplayNext && selectedMedia?.type === 'tv' && !autoNextBusy) {
       autoNextCount.current += 1
       if (autoNextCount.current >= 2) {
@@ -520,6 +577,23 @@ export default function PlayerPage() {
       const got = await w?.executeJavaScript?.(`(() => { const v = document.querySelector('video'); if (!v) return null; return { p: v.currentTime || 0, d: v.duration || 0 } })()`)
       if (got && Number(got.p) > 1) { p = Number(got.p); if (Number(got.d) > 1) d = Number(got.d) }
     } catch {}
+    if (forceDone && selectedMedia.type !== 'movie') {
+      const nxt = nextUp
+      upsertHistory({
+        id: `${selectedMedia.id}-tv-${nxt?.season || selectedMedia.season || 1}-${nxt?.episode || (selectedMedia.episode || 1) + 1}`,
+        mediaId: String(selectedMedia.id),
+        mediaType: 'tv',
+        title: String((selectedMedia as any).title || (selectedMedia as any).name || selectedMedia.id),
+        posterPath: (selectedMedia as any).poster_path || null,
+        progress: 1,
+        duration: 0,
+        season: nxt?.season || selectedMedia.season || 1,
+        episode: nxt?.episode || (selectedMedia.episode || 1) + 1,
+        watchedAt: new Date().toISOString(),
+        profileId: useStore.getState().currentProfile?.id || 'default',
+      })
+      return
+    }
     if (forceDone && d > 30) p = d
     const prev = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia.id))
     upsertHistory({
@@ -601,6 +675,19 @@ export default function PlayerPage() {
     <>
     {together && (
       <TogetherPanel streamUrl={streamUrl} imdbOrId={String((selectedMedia as any)?.imdb || selectedMedia?.id || '')} type={selectedMedia?.type === 'movie' ? 'movie' : 'series'} onClose={() => setTogether(false)} onSplitSports={() => { setTogether(false); setCurrentPage('sports') }} />
+    )}
+    {showNext && nextUp && (
+      <div style={{ position: 'fixed', left: 24, bottom: 88, zIndex: 80, width: 420, maxWidth: 'calc(100vw - 48px)', background: 'rgba(12,8,14,0.94)', border: '1px solid rgba(255,20,147,0.35)', borderRadius: 16, padding: 12, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 12px 40px rgba(0,0,0,0.45)' }}>
+        {nextUp.still ? <img src={`${POSTER_URL.replace('/w500','/w300')}${nextUp.still}`} alt="" style={{ width: 120, height: 68, objectFit: 'cover', borderRadius: 10, flexShrink: 0 }} /> : <div style={{ width: 120, height: 68, borderRadius: 10, background: '#1a1016' }} />}
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <p style={{ fontSize: 11, color: '#FF1493', fontWeight: 700, marginBottom: 2 }}>Next on {(selectedMedia as any)?.title || 'this show'}</p>
+          <p style={{ fontSize: 14, color: '#fff', fontWeight: 650 }}>{nextUp.name} (S{nextUp.season}E{nextUp.episode})</p>
+          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+            <button type="button" onClick={() => setShowNext(false)} style={{ background: 'transparent', border: 'none', color: '#fff', opacity: 0.7, cursor: 'pointer' }}>Dismiss</button>
+            <button type="button" onClick={playNextEpisode} style={{ background: '#FF1493', border: 'none', color: '#fff', borderRadius: 999, padding: '8px 14px', fontWeight: 700, cursor: 'pointer' }}>Watch now</button>
+          </div>
+        </div>
+      </div>
     )}
     {stillWatching && (
       <div className="fixed inset-0 z-[80] bg-black/70 flex items-center justify-center">

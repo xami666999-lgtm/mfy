@@ -96,7 +96,7 @@ function Shelf({ title, items, onOpen, viewAll, onRemove }: { title: string; ite
 }
 
 export default function Board() {
-  const { tmdbApiKey, setCurrentPage, setSelectedMedia, setSelectedProviderId, setCurrentStreamUrl, addToWatchlist, isInWatchlist, removeFromWatchlist, watchHistory, favorites, removeHistory, clearHistory } = useStore()
+  const { tmdbApiKey, setCurrentPage, setSelectedMedia, setSelectedProviderId, setCurrentStreamUrl, addToWatchlist, isInWatchlist, removeFromWatchlist, watchHistory, favorites, removeHistory, clearHistory, setSelectedFranchiseId } = useStore()
   const [hideWatched, setHideWatched] = useState(false)
   const [railOpen, setRailOpen] = useState(true)
   const [railQ, setRailQ] = useState('')
@@ -216,7 +216,7 @@ export default function Board() {
     addonCatalog('dc').then(setDcCat).catch(() => {})
     addonCatalog('starwars').then(setSwCat).catch(() => {})
     tmdb.searchMovies('Harry Potter').then((d) => setHpCat(d?.results || [])).catch(() => {})
-    tmdb.searchMovies('Need for Speed').then((d) => setNfsCat(d?.results || [])).catch(() => {})
+    tmdb.searchMovies('Fast and Furious').then((d) => setNfsCat(d?.results || [])).catch(() => {})
     addonCatalog('nick').then(setNickCat).catch(() => {})
     const likes = getTaste().likes || []
     if (likes.length) {
@@ -341,25 +341,16 @@ export default function Board() {
             {[
               { id: 'marvel', name: 'Marvel', logo: '/logos/marvel.svg', color: '#ED1D24' },
               { id: 'dc', name: 'DC', logo: '/logos/dc-white.svg', color: '#0476F2' },
-              { id: 'starwars', name: 'Star Wars', logo: '/logos/star-wars.svg', color: '#FFE81F' },
-              { id: 'hp', name: 'Harry Potter', logo: '/logos/harry-potter.svg', color: '#D3A625' },
-              { id: 'nfs', name: 'Need for Speed', logo: '/logos/nfs.svg', color: '#FF3B00' },
-              { id: 'nick', name: 'Nickelodeon', logo: '/logos/nickelodeon.svg', color: '#EA5B0C' },
+              { id: 'star-wars', name: 'Star Wars', logo: '/logos/star-wars.svg', color: '#FFE81F' },
+              { id: 'harry-potter', name: 'Harry Potter', logo: '/logos/harry-potter.svg', color: '#D3A625' },
+              { id: 'fast-furious', name: 'Fast & Furious', logo: '/logos/fast-furious.png', color: '#FF3B00' },
+              { id: 'nickelodeon', name: 'Nickelodeon', logo: '/logos/nickelodeon.svg', color: '#EA5B0C' },
             ].map((f, i) => (
-              <button key={f.id} type="button" className="mfy-brand-tile shrink-0 h-20 w-40 rounded-2xl border flex flex-col items-center justify-center gap-1 px-3" style={{ borderColor: f.color + '88', animationDelay: `${i * 0.18}s`, background: `${f.color}18` }} onClick={() => {
-                if (f.id === 'marvel' || f.id === 'dc' || f.id === 'starwars' || f.id === 'nick') {
-                  addonCatalog(f.id as any).then((list) => {
-                    const hit = list[0]
-                    if (hit) { setSelectedMedia({ id: hit.id, type: hit.media_type === 'tv' ? 'tv' : 'movie', title: hit.title } as any); setCurrentPage('detail') }
-                  })
-                  return
-                }
-                tmdb.searchMovies(f.id === 'hp' ? 'Harry Potter' : 'Need for Speed').then((d) => {
-                  const hit = d?.results?.[0]
-                  if (hit) goDetail(hit, 'movie')
-                })
+              <button key={f.id} type="button" className="mfy-brand-tile shrink-0 h-20 w-44 rounded-2xl border flex flex-col items-center justify-center gap-1 px-3" style={{ borderColor: f.color + '88', animationDelay: `${i * 0.18}s`, background: `${f.color}22` }} onClick={() => {
+                setSelectedFranchiseId(f.id)
+                setCurrentPage('franchise')
               }}>
-                {f.logo ? <img src={f.logo} alt="" className="h-8 w-auto max-w-[110px] object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} /> : null}
+                <img src={f.logo} alt={f.name} className="h-9 w-auto max-w-[120px] object-contain" onError={(e) => { const el = e.currentTarget; if (!el.src.includes('./logos')) { el.src = '.' + f.logo } }} />
                 <span className="text-[11px] text-white/85">{f.name}</span>
               </button>
             ))}
@@ -394,7 +385,7 @@ export default function Board() {
         <Shelf title="DC" items={dcCat} onOpen={(i) => goDetail(i, i.media_type === 'tv' ? 'tv' : 'movie')} />
         <Shelf title="Star Wars" items={swCat} onOpen={(i) => goDetail(i, i.media_type === 'tv' ? 'tv' : 'movie')} />
         <Shelf title="Harry Potter" items={hpCat} onOpen={(i) => goDetail(i, 'movie')} />
-        <Shelf title="Need for Speed" items={nfsCat} onOpen={(i) => goDetail(i, 'movie')} />
+        <Shelf title="Fast & Furious" items={nfsCat} onOpen={(i) => goDetail(i, 'movie')} />
         <Shelf title="Nickelodeon" items={nickCat} onOpen={(i) => goDetail(i, i.media_type === 'tv' ? 'tv' : 'movie')} />
         <Shelf title="MCU" items={mcu} onOpen={(i) => goDetail(i, 'movie')} />
         <Shelf title="Studio Ghibli" items={ghibli} onOpen={(i) => goDetail(i, 'movie')} />
