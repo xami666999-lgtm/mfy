@@ -329,6 +329,19 @@ a:focus-visible,
 .mfy-live-chip {
   animation: mfy-float 3.2s ease-in-out infinite;
 }
+@keyframes mfy-brand-pulse {
+  0%, 100% { transform: translateY(0) scale(1); filter: brightness(1); }
+  50% { transform: translateY(-6px) scale(1.04); filter: brightness(1.15); }
+}
+.mfy-brand-tile {
+  animation: mfy-brand-pulse 2.6s ease-in-out infinite;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.mfy-brand-tile:hover {
+  animation-play-state: paused;
+  transform: translateY(-8px) scale(1.06);
+  filter: brightness(1.2);
+}
 .poster-card.has-fallback { background: linear-gradient(160deg, #1a1520, #0e0c14); }
 .poster-card.has-fallback::before {
   content: ''; position: absolute; inset: 0;

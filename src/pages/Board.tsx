@@ -317,10 +317,10 @@ export default function Board() {
         <section className="media-row">
           <div className="media-row-header"><h2 className="media-row-title">Providers</h2></div>
           <div className="scroll-row">
-            {streamingServices.map((s) => (
-              <button key={s.id} type="button" className="mfy-live-chip shrink-0 h-16 px-5 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3 hover:bg-white/10 hover:scale-105 transition-transform" onClick={() => { setSelectedProviderId(s.id); setCurrentPage('provider') }}>
-                <img src={s.logo} alt="" className="w-8 h-8 object-contain" />
-                <span className="text-sm">{s.name}</span>
+            {streamingServices.map((s, i) => (
+              <button key={s.id} type="button" className="mfy-brand-tile shrink-0 h-20 w-40 rounded-2xl border flex flex-col items-center justify-center gap-1 px-3" style={{ borderColor: s.color + '66', animationDelay: `${i * 0.18}s`, background: `${s.color}14` }} onClick={() => { setSelectedProviderId(s.id); setCurrentPage('provider') }}>
+                <img src={s.logo} alt="" className="h-8 w-auto max-w-[110px] object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                <span className="text-[11px] text-white/80">{s.name}</span>
               </button>
             ))}
           </div>
@@ -329,14 +329,14 @@ export default function Board() {
           <div className="media-row-header"><h2 className="media-row-title">Franchises</h2></div>
           <div className="scroll-row">
             {[
-              { id: 'marvel', name: 'Marvel', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Marvel_Logo.svg/320px-Marvel_Logo.svg.png' },
-              { id: 'dc', name: 'DC', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/DC_Comics_logo.svg/200px-DC_Comics_logo.svg.png' },
-              { id: 'starwars', name: 'Star Wars', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Star_Wars_Logo.svg/320px-Star_Wars_Logo.svg.png' },
-              { id: 'hp', name: 'Harry Potter', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Harry_Potter_wordmark.svg/320px-Harry_Potter_wordmark.svg.png' },
-              { id: 'nfs', name: 'Need for Speed', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Need_for_Speed_logo.svg/320px-Need_for_Speed_logo.svg.png' },
-              { id: 'nick', name: 'Nickelodeon', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Nickelodeon_2009_logo.svg/320px-Nickelodeon_2009_logo.svg.png' },
-            ].map((f) => (
-              <button key={f.id} type="button" className="mfy-live-chip shrink-0 h-16 px-4 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3 hover:bg-white/10 hover:scale-105 transition-transform" onClick={() => {
+              { id: 'marvel', name: 'Marvel', logo: './logos/marvel.svg', color: '#ED1D24' },
+              { id: 'dc', name: 'DC', logo: './logos/dc-white.svg', color: '#0476F2' },
+              { id: 'starwars', name: 'Star Wars', logo: './logos/star-wars.svg', color: '#FFE81F' },
+              { id: 'hp', name: 'Harry Potter', logo: './logos/harry-potter.svg', color: '#D3A625' },
+              { id: 'nfs', name: 'Need for Speed', logo: './logos/fast-furious.png', color: '#FF3B00' },
+              { id: 'nick', name: 'Nickelodeon', logo: '', color: '#EA5B0C' },
+            ].map((f, i) => (
+              <button key={f.id} type="button" className="mfy-brand-tile shrink-0 h-20 w-40 rounded-2xl border flex flex-col items-center justify-center gap-1 px-3" style={{ borderColor: f.color + '88', animationDelay: `${i * 0.18}s`, background: `${f.color}18` }} onClick={() => {
                 if (f.id === 'marvel' || f.id === 'dc' || f.id === 'starwars' || f.id === 'nick') {
                   addonCatalog(f.id as any).then((list) => {
                     const hit = list[0]
@@ -349,7 +349,8 @@ export default function Board() {
                   if (hit) goDetail(hit, 'movie')
                 })
               }}>
-                <img src={f.logo} alt={f.name} className="h-8 w-auto max-w-[120px] object-contain" />
+                {f.logo ? <img src={f.logo} alt="" className="h-8 w-auto max-w-[110px] object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} /> : null}
+                <span className="text-[11px] text-white/85">{f.name}</span>
               </button>
             ))}
           </div>
