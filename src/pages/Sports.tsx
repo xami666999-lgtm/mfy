@@ -281,12 +281,14 @@ export default function Sports() {
                 type="button"
                 className="text-left rounded-xl border border-white/10 bg-white/[0.03] p-3 hover:border-[#FF1493]/40"
                 onClick={async () => {
-                  const rows = await addonStreams(ADDONS.nuvio.base, 'tv', String(e.stremioId || e.id))
+                  const nid = String(e.stremioId || e.id || '')
+                  const rows = await addonStreams(ADDONS.nuvio.base, 'tv', nid).catch(() => [])
                   const hit = rows.find((r) => /^https?:/i.test(r.url)) || rows[0]
                   if (hit?.url) {
-                    setCurrentStreamUrl(hit.url)
-                    setCurrentPage('player')
+                    playEmbed(hit.url, e.title || e.name)
+                    return
                   }
+                  if (nid) playEmbed(`https://nuvio.moaqeel6679.my.id/watch?id=${encodeURIComponent(nid)}`, e.title || e.name)
                 }}
               >
                 <p className="text-sm font-semibold text-white line-clamp-2">{e.title || e.name}</p>
@@ -309,9 +311,25 @@ export default function Sports() {
                 key={e.id}
                 type="button"
                 className="text-left rounded-xl border border-white/10 bg-white/[0.03] p-3 hover:border-[#FF1493]/40"
-                onClick={() => {
-                  const url = e.streams?.[0]?.url
-                  if (url) playEmbed(url)
+                onClick={async () => {
+                  const url = e.streams?.[0]?.url || e.url || e.embed || ''
+                  const title = String(e.title || '')
+                  if (/\.m3u8($|\?)/i.test(url)) {
+                    playEmbed(url, title)
+                    return
+                  }
+                  const liveHit = live.find((m) => title && m.title.toLowerCase().includes(title.split(' vs ')[0]?.toLowerCase?.() || '___nomatch'))
+                  if (liveHit) {
+                    await openMatch(liveHit)
+                    return
+                  }
+                  if (url && !/\.m3u($|\?)/i.test(url)) {
+                    playEmbed(url, title)
+                    return
+                  }
+                  const foot = matches.find((m) => title && m.title.toLowerCase().includes(title.split(' ')[0].toLowerCase()))
+                  if (foot) await openMatch(foot)
+                  else if (live[0]) await openMatch(live[0])
                 }}
               >
                 <p className="text-[10px] text-red-400 font-bold">LIVE</p>

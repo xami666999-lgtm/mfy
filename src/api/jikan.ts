@@ -26,7 +26,7 @@ function card(row: any) {
     score: row.score,
     genres: (row.genres || []).map((g: any) => g.name),
     overview: row.synopsis,
-    media_type: /novel/i.test(row.type||'') ? 'book' : /manga|manhwa|manhua|one.shot|doujin/i.test(row.type||'') ? 'manga' : (row.type === 'Movie' ? 'movie' : 'tv'),
+    media_type: /novel/i.test(row.type||'') ? 'novel' : /manga|manhwa|manhua|one.shot|doujin|light/i.test(row.type||'') ? 'manga' : 'manga',
   }
 }
 

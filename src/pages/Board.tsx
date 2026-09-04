@@ -339,12 +339,12 @@ export default function Board() {
           <div className="media-row-header"><h2 className="media-row-title">Franchises</h2></div>
           <div className="scroll-row">
             {[
-              { id: 'marvel', name: 'Marvel', logo: './logos/marvel.svg', color: '#ED1D24' },
-              { id: 'dc', name: 'DC', logo: './logos/dc-white.svg', color: '#0476F2' },
-              { id: 'starwars', name: 'Star Wars', logo: './logos/star-wars.svg', color: '#FFE81F' },
-              { id: 'hp', name: 'Harry Potter', logo: './logos/harry-potter.svg', color: '#D3A625' },
-              { id: 'nfs', name: 'Need for Speed', logo: './logos/fast-furious.png', color: '#FF3B00' },
-              { id: 'nick', name: 'Nickelodeon', logo: '', color: '#EA5B0C' },
+              { id: 'marvel', name: 'Marvel', logo: '/logos/marvel.svg', color: '#ED1D24' },
+              { id: 'dc', name: 'DC', logo: '/logos/dc-white.svg', color: '#0476F2' },
+              { id: 'starwars', name: 'Star Wars', logo: '/logos/star-wars.svg', color: '#FFE81F' },
+              { id: 'hp', name: 'Harry Potter', logo: '/logos/harry-potter.svg', color: '#D3A625' },
+              { id: 'nfs', name: 'Need for Speed', logo: '/logos/nfs.svg', color: '#FF3B00' },
+              { id: 'nick', name: 'Nickelodeon', logo: '/logos/nickelodeon.svg', color: '#EA5B0C' },
             ].map((f, i) => (
               <button key={f.id} type="button" className="mfy-brand-tile shrink-0 h-20 w-40 rounded-2xl border flex flex-col items-center justify-center gap-1 px-3" style={{ borderColor: f.color + '88', animationDelay: `${i * 0.18}s`, background: `${f.color}18` }} onClick={() => {
                 if (f.id === 'marvel' || f.id === 'dc' || f.id === 'starwars' || f.id === 'nick') {

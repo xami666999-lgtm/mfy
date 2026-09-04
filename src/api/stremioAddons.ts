@@ -68,7 +68,7 @@ export async function addonStreams(base: string, type: string, id: string) {
   const d = await getJson(`${base}/stream/${type}/${encodeURIComponent(id)}.json`)
   return (d.streams || []).map((s: any) => ({
     title: s.title || s.name || s.description || 'Stream',
-    url: s.url || (s.ytId ? `https://www.youtube.com/watch?v=${s.ytId}` : '') || (s.infoHash ? `magnet:?xt=urn:btih:${s.infoHash}` : ''),
+    url: s.url || s.externalUrl || (s.ytId ? `https://www.youtube.com/watch?v=${s.ytId}` : '') || (s.infoHash ? `magnet:?xt=urn:btih:${s.infoHash}` : ''),
     quality: String(s.name || s.title || ''),
   })).filter((s: any) => s.url)
 }

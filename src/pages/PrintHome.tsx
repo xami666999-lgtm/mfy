@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { jikan } from '../api/jikan'
 import { anilist } from '../api/anilist'
 import { fireflyManga } from '../api/fireflyManga'
-import { OFFLINE_MANGA, OFFLINE_COMICS } from '../data/offlineCatalog'
+import { OFFLINE_MANGA, OFFLINE_COMICS, OFFLINE_BOOKS } from '../data/offlineCatalog'
 import { useStore } from '../store'
 
 function offlineCards() {
@@ -73,12 +73,14 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' | 'novels
     let live = true
     ;(async () => {
       if (kind === 'novels') {
+        const seed = (OFFLINE_BOOKS || []).map((b: any) => ({ ...b, poster_path: b.image, media_type: 'novel' }))
+        setPopular(seed)
         const [novels, light] = await Promise.all([
           jikan.topByType('novel', 1).catch(() => []),
           jikan.topByType('lightnovel', 1).catch(() => []),
         ])
         if (!live) return
-        const extra: Record<string, any[]> = { Novels: novels, 'Light novels': light }
+        const extra: Record<string, any[]> = { Novels: novels.length ? novels : seed, 'Light novels': light }
         const names = ['Overlord', 'Re:Zero', 'Mushoku Tensei', 'Classroom of the Elite', 'Spice and Wolf', 'Monogatari']
         for (const q of names) {
           extra[q] = await jikan.searchManga(q, 1).catch(() => [])
@@ -111,14 +113,15 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' | 'novels
       ])
       if (!live) return
       const extra: Record<string, any[]> = {
-        'Top manga': top,
+        'Top manga': top.length ? top : offlineCards(),
         'AniList manga': ani,
-        Novels: novels,
+        Novels: novels.length ? novels : (OFFLINE_BOOKS || []).map((b: any) => ({ ...b, poster_path: b.image, media_type: 'novel' })),
         'Light novels': light,
         'FireFly latest': ff,
       }
       const livePop = (top.length ? top : ani).filter((x: any) => x.image || x.coverImage || x.poster_path)
       setPopular(livePop.length ? livePop : offlineCards())
+      setRows({ ...extra })
       const titles = ['One Piece', 'Naruto', 'Berserk', 'Vagabond', 'Chainsaw Man', 'Jujutsu Kaisen']
       for (const q of titles) {
         extra[q] = await jikan.searchManga(q, 1).catch(() => [])
