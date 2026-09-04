@@ -63,7 +63,9 @@ export default function PlayerPage() {
   const [stillWatching, setStillWatching] = useState<null | 'idle' | 'next'>(null)
   const autoNextCount = useRef(0)
   const [showRate, setShowRate] = useState(false)
-  const [countdown, setCountdown] = useState(0)
+  const [countdown, setCountdown] = useState(5)
+  const [gate, setGate] = useState(true)
+  const [meta, setMeta] = useState<{ title: string; overview: string; poster: string; backdrop: string } | null>(null)
   const failTried = useRef<string[]>([])
   const [playerSource, setPlayerSource] = useState<PlayerSource>(() => {
     try { return (localStorage.getItem('mfy-player-engine') as PlayerSource) || 'vidy' } catch { return 'vidy' }
@@ -111,9 +113,15 @@ export default function PlayerPage() {
       load.then((rows) => {
         setPicks(rows)
         const q = rows.find((r: any) => /^https?:/i.test(r.url)) || rows[0]
-        if (!q) { setError('No stream from this addon'); setLoading(false); return }
+        if (!q) {
+          const fallback = getPlayerUrl('playtorrio', selectedMedia.type === 'movie' ? 'movie' : 'tv', selectedMedia.id, selectedMedia.season, selectedMedia.episode, anime)
+          setStreamUrl(fallback); setLoaded(true); setLoading(false); return
+        }
         setStreamUrl(q.url); setLoaded(true); setLoading(false)
-      }).catch(() => { setError('Addon failed'); setLoading(false) })
+      }).catch(() => {
+        const fallback = getPlayerUrl('playtorrio', selectedMedia.type === 'movie' ? 'movie' : 'tv', selectedMedia.id, selectedMedia.season, selectedMedia.episode, anime)
+        setStreamUrl(fallback); setLoaded(true); setLoading(false); setError('')
+      })
       return
     }
     if (src === 'mediafusion') {
@@ -229,6 +237,41 @@ export default function PlayerPage() {
   }, [streamUrl])
 
   useEffect(() => {
+    if (!selectedMedia?.id || selectedMedia.type === 'iptv') return
+    const kind = selectedMedia.type === 'movie' ? 'movie' : 'tv'
+    const existing = String((selectedMedia as any).title || (selectedMedia as any).name || '')
+    const run = async () => {
+      let d: any = null
+      try {
+        d = kind === 'movie' ? await tmdb.getMovieDetail(selectedMedia.id as number) : await tmdb.getTVDetail(selectedMedia.id as number)
+      } catch {}
+      setMeta({
+        title: d?.title || d?.name || existing || `${kind === 'movie' ? 'Movie' : 'Series'}`,
+        overview: d?.overview || (selectedMedia as any).overview || '',
+        poster: d?.poster_path || (selectedMedia as any).poster_path || '',
+        backdrop: d?.backdrop_path || (selectedMedia as any).backdrop_path || '',
+      })
+    }
+    run()
+  }, [selectedMedia?.id, selectedMedia?.type])
+
+  useEffect(() => {
+    if (!gate) return
+    setCountdown(5)
+    const id = setInterval(() => {
+      setCountdown((n) => {
+        if (n <= 1) {
+          clearInterval(id)
+          setGate(false)
+          return 0
+        }
+        return n - 1
+      })
+    }, 1000)
+    return () => clearInterval(id)
+  }, [gate, selectedMedia?.id, selectedMedia?.episode])
+
+  useEffect(() => {
     const onFullscreen = () => setFullscreen(Boolean(document.fullscreenElement))
     document.addEventListener('fullscreenchange', onFullscreen)
     return () => document.removeEventListener('fullscreenchange', onFullscreen)
@@ -261,6 +304,7 @@ export default function PlayerPage() {
         const eps = season?.episodes || []
         const next = eps.find((e: any) => e.episode_number === curEpisode + 1)
         if (next) {
+          setGate(true)
           setSelectedMedia({ id: selectedMedia.id, type: 'tv', season: curSeason, episode: next.episode_number })
           const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, curSeason, next.episode_number, isAnimeItem(selectedMedia))
           setCurrentStreamUrl(url)
@@ -468,7 +512,18 @@ export default function PlayerPage() {
     leavePlayer(selectedMedia?.id ? 'detail' : 'home')
   }
 
-  const title = selectedMedia ? `${selectedMedia.type === 'movie' ? 'Movie' : 'Series'} ${selectedMedia.id}` : 'MFY Player'
+  const title = meta?.title || String((selectedMedia as any)?.title || (selectedMedia as any)?.name || '') || (selectedMedia ? `${selectedMedia.type === 'movie' ? 'Movie' : 'Series'} ${selectedMedia.id}` : 'MFY Player')
+  const franchiseLogos = (() => {
+    const t = title.toLowerCase()
+    const all = [
+      { k: /spider-?man|avengers|iron man|marvel|deadpool|x-men|guardians of the galaxy|doctor strange|black panther|thor /, src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Marvel_Logo.svg/320px-Marvel_Logo.svg.png' },
+      { k: /batman|superman|joker|wonder woman|aquaman|flash|dc comics|justice league/, src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/DC_Comics_logo.svg/200px-DC_Comics_logo.svg.png' },
+      { k: /star wars|mandalorian|andor|ahsoka/, src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Star_Wars_Logo.svg/320px-Star_Wars_Logo.svg.png' },
+      { k: /harry potter|fantastic beasts/, src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Harry_Potter_wordmark.svg/320px-Harry_Potter_wordmark.svg.png' },
+      { k: /one piece/, src: 'https://upload.wikimedia.org/wikipedia/en/2/2d/One_Piece_Logo.png' },
+    ]
+    return all.filter((x) => x.k.test(t)).map((x) => x.src)
+  })()
 
   return (
     <>
@@ -541,10 +596,48 @@ export default function PlayerPage() {
       </div>
 
       <div className="player-stage" onClick={togglePlay} style={{ position: 'relative', width: '100%', height: '100vh', minHeight: '100vh' }}>
-        {!loaded && !error && (
-          <div className="player-empty" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white/60' }}>
-            <div className="player-empty-icon" style={{ fontSize: 48, marginBottom: 16 }}><Play /></div>
-            <h2>Loading stream…</h2>
+        {(gate || (!loaded && !error)) && (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 40,
+            background: meta?.backdrop
+              ? `center/cover url(${BACKDROP_URL}${meta.backdrop})`
+              : '#0b0710',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <div style={{ position: 'absolute', inset: 0, backdropFilter: 'blur(28px)', background: 'rgba(8,6,12,0.55)' }} />
+            {franchiseLogos.map((src) => (
+              <img key={src} src={src} alt="" style={{ position: 'absolute', top: 18, left: '50%', transform: 'translateX(-50%)', height: 36, opacity: 0.9, zIndex: 2 }} />
+            ))}
+            <div style={{
+              position: 'relative', zIndex: 3, display: 'flex', gap: 16, alignItems: 'center',
+              background: 'rgba(16,12,20,0.92)', border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 18, padding: 14, maxWidth: 560, width: 'min(560px, 92vw)',
+              boxShadow: '0 24px 80px rgba(0,0,0,0.55)',
+            }}>
+              {meta?.poster && (
+                <img src={`${POSTER_URL}${meta.poster}`} alt="" style={{ width: 92, height: 138, objectFit: 'cover', borderRadius: 10, flexShrink: 0 }} />
+              )}
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 10, letterSpacing: 1.4, color: '#FF1493', fontWeight: 700, marginBottom: 4 }}>
+                  {selectedMedia?.type === 'movie' ? 'MOVIE' : isAnimeItem(selectedMedia) ? 'ANIME' : 'SERIES'}
+                </div>
+                <div style={{ color: '#fff', fontWeight: 700, fontSize: 16, marginBottom: 6 }}>{title}</div>
+                <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {meta?.overview || 'Ready when you are.'}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
+                  <button type="button" onClick={() => setGate(false)} style={{ background: '#FF1493', color: '#fff', border: 'none', borderRadius: 999, padding: '8px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                    ▶ Play Now
+                  </button>
+                  <button type="button" onClick={() => leavePlayer('detail')} style={{ background: 'rgba(255,255,255,0.08)', color: '#fff', border: 'none', borderRadius: 999, padding: '8px 14px', fontSize: 13, cursor: 'pointer' }}>
+                    Later
+                  </button>
+                  <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, marginLeft: 6 }}>
+                    auto-playing… {countdown}s
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
         {error && <div className="player-error" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'red', padding: 24, textAlign: 'center' }}>{error}</div>}

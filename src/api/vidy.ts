@@ -76,7 +76,9 @@ export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId:
 
 export function isPlayerEmbed(url: string): boolean {
   if (!url) return false
-  return /vidy\.st|playtorrio|simplstream|zangetsu|miruro|youtube|youtu\.be|nadeko|yewtu|invidious|embed/.test(url)
+  if (/pengu\.uk|vixsrc\.to|vidnest\.fun|vidsrc\.|vidlink\.pro|vidfast\.pro|moviebox\.ph|youtube|youtu\.be|invidious|nadeko|embed|player\./i.test(url)) return true
+  if (/^https?:/i.test(url) && !/\.(mp4|m3u8|mkv|webm|avi)(\?|$)/i.test(url)) return true
+  return false
 }
 
 export function getFallbackSources(type: 'movie' | 'tv', tmdbId: number | string | undefined, season?: number, episode?: number): { source: PlayerSource; url: string }[] {
