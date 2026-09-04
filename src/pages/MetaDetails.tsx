@@ -183,6 +183,7 @@ export default function MetaDetails() {
     { id: 'mangayomi', label: 'Mangayomi', q: 'Reader / 1080p' },
     { id: 'vidy', label: 'Vidy', q: '1080p · 720p' },
     { id: 'mediafusion', label: 'MediaFusion', q: 'P2P · Debrid · Anime' },
+    { id: 'moviebox', label: 'MovieBox', q: 'MP4 · DASH · Multi-lang' },
   ]
   const [playerPick, setPlayerPick] = useState(() => {
     try { return localStorage.getItem('mfy-player-engine') || 'zangetsu' } catch { return 'zangetsu' }
@@ -199,7 +200,11 @@ export default function MetaDetails() {
     const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
     const op = isOnePiece((detail as any)?.title || (detail as any)?.name || (selectedMedia as any)?.title)
     const pick = op ? 'onepace' : (anime && !['zangetsu', 'miruro', 'mangayomi', 'mediafusion', 'flix', 'nyaa', 'animeflv'].includes(playerPick) ? 'zangetsu' : playerPick)
-    const url = getPlayerUrl(pick as any, kind, selectedMedia.id as number, activeSeason, selectedMedia.episode || 1, anime)
+    let url = getPlayerUrl(pick as any, kind, selectedMedia.id as number, activeSeason, selectedMedia.episode || 1, anime)
+    if (pick === 'moviebox') {
+      const name = (detail as any)?.title || (detail as any)?.name || String(selectedMedia.id)
+      url = `https://moviebox.ph/web/searchResult?keyword=${encodeURIComponent(name)}`
+    }
     setSelectedMedia({ ...selectedMedia, season: activeSeason, episode: selectedMedia.episode, title: (detail as any)?.title || (detail as any)?.name, poster_path: (detail as any)?.poster_path } as any)
     setCurrentStreamUrl(url)
     try {
@@ -396,7 +401,7 @@ export default function MetaDetails() {
                 const op = isOnePiece(detail?.title || detail?.name || (selectedMedia as any)?.title)
                 if (op) return p.id === 'onepace'
                 if (anime) return ['zangetsu','miruro','mangayomi','mediafusion','flix','nyaa','animeflv','sportsstreams'].includes(p.id)
-                return ['playtorrio','simplstream','vidy','mediafusion','flix'].includes(p.id)
+                return ['playtorrio','simplstream','vidy','mediafusion','flix','moviebox'].includes(p.id)
               })).map((p) => (
                 <button
                   key={p.id}
@@ -465,7 +470,7 @@ export default function MetaDetails() {
                 const op = isOnePiece(detail?.title || detail?.name || (selectedMedia as any)?.title)
                 if (op) return p.id === 'onepace'
                 if (anime) return ['zangetsu','miruro','mangayomi','mediafusion','flix','nyaa','animeflv','sportsstreams'].includes(p.id)
-                return ['playtorrio','simplstream','vidy','mediafusion','flix'].includes(p.id)
+                return ['playtorrio','simplstream','vidy','mediafusion','flix','moviebox'].includes(p.id)
               })).map((p) => (
                     <button key={p.id} type="button" className="w-full flex items-center justify-between h-10 px-3 rounded-xl bg-[#1a1016] border border-white/10 hover:border-[#FF1493]/50 text-left text-white" onClick={() => {
                       setPlayerPick(p.id)

@@ -23,10 +23,10 @@ export function vidyAnimeUrl(anilistId: number | string, episode = 1): string {
   return `${VIDY_BASE}/anime/${anilistId}/${episode}`
 }
 
-export type PlayerSource = 'vidy' | 'playtorrio' | 'simplstream' | 'zangetsu' | 'miruro' | 'mangayomi' | 'mediafusion' | 'flix' | 'nyaa' | 'animeflv' | 'onepace' | 'streamsppv' | 'sportsstreams'
+export type PlayerSource = 'vidy' | 'playtorrio' | 'simplstream' | 'zangetsu' | 'miruro' | 'mangayomi' | 'mediafusion' | 'flix' | 'nyaa' | 'animeflv' | 'onepace' | 'streamsppv' | 'sportsstreams' | 'moviebox'
 
 export const ANIME_SOURCES: PlayerSource[] = ['zangetsu', 'miruro', 'mangayomi', 'mediafusion', 'flix', 'nyaa', 'animeflv', 'sportsstreams']
-export const MOVIE_TV_SOURCES: PlayerSource[] = ['playtorrio', 'simplstream', 'vidy', 'mediafusion', 'flix']
+export const MOVIE_TV_SOURCES: PlayerSource[] = ['playtorrio', 'simplstream', 'vidy', 'mediafusion', 'flix', 'moviebox']
 
 export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId: number | string, season?: number, episode?: number, anime = false): string {
   const s = season ?? 1
@@ -48,6 +48,9 @@ export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId:
   }
   if (anime) {
     return `https://player.videasy.net/tv/${tmdbId}/${s}/${e}`
+  }
+  if (source === 'moviebox') {
+    return `https://moviebox.ph/web/searchResult?keyword=${encodeURIComponent(String(tmdbId))}`
   }
   if (source === 'mediafusion') {
     return `mfusion:${type}:${tmdbId}:${s}:${e}`

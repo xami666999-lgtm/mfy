@@ -55,7 +55,7 @@ export default function PlayerPage() {
     playtorrio: 'PlayTorrio', simplstream: 'SimplStream', vidy: 'Vidy',
     zangetsu: 'Zangetsu', miruro: 'Miruro', mangayomi: 'Mangayomi',
     mediafusion: 'MediaFusion', flix: 'Flix', nyaa: 'Nyaa', animeflv: 'AnimeFLV',
-    onepace: 'One Pace', streamsppv: 'StreamsPPV', sportsstreams: 'Sports Streams',
+    onepace: 'One Pace', streamsppv: 'StreamsPPV', sportsstreams: 'Sports Streams', moviebox: 'MovieBox',
   }
   const trackRef = useRef<HTMLTrackElement>(null)
 
@@ -82,6 +82,14 @@ export default function PlayerPage() {
     if (isOnePiece(title)) src = 'onepace'
     else if (anime && !(ANIME_SOURCES as string[]).includes(src) && src !== 'onepace') src = 'zangetsu'
     else if (!anime && !(MOVIE_TV_SOURCES as string[]).includes(src) && src !== 'streamsppv' && src !== 'sportsstreams') src = 'playtorrio'
+    if (src === 'moviebox') {
+      const name = String((selectedMedia as any).title || (selectedMedia as any).name || title || selectedMedia.id)
+      setStreamUrl(`https://moviebox.ph/web/searchResult?keyword=${encodeURIComponent(name)}`)
+      setLoaded(true)
+      setLoading(false)
+      setError('')
+      return
+    }
     const addonBase = (STREAM_HOST as any)[src]
     if (addonBase) {
       setLoading(true); setLoaded(false); setError('')
