@@ -608,8 +608,6 @@ export default function PlayerPage() {
         <RateModal title={title} kind={isAnimeItem(selectedMedia) ? 'anime' : (selectedMedia?.type === 'movie' ? 'movie' : 'tv')} onSubmit={(s, n) => finishRate(s, n)} onSkip={() => finishRate()} />
       )}
         <div className="mfy-player" onMouseMove={onMouseMove} style={{ background: '#000', minHeight: '100vh' }}>
-      <button type="button" onClick={goBack} style={{ position: 'fixed', top: 12, left: 12, zIndex: 120, background: 'rgba(0,0,0,0.75)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, padding: '8px 12px', cursor: 'pointer' }}>Exit</button>
-      <button type="button" onClick={() => setTogether(true)} style={{ position: 'fixed', top: 12, left: 84, zIndex: 120, background: 'rgba(0,0,0,0.75)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, padding: '8px 12px', cursor: 'pointer' }}>Together</button>
       <div className={cn('player-topbar', showUI ? 'visible' : 'hidden')} style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 90, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
         <div className="flex items-center gap-2">
         <button onClick={goBack} className="player-back flex items-center gap-2 text-white/80 hover:text-white" style={{ background: 'rgba(0,0,0,0.5)', padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>
@@ -655,7 +653,7 @@ export default function PlayerPage() {
         </div>
       </div>
 
-      <div className="player-stage" onClick={togglePlay} style={{ position: 'relative', width: '100%', height: '100vh', minHeight: '100vh' }}>
+      <div className="player-stage" onClick={togglePlay} style={{ position: 'relative', width: '100%', height: '100vh', minHeight: '100vh', overflow: 'hidden' }}>
         {(gate || (!loaded && !error)) && (
           <div style={{
             position: 'absolute', inset: 0, zIndex: 40,
@@ -707,7 +705,13 @@ export default function PlayerPage() {
             key={streamUrl}
             src={streamUrl}
             partition="persist:mfy"
-            style={{ width: '100%', height: '100%', background: '#000', objectFit: fit }}
+            style={{
+              width: '100%',
+              height: '100%',
+              background: '#000',
+              transform: fit === 'cover' ? 'scale(1.28)' : fit === 'fill' ? 'scaleX(1.12) scaleY(1.18)' : 'scale(1)',
+              transformOrigin: 'center center',
+            }}
             allowpopups="false"
             allowfullscreen="true"
             useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
@@ -718,8 +722,8 @@ export default function PlayerPage() {
           <video ref={videoRef} playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: fit, background: '#000' }} />
         )}
 
-        {loaded && !error && isPlayerEmbedUrl(streamUrl) && (
-          <div style={{ position: 'absolute', bottom: 10, right: 168, zIndex: 2147483646, display: 'flex', alignItems: 'center', gap: 8, pointerEvents: 'auto' }}>
+        {showUI && loaded && !error && isPlayerEmbedUrl(streamUrl) && (
+          <div style={{ position: 'absolute', bottom: 18, right: 18, zIndex: 90, display: 'flex', alignItems: 'center', gap: 8, pointerEvents: 'auto' }}>
             {srcOpen && (
               <div style={{ position: 'absolute', bottom: 42, left: 0, background: '#120a12', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 8, minWidth: 160 }}>
                 {((isOnePiece(String((selectedMedia as any)?.title||'')) ? (['onepace'] as PlayerSource[]) : (isAnimeItem(selectedMedia) ? ANIME_SOURCES : MOVIE_TV_SOURCES))).map((s) => (
