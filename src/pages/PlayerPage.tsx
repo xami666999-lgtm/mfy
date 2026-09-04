@@ -48,7 +48,7 @@ export default function PlayerPage() {
   const [subtitleOffset, setSubtitleOffset] = useState(0)
   const [subSize, setSubSize] = useState(0.65)
   const [subBg, setSubBg] = useState(false)
-  const [fit, setFit] = useState<'contain' | 'cover' | 'fill'>('contain')
+  const [fit, setFit] = useState<'contain' | 'cover' | 'fill' | 'full'>('contain')
   const [picks, setPicks] = useState<{ title: string; url: string; quality: string }[]>([])
   const [srcOpen, setSrcOpen] = useState(false)
 
@@ -214,7 +214,12 @@ export default function PlayerPage() {
     if (!w?.addEventListener) return
     const apply = () => {
       try {
-        w.insertCSS(`video::cue { font-size: ${subSize}em !important; line-height: 1.2; background: ${subBg ? 'rgba(0,0,0,0.75)' : 'transparent'} !important; color: #fff; }`)
+        w.insertCSS(`
+          html, body { width:100% !important; height:100% !important; margin:0 !important; background:#000 !important; overflow:hidden !important; }
+          video, iframe { width:100vw !important; height:100vh !important; max-width:none !important; max-height:none !important; object-fit:${fit === 'full' ? 'contain' : fit} !important; background:#000 !important; }
+          video::cue { font-size: ${subSize}em !important; line-height: 1.2; background: ${subBg ? 'rgba(0,0,0,0.75)' : 'transparent'} !important; color: #fff; }
+        `)
+        w.executeJavaScript(`document.querySelectorAll('video').forEach(v=>{v.style.objectFit='${fit === 'full' ? 'contain' : fit}'; v.style.width='100vw'; v.style.height='100vh';})`)
       } catch {}
     }
     const resume = () => {
@@ -240,7 +245,7 @@ export default function PlayerPage() {
     w.addEventListener('dom-ready', resume)
     setTimeout(resume, 1500)
     return () => { try { w.removeEventListener('dom-ready', resume) } catch {} }
-  }, [subSize, subBg, streamUrl])
+  }, [subSize, subBg, streamUrl, fit])
 
   useEffect(() => {
     const v = videoRef.current
@@ -727,8 +732,16 @@ export default function PlayerPage() {
               </div>
             )}
             <button type="button" title="Sources" onClick={() => setSrcOpen((v) => !v)} style={{ width: 36, height: 36, borderRadius: 8, border: 'none', background: 'rgba(0,0,0,0.55)', color: '#fff', cursor: 'pointer' }}>⋯</button>
-            <button type="button" title="Fit" onClick={() => setFit((f) => f === 'contain' ? 'cover' : f === 'cover' ? 'fill' : 'contain')} style={{ width: 36, height: 36, borderRadius: 8, border: 'none', background: 'rgba(0,0,0,0.55)', color: '#fff', cursor: 'pointer', fontSize: 10 }}>{fit === 'cover' ? 'Crop' : fit === 'fill' ? 'Fill' : 'Fit'}</button>
-            <button type="button" title="Fullscreen" onClick={toggleFullscreen} style={{ width: 36, height: 36, borderRadius: 8, border: 'none', background: 'rgba(0,0,0,0.55)', color: '#fff', cursor: 'pointer' }}>{fullscreen ? '✕' : '⛶'}</button>
+            <button type="button" title="Fit / Crop / Full" onClick={() => {
+              setFit((f) => {
+                const next = f === 'contain' ? 'cover' : f === 'cover' ? 'fill' : f === 'fill' ? 'full' : 'contain'
+                if (next === 'full') toggleFullscreen()
+                else if (f === 'full') { try { (window as any).electronAPI?.exitFullscreen?.() } catch {}; try { document.exitFullscreen?.() } catch {} }
+                return next
+              })
+            }} style={{ minWidth: 52, height: 36, borderRadius: 8, border: 'none', background: '#FF1493', color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
+              {fit === 'cover' ? 'Crop' : fit === 'fill' ? 'Fill' : fit === 'full' ? 'Full' : 'Fit'}
+            </button>
           </div>
         )}
         {showUI && loaded && !error && !isPlayerEmbedUrl(streamUrl) && (
