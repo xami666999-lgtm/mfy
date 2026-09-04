@@ -49,6 +49,14 @@ export default function PlayerPage() {
   const [subBg, setSubBg] = useState(true)
   const [fit, setFit] = useState<'contain' | 'cover' | 'fill'>('contain')
   const [picks, setPicks] = useState<{ title: string; url: string; quality: string }[]>([])
+  const [srcOpen, setSrcOpen] = useState(false)
+
+  const sourceNames: Record<string, string> = {
+    playtorrio: 'PlayTorrio', simplstream: 'SimplStream', vidy: 'Vidy',
+    zangetsu: 'Zangetsu', miruro: 'Miruro', mangayomi: 'Mangayomi',
+    mediafusion: 'MediaFusion', flix: 'Flix', nyaa: 'Nyaa', animeflv: 'AnimeFLV',
+    onepace: 'One Pace', streamsppv: 'StreamsPPV', sportsstreams: 'Sports Streams',
+  }
   const trackRef = useRef<HTMLTrackElement>(null)
 
   const [autoNextBusy, setAutoNextBusy] = useState(false)
@@ -427,41 +435,37 @@ export default function PlayerPage() {
         </div>
         <div className="player-title text-white font-medium truncate" style={{ maxWidth: 400 }}>{title}</div>
         <div className="player-top-actions flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            <span style={{ fontSize: 10, color: 'white/60' }}>Source:</span>
-            <select
-              value={playerSource}
-              onChange={(e) => {
-                const v = e.target.value as PlayerSource
-                setPlayerSource(v)
-                try { localStorage.setItem('mfy-player-engine', v) } catch {}
-              }}
-              style={{
-                background: 'rgba(255,255,255,0.1)',
-                border: 'none',
-                borderRadius: 6,
-                padding: '6px 10px',
-                color: 'white',
-                fontSize: 11,
-                cursor: 'pointer',
-                appearance: 'none'
-              }}
+          <div className="relative flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSrcOpen((v) => !v)}
+              style={{ background: '#1a1016', border: '1px solid #FF1493', borderRadius: 999, padding: '7px 14px', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
             >
-              <option value="playtorrio">PlayTorrio</option>
-              <option value="simplstream">SimplStream</option>
-              <option value="zangetsu">Zangetsu</option>
-              <option value="miruro">Miruro</option>
-              <option value="vidy">Vidy</option>
-              <option value="mediafusion">MediaFusion</option>
-              <option value="flix">Flix</option>
-              <option value="nyaa">Nyaa</option>
-              <option value="animeflv">AnimeFLV</option>
-              <option value="onepace">One Pace</option>
-              <option value="streamsppv">StreamsPPV</option>
-              <option value="sportsstreams">Sports Streams</option>
-            </select>
-            <button type="button" onClick={tryNextSource} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 6, padding: '6px 10px', color: 'white', fontSize: 11, cursor: 'pointer' }}>Switch source</button>
-            <Zap size={12} style={{ color: '#FFD24C' }} />
+              {sourceNames[playerSource] || playerSource} ▾
+            </button>
+            {srcOpen && (
+              <div style={{ position: 'absolute', right: 0, top: 40, width: 220, background: '#12080d', border: '1px solid rgba(255,20,147,0.45)', borderRadius: 16, padding: 8, zIndex: 80, boxShadow: '0 16px 40px rgba(0,0,0,0.55)' }}>
+                {(isOnePiece(String((selectedMedia as any)?.title || '')) ? (['onepace'] as PlayerSource[]) : (isAnimeItem(selectedMedia) ? ANIME_SOURCES : MOVIE_TV_SOURCES)).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => {
+                      setPlayerSource(s)
+                      setSrcOpen(false)
+                      try { localStorage.setItem('mfy-player-engine', s) } catch {}
+                    }}
+                    style={{
+                      width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer',
+                      background: playerSource === s ? '#FF1493' : 'transparent',
+                      color: '#fff', borderRadius: 10, padding: '9px 12px', fontSize: 13, fontWeight: 600, marginBottom: 4,
+                    }}
+                  >
+                    {sourceNames[s] || s}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button type="button" onClick={tryNextSource} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>Next</button>
           </div>
           <button className="player-icon-button" onClick={toggleFullscreen} style={{ background: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white' }}><Maximize size={18} /></button>
         </div>

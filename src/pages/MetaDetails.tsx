@@ -404,7 +404,7 @@ export default function MetaDetails() {
                     setPlayerPick(p.id)
                     try { localStorage.setItem('mfy-player-engine', p.id) } catch {}
                   }}
-                  className={`h-7 px-2.5 rounded-full text-[10px] font-semibold ${playerPick === p.id ? 'bg-[#FF1493] text-white' : 'bg-white/10 text-white/50'}`}
+                  className={`h-8 px-3 rounded-full text-[11px] font-semibold border ${playerPick === p.id ? 'bg-[#FF1493] text-white border-[#FF1493]' : 'bg-[#1a1016] text-white border-white/15 hover:border-[#FF1493]/60'}`}
                 >
                   <span className="inline-block w-1.5 h-1.5 rounded-full mr-1" style={{background: sourceDot(p.id)==='green'?'#22c55e':sourceDot(p.id)==='red'?'#ef4444':'#64748b'}} />
                   {p.label}
@@ -442,7 +442,7 @@ export default function MetaDetails() {
                 if (anime) return ['zangetsu','miruro','mangayomi','mediafusion','flix','nyaa','animeflv','sportsstreams'].includes(p.id)
                 return ['playtorrio','simplstream','vidy','mediafusion','flix'].includes(p.id)
               })).map((p) => (
-                    <button key={p.id} type="button" className="w-full flex items-center justify-between h-10 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-left" onClick={() => {
+                    <button key={p.id} type="button" className="w-full flex items-center justify-between h-10 px-3 rounded-xl bg-[#1a1016] border border-white/10 hover:border-[#FF1493]/50 text-left text-white" onClick={() => {
                       setPlayerPick(p.id)
                       try { localStorage.setItem('mfy-player-engine', p.id) } catch {}
                       handlePlay()
