@@ -20,7 +20,6 @@ function cleanTitle(raw: string) {
   return String(raw || '')
     .replace(/\s*\(.*?\)\s*/g, ' ')
     .replace(/\s*\[.*?\]\s*/g, ' ')
-    .replace(/[:\-–].*$/, '')
     .replace(/\s+/g, ' ')
     .trim()
 }

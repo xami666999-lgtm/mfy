@@ -191,7 +191,7 @@ export default function MetaDetails() {
     { id: 'miruro', label: 'Miruro', q: 'Anime' },
   ]
   const [playerPick, setPlayerPick] = useState(() => {
-    try { return localStorage.getItem('mfy-player-engine') || 'zangetsu' } catch { return 'zangetsu' }
+    try { return localStorage.getItem('mfy-player-engine') || 'playtorrio' } catch { return 'playtorrio' }
   })
   const [pickOpen, setPickOpen] = useState(false)
 
@@ -345,17 +345,19 @@ export default function MetaDetails() {
             {/* Ratings row */}
             <div className="flex flex-wrap items-center gap-2 mb-4">
               {(omdb?.imdbRating || detail.vote_average > 0) && (
-                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-[#f5c518]/20 border border-[#f5c518]/40 text-[11px] font-bold text-[#f5c518] shadow-sm">
-                  IMDb {omdb?.imdbRating || Number(detail.vote_average).toFixed(1)}
+                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/IMDB_Logo_2016.svg/80px-IMDB_Logo_2016.svg.png" alt="IMDb" className="h-3.5" />
+                  {omdb?.imdbRating || Number(detail.vote_average).toFixed(1)}
                 </span>
               )}
               {(omdb?.rottenTomatoes || rtExtra?.critics) && (
-                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-[#fa320a]/15 border border-[#fa320a]/40 text-[11px] font-bold text-[#ff6b4a]">
-                  RT {omdb?.rottenTomatoes || rtExtra?.critics}
+                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Rotten_Tomatoes.svg/40px-Rotten_Tomatoes.svg.png" alt="RT" className="h-3.5" />
+                  {omdb?.rottenTomatoes || rtExtra?.critics}
                 </span>
               )}
-              {aggRatings.map((r) => (
-                <span key={r.key} className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-white/8 border border-white/15 text-[11px] font-bold text-white/85">
+              {aggRatings.filter((r) => r.key === 'tmdb' || r.key === 'mc').map((r) => (
+                <span key={r.key} className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
                   {r.label} {r.value}
                 </span>
               ))}
@@ -364,26 +366,7 @@ export default function MetaDetails() {
                   Audience {rtExtra.audience}
                 </span>
               )}
-              {mdblistRatings && mdblistRatings.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {mdblistRatings.slice(0, 5).map((r) => {
-                    const label = (r.source || '').toLowerCase()
-                    const score = r.score ?? r.value
-                    if (score == null || !Number.isFinite(score)) return null
-                    const pct = label === 'letterboxd' ? Math.round(score * 20) : label === 'imdb' || label === 'tmdb' || label === 'trakt' ? Math.round(score * 10) : Math.round(score)
-                    const badge = label === 'rotten' ? { c: 'bg-[#fa320a]/15 text-[#ff6b4a] border-[#fa320a]/40', t: 'RT' }
-                      : label === 'metacritic' ? { c: 'bg-[#3a6ea5]/20 text-[#7cb2e8] border-[#3a6ea5]/45', t: 'MC' }
-                      : label === 'letterboxd' ? { c: 'bg-[#00b19d]/15 text-[#34d4c0] border-[#00b19d]/40', t: 'LB' }
-                      : label === 'trakt' ? { c: 'bg-[#ed1c24]/15 text-[#ff6b6b] border-[#ed1c24]/40', t: 'TK' }
-                      : { c: 'bg-[#f5c518]/20 text-[#f5c518] border-[#f5c518]/40', t: 'IMDb' }
-                    return (
-                      <span key={r.source} className={`inline-flex items-center gap-1 h-7 px-2.5 rounded-md border text-[11px] font-bold ${badge.c}`} title={`${r.source}: ${score}${r.votes != null ? ` (${r.votes} votes)` : ''}`}>
-                        {badge.t} {pct}%
-                      </span>
-                    )
-                  })}
-                </div>
-              )}
+              {false && mdblistRatings}
               {imdbId && (
                 <button
                   type="button"
@@ -431,7 +414,6 @@ export default function MetaDetails() {
               <button
                 type="button"
                 onClick={() => {
-                  setPickOpen(true)
                   try { localStorage.setItem('mfy-player-engine', playerPick) } catch {}
                   handlePlay()
                 }}
@@ -439,40 +421,14 @@ export default function MetaDetails() {
                 className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all disabled:opacity-60 shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
               >
                 <Play className="w-4 h-4" fill="black" />
-                {resolving ? 'Finding…' : 'Play'}
+                Play
               </button>
-              <button type="button" className="h-11 px-4 rounded-full bg-[#FF1493] text-xs font-semibold" onClick={() => {
+              <button type="button" className="h-11 w-11 rounded-full bg-white/10 text-lg" title="Like" onClick={() => {
                 markLike({ id: String(selectedMedia?.id), type: selectedMedia?.type || 'movie', title: title || '', poster: detail?.poster_path })
-                alert('We’ll show more like this on Home')
-              }}>See more like this</button>
-              <button type="button" className="h-11 px-4 rounded-full bg-white/10 text-xs" onClick={() => {
+              }}>👍</button>
+              <button type="button" className="h-11 w-11 rounded-full bg-white/10 text-lg" title="Dislike" onClick={() => {
                 markDislike({ id: String(selectedMedia?.id), type: selectedMedia?.type || 'movie', title: title || '' })
-                alert('We’ll show less of this')
-              }}>See less like this</button>
-              <button type="button" className="h-11 px-4 rounded-full bg-white/10 text-xs" onClick={() => {
-                const imdb = (detail as any)?.imdb_id || (detail as any)?.external_ids?.imdb_id || selectedMedia?.id
-                const url = pearioWatchUrl(String(imdb), selectedMedia?.type === 'movie' ? 'movie' : 'series')
-                setCurrentStreamUrl(url)
-                setCurrentPage('player')
-              }}>Watch together</button>
-              <form className="flex items-center gap-1" onSubmit={(e) => {
-                e.preventDefault()
-                const name = String(new FormData(e.currentTarget).get('peer') || '').trim()
-                if (!name) return
-                setCurrentStreamUrl(pearioUserUrl(name))
-                setCurrentPage('player')
-              }}>
-                <input name="peer" placeholder="Peario username" className="h-11 px-3 rounded-full bg-[#1a1016] border border-white/15 text-xs w-36" />
-                <button type="submit" className="h-11 px-3 rounded-full bg-white/10 text-xs">Find</button>
-              </form>
-              <button type="button" className="h-11 px-4 rounded-full bg-white/10 text-xs" onClick={() => { reportBroken(detail?.title || detail?.name || 'title', playerPick); alert('Reported. Next Play will try another source.') }}>Report broken</button>
-              <button type="button" className="h-11 px-4 rounded-full bg-white/10 text-xs" onClick={async () => {
-                const imdb = (detail as any)?.imdb_id || (detail as any)?.external_ids?.imdb_id || selectedMedia?.id
-                const url = await trailerUrl(String(imdb), selectedMedia?.type === 'movie' ? 'movie' : 'series')
-                if (!url) return alert('No trailer')
-                setCurrentStreamUrl(url.includes('watch?v=') ? `https://www.youtube-nocookie.com/embed/${url.split('v=')[1].split('&')[0]}?autoplay=1` : url)
-                setCurrentPage('player')
-              }}>Trailer</button>
+              }}>👎</button>
               {pickOpen && (
                 <div className="w-full mt-3 rounded-2xl bg-black/55 border border-white/10 p-3 space-y-2">
                   {(PLAYERS.filter((p) => {

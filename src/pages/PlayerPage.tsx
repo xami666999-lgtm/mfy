@@ -81,7 +81,7 @@ export default function PlayerPage() {
     let src: PlayerSource = playerSource
     if (isOnePiece(title)) src = 'onepace'
     else if (anime && !(ANIME_SOURCES as string[]).includes(src) && src !== 'onepace') src = 'zangetsu'
-    else if (!anime && !(MOVIE_TV_SOURCES as string[]).includes(src) && src !== 'streamsppv' && src !== 'sportsstreams') src = 'playtorrio'
+    else if (!anime && !(MOVIE_TV_SOURCES as string[]).includes(src)) src = 'playtorrio'
     if (src === 'moviebox') {
       const name = String((selectedMedia as any).title || (selectedMedia as any).name || title || selectedMedia.id)
       setStreamUrl(`https://moviebox.ph/web/searchResult?keyword=${encodeURIComponent(name)}`)

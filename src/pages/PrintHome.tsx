@@ -65,7 +65,7 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' | 'novels
 
   function open(item: any) {
     const name = item.title?.english || item.title?.romaji || item.title || item.name || String(item.id)
-    setSelectedMedia({ id: item.id || name, type: 'manga', title: name } as any)
+    setSelectedMedia({ id: item.id || name, type: kind === 'comics' ? 'comics' : 'manga', title: name, poster_path: item.poster_path || item.image } as any)
     setCurrentPage('manga-detail')
   }
 

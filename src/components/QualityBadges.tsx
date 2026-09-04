@@ -16,31 +16,13 @@ const BADGES: { id: string; group: string; src: string; test: RegExp }[] = [
   { id: '71', group: 'ch', src: 'https://raw.githubusercontent.com/leonevz/Elite-Badges/main/Badges/7_1_audio.png', test: /7[\s._-]*1/ },
 ]
 
-export default function QualityBadges({ haystack = '', year }: { haystack?: string; year?: string }) {
-  const y = Number(year) || 0
-  let text = haystack
-  if (!/2160p|1080p|720p|\bhdr\b|atmos/i.test(text)) {
-    text += y >= 2017 ? ' 2160p hdr atmos 1080p 5.1' : y >= 2010 ? ' 1080p hdr 5.1' : ' 1080p 5.1'
-  }
-  const groups = ['res', 'vid', 'aud', 'ch']
+export default function QualityBadges({ haystack = '' }: { haystack?: string; year?: string }) {
+  const hits = BADGES.filter((b) => b.test.test(haystack || ''))
+  if (!hits.length) return null
   return (
-    <div className="flex flex-col gap-2 mb-4">
-      {groups.map((g) => (
-        <div key={g} className="flex flex-wrap items-center gap-1.5">
-          {BADGES.filter((b) => b.group === g).map((b) => {
-            const on = b.test.test(text)
-            return (
-              <img
-                key={b.id}
-                src={b.src}
-                alt={b.id}
-                title={b.id}
-                className={`h-6 object-contain ${on ? 'opacity-100' : 'opacity-35'}`}
-                referrerPolicy="no-referrer"
-              />
-            )
-          })}
-        </div>
+    <div className="flex flex-wrap items-center gap-1.5 mb-4">
+      {hits.map((b) => (
+        <img key={b.id} src={b.src} alt={b.id} title={b.id} className="h-6 object-contain" referrerPolicy="no-referrer" />
       ))}
     </div>
   )
