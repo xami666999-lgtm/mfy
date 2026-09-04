@@ -76,7 +76,16 @@ export default function MetaDetails() {
       }
       if (d) {
         setDetail(d)
-        setTrailerKey(d?.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')?.key || null)
+        const fromDetail = d?.videos?.results?.find((v: any) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'))?.key
+        if (fromDetail) setTrailerKey(fromDetail)
+        else {
+          const kind = selectedMedia.type === 'movie' ? 'movie' : 'tv'
+          tmdb.getVideos(kind, d.id).then((v) => {
+            const key = (v?.results || []).find((x: any) => x.site === 'YouTube' && (x.type === 'Trailer' || x.type === 'Teaser'))?.key
+              || (v?.results || []).find((x: any) => x.site === 'YouTube')?.key
+            setTrailerKey(key || null)
+          }).catch(() => setTrailerKey(null))
+        }
         if (d.seasons?.length) {
           const sNum = d.seasons.find((s: any) => s.season_number > 0)?.season_number || 0
           setActiveSeason(sNum)
@@ -207,7 +216,7 @@ export default function MetaDetails() {
     const kind = selectedMedia.type === 'movie' ? 'movie' : 'tv'
     const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
     const op = isOnePiece((detail as any)?.title || (detail as any)?.name || (selectedMedia as any)?.title)
-    const pick = op ? 'onepace' : (anime && !['zangetsu', 'miruro', 'animepahe'].includes(playerPick) ? 'zangetsu' : playerPick)
+    const pick = op ? 'onepace' : (anime && !['zangetsu', 'miruro', 'animepahe', 'playtorrio', 'simplstream', 'vidy', 'vixsrc', 'vidnest', 'moviebox'].includes(playerPick) ? 'zangetsu' : playerPick)
     let url = getPlayerUrl(pick as any, kind, selectedMedia.id as number, activeSeason, selectedMedia.episode || 1, anime)
     if (pick === 'moviebox') {
       const name = (detail as any)?.title || (detail as any)?.name || String(selectedMedia.id)
@@ -353,13 +362,13 @@ export default function MetaDetails() {
             <div className="flex flex-wrap items-center gap-2 mb-4">
               {(omdb?.imdbRating || detail.vote_average > 0) && (
                 <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/IMDB_Logo_2016.svg/80px-IMDB_Logo_2016.svg.png" alt="IMDb" className="h-3.5" />
+                  <span className="bg-[#f5c518] text-black text-[9px] font-black px-1 rounded">IMDb</span>
                   {omdb?.imdbRating || Number(detail.vote_average).toFixed(1)}
                 </span>
               )}
               {(omdb?.rottenTomatoes || rtExtra?.critics) && (
                 <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Rotten_Tomatoes.svg/40px-Rotten_Tomatoes.svg.png" alt="RT" className="h-3.5" />
+                  <span className="bg-[#fa320a] text-white text-[9px] font-black px-1 rounded">RT</span>
                   {omdb?.rottenTomatoes || rtExtra?.critics}
                 </span>
               )}
@@ -400,7 +409,7 @@ export default function MetaDetails() {
                 const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
                 const op = isOnePiece(detail?.title || detail?.name || (selectedMedia as any)?.title)
                 if (op) return p.id === 'onepace'
-                if (anime) return ['zangetsu','miruro','animepahe'].includes(p.id)
+                if (anime) return ['zangetsu','miruro','animepahe','playtorrio','simplstream','vidy','vixsrc','vidnest','moviebox'].includes(p.id)
                 return ['playtorrio','simplstream','vidy','moviebox','vixsrc','vidnest'].includes(p.id)
               })).map((p) => (
                 <button
@@ -442,7 +451,7 @@ export default function MetaDetails() {
                 const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
                 const op = isOnePiece(detail?.title || detail?.name || (selectedMedia as any)?.title)
                 if (op) return p.id === 'onepace'
-                if (anime) return ['zangetsu','miruro','animepahe'].includes(p.id)
+                if (anime) return ['zangetsu','miruro','animepahe','playtorrio','simplstream','vidy','vixsrc','vidnest','moviebox'].includes(p.id)
                 return ['playtorrio','simplstream','vidy','moviebox','vixsrc','vidnest'].includes(p.id)
               })).map((p) => (
                     <button key={p.id} type="button" className="w-full flex items-center justify-between h-10 px-3 rounded-xl bg-[#1a1016] border border-white/10 hover:border-[#FF1493]/50 text-left text-white" onClick={() => {
@@ -613,7 +622,7 @@ onKeyDown={(e) => {
       {showTrailer && trailerKey && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowTrailer(false)}>
           <div className="w-[800px] aspect-video rounded-xl overflow-hidden border border-white/[0.1]" onClick={(e) => e.stopPropagation()}>
-            <iframe width="100%" height="100%" src={`https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&rel=0`} frameBorder="0" allow="autoplay; encrypted-media" allowFullScreen />
+            <iframe width="100%" height="100%" src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&rel=0&modestbranding=1`} frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
           </div>
         </div>
       )}

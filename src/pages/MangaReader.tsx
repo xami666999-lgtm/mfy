@@ -144,14 +144,14 @@ export default function MangaReader() {
       )}
       {err && <p className="text-red-400 text-sm mb-4">{err}</p>}
       {loading && <p className="text-white/40 text-sm">Loading chapters…</p>}
-      {!loading && !pages.length && !chapters.length && (
+      {!loading && !pages.length && (
         <div className="mt-4 min-h-[70vh] rounded-2xl overflow-hidden bg-black">
-          {/* @ts-expect-error Electron webview */}
-          <webview
+          <iframe
+            title="manga-web"
             src={`https://mangadex.org/titles?q=${encodeURIComponent(cleanTitle(title) || title)}`}
-            partition="persist:mfy"
-            style={{ width: '100%', height: '75vh', background: '#000' }}
-            allowpopups="false"
+            className="w-full"
+            style={{ height: '75vh', border: 0, background: '#000' }}
+            allow="fullscreen"
           />
         </div>
       )}
