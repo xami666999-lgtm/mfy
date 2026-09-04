@@ -8,6 +8,7 @@ import { addonStreams, isOnePiece, STREAM_HOST, onePaceStreams } from '../api/st
 import { ANIME_SOURCES, MOVIE_TV_SOURCES } from '../api/vidy'
 import { useStore } from '../store'
 import RateModal from '../components/RateModal'
+import TogetherPanel from '../components/TogetherPanel'
 import { syncRating, isAnimeItem } from '../lib/trackers'
 import { markSource } from '../lib/playerStatus'
 
@@ -65,6 +66,7 @@ export default function PlayerPage() {
   const [showRate, setShowRate] = useState(false)
   const [countdown, setCountdown] = useState(5)
   const [gate, setGate] = useState(true)
+  const [together, setTogether] = useState(false)
   const [meta, setMeta] = useState<{ title: string; overview: string; poster: string; backdrop: string } | null>(null)
   const failTried = useRef<string[]>([])
   const [playerSource, setPlayerSource] = useState<PlayerSource>(() => {
@@ -541,6 +543,9 @@ export default function PlayerPage() {
 
   return (
     <>
+    {together && (
+      <TogetherPanel streamUrl={streamUrl} imdbOrId={String((selectedMedia as any)?.imdb || selectedMedia?.id || '')} type={selectedMedia?.type === 'movie' ? 'movie' : 'series'} onClose={() => setTogether(false)} onSplitSports={() => { setTogether(false); setCurrentPage('sports') }} />
+    )}
     {stillWatching && (
       <div className="fixed inset-0 z-[80] bg-black/70 flex items-center justify-center">
         <div className="rounded-3xl bg-[#120a12] border border-white/15 px-10 py-8 text-center max-w-md">
@@ -565,6 +570,7 @@ export default function PlayerPage() {
       )}
         <div className="mfy-player" onMouseMove={onMouseMove} style={{ background: '#000', minHeight: '100vh' }}>
       <button type="button" onClick={goBack} style={{ position: 'fixed', top: 12, left: 12, zIndex: 120, background: 'rgba(0,0,0,0.75)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, padding: '8px 12px', cursor: 'pointer' }}>Exit</button>
+      <button type="button" onClick={() => setTogether(true)} style={{ position: 'fixed', top: 12, left: 84, zIndex: 120, background: 'rgba(0,0,0,0.75)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, padding: '8px 12px', cursor: 'pointer' }}>Together</button>
       <div className={cn('player-topbar', showUI ? 'visible' : 'hidden')} style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 90, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
         <div className="flex items-center gap-2">
         <button onClick={goBack} className="player-back flex items-center gap-2 text-white/80 hover:text-white" style={{ background: 'rgba(0,0,0,0.5)', padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>

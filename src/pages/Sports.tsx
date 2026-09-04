@@ -5,6 +5,7 @@ import { iptvEnhancedApi } from '../api/iptv-enhanced'
 import { useStore } from '../store'
 import { addonCatalog, addonStreams, ADDONS } from '../api/stremioAddons'
 import { cn } from '../lib/utils'
+import TogetherPanel from '../components/TogetherPanel'
 
 const SPORT_META: Record<string, { icon: any; color: string }> = {
   football: { icon: Activity, color: '#22C55E' },
@@ -36,6 +37,7 @@ export default function Sports() {
   const [mvSlots, setMvSlots] = useState<{ id: string; title: string; url: string }[]>([])
   const [mvGrid, setMvGrid] = useState<'1x2' | '2x1' | '2x2' | '1+2' | '3x3'>('2x2')
   const [partyCode, setPartyCode] = useState('')
+  const [together, setTogether] = useState(false)
   const [streams, setStreams] = useState<SportStream[] | null>(null)
   const [activeMatch, setActiveMatch] = useState<SportMatch | null>(null)
   const [streamError, setStreamError] = useState('')
@@ -174,6 +176,8 @@ export default function Sports() {
   }
 
   return (
+    <>
+    {together && <TogetherPanel streamUrl={watchUrl} onClose={() => setTogether(false)} />}
     <div className="page-fade-enter min-h-full bg-[#0b0f14] text-white flex">
       <aside className="w-52 flex-shrink-0 bg-[#0a0e12] border-r border-white/10 p-3 hidden md:block">
         <p className="text-[10px] tracking-[0.25em] text-[#FF1493] font-bold mb-3">MFY SPORTS</p>
@@ -231,6 +235,7 @@ export default function Sports() {
           title="Watch party">
           <PlayCircle className="w-3.5 h-3.5" /> Party
         </button>
+        <button type="button" onClick={() => setTogether(true)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 text-xs text-white">Together</button>
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-4 scroll-row">
@@ -507,6 +512,7 @@ export default function Sports() {
     )}
       </div>
     </div>
+    </>
   )
 }
 
