@@ -196,7 +196,7 @@ export default function MetaDetails() {
     const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
     const pick = anime && !['zangetsu', 'miruro', 'mangayomi'].includes(playerPick) ? 'zangetsu' : playerPick
     const url = getPlayerUrl(pick as any, kind, selectedMedia.id as number, activeSeason, selectedMedia.episode || 1, anime)
-    setSelectedMedia({ ...selectedMedia, season: activeSeason, episode: selectedMedia.episode })
+    setSelectedMedia({ ...selectedMedia, season: activeSeason, episode: selectedMedia.episode, title: (detail as any)?.title || (detail as any)?.name, poster_path: (detail as any)?.poster_path } as any)
     setCurrentStreamUrl(url)
     try {
       const st = useStore.getState()

@@ -169,9 +169,18 @@ export const useStore = create<AppState>((set, get) => ({
   setSelectedMedia: (media) => set({ selectedMedia: media }),
 
   currentProfile: null,
-  setCurrentProfile: (profile) => set({ currentProfile: profile }),
-  authenticated: false,
-  setAuthenticated: (v) => set({ authenticated: v }),
+  setCurrentProfile: (profile) => {
+    set({ currentProfile: profile })
+    if (profile?.id) persist('currentProfileId', profile.id)
+  },
+  authenticated: (() => {
+    try { return JSON.parse(localStorage.getItem('mfy-authenticated') || 'false') === true } catch { return false }
+  })(),
+  setAuthenticated: (v) => {
+    set({ authenticated: v })
+    persist('authenticated', v)
+    try { localStorage.setItem('mfy-authenticated', JSON.stringify(v)) } catch {}
+  },
   profiles: [],
   setProfiles: (profiles) => {
     set({ profiles })
@@ -461,6 +470,12 @@ export const useStore = create<AppState>((set, get) => ({
     loadKey('watchlist', (v) => set({ watchlist: v as WatchlistItem[] }))
     loadKey('favorites', (v) => set({ favorites: v as WatchlistItem[] }))
     loadKey('profiles', (v) => set({ profiles: v as UserProfile[] }))
+    loadKey('authenticated', (v) => {
+      if (v === true) {
+        set({ authenticated: true })
+        try { localStorage.setItem('mfy-authenticated', 'true') } catch {}
+      }
+    })
     loadKey('customLists', (v) => set({ customLists: v as CustomList[] }))
     loadKey('tmdbApiKey', (v) => set({ tmdbApiKey: v as string }))
     loadKey('traktToken', (v) => set({ traktToken: v as string }))

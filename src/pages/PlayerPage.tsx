@@ -307,12 +307,13 @@ export default function PlayerPage() {
       if (got && Number(got.d) > 1) { p = Number(got.p); d = Number(got.d) }
     } catch {}
     if (forceDone && d > 30) p = d
+    const prev = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia.id))
     upsertHistory({
       id: `${selectedMedia.id}-${selectedMedia.type}-${selectedMedia.season || 0}-${selectedMedia.episode || 0}`,
       mediaId: selectedMedia.id,
       mediaType: selectedMedia.type === 'movie' ? 'movie' : 'tv',
-      title: String((selectedMedia as any).title || (selectedMedia as any).name || selectedMedia.id),
-      posterPath: (selectedMedia as any).poster_path || null,
+      title: String((selectedMedia as any).title || (selectedMedia as any).name || prev?.title || selectedMedia.id),
+      posterPath: (selectedMedia as any).poster_path || prev?.posterPath || null,
       progress: p,
       duration: d,
       season: selectedMedia.season,

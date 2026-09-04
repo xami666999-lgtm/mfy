@@ -50,7 +50,18 @@ export default function Anime() {
       return [name, d?.results || []] as const
     })).then((pairs) => setRows(Object.fromEntries(pairs)))
     anilist.getPopular('ANIME', 1, 40).then((p) => {
-      if (p?.media?.length) setPopular((prev) => prev.length > 12 ? prev : p.media)
+      const mapped = (p?.media || []).map((m: any) => ({
+        id: m.id,
+        title: m.title?.english || m.title?.romaji,
+        name: m.title?.english || m.title?.romaji,
+        poster_path: m.coverImage?.large || m.coverImage?.medium,
+        backdrop_path: m.bannerImage,
+        overview: m.description,
+        averageScore: m.averageScore,
+        media_type: m.format === 'MOVIE' ? 'movie' : 'tv',
+        isAnime: true,
+      }))
+      if (mapped.length) setPopular((prev) => prev.length > 12 ? prev : mapped)
     }).catch(() => {})
     jikan.topAnime(1).then((list) => { if (list.length) setPopular((prev) => prev.length >= 20 ? prev : list) }).catch(() => {})
     jikan.seasonUpcoming().then((list) => {
@@ -72,7 +83,14 @@ export default function Anime() {
           ))}
         </div>
         <MediaShelf title="Airing calendar" items={calendar} onOpen={open} />
-        <MediaShelf title="Popular Anime" items={audio === 'dub' ? popular.filter((x) => (x.original_language || '') === 'en') : audio === 'sub' ? popular.filter((x) => (x.original_language || 'ja') !== 'en') : popular} onOpen={open} />
+        <MediaShelf title="Popular Anime" items={(() => {
+          const list = audio === 'dub'
+            ? popular.filter((x) => (x.original_language || '') === 'en')
+            : audio === 'sub'
+              ? popular.filter((x) => (x.original_language || 'ja') !== 'en')
+              : popular
+          return list.length ? list : popular
+        })()} onOpen={open} />
         <MediaShelf title="Upcoming Anime" items={upcoming} onOpen={open} />
         {Object.entries(rows).map(([name, list]) => (
           <MediaShelf key={name} title={name} items={list} onOpen={open} />

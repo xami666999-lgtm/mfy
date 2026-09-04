@@ -109,8 +109,24 @@ export default function Board() {
   const [genreMovie, setGenreMovie] = useState<Record<number, any[]>>({})
   const [genreTv, setGenreTv] = useState<Record<number, any[]>>({})
   const [genreAnime, setGenreAnime] = useState<Record<string, any[]>>({})
+  const [cwExtra, setCwExtra] = useState<Record<string, { poster?: string; title?: string }>>({})
 
   useEffect(() => { load() }, [tmdbApiKey])
+
+  useEffect(() => {
+    const need = watchHistory.filter((h: any) => h.mediaId && (!h.posterPath || !h.title || /^\d+$/.test(String(h.title))))
+    if (!need.length) return
+    Promise.all(need.slice(0, 16).map(async (h: any) => {
+      try {
+        const d = h.mediaType === 'movie' ? await tmdb.getMovieDetail(h.mediaId) : await tmdb.getTVDetail(h.mediaId)
+        return [String(h.mediaId), { poster: d?.poster_path, title: d?.title || d?.name }] as const
+      } catch { return null }
+    })).then((rows) => {
+      const next: Record<string, { poster?: string; title?: string }> = {}
+      rows.forEach((row) => { if (row) next[row[0]] = row[1] })
+      setCwExtra((prev) => ({ ...prev, ...next }))
+    })
+  }, [watchHistory])
 
   useEffect(() => {
     if (trending.length < 2) return
@@ -293,7 +309,8 @@ export default function Board() {
             title="Continue Watching"
             items={watchHistory.filter((h: any) => !isFinished(h)).slice(0, 16).map((h: any) => {
               const pct = watchPercent(h)
-              return { id: h.mediaId, title: h.title, poster_path: h.posterPath, media_type: h.mediaType, season: h.season, episode: h.episode, progressLabel: `${h.season ? `S${h.season}E${h.episode || 1} · ` : ''}${pct > 0 ? `${pct}%` : 'Resume'}`, progress: h.progress, duration: h.duration, progressPct: pct, vote_average: 0 }
+              const extra = cwExtra[String(h.mediaId)] || {}
+              return { id: h.mediaId, title: extra.title || h.title, poster_path: h.posterPath || extra.poster, media_type: h.mediaType, season: h.season, episode: h.episode, progressLabel: `${h.season ? `S${h.season}E${h.episode || 1} · ` : ''}${pct > 0 ? `${pct}%` : 'Resume'}`, progress: h.progress, duration: h.duration, progressPct: pct, vote_average: 0 }
             })}
             onOpen={(h) => { setSelectedMedia({ id: h.id, type: h.media_type, season: h.season, episode: h.episode }); setCurrentPage('detail') }}
           />
