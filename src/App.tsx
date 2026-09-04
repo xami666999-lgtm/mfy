@@ -171,10 +171,13 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
   // released since the last notification (stored per-title). Uses the in-app
   // banner path so results show whether or not a key is set.
   async function checkReleases() {
+    try { if (localStorage.getItem('mfy-episode-alerts') === '0') return } catch {}
+    const today = new Date().toISOString().slice(0, 10)
+    try { if (localStorage.getItem('mfy-notify-day') === today) return } catch {}
     const api = (window as any).electronAPI
-    const { watchlist, favorites, tmdbApiKey } = useStore.getState()
-    const titles = [...watchlist, ...favorites].filter((t: any) => t.mediaType === 'tv')
-    const unique = Array.from(new Map(titles.map((t: any) => [`${t.mediaType}-${t.mediaId}`, t])).values()).slice(0, 10)
+    const { watchlist, favorites } = useStore.getState()
+    const titles = [...watchlist, ...favorites].filter((t: any) => t.mediaType === 'tv' || t.mediaType === 'anime')
+    const unique = Array.from(new Map(titles.map((t: any) => [`${t.mediaType}-${t.mediaId}`, t])).values()).slice(0, 12)
     if (!unique.length) return
     let lastNotified: Record<string, string> = {}
     try { lastNotified = JSON.parse(localStorage.getItem('mfy-release-notified') || '{}') } catch {}
@@ -183,24 +186,30 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
       try {
         const key = `tv-${t.mediaId}`
         const d = await tmdb.getTVDetail(t.mediaId)
-        const seasons = (d?.seasons || []).filter((s: any) => s.season_number > 0)
-        if (!seasons.length) continue
-        const latest = seasons.sort((a: any, b: any) => (b.season_number || 0) - (a.season_number || 0))[0]
-        if (!latest?.air_date) continue
-        const last = lastNotified[key] || ''
-        if (last === latest.air_date) continue
-        lastNotified[key] = latest.air_date
+        const ep = d?.last_episode_to_air
+        if (!ep?.air_date) continue
+        const stamp = `${ep.season_number}-${ep.episode_number}-${ep.air_date}`
+        const prev = lastNotified[key]
+        if (!prev) {
+          lastNotified[key] = stamp
+          continue
+        }
+        if (prev === stamp) continue
+        const age = (Date.now() - new Date(ep.air_date + 'T12:00:00').getTime()) / 86400000
+        lastNotified[key] = stamp
+        if (age < 0 || age > 4) continue
         notifications.push({
           title: d.name || t.title,
-          body: `New season ${latest.season_number} is out (${latest.air_date})`,
+          body: `S${ep.season_number}E${ep.episode_number} aired ${ep.air_date}`,
         })
       } catch {}
     }
-    if (notifications.length) {
-      try { localStorage.setItem('mfy-release-notified', JSON.stringify(lastNotified)) } catch {}
-      if (api?.showNotification) {
-        for (const n of notifications.slice(0, 3)) api.showNotification(n.title, n.body)
-      }
+    try {
+      localStorage.setItem('mfy-release-notified', JSON.stringify(lastNotified))
+      localStorage.setItem('mfy-notify-day', today)
+    } catch {}
+    if (notifications.length && api?.showNotification) {
+      for (const n of notifications.slice(0, 3)) api.showNotification(n.title, n.body)
     }
   }
 

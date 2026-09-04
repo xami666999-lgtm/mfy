@@ -649,7 +649,12 @@ export default function Settings() {
         </Section>
 
         <Section title="General">
-          <Toggle label="Notifications" description="Alert for new episodes" checked={true} />
+          <Toggle
+            label="Notifications"
+            description="Alert only when a show you saved actually aired a new episode"
+            checked={typeof window !== 'undefined' ? localStorage.getItem('mfy-episode-alerts') !== '0' : true}
+            onChange={(v: boolean) => { try { localStorage.setItem('mfy-episode-alerts', v ? '1' : '0') } catch {} }}
+          />
           <Toggle
             label="Auto-update"
             description="Download new versions in the background automatically"
