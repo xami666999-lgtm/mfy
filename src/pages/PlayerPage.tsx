@@ -445,18 +445,22 @@ export default function PlayerPage() {
   }, [nextUp, progress, dur])
 
   function playNextEpisode() {
-    if (!selectedMedia || !nextUp) return
+    if (!selectedMedia || selectedMedia.type === 'movie') return
+    const season = nextUp?.season || selectedMedia.season || 1
+    const episode = nextUp?.episode || (selectedMedia.episode || 1) + 1
     setShowNext(false)
     setGate(true)
+    setLoaded(false)
     setSelectedMedia({
       ...selectedMedia,
       type: 'tv',
-      season: nextUp.season,
-      episode: nextUp.episode,
+      season,
+      episode,
       title: (selectedMedia as any).title,
     } as any)
-    const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, nextUp.season, nextUp.episode, isAnimeItem(selectedMedia))
+    const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, season, episode, isAnimeItem(selectedMedia))
     setCurrentStreamUrl(url)
+    setStreamUrl(url)
     setLoaded(true)
   }
 
@@ -840,7 +844,12 @@ export default function PlayerPage() {
         <div className="flex items-center gap-2">
         <button type="button" onClick={() => setShowRate(true)} style={{ background: '#FF1493', padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white' }}>Mark watched</button>
         </div>
-        <div className="player-title text-white font-medium truncate" style={{ maxWidth: 400 }}>{title}</div>
+        <div className="player-title text-white font-medium truncate" style={{ maxWidth: 420 }}>
+          {title}
+          {selectedMedia && selectedMedia.type !== 'movie' && selectedMedia.type !== 'iptv' ? (
+            <span style={{ marginLeft: 10, color: '#FF1493', fontWeight: 800 }}>S{selectedMedia.season || 1}E{selectedMedia.episode || 1}</span>
+          ) : null}
+        </div>
         <div className="player-top-actions flex items-center gap-2">
           <div className="relative flex items-center gap-2">
             <button
@@ -872,7 +881,12 @@ export default function PlayerPage() {
                 ))}
               </div>
             )}
-            <button type="button" onClick={tryNextSource} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>Next</button>
+            <button type="button" onClick={tryNextSource} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>Next source</button>
+            {selectedMedia && selectedMedia.type !== 'movie' && selectedMedia.type !== 'iptv' ? (
+              <button type="button" onClick={playNextEpisode} style={{ background: '#FF1493', border: 'none', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>
+                Next ep {nextUp ? `S${nextUp.season}E${nextUp.episode}` : `E${(selectedMedia.episode || 1) + 1}`}
+              </button>
+            ) : null}
           </div>
           <button className="player-icon-button" onClick={toggleFullscreen} style={{ background: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white' }}><Maximize size={18} /></button>
         </div>
