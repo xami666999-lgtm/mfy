@@ -85,7 +85,7 @@ export function MediaShelf({
             )}
             <PosterMarks
               rank={ranked && i < 10 ? i + 1 : 0}
-              item={{ ...item, progressPct: item.progressPct ?? watchPercent(hist.find((h) => String(h.mediaId) === String(item.id))) }}
+              item={{ ...item, progressPct: item.progressPct ?? watchPercent(hist.find((h) => String(h.mediaId) === String(item.id))), completed: item.completed ?? hist.some((h) => String(h.mediaId) === String(item.id) && !!(h as any).completed) }}
             />
             <div className="poster-overlay">
               <div className="poster-meta-title">{titleOf(item)}</div>

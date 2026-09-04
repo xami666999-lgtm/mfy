@@ -38,7 +38,10 @@ export function PosterMarks({ item, rank }: { item: any; rank?: number }) {
         {show4k && <span className="text-[8px] font-black bg-black/70 text-[#f5c518] px-1 rounded">4K</span>}
         {showHd && !show4k && <span className="text-[8px] font-black bg-black/70 text-white px-1 rounded">HD</span>}
       </div>
-      {pct > 0 && (
+      {(item.completed || pct >= 90) && (
+        <div className="absolute top-1.5 right-1.5 z-20 h-6 w-6 rounded-full bg-[#FF1493] text-white grid place-items-center text-[11px] font-black shadow">✓</div>
+      )}
+      {pct > 0 && pct < 90 && !item.completed && (
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 z-10">
           <div className="h-full bg-[#FF1493]" style={{ width: `${Math.min(100, pct)}%` }} />
         </div>

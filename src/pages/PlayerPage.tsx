@@ -578,20 +578,34 @@ export default function PlayerPage() {
       if (got && Number(got.p) > 1) { p = Number(got.p); if (Number(got.d) > 1) d = Number(got.d) }
     } catch {}
     if (forceDone && selectedMedia.type !== 'movie') {
-      const nxt = nextUp
-      upsertHistory({
-        id: `${selectedMedia.id}-tv-${nxt?.season || selectedMedia.season || 1}-${nxt?.episode || (selectedMedia.episode || 1) + 1}`,
+      const base = {
         mediaId: String(selectedMedia.id),
-        mediaType: 'tv',
+        mediaType: 'tv' as const,
         title: String((selectedMedia as any).title || (selectedMedia as any).name || selectedMedia.id),
         posterPath: (selectedMedia as any).poster_path || null,
-        progress: 1,
-        duration: 0,
-        season: nxt?.season || selectedMedia.season || 1,
-        episode: nxt?.episode || (selectedMedia.episode || 1) + 1,
         watchedAt: new Date().toISOString(),
         profileId: useStore.getState().currentProfile?.id || 'default',
+      }
+      upsertHistory({
+        ...base,
+        id: `${selectedMedia.id}-tv-${selectedMedia.season || 1}-${selectedMedia.episode || 1}`,
+        progress: Math.max(d, p, 1),
+        duration: Math.max(d, 1),
+        season: selectedMedia.season || 1,
+        episode: selectedMedia.episode || 1,
+        completed: true,
       })
+      if (nextUp) {
+        upsertHistory({
+          ...base,
+          id: `${selectedMedia.id}-tv-${nextUp.season}-${nextUp.episode}`,
+          progress: 1,
+          duration: 0,
+          season: nextUp.season,
+          episode: nextUp.episode,
+          completed: false,
+        })
+      }
       return
     }
     if (forceDone && d > 30) p = d
@@ -608,6 +622,7 @@ export default function PlayerPage() {
       episode: selectedMedia.episode,
       watchedAt: new Date().toISOString(),
       profileId: useStore.getState().currentProfile?.id || 'default',
+      completed: forceDone || (d > 30 && p / d >= 0.9),
     })
   }
 

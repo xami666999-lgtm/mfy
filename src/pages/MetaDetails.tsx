@@ -8,6 +8,7 @@ import QualityBadges from '../components/QualityBadges'
 import { fetchMdblistRatings, type MdblistRating } from '../api/mdblist'
 import { vidyUrl, getPlayerUrl } from '../api/vidy'
 import { isAnimeItem } from '../lib/trackers'
+import { isEpisodeWatched } from '../lib/watchProgress'
 import { useStore } from '../store'
 import { trailerUrl, isOnePiece, pearioWatchUrl, pearioUserUrl } from '../api/stremioAddons'
 import { markLike, markDislike, isLiked, isDisliked } from '../lib/taste'
@@ -15,7 +16,7 @@ import { sourceDot, reportBroken } from '../lib/playerStatus'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 
 export default function MetaDetails() {
-  const { selectedMedia, setCurrentPage, setSelectedMedia, tmdbApiKey, setCurrentStreamUrl, addToWatchlist, removeFromWatchlist, isInWatchlist, addFavorite, removeFavorite, isFavorite, aiostreamsUrl, externalPlayer, mdblistApiKey, customLists, addToCustomList, removeFromCustomList, isInCustomList, createCustomList } = useStore()
+  const { selectedMedia, setCurrentPage, setSelectedMedia, tmdbApiKey, setCurrentStreamUrl, addToWatchlist, removeFromWatchlist, isInWatchlist, addFavorite, removeFavorite, isFavorite, aiostreamsUrl, externalPlayer, mdblistApiKey, customLists, addToCustomList, removeFromCustomList, isInCustomList, createCustomList, watchHistory } = useStore()
   const [detail, setDetail] = useState<any>(null)
   const [seasonData, setSeasonData] = useState<any>(null)
   const [activeSeason, setActiveSeason] = useState(0)
@@ -738,6 +739,9 @@ onKeyDown={(e) => {
                           <p className="text-[10px] text-white/20 line-clamp-1">{ep.overview}</p>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
+                          {isEpisodeWatched(watchHistory, selectedMedia?.id, activeSeason, ep.episode_number) && (
+                            <span className="h-6 w-6 rounded-full bg-[#FF1493] text-white grid place-items-center text-[11px] font-black">✓</span>
+                          )}
                           {ep.vote_average > 0 && <span className={cn('text-[10px] font-semibold', getRatingColor(ep.vote_average))}>★ {ep.vote_average.toFixed(1)}</span>}
                           {ep.runtime && <span className="text-[10px] text-white/15">{ep.runtime}m</span>}
                         </div>

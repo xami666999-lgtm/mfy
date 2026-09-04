@@ -118,6 +118,7 @@ export interface WatchHistoryItem {
   episode?: number
   watchedAt: string
   profileId: string
+  completed?: boolean
 }
 
 export interface CustomList {
