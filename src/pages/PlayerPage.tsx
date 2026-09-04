@@ -408,6 +408,15 @@ export default function PlayerPage() {
   }
 
   function finishRate(score?: number, note?: string) {
+    if (selectedMedia && isAnimeItem(selectedMedia)) {
+      const name = String((selectedMedia as any).title || (selectedMedia as any).name || selectedMedia.id)
+      const url = `https://anisync.qzz.io/?title=${encodeURIComponent(name)}&ep=${selectedMedia.episode || 1}`
+      try {
+        const api = (window as any).electronAPI
+        if (api?.openExternal) api.openExternal(url)
+        else window.open(url, '_blank')
+      } catch {}
+    }
     if (score && selectedMedia) {
       const anime = isAnimeItem(selectedMedia)
       const print = /manga|novel|book/i.test(String(selectedMedia.type))

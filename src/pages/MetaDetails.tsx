@@ -3,6 +3,7 @@ import { ArrowLeft, Play, Star, Clock, Calendar, Heart, Plus, Share2, List, Chec
 import { tmdb, POSTER_URL, BACKDROP_URL, PROFILE_URL, STILL_URL } from '../api/tmdb'
 import { fetchOmdbByImdbId } from '../api/omdb'
 import { fetchRottenTomatoes } from '../api/rottentomatoes'
+import { fetchAggregatedRatings, type AggRating } from '../api/ratingsAggregator'
 import QualityBadges from '../components/QualityBadges'
 import { fetchMdblistRatings, type MdblistRating } from '../api/mdblist'
 import { vidyUrl, getPlayerUrl } from '../api/vidy'
@@ -29,6 +30,7 @@ export default function MetaDetails() {
   const [rtExtra, setRtExtra] = useState<{ critics: string | null; audience: string | null } | null>(null)
   const [imdbId, setImdbId] = useState<string | null>(null)
   const [mdblistRatings, setMdblistRatings] = useState<MdblistRating[] | null>(null)
+  const [aggRatings, setAggRatings] = useState<AggRating[]>([])
   const [listOpen, setListOpen] = useState(false)
   const [newListName, setNewListName] = useState('')
 
@@ -88,8 +90,13 @@ export default function MetaDetails() {
         const ext = await tmdb.getExternalIds(selectedMedia.type, selectedMedia.id as number)
         const iid = ext?.imdb_id || null
         setImdbId(iid)
-        if (iid) fetchOmdbByImdbId(iid).then(setOmdb).catch(() => setOmdb(null))
-        else setOmdb(null)
+        if (iid) {
+          fetchOmdbByImdbId(iid).then(setOmdb).catch(() => setOmdb(null))
+          fetchAggregatedRatings(iid, selectedMedia.type === 'movie' ? 'movie' : 'series').then(setAggRatings).catch(() => setAggRatings([]))
+        } else {
+          setOmdb(null)
+          setAggRatings([])
+        }
       }
     } catch {
       setOmdb(null)
@@ -349,6 +356,11 @@ export default function MetaDetails() {
                   RT {omdb?.rottenTomatoes || rtExtra?.critics}
                 </span>
               )}
+              {aggRatings.map((r) => (
+                <span key={r.key} className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-white/8 border border-white/15 text-[11px] font-bold text-white/85">
+                  {r.label} {r.value}
+                </span>
+              ))}
               {rtExtra?.audience && (
                 <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-[#fa320a]/10 border border-[#fa320a]/25 text-[11px] font-bold text-[#ff8a6a]">
                   Audience {rtExtra.audience}

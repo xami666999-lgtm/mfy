@@ -67,6 +67,13 @@ export async function syncRating(opts: {
       const q = title && !/^\d+$/.test(title) ? title : String(opts.title)
       await anilist.saveScore(q, opts.score, opts.type === 'anime' ? 'ANIME' : 'MANGA')
       notes.push('AniList')
+      if (opts.type === 'anime') {
+        const api = (window as any).electronAPI
+        const url = `https://anisync.qzz.io/?title=${encodeURIComponent(q)}&ep=${opts.episode || 1}`
+        if (api?.openExternal) api.openExternal(url)
+        else window.open(url, '_blank')
+        notes.push('AniSync')
+      }
     } catch {}
   }
 

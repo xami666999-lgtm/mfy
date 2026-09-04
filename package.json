@@ -1,6 +1,6 @@
 {
   "name": "mfy",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "MFY - Movies For You",
   "main": "dist-electron/main.js",
   "author": "xami666999-lgtm",
