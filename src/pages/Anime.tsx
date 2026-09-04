@@ -7,6 +7,7 @@ import { MediaShelf } from '../components/MediaShelf'
 import PageHero from '../components/PageHero'
 import { OFFLINE_ANIME } from '../data/offlineCatalog'
 import { openAnime } from '../api/animeOpen'
+import { addonCatalog } from '../api/stremioAddons'
 
 export default function Anime() {
   const { setSelectedMedia, setCurrentPage } = useStore()
