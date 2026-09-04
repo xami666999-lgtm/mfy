@@ -85,3 +85,22 @@ export const sportsApi = {
       `/api/stream/${encodeURIComponent(source)}/${encodeURIComponent(id)}`
     ),
 }
+
+async function timFetch<T>(path: string): Promise<T> {
+  const url = `https://timst.cfd${path}`
+  const api = (globalThis as any).electronAPI || (typeof window !== 'undefined' ? (window as any).electronAPI : null)
+  if (api?.fetchText) {
+    const r = await api.fetchText(url, 15000)
+    if (r?.ok && r.text) return JSON.parse(r.text) as T
+    throw new Error(r?.error || 'TimStreams failed')
+  }
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`Tim ${res.status}`)
+  return res.json() as Promise<T>
+}
+
+export const timStreamsApi = {
+  live: () => timFetch<{ events: any[]; genres: any[] }>('/api/live-upcoming'),
+  replays: () => timFetch<{ replays: any[] }>('/api/replays'),
+  channels: () => timFetch<{ channels: any[] }>('/api/channels'),
+}

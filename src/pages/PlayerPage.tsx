@@ -121,9 +121,9 @@ export default function PlayerPage() {
         : addonStreams(addonBase, kind, want)
       load.then((rows) => {
         setPicks(rows)
-        const playable = rows.find((r: any) => /^https?:/i.test(r.url) && !/pengu\.uk\/direct|attachment|download/i.test(r.url))
+        const playable = rows.find((r: any) => /^https?:/i.test(r.url) && !/pengu\.uk\/signin|signin\.mp4|pengu\.uk\/direct|attachment|download/i.test(r.url))
         const q = playable || (src === 'pengu' ? null : rows[0])
-        if (!q || /pengu\.uk\/direct/i.test(q.url || '')) {
+        if (!q || /pengu\.uk\/signin|signin\.mp4|pengu\.uk\/direct/i.test(q.url || '')) {
           const fallback = getPlayerUrl('playtorrio', selectedMedia.type === 'movie' ? 'movie' : 'tv', selectedMedia.id, selectedMedia.season, selectedMedia.episode, anime)
           setStreamUrl(fallback); setLoaded(true); setLoading(false); return
         }

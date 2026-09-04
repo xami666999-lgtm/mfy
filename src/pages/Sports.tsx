@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Trophy, Radio, ExternalLink, Loader2, Activity, Flag, Volleyball, Target, Gauge, Swords, Medal, Siren, Dumbbell, Skull, Bike, Sparkles, PlayCircle, X, Search, Filter } from 'lucide-react'
-import { sportsApi, badgeUrl, posterUrl, type SportCategory, type SportMatch, type SportStream } from '../api/sports'
+import { sportsApi, badgeUrl, posterUrl, timStreamsApi, type SportCategory, type SportMatch, type SportStream } from '../api/sports'
 import { iptvEnhancedApi } from '../api/iptv-enhanced'
 import { useStore } from '../store'
 import { addonCatalog, addonStreams, ADDONS } from '../api/stremioAddons'
@@ -50,6 +50,10 @@ export default function Sports() {
   const [watchUrl, setWatchUrl] = useState('')
   const [metegol, setMetegol] = useState<any[]>([])
   const [when, setWhen] = useState<'live' | 'upcoming' | 'finished'>('live')
+  const [timLive, setTimLive] = useState<any[]>([])
+  const [timReplays, setTimReplays] = useState<any[]>([])
+  const [timChannels, setTimChannels] = useState<any[]>([])
+  const [timGenres, setTimGenres] = useState<any[]>([])
 
   const filteredMatches = useMemo(() => {
     const now = Date.now()
@@ -78,6 +82,9 @@ export default function Sports() {
     iptvEnhancedApi.getMetegolEvents().then(setMetegol).catch(() => {
       fetch('./data/metegol.json').then((r) => r.json()).then((d) => setMetegol(d.events || [])).catch(() => setMetegol([]))
     })
+    timStreamsApi.live().then((d) => { setTimLive(d.events || []); setTimGenres(d.genres || []) }).catch(() => setTimLive([]))
+    timStreamsApi.replays().then((d) => setTimReplays(d.replays || [])).catch(() => setTimReplays([]))
+    timStreamsApi.channels().then((d) => setTimChannels((d.channels || []).slice(0, 24))).catch(() => setTimChannels([]))
     sportsApi.getSports().then(setSports).catch(() => setSports([
       { id: 'football', name: 'Football' },
       { id: 'basketball', name: 'Basketball' },
@@ -158,6 +165,20 @@ export default function Sports() {
       setStreamError('Could not load players.')
     }
     setResolving(false)
+  }
+
+  function openTim(ev: any) {
+    const feeds = (ev.streams || []).filter((s: any) => s.url && !s.vip)
+    setActiveMatch({ id: ev.url || ev.name, title: ev.name, category: String(ev.genre || ''), date: 0, sources: [] })
+    setStreams(feeds.map((s: any, i: number) => ({
+      id: String(s.url || i),
+      streamNo: i + 1,
+      language: s.name || `Feed ${i + 1}`,
+      hd: /4k|uhd|hd/i.test(s.name || ''),
+      embedUrl: s.url,
+      source: s.name || 'TimStreams',
+    })))
+    setStreamError(feeds.length ? '' : 'No free feeds for this event.')
   }
 
   function playEmbed(url: string, title?: string) {
@@ -351,15 +372,89 @@ export default function Sports() {
         </section>
       )}
 
-      {live.length > 0 && (
-        <section className="mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <Radio className="w-3.5 h-3.5 text-red-400" />
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-red-400/90">Live now</span>
+      <section className="mb-10">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="w-1 h-4 bg-[#FF1493] rounded-full" />
+          <h3 className="text-sm font-bold tracking-[0.18em] text-white">LIVE EVENTS</h3>
+        </div>
+        <div className="flex gap-3 overflow-x-auto pb-2 scroll-row">
+          {timLive.map((ev: any) => (
+            <button key={ev.url || ev.name} type="button" onClick={() => openTim(ev)} className="shrink-0 w-56 text-left rounded-2xl overflow-hidden bg-[#12131a] border border-white/10 hover:border-[#FF1493]/50">
+              <div className="relative h-36 bg-[#1b1c24]">
+                {ev.logo ? <img src={String(ev.logo).replace(/&amp;/g, '&')} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gradient-to-br from-[#FF1493]/40 to-[#111]" />}
+                <span className="absolute top-2 left-2 text-[10px] font-black bg-[#FF1493] text-white px-2 py-0.5 rounded">LIVE</span>
+              </div>
+              <div className="p-3">
+                <p className="text-xs font-semibold text-white line-clamp-2">{ev.name}</p>
+                <div className="flex items-center justify-between mt-2 text-[10px] text-white/40">
+                  <span>{(timGenres.find((g: any) => g.id === ev.genre) || {}).name || 'Sport'}</span>
+                  <span>{ev.time ? String(ev.time).replace('T', ' ').slice(0, 16) : ''}</span>
+                </div>
+                <p className="text-[10px] text-emerald-400 mt-1">{ev.vip ? 'VIP' : 'FREE'} · {(ev.streams || []).length} feeds</p>
+              </div>
+            </button>
+          ))}
+          {live.slice(0, 8).map((m) => (
+            <button key={m.id} type="button" onClick={() => openMatch(m)} className="shrink-0 w-56 text-left rounded-2xl overflow-hidden bg-[#12131a] border border-white/10 hover:border-[#FF1493]/50">
+              <div className="relative h-36 bg-gradient-to-r from-[#1e3a5f] to-[#0f766e] flex items-center justify-center gap-4 px-3">
+                <span className="absolute top-2 left-2 text-[10px] font-black bg-[#FF1493] text-white px-2 py-0.5 rounded">LIVE</span>
+                <div className="text-center">
+                  {m.teams?.home?.badge ? <img src={badgeUrl(m.teams.home.badge)} alt="" className="w-12 h-12 object-contain mx-auto" /> : null}
+                  <p className="text-[10px] text-white mt-1 line-clamp-1">{m.teams?.home?.name || m.title.split(/vs/i)[0]}</p>
+                </div>
+                <span className="text-white/50 text-xs">VS</span>
+                <div className="text-center">
+                  {m.teams?.away?.badge ? <img src={badgeUrl(m.teams.away.badge)} alt="" className="w-12 h-12 object-contain mx-auto" /> : null}
+                  <p className="text-[10px] text-white mt-1 line-clamp-1">{m.teams?.away?.name || m.title.split(/vs/i)[1]}</p>
+                </div>
+              </div>
+              <div className="p-3">
+                <p className="text-xs font-semibold text-white line-clamp-2">{m.title}</p>
+                <p className="text-[10px] text-white/40 mt-1">{m.category} · {formatDate(m.date)}</p>
+              </div>
+            </button>
+          ))}
+          {!timLive.length && !live.length && <p className="text-sm text-white/35">No live events right now.</p>}
+        </div>
+      </section>
+
+      {timReplays.length > 0 && (
+        <section className="mb-10">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="w-1 h-4 bg-[#FF1493] rounded-full" />
+            <h3 className="text-sm font-bold tracking-[0.18em] text-white">LATEST REPLAYS</h3>
           </div>
-          <div className="grid gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {live.slice(0, 12).map((m) => (
-              <MatchCard key={m.id} match={m} onOpen={() => openMatch(m)} formatDate={formatDate} />
+          <div className="flex gap-3 overflow-x-auto pb-2 scroll-row">
+            {timReplays.slice(0, 12).map((ev: any) => (
+              <button key={ev.url || ev.name} type="button" onClick={() => openTim(ev)} className="shrink-0 w-52 text-left rounded-2xl overflow-hidden bg-[#12131a] border border-white/10 hover:border-[#FF1493]/40">
+                <div className="relative h-32 bg-[#1b1c24]">
+                  {ev.logo ? <img src={String(ev.logo).replace(/&amp;/g, '&')} alt="" className="w-full h-full object-cover" /> : null}
+                  <span className="absolute top-2 left-2 text-[10px] font-black bg-white/15 text-white px-2 py-0.5 rounded">REPLAY</span>
+                </div>
+                <div className="p-3">
+                  <p className="text-xs font-semibold text-white line-clamp-2">{ev.name}</p>
+                  <p className="text-[10px] text-white/40 mt-1">{ev.date || ''} · FREE</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {timChannels.length > 0 && (
+        <section className="mb-10">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="w-1 h-4 bg-[#FF1493] rounded-full" />
+            <h3 className="text-sm font-bold tracking-[0.18em] text-white">24/7 CHANNELS</h3>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-2 scroll-row">
+            {timChannels.map((ch: any) => (
+              <button key={ch.url || ch.name} type="button" onClick={() => openTim(ch)} className="shrink-0 w-36 text-left rounded-2xl overflow-hidden bg-[#12131a] border border-white/10 hover:border-[#FF1493]/40">
+                <div className="h-20 bg-[#1b1c24] grid place-items-center p-3">
+                  {ch.logo ? <img src={ch.logo} alt="" className="max-h-12 max-w-full object-contain" /> : <span className="text-xs text-white/60">{ch.name}</span>}
+                </div>
+                <p className="px-2 py-2 text-[11px] text-white truncate">{ch.name}</p>
+              </button>
             ))}
           </div>
         </section>
