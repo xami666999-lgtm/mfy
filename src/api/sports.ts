@@ -104,3 +104,31 @@ export const timStreamsApi = {
   replays: () => timFetch<{ replays: any[] }>('/api/replays'),
   channels: () => timFetch<{ channels: any[] }>('/api/channels'),
 }
+
+const WF = 'https://api.watchfooty.st'
+
+async function wfJson<T>(path: string): Promise<T> {
+  const url = `${WF}${path}`
+  const api = (globalThis as any).electronAPI || (typeof window !== 'undefined' ? (window as any).electronAPI : null)
+  if (api?.fetchText) {
+    const r = await api.fetchText(url, 18000)
+    if (r?.ok && r.text) return JSON.parse(r.text) as T
+    throw new Error(r?.error || 'WatchFooty failed')
+  }
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`WatchFooty ${res.status}`)
+  return res.json() as Promise<T>
+}
+
+export function wfSport(id: string) {
+  if (id === 'fight') return 'fighting'
+  if (id === 'motor-sports') return 'racing'
+  if (id === 'afl') return 'australian-football'
+  return id
+}
+
+export const watchfootyApi = {
+  sports: () => wfJson<any[]>('/api/v1/sports'),
+  matches: (sport: string) => wfJson<any[]>(`/api/v1/matches/${encodeURIComponent(wfSport(sport))}`),
+  live: (sport: string) => wfJson<any[]>(`/api/v1/matches/${encodeURIComponent(wfSport(sport))}/live`),
+}

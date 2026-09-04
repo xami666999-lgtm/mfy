@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Trophy, Radio, ExternalLink, Loader2, Activity, Flag, Volleyball, Target, Gauge, Swords, Medal, Siren, Dumbbell, Skull, Bike, Sparkles, PlayCircle, X, Search, Filter, SkipBack, SkipForward } from 'lucide-react'
-import { sportsApi, badgeUrl, posterUrl, timStreamsApi, type SportCategory, type SportMatch, type SportStream } from '../api/sports'
+import { sportsApi, badgeUrl, posterUrl, timStreamsApi, watchfootyApi, type SportCategory, type SportMatch, type SportStream } from '../api/sports'
 import { iptvEnhancedApi } from '../api/iptv-enhanced'
 import { useStore } from '../store'
 import { addonCatalog, addonStreams, ADDONS } from '../api/stremioAddons'
@@ -58,6 +58,7 @@ export default function Sports() {
   const [timLive, setTimLive] = useState<any[]>([])
   const [timReplays, setTimReplays] = useState<any[]>([])
   const [timChannels, setTimChannels] = useState<any[]>([])
+  const [footy, setFooty] = useState<any[]>([])
   const [timGenres, setTimGenres] = useState<any[]>([])
 
   const filteredMatches = useMemo(() => {
@@ -90,6 +91,7 @@ export default function Sports() {
     timStreamsApi.live().then((d) => { setTimLive(d.events || []); setTimGenres(d.genres || []) }).catch(() => setTimLive([]))
     timStreamsApi.replays().then((d) => setTimReplays(d.replays || [])).catch(() => setTimReplays([]))
     timStreamsApi.channels().then((d) => setTimChannels((d.channels || []).slice(0, 24))).catch(() => setTimChannels([]))
+    watchfootyApi.live('football').then((rows) => setFooty((rows || []).filter((m: any) => (m.streams || []).length))).catch(() => setFooty([]))
     sportsApi.getSports().then(setSports).catch(() => setSports([
       { id: 'football', name: 'Football' },
       { id: 'basketball', name: 'Basketball' },
@@ -117,6 +119,9 @@ export default function Sports() {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
+    watchfootyApi.live(sportId).then((rows) => {
+      if (!cancelled) setFooty((rows || []).filter((m: any) => (m.streams || []).length))
+    }).catch(() => { if (!cancelled) setFooty([]) })
     Promise.all([
       sportsApi.getMatchesPopular(sportId).catch(() => []),
       sportsApi.getMatches(sportId).catch(() => []),
@@ -164,12 +169,35 @@ export default function Sports() {
         ] as SportStream[]
       }))
       const all = bags.flat()
-      setStreams(all)
+      const needle = match.title.toLowerCase()
+      const extra = footy.filter((m: any) => String(m.title || '').toLowerCase().includes(needle.split(' vs')[0].slice(0, 12)) || needle.includes(String(m.title || '').toLowerCase().slice(0, 12)))
+        .flatMap((m: any) => (m.streams || []).map((s: any, i: number) => ({
+          id: String(s.id || i),
+          streamNo: i + 1,
+          language: `${s.language || 'EN'} · ${s.quality || 'HD'}`,
+          hd: /hd|fhd|4k/i.test(s.quality || ''),
+          embedUrl: s.url,
+          source: 'WatchFooty',
+        })))
+      setStreams([...extra, ...all])
       if (!all.length) setStreamError('No players listed for this match right now.')
     } catch {
       setStreamError('Could not load players.')
     }
     setResolving(false)
+  }
+
+  function openFooty(m: any) {
+    setActiveMatch({ id: m.matchId || m.title, title: m.title, category: m.sport || sportId, date: m.timestamp || 0, sources: [] })
+    setStreams((m.streams || []).map((s: any, i: number) => ({
+      id: String(s.id || i),
+      streamNo: i + 1,
+      language: `${s.language || 'EN'} · ${s.quality || 'HD'}`,
+      hd: /hd|fhd|4k/i.test(String(s.quality || '')),
+      embedUrl: s.url,
+      source: 'WatchFooty',
+    })))
+    setStreamError((m.streams || []).length ? '' : 'WatchFooty has no feeds for this match.')
   }
 
   function openTim(ev: any) {
@@ -414,6 +442,14 @@ export default function Sports() {
           <h3 className="text-sm font-bold tracking-[0.18em] text-white">LIVE EVENTS</h3>
         </div>
         <div className="flex gap-3 overflow-x-auto pb-2 scroll-row">
+          {footy.slice(0, 10).map((m: any) => (
+            <button key={m.matchId || m.title} type="button" onClick={() => openFooty(m)} className="shrink-0 w-56 text-left rounded-2xl overflow-hidden bg-[#12131a] border border-[#22c55e]/30 hover:border-[#22c55e]">
+              <div className="h-20 bg-[#102016] grid place-items-center px-3">
+                <p className="text-xs font-semibold text-center line-clamp-2">{m.title}</p>
+              </div>
+              <p className="px-3 py-2 text-[10px] text-emerald-400">{m.league || 'WatchFooty'} · {(m.streams || []).length} feeds</p>
+            </button>
+          ))}
           {timLive.map((ev: any) => (
             <button key={ev.url || ev.name} type="button" onClick={() => openTim(ev)} className="shrink-0 w-56 text-left rounded-2xl overflow-hidden bg-[#12131a] border border-white/10 hover:border-[#FF1493]/50">
               <div className="relative h-36 bg-[#1b1c24]">
