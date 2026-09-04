@@ -68,7 +68,11 @@ export default function PlayerPage() {
   const [meta, setMeta] = useState<{ title: string; overview: string; poster: string; backdrop: string } | null>(null)
   const failTried = useRef<string[]>([])
   const [playerSource, setPlayerSource] = useState<PlayerSource>(() => {
-    try { return (localStorage.getItem('mfy-player-engine') as PlayerSource) || 'vidy' } catch { return 'vidy' }
+    try {
+      const s = (localStorage.getItem('mfy-player-engine') as PlayerSource) || 'playtorrio'
+      if (s === 'pengu') return 'playtorrio'
+      return s
+    } catch { return 'playtorrio' }
   })
 
   useEffect(() => {
@@ -113,7 +117,9 @@ export default function PlayerPage() {
       load.then((rows) => {
         setPicks(rows)
         const q = rows.find((r: any) => /^https?:/i.test(r.url)) || rows[0]
-        if (!q) {
+        const playable = rows.find((r: any) => /^https?:/i.test(r.url) && !/pengu\.uk\/direct|attachment|download/i.test(r.url))
+        const q = playable || (src === 'pengu' ? null : rows[0])
+        if (!q || /pengu\.uk\/direct/i.test(q.url || '')) {
           const fallback = getPlayerUrl('playtorrio', selectedMedia.type === 'movie' ? 'movie' : 'tv', selectedMedia.id, selectedMedia.season, selectedMedia.episode, anime)
           setStreamUrl(fallback); setLoaded(true); setLoading(false); return
         }
@@ -263,6 +269,14 @@ export default function PlayerPage() {
         if (n <= 1) {
           clearInterval(id)
           setGate(false)
+          if (!streamUrl) {
+            try {
+              const fallback = getPlayerUrl('playtorrio', selectedMedia?.type === 'movie' ? 'movie' : 'tv', selectedMedia?.id as any, selectedMedia?.season, selectedMedia?.episode, isAnimeItem(selectedMedia))
+              setStreamUrl(fallback)
+              setLoaded(true)
+              setError('')
+            } catch {}
+          }
           return 0
         }
         return n - 1
@@ -549,8 +563,9 @@ export default function PlayerPage() {
     {showRate && (
         <RateModal title={title} kind={isAnimeItem(selectedMedia) ? 'anime' : (selectedMedia?.type === 'movie' ? 'movie' : 'tv')} onSubmit={(s, n) => finishRate(s, n)} onSkip={() => finishRate()} />
       )}
-    <div className="mfy-player" onMouseMove={onMouseMove} style={{ background: '#000', minHeight: '100vh' }}>
-      <div className={cn('player-topbar', showUI ? 'visible' : 'hidden')} style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, padding: '12px 16px', display: showUI ? 'flex' : 'none', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
+        <div className="mfy-player" onMouseMove={onMouseMove} style={{ background: '#000', minHeight: '100vh' }}>
+      <button type="button" onClick={goBack} style={{ position: 'fixed', top: 12, left: 12, zIndex: 120, background: 'rgba(0,0,0,0.75)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, padding: '8px 12px', cursor: 'pointer' }}>Exit</button>
+      <div className={cn('player-topbar', showUI ? 'visible' : 'hidden')} style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 90, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
         <div className="flex items-center gap-2">
         <button onClick={goBack} className="player-back flex items-center gap-2 text-white/80 hover:text-white" style={{ background: 'rgba(0,0,0,0.5)', padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>
           <ArrowLeft size={16} /> Back

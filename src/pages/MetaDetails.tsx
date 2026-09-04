@@ -34,6 +34,7 @@ export default function MetaDetails() {
   const [watchLogos, setWatchLogos] = useState<{ name: string; logo: string }[]>([])
   const [listOpen, setListOpen] = useState(false)
   const [newListName, setNewListName] = useState('')
+  const [tasteN, setTasteN] = useState(0)
 
   useEffect(() => {
     if (!selectedMedia) return
@@ -458,11 +459,13 @@ export default function MetaDetails() {
                 <Play className="w-4 h-4" fill="black" />
                 Play
               </button>
-              <button type="button" className="h-11 w-11 rounded-full bg-white/10 text-lg" title="Like" onClick={() => {
+              <button type="button" className={`h-11 w-11 rounded-full text-lg ${isLiked(selectedMedia?.id || '') ? 'bg-[#FF1493]' : 'bg-white/10'}`} title="Like" onClick={() => {
                 markLike({ id: String(selectedMedia?.id), type: selectedMedia?.type || 'movie', title: title || '', poster: detail?.poster_path })
+                setTasteN((n) => n + 1)
               }}>👍</button>
-              <button type="button" className="h-11 w-11 rounded-full bg-white/10 text-lg" title="Dislike" onClick={() => {
+              <button type="button" className={`h-11 w-11 rounded-full text-lg ${isDisliked(selectedMedia?.id || '') ? 'bg-white/25' : 'bg-white/10'}`} title="Dislike" onClick={() => {
                 markDislike({ id: String(selectedMedia?.id), type: selectedMedia?.type || 'movie', title: title || '' })
+                setTasteN((n) => n + 1)
               }}>👎</button>
               {pickOpen && (
                 <div className="w-full mt-3 rounded-2xl bg-black/55 border border-white/10 p-3 space-y-2">
@@ -641,7 +644,24 @@ onKeyDown={(e) => {
       {showTrailer && trailerKey && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowTrailer(false)}>
           <div className="w-[800px] aspect-video rounded-xl overflow-hidden border border-white/[0.1]" onClick={(e) => e.stopPropagation()}>
-            <iframe width="100%" height="100%" src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&rel=0&modestbranding=1`} frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+            <iframe
+              id="mfy-trailer-frame"
+              width="100%"
+              height="100%"
+              src={`https://yewtu.be/embed/${trailerKey}?autoplay=1`}
+              referrerPolicy="no-referrer"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2">
+              <a className="h-8 px-3 rounded-full bg-white text-black text-xs font-semibold flex items-center" href={`https://www.youtube.com/watch?v=${trailerKey}`} target="_blank" rel="noreferrer">Open on YouTube</a>
+              <button type="button" className="h-8 px-3 rounded-full bg-white/15 text-white text-xs" onClick={() => {
+                setTrailerKey(trailerKey)
+                const el = document.querySelector('#mfy-trailer-frame') as HTMLIFrameElement | null
+                if (el) el.src = `https://yewtu.be/embed/${trailerKey}?autoplay=1`
+              }}>Try other player</button>
+            </div>
           </div>
         </div>
       )}
