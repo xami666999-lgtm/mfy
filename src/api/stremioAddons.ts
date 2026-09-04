@@ -13,9 +13,9 @@ export const ADDONS = {
   starwars: { base: 'https://addon-star-wars-u9e3.onrender.com', type: 'StarWars', catalog: 'sw-movies-series-chronological' },
   streaming: { base: 'https://catalog.ers.pw', type: 'movie', catalog: 'nfx' },
   streamingTv: { base: 'https://catalog.ers.pw', type: 'series', catalog: 'nfx' },
-  animestream: { base: 'https://animestream-addon.keypop3750.workers.dev', type: 'anime', catalog: 'top' },
-  animeworld: { base: 'https://aw-catalog.vercel.app', type: 'anime', catalog: 'animeworld' },
-  animecatalogs: { base: 'https://1fe84bc728af-stremio-anime-catalogs.baby-beamup.club', type: 'anime', catalog: 'kitsu-trending' },
+  animestream: { base: 'https://animestream-addon.keypop3750.workers.dev', type: 'anime', catalog: 'anime-top-rated' },
+  animeworld: { base: 'https://animestream-addon.keypop3750.workers.dev', type: 'anime', catalog: 'anime-movies' },
+  animecatalogs: { base: 'https://animestream-addon.keypop3750.workers.dev', type: 'anime', catalog: 'anime-airing' },
   onepace: { base: 'https://fedew04.github.io/OnePaceStremio', type: 'series', catalog: 'seriesCatalog' },
   iptv: { base: 'https://fun.kort.workers.dev', type: 'tv', catalog: 'cat_all' },
   streailer: { base: 'https://streailer.elfhosted.com' },
@@ -90,6 +90,14 @@ export const STREAM_HOST = {
   nyaa: ADDONS.nyaa.base,
   animeflv: ADDONS.animeflv.base,
   onepace: ADDONS.onepace.base,
-  streamsppv: ADDONS.streamsppv.base,
+  streamsppv: ADDONS.sportsstreams.base,
   sportsstreams: ADDONS.sportsstreams.base,
+}
+
+export async function onePaceStreams(season = 1, episode = 1) {
+  const d = await getJson(`${ADDONS.onepace.base}/meta/series/pp_onepace.json`)
+  const videos = d?.meta?.videos || []
+  const hit = videos.find((v: any) => Number(v.season) === Number(season) && Number(v.episode) === Number(episode)) || videos[Math.max(0, episode - 1)]
+  if (!hit?.id) return []
+  return addonStreams(ADDONS.onepace.base, 'series', hit.id)
 }

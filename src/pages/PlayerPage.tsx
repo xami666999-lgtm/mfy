@@ -4,7 +4,7 @@ import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 import { tmdb, POSTER_URL, BACKDROP_URL } from '../api/tmdb'
 import { vidyUrl, getPlayerUrl, isPlayerEmbed, getFallbackSources, PlayerSource } from '../api/vidy'
 import { mediafusionStreams } from '../api/mediafusion'
-import { addonStreams, isOnePiece, STREAM_HOST } from '../api/stremioAddons'
+import { addonStreams, isOnePiece, STREAM_HOST, onePaceStreams } from '../api/stremioAddons'
 import { ANIME_SOURCES, MOVIE_TV_SOURCES } from '../api/vidy'
 import { useStore } from '../store'
 import RateModal from '../components/RateModal'
@@ -88,7 +88,10 @@ export default function PlayerPage() {
       const kind = selectedMedia.type === 'movie' ? 'movie' : 'series'
       const sid = String((selectedMedia as any).imdb || ('tmdb:' + selectedMedia.id))
       const want = selectedMedia.type === 'movie' ? sid : `${sid}:${selectedMedia.season || 1}:${selectedMedia.episode || 1}`
-      addonStreams(addonBase, kind, want).then((rows) => {
+      const load = src === 'onepace'
+        ? onePaceStreams(selectedMedia.season || 1, selectedMedia.episode || 1)
+        : addonStreams(addonBase, kind, want)
+      load.then((rows) => {
         setPicks(rows)
         const q = rows.find((r: any) => /^https?:/i.test(r.url)) || rows[0]
         if (!q) { setError('No stream from this addon'); setLoading(false); return }

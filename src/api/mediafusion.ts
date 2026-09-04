@@ -1,8 +1,8 @@
 import { tmdb } from './tmdb'
 
 const HOSTS = [
-  'https://mediafusion.elfhosted.com',
   'https://mediafusionfortheweebs.midnightignite.me',
+  'https://mediafusion.elfhosted.com',
   'https://mediafusion-dev.elfhosted.com',
 ]
 
