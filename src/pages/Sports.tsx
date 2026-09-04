@@ -569,7 +569,8 @@ export default function Sports() {
                 <div key={i} className={`relative rounded-xl overflow-hidden bg-[#0c0c12] border border-white/10 ${extra}`}>
                   {slot?.url ? (
                     <>
-                      <iframe title={slot.title} src={slot.url} className="w-full h-full" allow="autoplay; fullscreen" allowFullScreen />
+                      {/* @ts-expect-error Electron webview */}
+                      <webview title={slot.title} src={slot.url} partition="persist:mfy" className="w-full h-full" style={{ width: '100%', height: '100%' }} allowpopups="false" />
                       <div className="absolute top-1 left-1 right-1 flex justify-between text-[10px] text-white">
                         <span className="bg-black/60 px-2 py-0.5 rounded">{slot.title}</span>
                         <button type="button" className="bg-black/60 px-2 py-0.5 rounded" onClick={() => setMvSlots((s) => s.filter((x) => x.id !== slot.id))}>✕</button>
@@ -591,7 +592,7 @@ export default function Sports() {
         </section>
       )}
 
-      {addSlot != null && (
+      {addSlot != null && !activeMatch && !streams && !resolving && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4" onClick={() => setAddSlot(null)}>
           <div className="w-full max-w-md max-h-[80vh] overflow-y-auto rounded-2xl bg-[#16161c] border border-white/10 p-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
@@ -627,7 +628,7 @@ export default function Sports() {
 
       {activeMatch || resolving || streams ? (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4"
           onClick={() => {
             setActiveMatch(null)
             setStreams(null)
@@ -778,7 +779,7 @@ function MatchCard({
     >
       <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
         <div className="text-xs text-white/80 truncate text-right">{home?.name || match.title.split(/vs|v\s/i)[0]}</div>
-        {home?.badge ? <img src={badgeUrl(home.badge)} alt="" className="w-9 h-9 object-contain" /> : <div className="w-9 h-9 rounded-full bg-white/10" />}
+        {home?.badge ? <img src={badgeUrl(home.badge)} alt="" className="w-9 h-9 object-contain bg-white/5 rounded-full" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} /> : <div className="w-9 h-9 rounded-full bg-white/10" />}
       </div>
       <div className="flex flex-col items-center w-16 flex-shrink-0">
         {match.live && <span className="text-[8px] text-red-400 font-bold tracking-widest">LIVE</span>}
@@ -786,7 +787,7 @@ function MatchCard({
         <div className="text-[9px] text-white/30">{match.date ? formatDate(match.date) : match.category}</div>
       </div>
       <div className="flex-1 flex items-center gap-2 min-w-0">
-        {away?.badge ? <img src={badgeUrl(away.badge)} alt="" className="w-9 h-9 object-contain" /> : <div className="w-9 h-9 rounded-full bg-white/10" />}
+        {away?.badge ? <img src={badgeUrl(away.badge)} alt="" className="w-9 h-9 object-contain bg-white/5 rounded-full" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} /> : <div className="w-9 h-9 rounded-full bg-white/10" />}
         <div className="text-xs text-white/80 truncate">{away?.name || match.title.split(/vs|v\s/i)[1] || ''}</div>
       </div>
     </button>

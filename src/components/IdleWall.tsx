@@ -18,7 +18,8 @@ export default function IdleWall() {
     const bump = () => {
       setOn(false)
       clearTimeout(t)
-      if (useStore.getState().currentPage === 'player') return
+      const page = useStore.getState().currentPage
+      if (page === 'player' || page === 'sports') return
       t = setTimeout(() => setOn(true), IDLE_MS)
     }
     bump()
@@ -57,7 +58,7 @@ export default function IdleWall() {
     }).catch(() => {})
   }, [on, rows.length])
 
-  if (!on || currentPage === 'player') return null
+  if (!on || currentPage === 'player' || currentPage === 'sports') return null
 
   function open(item: any) {
     const type = item.media_type === 'tv' || item.first_air_date || item.name ? 'tv' : 'movie'

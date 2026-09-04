@@ -43,7 +43,8 @@ export interface SportStream {
 export function badgeUrl(badge?: string) {
   if (!badge) return ''
   if (badge.startsWith('http')) return badge
-  return `${BASE}/api/images/proxy/${badge}.webp`
+  if (badge.startsWith('/')) return `https://api.watchfooty.st${badge}`
+  return `${BASE}/api/images/proxy/${encodeURIComponent(badge)}.webp`
 }
 
 export function posterUrl(poster?: string) {
