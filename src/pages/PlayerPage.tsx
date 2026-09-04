@@ -200,8 +200,8 @@ export default function PlayerPage() {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
       if (e.code === 'Space') { e.preventDefault(); togglePlay() }
-      if (e.key === 'ArrowRight') seek(progress + 10)
-      if (e.key === 'ArrowLeft') seek(progress - 10)
+      if (e.key === 'ArrowRight') seekBy(5)
+      if (e.key === 'ArrowLeft') seekBy(-5)
       if (e.key === 'f' || e.key === 'F') toggleFullscreen()
       if (e.key === 'n' || e.key === 'N') setShowRate(true)
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); goBack() }
@@ -234,32 +234,27 @@ export default function PlayerPage() {
             for (let i = 0; i < tracks.length; i++) tracks[i].mode = i === 0 ? 'showing' : 'hidden'
           } catch {}
         })`)
+        w.executeJavaScript(`document.querySelectorAll('video').forEach(v=>{ v.muted=false; v.volume=1; const p=v.play(); if(p&&p.catch) p.catch(()=>{}); })`)
       } catch {}
     }
-    const resume = () => {
-      apply()
-      const at = Number((selectedMedia as any)?.resumeAt || useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id) && h.season === selectedMedia?.season && h.episode === selectedMedia?.episode)?.progress || 0)
-      try {
-        w.executeJavaScript(`(() => {
-          const kick = () => {
-            document.querySelectorAll('video').forEach((v) => {
-              v.muted = false; v.defaultMuted = false; v.volume = 1;
-              const p = v.play(); if (p && p.catch) p.catch(() => {})
-            })
-            document.querySelectorAll('button, [class], [aria-label]').forEach((el) => {
-              const t = ((el.getAttribute && el.getAttribute('aria-label')) || el.textContent || el.className || '').toString().toLowerCase()
-              if (/unmute|sound on|volume/.test(t) && /mute/.test(t)) el.click()
-            })
-          }
-          kick(); setTimeout(kick, 400); setTimeout(kick, 1200); setTimeout(kick, 2500);
-          ${at > 8 ? `const v = document.querySelector('video'); if (v && v.currentTime < ${at - 2}) v.currentTime = ${at};` : ''}
-        })()`)
-      } catch {}
-    }
-    w.addEventListener('dom-ready', resume)
-    setTimeout(resume, 1500)
-    return () => { try { w.removeEventListener('dom-ready', resume) } catch {} }
+    w.addEventListener('dom-ready', apply)
+    return () => { try { w.removeEventListener('dom-ready', apply) } catch {} }
   }, [subSize, subBg, streamUrl, fit])
+
+  useEffect(() => {
+    const w = document.querySelector('webview') as any
+    if (!w?.executeJavaScript) return
+    const row = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id) && h.season === selectedMedia?.season && h.episode === selectedMedia?.episode)
+    const at = Number((selectedMedia as any)?.resumeAt || row?.progress || 0)
+    const done = !!(row as any)?.completed || (Number(row?.duration) > 90 && at / Number(row?.duration) >= 0.9)
+    if (!(at > 12) || done) return
+    const id = setTimeout(() => {
+      try {
+        w.executeJavaScript(`(() => { const v = document.querySelector('video'); if (v && v.currentTime < 8) v.currentTime = ${at}; })()`)
+      } catch {}
+    }, 1800)
+    return () => clearTimeout(id)
+  }, [streamUrl, selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
 
   useEffect(() => {
     const v = videoRef.current
@@ -403,7 +398,8 @@ export default function PlayerPage() {
         const got = await w?.executeJavaScript?.(`(() => { const v = document.querySelector('video'); if (!v) return null; return { p: v.currentTime || 0, d: v.duration || 0 } })()`)
         if (got && Number(got.d) > 30) { p = Number(got.p); d = Number(got.d) }
       } catch {}
-      if (d > 60 && d - p <= 30 && d - p >= 0) setShowNext(true)
+      const sessionSec = (Date.now() - startedAt.current) / 1000
+      if (sessionSec > 90 && d > 120 && p > 60 && d - p <= 30 && d - p >= 0) setShowNext(true)
     }, 2000)
     return () => clearInterval(id)
   }, [nextUp, progress, dur])
@@ -479,7 +475,17 @@ export default function PlayerPage() {
   }
 
   function seek(t: number) {
-    if (videoRef.current && Number.isFinite(t)) videoRef.current.currentTime = Math.max(0, Math.min(dur || t, t))
+    seekBy(t - (progress || 0))
+  }
+
+  function seekBy(delta: number) {
+    if (!Number.isFinite(delta) || !delta) return
+    try {
+      const w = document.querySelector('webview') as any
+      w?.executeJavaScript?.(`document.querySelectorAll('video').forEach(v => { v.currentTime = Math.max(0, (v.currentTime || 0) + (${delta})); })`)
+    } catch {}
+    if (videoRef.current) videoRef.current.currentTime = Math.max(0, (videoRef.current.currentTime || 0) + delta)
+    setProgress((p) => Math.max(0, p + delta))
   }
 
   async function goToEpisode(season: number, episode: number) {
@@ -888,9 +894,9 @@ export default function PlayerPage() {
             </div>
             <div className="player-control-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
               <div className="player-left-controls" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button onClick={() => seek(progress - 10)} title="Rewind 10s" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><SkipBack size={20} /></button>
+                <button onClick={() => seekBy(-5)} title="Rewind 5s" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><SkipBack size={20} /></button>
                 <button className="player-main-play" onClick={togglePlay} style={{ background: '#FF1493', border: 'none', borderRadius: '50%', padding: 12, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{playing ? <Pause size={24} /> : <Play size={24} />}</button>
-                <button onClick={() => seek(progress + 10)} title="Forward 10s" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><SkipForward size={20} /></button>
+                <button onClick={() => seekBy(5)} title="Forward 5s" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><SkipForward size={20} /></button>
                 {selectedMedia?.type === 'tv' && selectedMedia.season !== undefined && selectedMedia.episode !== undefined && (
                   <>
                     <button onClick={() => goToEpisode(selectedMedia.season!, (selectedMedia.episode || 1) - 1)} title="Previous episode" disabled={selectedMedia.episode === 1} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: selectedMedia.episode === 1 ? 0.5 : 1 }}><SkipBack size={18} /></button>
