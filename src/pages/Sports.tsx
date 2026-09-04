@@ -50,6 +50,9 @@ export default function Sports() {
   const [watchUrl, setWatchUrl] = useState('')
   const [watchQuality, setWatchQuality] = useState('')
   const [watchList, setWatchList] = useState<SportStream[]>([])
+  const [addSlot, setAddSlot] = useState<number | null>(null)
+  const [addQ, setAddQ] = useState('')
+  const [mvFull, setMvFull] = useState(false)
   const [metegol, setMetegol] = useState<any[]>([])
   const [when, setWhen] = useState<'live' | 'upcoming' | 'finished'>('live')
   const [timLive, setTimLive] = useState<any[]>([])
@@ -197,10 +200,16 @@ export default function Sports() {
     setStreams(null)
     if (multiView) {
       const cap = mvGrid === '1x2' || mvGrid === '2x1' ? 2 : mvGrid === '1+2' ? 3 : mvGrid === '3x3' ? 9 : 4
+      const item = { id: `${Date.now()}`, title: title || activeMatch?.title || 'Stream', url }
       setMvSlots((cur) => {
-        const next = [...cur, { id: `${Date.now()}`, title: title || activeMatch?.title || 'Stream', url }]
+        const next = cur.slice()
+        while (next.length < cap) next.push({ id: `empty-${next.length}`, title: '', url: '' })
+        const idx = addSlot != null ? addSlot : next.findIndex((s) => !s.url)
+        if (idx >= 0 && idx < cap) next[idx] = item
+        else if (next.length < cap) next.push(item)
         return next.slice(0, cap)
       })
+      setAddSlot(null)
       return
     }
     setWatchUrl(url)
@@ -498,11 +507,19 @@ export default function Sports() {
               </button>
             ))}
             <button type="button" className="ml-auto text-[11px] text-white/50" onClick={() => setMvSlots([])}>Clear</button>
+            <button type="button" className="text-[11px] text-white" onClick={() => {
+              const el = document.getElementById('mfy-multiview')
+              if (!el) return
+              if (document.fullscreenElement) document.exitFullscreen()
+              else el.requestFullscreen().catch(() => {})
+              setMvFull((v) => !v)
+            }}>{mvFull ? 'Exit full' : 'Full screen'}</button>
             <button type="button" className="text-[11px] text-red-400" onClick={() => { setMultiView(false); setMvSlots([]) }}>Close</button>
           </div>
           <div
+            id="mfy-multiview"
             className={
-              mvGrid === '1x2' ? 'grid grid-cols-2 gap-2 h-[52vh]' :
+              mvGrid === '1x2' ? 'grid grid-cols-2 gap-2 h-[52vh] bg-black' :
               mvGrid === '2x1' ? 'grid grid-cols-1 grid-rows-2 gap-2 h-[70vh]' :
               mvGrid === '1+2' ? 'grid grid-cols-3 grid-rows-2 gap-2 h-[62vh]' :
               mvGrid === '3x3' ? 'grid grid-cols-3 grid-rows-3 gap-2 h-[72vh]' :
@@ -523,8 +540,11 @@ export default function Sports() {
                       </div>
                     </>
                   ) : (
-                    <button type="button" className="w-full h-full text-white/35 text-xs" onClick={() => live[i] && openMatch(live[i])}>
-                      Click a match below to fill this pane
+                    <button type="button" className="w-full h-full text-white/45 text-xs grid place-items-center" onClick={() => { setAddSlot(i); setAddQ('') }}>
+                      <span className="text-center">
+                        <span className="block text-3xl text-white/30 mb-2">+</span>
+                        Click to add stream
+                      </span>
                     </button>
                   )}
                 </div>
@@ -533,6 +553,40 @@ export default function Sports() {
           </div>
           <p className="text-[11px] text-white/40 mt-2">Open matches while Multi-view is on — they drop into empty panes instead of taking the whole screen.</p>
         </section>
+      )}
+
+      {addSlot != null && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4" onClick={() => setAddSlot(null)}>
+          <div className="w-full max-w-md max-h-[80vh] overflow-y-auto rounded-2xl bg-[#16161c] border border-white/10 p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold">Add Stream</h3>
+              <button type="button" className="text-white/40" onClick={() => setAddSlot(null)}>✕</button>
+            </div>
+            <input
+              value={addQ}
+              onChange={(e) => setAddQ(e.target.value)}
+              placeholder="Search for a match…"
+              className="w-full h-10 px-3 rounded-xl bg-black border border-[#FF1493]/70 text-sm mb-4 outline-none"
+            />
+            <p className="text-[11px] text-white/40 mb-2">Categories</p>
+            <div className="grid grid-cols-4 gap-2 mb-4">
+              {sports.slice(0, 16).map((s) => (
+                <button key={s.id} type="button" onClick={() => setSportId(s.id)} className={`rounded-xl px-2 py-3 text-[10px] border ${sportId === s.id ? 'border-[#FF1493] bg-[#FF1493]/15' : 'border-white/10 bg-white/5'}`}>
+                  {s.name || s.id}
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-white/40 mb-2">Popular live</p>
+            <div className="space-y-1">
+              {(live.length ? live : matches).filter((m) => !addQ || m.title.toLowerCase().includes(addQ.toLowerCase())).slice(0, 20).map((m) => (
+                <button key={m.id} type="button" className="w-full text-left px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10" onClick={() => openMatch(m)}>
+                  <p className="text-sm">{m.title}</p>
+                  <p className="text-[10px] text-white/35">{formatDate(m.date)}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {activeMatch || resolving || streams ? (
