@@ -33,8 +33,8 @@ export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId:
   const e = episode ?? 1
   if (source === 'zangetsu' || (anime && source === 'zangetsu')) {
     return type === 'movie'
-      ? `https://player.videasy.net/movie/${tmdbId}`
-      : `https://player.videasy.net/tv/${tmdbId}/${s}/${e}`
+      ? `https://vidfast.pro/movie/${tmdbId}`
+      : `https://vidfast.pro/tv/${tmdbId}/${s}/${e}`
   }
   if (source === 'miruro' || (anime && source === 'miruro')) {
     return type === 'movie'
@@ -43,11 +43,11 @@ export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId:
   }
   if (source === 'mangayomi' || (anime && source === 'mangayomi')) {
     return type === 'movie'
-      ? `https://embed.su/embed/movie/${tmdbId}`
-      : `https://embed.su/embed/tv/${tmdbId}/${s}/${e}`
+      ? `https://vidsrc.to/embed/movie/${tmdbId}`
+      : `https://vidsrc.to/embed/tv/${tmdbId}/${s}/${e}`
   }
   if (anime) {
-    return `https://player.videasy.net/tv/${tmdbId}/${s}/${e}`
+    return `https://vidfast.pro/tv/${tmdbId}/${s}/${e}`
   }
   if (source === 'moviebox') {
     return `https://moviebox.ph/web/searchResult?keyword=${encodeURIComponent(String(tmdbId))}`
@@ -56,13 +56,13 @@ export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId:
     return `mfusion:${type}:${tmdbId}:${s}:${e}`
   }
   if (source === 'playtorrio') {
-    return type === 'movie' ? `https://vidsrc.xyz/embed/movie/${tmdbId}` : `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}`
+    return type === 'movie' ? `https://vidsrc.me/embed/movie/${tmdbId}` : `https://vidsrc.me/embed/tv/${tmdbId}/${s}/${e}`
   }
   if (source === 'simplstream') {
     return type === 'movie' ? `https://vidlink.pro/movie/${tmdbId}` : `https://vidlink.pro/tv/${tmdbId}/${s}/${e}`
   }
-  if (type === 'movie') return `https://vidsrc.xyz/embed/movie/${tmdbId}`
-  return `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}`
+  if (type === 'movie') return `https://vidsrc.me/embed/movie/${tmdbId}`
+  return `https://vidsrc.me/embed/tv/${tmdbId}/${s}/${e}`
 }
 
 export function isPlayerEmbed(url: string): boolean {
