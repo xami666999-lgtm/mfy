@@ -459,7 +459,7 @@ export default function PlayerPage() {
     let idle: ReturnType<typeof setTimeout>
     const bump = () => {
       clearTimeout(idle)
-      idle = setTimeout(() => setStillWatching('idle'), 5 * 60 * 1000)
+      idle = setTimeout(() => setStillWatching('idle'), 60 * 60 * 1000)
     }
     bump()
     window.addEventListener('mousemove', bump)
