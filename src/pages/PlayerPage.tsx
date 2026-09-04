@@ -162,6 +162,12 @@ export default function PlayerPage() {
     return () => clearInterval(id)
   }, [selectedMedia?.id, selectedMedia?.episode, playerSource])
 
+  useEffect(() => {
+    setShowUI(true)
+    const id = setTimeout(() => setShowUI(false), 2500)
+    return () => clearTimeout(id)
+  }, [streamUrl])
+
   async function handleEnded() {
     saveProgress(true).catch(() => {})
     if (autoplayNext && selectedMedia?.type === 'tv' && !autoNextBusy) {
@@ -267,7 +273,7 @@ export default function PlayerPage() {
   function onMouseMove() {
     setShowUI(true)
     if (timer.current) clearTimeout(timer.current)
-    timer.current = setTimeout(() => playing && setShowUI(false), 3000)
+    timer.current = setTimeout(() => setShowUI(false), 2200)
   }
 
   async function toggleFullscreen() {
@@ -362,7 +368,7 @@ export default function PlayerPage() {
         <RateModal title={title} kind={isAnimeItem(selectedMedia) ? 'anime' : (selectedMedia?.type === 'movie' ? 'movie' : 'tv')} onSubmit={(s, n) => finishRate(s, n)} onSkip={() => finishRate()} />
       )}
     <div className="mfy-player" onMouseMove={onMouseMove} style={{ background: '#000', minHeight: '100vh' }}>
-      <div className={cn('player-topbar', showUI ? 'visible' : 'hidden')} style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
+      <div className={cn('player-topbar', showUI ? 'visible' : 'hidden')} style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, padding: '12px 16px', display: showUI ? 'flex' : 'none', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
         <div className="flex items-center gap-2">
         <button onClick={goBack} className="player-back flex items-center gap-2 text-white/80 hover:text-white" style={{ background: 'rgba(0,0,0,0.5)', padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>
           <ArrowLeft size={16} /> Back
@@ -404,7 +410,7 @@ export default function PlayerPage() {
         </div>
       </div>
 
-      <div className="player-stage" onClick={togglePlay} style={{ position: 'relative', width: '100%', height: 'calc(100vh - 100px)', minHeight: 400 }}>
+      <div className="player-stage" onClick={togglePlay} style={{ position: 'relative', width: '100%', height: '100vh', minHeight: '100vh' }}>
         {!loaded && !error && (
           <div className="player-empty" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white/60' }}>
             <div className="player-empty-icon" style={{ fontSize: 48, marginBottom: 16 }}><Play /></div>
@@ -429,7 +435,7 @@ export default function PlayerPage() {
           <video ref={videoRef} playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }} />
         )}
 
-        {loaded && !error && isPlayerEmbedUrl(streamUrl) && (
+        {showUI && loaded && !error && isPlayerEmbedUrl(streamUrl) && (
           <div style={{ position: 'absolute', bottom: 12, right: 12, zIndex: 30, display: 'flex', gap: 8 }}>
             {(isAnimeItem(selectedMedia) ? (['zangetsu', 'miruro', 'mangayomi'] as PlayerSource[]) : (['playtorrio', 'simplstream', 'vidy'] as PlayerSource[])).map((s) => (
               <button key={s} type="button" onClick={() => { setPlayerSource(s); try { localStorage.setItem('mfy-player-engine', s) } catch {} }}

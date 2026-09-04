@@ -33,6 +33,9 @@ export default function Anime() {
   useEffect(() => {
     const jp = { with_origin_country: 'JP', with_genres: '16', sort_by: 'popularity.desc', page: '1' }
     tmdb.discoverTV(jp).then((d) => { if (d?.results?.length) setPopular(d.results) }).catch(() => {})
+    tmdb.discoverMovies({ with_origin_country: 'JP', with_genres: '16', sort_by: 'popularity.desc', page: '1' }).then((d) => {
+      if (d?.results?.length) setRows((prev) => ({ ...prev, 'Anime movies': d.results.map((x: any) => ({ ...x, media_type: 'movie' })) }))
+    }).catch(() => {})
     tmdb.discoverTV({
       ...jp,
       sort_by: 'first_air_date.asc',
