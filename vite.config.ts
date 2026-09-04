@@ -28,6 +28,14 @@ export default defineConfig({
           },
         },
       },
+      {
+        entry: 'electron/guest-preload.ts',
+        vite: {
+          build: {
+            outDir: 'dist-electron',
+          },
+        },
+      },
     ]),
     electronRenderer(),
   ],

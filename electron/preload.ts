@@ -38,6 +38,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('mfy-player-escape', listener)
     return () => ipcRenderer.removeListener('mfy-player-escape', listener)
   },
+  onPlayerMouse: (cb: () => void) => {
+    const listener = () => cb()
+    ipcRenderer.on('mfy-player-mm', listener)
+    return () => ipcRenderer.removeListener('mfy-player-mm', listener)
+  },
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
   installUpdate: () => ipcRenderer.invoke('install-update'),
   onUpdateDownloaded: (cb: (info: any) => void) => {

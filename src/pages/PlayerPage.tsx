@@ -209,9 +209,11 @@ export default function PlayerPage() {
     }
     window.addEventListener('keydown', onKey, true)
     const off = (window as any).electronAPI?.onPlayerEscape?.(() => goBack())
+    const offMm = (window as any).electronAPI?.onPlayerMouse?.(() => onMouseMove())
     return () => {
       window.removeEventListener('keydown', onKey, true)
       try { off?.() } catch {}
+      try { offMm?.() } catch {}
     }
   })
 
@@ -226,6 +228,7 @@ export default function PlayerPage() {
           html, body { width:100% !important; height:100% !important; margin:0 !important; background:#000 !important; overflow:hidden !important; }
           video, iframe { width:100vw !important; height:100vh !important; max-width:none !important; max-height:none !important; object-fit:${fit === 'full' ? 'contain' : fit} !important; background:#000 !important; }
           video::cue, ::cue { font-size: ${subSize}em !important; line-height: 1.25; background: ${subBg ? 'rgba(0,0,0,0.55)' : 'transparent'} !important; color: #fff !important; }
+          video::-webkit-media-controls, video::-webkit-media-controls-enclosure, .vjs-control-bar, .jw-controlbar { display: none !important; opacity: 0 !important; height: 0 !important; }
         `)
         w.executeJavaScript(`document.querySelectorAll('video').forEach(v=>{
           v.style.objectFit='${fit === 'full' ? 'contain' : fit}';
@@ -453,7 +456,16 @@ export default function PlayerPage() {
 
   async function handleEnded() {
     const p = progress
-    if (expectedSec > 180 && p < expectedSec * 0.85) return
+    if (expectedSec > 180 && p < expectedSec * 0.85) {
+      const pool = isAnimeItem(selectedMedia) ? ANIME_SOURCES : MOVIE_TV_SOURCES
+      const next = pool.find((s) => !failTried.current.includes(s) && s !== playerSource)
+      if (next) {
+        failTried.current.push(playerSource)
+        setPlayerSource(next)
+        return
+      }
+      return
+    }
     saveProgress(true).catch(() => {})
     if (nextUp) { playNextEpisode(); return }
     if (autoplayNext && selectedMedia?.type === 'tv' && !autoNextBusy) {
@@ -803,15 +815,12 @@ export default function PlayerPage() {
         <RateModal title={title} kind={isAnimeItem(selectedMedia) ? 'anime' : (selectedMedia?.type === 'movie' ? 'movie' : 'tv')} onSubmit={(s, n) => finishRate(s, n)} onSkip={() => finishRate()} />
       )}
         <div className="mfy-player" onMouseMove={onMouseMove} onMouseLeave={hideChrome} style={{ background: '#000', minHeight: '100vh', cursor: showUI ? 'default' : 'none' }}>
-      {showUI && (
-        <button type="button" onClick={goBack} title="Exit player"
-          style={{ position: 'fixed', top: 14, left: 14, zIndex: 200, background: '#FF1493', color: '#fff', border: 'none', borderRadius: 999, padding: '8px 16px', cursor: 'pointer', fontWeight: 800, fontSize: 12, letterSpacing: 0.4, boxShadow: '0 6px 20px rgba(255,20,147,0.35)' }}>
-          ← Exit
-        </button>
-      )}
+      <button type="button" onClick={goBack} title="Exit player"
+        style={{ position: 'fixed', top: 14, left: 14, zIndex: 400, background: '#FF1493', color: '#fff', border: 'none', borderRadius: 999, padding: '8px 16px', cursor: 'pointer', fontWeight: 800, fontSize: 12, letterSpacing: 0.4, boxShadow: '0 6px 20px rgba(255,20,147,0.35)', opacity: showUI ? 1 : 0.92 }}>
+        ← Exit
+      </button>
       {showUI && <div className="player-topbar visible" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 90, padding: '12px 16px 12px 108px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
         <div className="flex items-center gap-2">
-        <button type="button" onClick={() => setShowRate(true)} style={{ background: '#FF1493', padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white' }}>Mark watched</button>
         <button type="button" onClick={() => setShowRate(true)} style={{ background: '#FF1493', padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white' }}>Mark watched</button>
         </div>
         <div className="player-title text-white font-medium truncate" style={{ maxWidth: 400 }}>{title}</div>
@@ -910,6 +919,7 @@ export default function PlayerPage() {
               background: '#000',
               transform: fit === 'cover' ? 'scale(1.28)' : fit === 'fill' ? 'scaleX(1.12) scaleY(1.18)' : 'scale(1)',
               transformOrigin: 'center center',
+              pointerEvents: showUI ? 'none' : 'auto',
             }}
             allowpopups="false"
             allowfullscreen="true"

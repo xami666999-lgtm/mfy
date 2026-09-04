@@ -106,6 +106,12 @@ mainWindow.once('ready-to-show', () => {
         mainWindow?.webContents.send('mfy-player-escape')
       }
     })
+    if (contents.getType() === 'webview') {
+      contents.on('ipc-message', (_e, channel) => {
+        if (channel === 'mfy-exit') mainWindow?.webContents.send('mfy-player-escape')
+        if (channel === 'mfy-mm') mainWindow?.webContents.send('mfy-player-mm')
+      })
+    }
   })
 
   mainWindow.webContents.on('will-navigate', (event, url) => {
@@ -231,6 +237,10 @@ app.whenReady().then(() => {
   app.userAgentFallback = chromeUA
   const { session } = require('electron')
   session.defaultSession.setUserAgent(chromeUA)
+  try {
+    session.fromPartition('persist:mfy').setUserAgent(chromeUA)
+    session.fromPartition('persist:mfy').setPreloads([path.join(__dirname, 'guest-preload.js')])
+  } catch {}
   session.defaultSession.webRequest.onHeadersReceived((details: any, callback: any) => {
     const headers = { ...(details.responseHeaders || {}) }
     for (const key of Object.keys(headers)) {
