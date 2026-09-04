@@ -125,4 +125,12 @@ export const mal = {
       return []
     }
   },
+  byFormat: async (type: string) => {
+    const d = await raw(`${JIKAN}/top/manga?type=${encodeURIComponent(type)}&limit=25`)
+    return (d.data || []).map(jikanCard)
+  },
+  genreFormat: async (genreId: number, type: string) => {
+    const d = await raw(`${JIKAN}/manga?genres=${genreId}&type=${encodeURIComponent(type)}&order_by=score&sort=desc&limit=25&sfw=true`)
+    return (d.data || []).map(jikanCard)
+  },
 }

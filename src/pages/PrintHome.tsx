@@ -21,25 +21,33 @@ async function openLibrary(q: string) {
   }))
 }
 
+const NOVEL_SHELVES = ['Overlord', 'Re:Zero', 'Mushoku Tensei', 'Spice and Wolf', 'Classroom of the Elite', 'Monogatari', 'Ascendance of a Bookworm', 'The Apothecary Diaries']
+
 export default function PrintHome({ kind }: { kind: 'manga' | 'comics' | 'novels' }) {
   const { setSelectedMedia, setCurrentPage } = useStore()
+  const [tab, setTab] = useState<'manga' | 'novel'>(kind === 'novels' ? 'novel' : 'manga')
   const [popular, setPopular] = useState<any[]>([])
   const [publishing, setPublishing] = useState<any[]>([])
   const [ranks, setRanks] = useState<Record<string, any[]>>({})
   const [genres, setGenres] = useState<Record<number, any[]>>({})
-  const title = kind === 'comics' ? 'Comics' : kind === 'novels' ? 'Novels' : 'Manga'
 
   function open(item: any) {
     const name = item.title || item.name || String(item.id)
+    const isNovel = tab === 'novel' || item.media_type === 'novel' || /novel/i.test(String(item.mal_type || ''))
     setSelectedMedia({
       id: item.id || item.mal_id || name,
-      type: kind === 'comics' ? 'comics' : kind === 'novels' ? 'novel' : 'manga',
+      type: kind === 'comics' ? 'comics' : isNovel ? 'novel' : 'manga',
       title: name,
       poster_path: item.poster_path || item.image,
       overview: item.overview,
     } as any)
     setCurrentPage('manga-detail')
   }
+
+  useEffect(() => {
+    if (kind === 'novels') setTab('novel')
+    if (kind === 'manga') setTab('manga')
+  }, [kind])
 
   useEffect(() => {
     let live = true
@@ -60,57 +68,89 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' | 'novels
         return
       }
 
-      if (kind === 'novels') {
-        const novels = await mal.ranking('novels', 50).catch(() => [])
+      if (tab === 'novel') {
+        const [novels, light] = await Promise.all([
+          mal.ranking('novels', 100).catch(() => []),
+          mal.byFormat('lightnovel').catch(() => []),
+        ])
         if (!live) return
-        setPopular(novels)
-        setRanks({ Novels: novels })
-        const more = ['Overlord', 'Re:Zero', 'Mushoku Tensei', 'Spice and Wolf']
-        for (const q of more) {
-          const list = await mal.search(q).catch(() => [])
+        const clean = (list: any[]) => list.filter((x) => x.poster_path || x.image)
+        setPopular(clean(novels.length ? novels : light))
+        setRanks({
+          Novels: clean(novels),
+          'Light novels': clean(light),
+        })
+        for (const q of NOVEL_SHELVES) {
+          const list = clean(await mal.search(q).catch(() => []))
           if (!live) return
           setRanks((prev) => ({ ...prev, [q]: list }))
-          await sleep(250)
+          await sleep(220)
+        }
+        for (const g of MAL_GENRES) {
+          const list = clean(await mal.genreFormat(g.id, 'novel').catch(() => []))
+          if (!live) return
+          setGenres((prev) => ({ ...prev, [g.id]: list }))
+          await sleep(350)
         }
         return
       }
 
-      const [all, publishingNow] = await Promise.all([
+      const [all, publishingNow, series] = await Promise.all([
         mal.ranking('all', 100).catch(() => []),
         mal.publishing().catch(() => []),
+        mal.ranking('manga', 100).catch(() => []),
       ])
       if (!live) return
-      setPopular(all.filter((x) => x.poster_path || x.image))
-      setPublishing(publishingNow.filter((x) => x.poster_path || x.image))
+      const clean = (list: any[]) => list.filter((x) => x.poster_path || x.image)
+      setPopular(clean(all.length ? all : series))
+      setPublishing(clean(publishingNow))
+      setRanks({ 'Manga series': clean(series) })
 
-      for (const rank of MAL_RANKS.filter((r) => r.id !== 'all')) {
-        const list = await mal.ranking(rank.id, 50).catch(() => [])
+      for (const rank of MAL_RANKS.filter((r) => !['all', 'novels'].includes(r.id))) {
+        const list = clean(await mal.ranking(rank.id, 50).catch(() => []))
         if (!live) return
-        setRanks((prev) => ({ ...prev, [rank.name]: list.filter((x) => x.poster_path || x.image) }))
-        await sleep(200)
+        setRanks((prev) => ({ ...prev, [rank.name]: list }))
+        await sleep(180)
       }
 
       for (const g of MAL_GENRES) {
-        const list = await mal.genre(g.id).catch(() => [])
+        const list = clean(await mal.genre(g.id).catch(() => []))
         if (!live) return
-        setGenres((prev) => ({ ...prev, [g.id]: list.filter((x) => x.poster_path || x.image) }))
-        await sleep(350)
+        setGenres((prev) => ({ ...prev, [g.id]: list }))
+        await sleep(320)
       }
     })()
 
     return () => { live = false }
-  }, [kind])
+  }, [kind, tab])
+
+  const kicker = kind === 'comics' ? 'COMICS' : tab === 'novel' ? 'NOVELS' : 'MANGA'
+  const hero = popular[0] || publishing[0]
 
   return (
     <div className="board page-fade-enter">
-      <PageHero item={popular[0] || publishing[0]} kicker={title.toUpperCase()} onPlay={() => (popular[0] || publishing[0]) && open(popular[0] || publishing[0])} />
+      <PageHero item={hero} kicker={kicker} onPlay={() => hero && open(hero)} />
       <div className="board-content px-6 pt-6">
-        <MediaShelf title={`Popular ${title}`} items={popular} onOpen={open} />
-        {kind === 'manga' && <MediaShelf title="Publishing now" items={publishing} onOpen={open} />}
+        {kind !== 'comics' && (
+          <div className="flex items-center gap-2 mb-6">
+            {(['manga', 'novel'] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTab(t)}
+                className={`h-9 px-5 rounded-full text-xs font-bold tracking-wide ${tab === t ? 'bg-[#FF1493] text-white' : 'bg-white/10 text-white/60'}`}
+              >
+                {t === 'manga' ? 'Manga' : 'Novels'}
+              </button>
+            ))}
+          </div>
+        )}
+        <MediaShelf title={tab === 'novel' ? 'Popular novels' : kind === 'comics' ? 'Popular comics' : 'Popular manga'} items={popular} onOpen={open} />
+        {tab === 'manga' && kind !== 'comics' && <MediaShelf title="Publishing now" items={publishing} onOpen={open} />}
         {Object.entries(ranks).map(([name, list]) => (
           <MediaShelf key={name} title={name} items={list} onOpen={open} />
         ))}
-        {kind === 'manga' && MAL_GENRES.map((g) => (
+        {kind !== 'comics' && MAL_GENRES.map((g) => (
           <MediaShelf key={g.id} title={g.name} items={genres[g.id] || []} onOpen={open} />
         ))}
       </div>
