@@ -6,7 +6,7 @@ const INVIDIOUS = ['https://inv.nadeko.net', 'https://yewtu.be', 'https://invidi
 type Saved = { id: string; title: string; author: string }
 
 export default function YouTubePage() {
-  const [tab, setTab] = useState<'yt' | 'music' | 'library' | 'search'>('yt')
+  const [tab, setTab] = useState<'yt' | 'music' | 'library' | 'search' | 'youtubio'>('yt')
   const [q, setQ] = useState('')
   const [watch, setWatch] = useState('')
   const [items, setItems] = useState<any[]>([])
@@ -44,12 +44,18 @@ export default function YouTubePage() {
         <span className="w-7 h-5 rounded-sm bg-[#FF1493] grid place-items-center text-[10px] font-black">M</span>
         <span className="font-black tracking-wide">MFY Tube</span>
         <div className="flex-1" />
-        {(['yt', 'music', 'search', 'library'] as const).map((t) => (
+        {(['yt', 'music', 'youtubio', 'search', 'library'] as const).map((t) => (
           <button key={t} type="button" onClick={() => setTab(t)} className={`h-8 px-3 rounded-full text-xs capitalize ${tab === t ? 'bg-[#FF1493]' : 'bg-white/10'}`}>
             {t === 'yt' ? 'YouTube' : t === 'music' ? 'YT Music' : t}
           </button>
         ))}
       </div>
+      {tab === 'youtubio' && (
+        <div className="flex-1 min-h-[72vh]">
+          {/* @ts-expect-error Electron webview */}
+          <webview src="https://youtubio.elfhosted.com" partition="persist:mfy-yt" style={{ width: '100%', height: '100%', minHeight: '72vh', background: '#000' }} allowpopups="false" />
+        </div>
+      )}
       {(tab === 'yt' || tab === 'music') && (
         <div className="flex-1 min-h-[72vh]">
           {/* @ts-expect-error Electron webview */}

@@ -5,6 +5,7 @@ import { anilist } from '../api/anilist'
 import { useStore } from '../store'
 import { SkeletonPoster, SkeletonHero } from '../components/Skeleton'
 import { streamingServices } from '../api/streaming'
+import { addonCatalog } from '../api/stremioAddons'
 import { PosterMarks } from '../components/PosterMarks'
 import { getPlayerUrl } from '../api/vidy'
 import { isFinished, watchPercent } from '../lib/watchProgress'
@@ -94,6 +95,11 @@ export default function Board() {
   const [a24, setA24] = useState<any[]>([])
   const [pixar, setPixar] = useState<any[]>([])
   const [kids, setKids] = useState<any[]>([])
+  const [marvelCat, setMarvelCat] = useState<any[]>([])
+  const [dcCat, setDcCat] = useState<any[]>([])
+  const [swCat, setSwCat] = useState<any[]>([])
+  const [hpCat, setHpCat] = useState<any[]>([])
+  const [nfsCat, setNfsCat] = useState<any[]>([])
   const [trending, setTrending] = useState<any[]>(HOME_CACHE?.trending || [])
   const [movies, setMovies] = useState<any[]>(HOME_CACHE?.movies || [])
   const [shows, setShows] = useState<any[]>(HOME_CACHE?.shows || [])
@@ -193,6 +199,11 @@ export default function Board() {
       anilist.search('Marvel', 'MANGA', 1, 20).then((c) => setComics(c.media || [])).catch(() => setComics([])),
     ]).catch(() => {})
     loadGenres().catch(() => {})
+    addonCatalog('marvel').then(setMarvelCat).catch(() => {})
+    addonCatalog('dc').then(setDcCat).catch(() => {})
+    addonCatalog('starwars').then(setSwCat).catch(() => {})
+    tmdb.searchMovies('Harry Potter').then((d) => setHpCat(d?.results || [])).catch(() => {})
+    tmdb.searchMovies('Need for Speed').then((d) => setNfsCat(d?.results || [])).catch(() => {})
   }
 
   async function loadGenres() {
@@ -304,6 +315,32 @@ export default function Board() {
             ))}
           </div>
         </section>
+        <section className="media-row">
+          <div className="media-row-header"><h2 className="media-row-title">Franchises</h2></div>
+          <div className="scroll-row">
+            {[
+              { id: 'marvel', name: 'Marvel' },
+              { id: 'dc', name: 'DC' },
+              { id: 'starwars', name: 'Star Wars' },
+              { id: 'hp', name: 'Harry Potter' },
+              { id: 'nfs', name: 'Need for Speed' },
+            ].map((f) => (
+              <button key={f.id} type="button" className="shrink-0 h-16 px-5 rounded-2xl bg-[#FF1493]/15 border border-[#FF1493]/30 text-sm font-semibold" onClick={() => {
+                if (f.id === 'marvel' || f.id === 'dc' || f.id === 'starwars') {
+                  addonCatalog(f.id as any).then((list) => {
+                    const hit = list[0]
+                    if (hit) { setSelectedMedia({ id: hit.id, type: hit.media_type === 'tv' ? 'tv' : 'movie', title: hit.title } as any); setCurrentPage('detail') }
+                  })
+                  return
+                }
+                tmdb.searchMovies(f.id === 'hp' ? 'Harry Potter' : 'Need for Speed').then((d) => {
+                  const hit = d?.results?.[0]
+                  if (hit) goDetail(hit, 'movie')
+                })
+              }}>{f.name}</button>
+            ))}
+          </div>
+        </section>
         {watchHistory.length > 0 && (
           <Shelf
             title="Continue Watching"
@@ -315,6 +352,11 @@ export default function Board() {
             onOpen={(h) => { setSelectedMedia({ id: h.id, type: h.media_type, season: h.season, episode: h.episode }); setCurrentPage('detail') }}
           />
         )}
+        <Shelf title="Marvel" items={marvelCat.length ? marvelCat : mcu} onOpen={(i) => goDetail(i, i.media_type === 'tv' ? 'tv' : 'movie')} />
+        <Shelf title="DC" items={dcCat} onOpen={(i) => goDetail(i, i.media_type === 'tv' ? 'tv' : 'movie')} />
+        <Shelf title="Star Wars" items={swCat} onOpen={(i) => goDetail(i, i.media_type === 'tv' ? 'tv' : 'movie')} />
+        <Shelf title="Harry Potter" items={hpCat} onOpen={(i) => goDetail(i, 'movie')} />
+        <Shelf title="Need for Speed" items={nfsCat} onOpen={(i) => goDetail(i, 'movie')} />
         <Shelf title="MCU" items={mcu} onOpen={(i) => goDetail(i, 'movie')} />
         <Shelf title="Studio Ghibli" items={ghibli} onOpen={(i) => goDetail(i, 'movie')} />
         <Shelf title="One sitting" items={shorties} onOpen={(i) => goDetail(i, 'movie')} />

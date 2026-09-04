@@ -71,6 +71,10 @@ export default function Anime() {
       })
     }).catch(() => {})
     tmdb.getOnTheAir().then((d) => setCalendar((d?.results || []).filter((x: any) => (x.origin_country || []).includes('JP') || (x.genre_ids || []).includes(16)))).catch(() => {})
+    addonCatalog('animestream').then((list) => { if (list.length) setRows((r) => ({ ...r, Animestream: list })) }).catch(() => {})
+    addonCatalog('animeworld').then((list) => { if (list.length) setRows((r) => ({ ...r, AnimeWorld: list })) }).catch(() => {})
+    addonCatalog('animecatalogs').then((list) => { if (list.length) setRows((r) => ({ ...r, 'Anime catalogs': list })) }).catch(() => {})
+    addonCatalog('onepace').then((list) => { if (list.length) setRows((r) => ({ ...r, 'One Pace': list })) }).catch(() => {})
   }, [])
 
   return (

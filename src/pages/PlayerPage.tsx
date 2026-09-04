@@ -4,6 +4,8 @@ import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 import { tmdb, POSTER_URL, BACKDROP_URL } from '../api/tmdb'
 import { vidyUrl, getPlayerUrl, isPlayerEmbed, getFallbackSources, PlayerSource } from '../api/vidy'
 import { mediafusionStreams } from '../api/mediafusion'
+import { addonStreams, isOnePiece, STREAM_HOST } from '../api/stremioAddons'
+import { ANIME_SOURCES, MOVIE_TV_SOURCES } from '../api/vidy'
 import { useStore } from '../store'
 import RateModal from '../components/RateModal'
 import { syncRating, isAnimeItem } from '../lib/trackers'
@@ -45,6 +47,8 @@ export default function PlayerPage() {
   const [subtitleOffset, setSubtitleOffset] = useState(0)
   const [subSize, setSubSize] = useState(0.65)
   const [subBg, setSubBg] = useState(true)
+  const [fit, setFit] = useState<'contain' | 'cover' | 'fill'>('contain')
+  const [picks, setPicks] = useState<{ title: string; url: string; quality: string }[]>([])
   const trackRef = useRef<HTMLTrackElement>(null)
 
   const [autoNextBusy, setAutoNextBusy] = useState(false)
@@ -65,9 +69,25 @@ export default function PlayerPage() {
       return
     }
     const anime = isAnimeItem(selectedMedia)
-    const src: PlayerSource = anime
-      ? (['zangetsu', 'miruro', 'mangayomi', 'mediafusion'].includes(playerSource) ? playerSource : 'zangetsu')
-      : playerSource
+    const title = String((selectedMedia as any).title || (selectedMedia as any).name || '')
+    let src: PlayerSource = playerSource
+    if (isOnePiece(title)) src = 'onepace'
+    else if (anime && !(ANIME_SOURCES as string[]).includes(src) && src !== 'onepace') src = 'zangetsu'
+    else if (!anime && !(MOVIE_TV_SOURCES as string[]).includes(src) && src !== 'streamsppv' && src !== 'sportsstreams') src = 'playtorrio'
+    const addonBase = (STREAM_HOST as any)[src]
+    if (addonBase) {
+      setLoading(true); setLoaded(false); setError('')
+      const kind = selectedMedia.type === 'movie' ? 'movie' : 'series'
+      const sid = String((selectedMedia as any).imdb || ('tmdb:' + selectedMedia.id))
+      const want = selectedMedia.type === 'movie' ? sid : `${sid}:${selectedMedia.season || 1}:${selectedMedia.episode || 1}`
+      addonStreams(addonBase, kind, want).then((rows) => {
+        setPicks(rows)
+        const q = rows.find((r: any) => /^https?:/i.test(r.url)) || rows[0]
+        if (!q) { setError('No stream from this addon'); setLoading(false); return }
+        setStreamUrl(q.url); setLoaded(true); setLoading(false)
+      }).catch(() => { setError('Addon failed'); setLoading(false) })
+      return
+    }
     if (src === 'mediafusion') {
       setLoading(true)
       setLoaded(false)
@@ -433,6 +453,12 @@ export default function PlayerPage() {
               <option value="miruro">Miruro</option>
               <option value="vidy">Vidy</option>
               <option value="mediafusion">MediaFusion</option>
+              <option value="flix">Flix</option>
+              <option value="nyaa">Nyaa</option>
+              <option value="animeflv">AnimeFLV</option>
+              <option value="onepace">One Pace</option>
+              <option value="streamsppv">StreamsPPV</option>
+              <option value="sportsstreams">Sports Streams</option>
             </select>
             <button type="button" onClick={tryNextSource} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 6, padding: '6px 10px', color: 'white', fontSize: 11, cursor: 'pointer' }}>Switch source</button>
             <Zap size={12} style={{ color: '#FFD24C' }} />
@@ -455,7 +481,7 @@ export default function PlayerPage() {
             key={streamUrl}
             src={streamUrl}
             partition="persist:mfy"
-            style={{ width: '100%', height: '100%', background: '#000' }}
+            style={{ width: '100%', height: '100%', background: '#000', objectFit: fit }}
             allowpopups="false"
             allowfullscreen="true"
             useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
@@ -463,12 +489,12 @@ export default function PlayerPage() {
           />
         )}
         {loaded && !error && !isPlayerEmbedUrl(streamUrl) && (
-          <video ref={videoRef} playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }} />
+          <video ref={videoRef} playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: fit, background: '#000' }} />
         )}
 
         {showUI && loaded && !error && isPlayerEmbedUrl(streamUrl) && (
           <div style={{ position: 'absolute', bottom: 12, right: 12, zIndex: 30, display: 'flex', gap: 8 }}>
-            {(isAnimeItem(selectedMedia) ? (['zangetsu', 'miruro', 'mangayomi', 'mediafusion'] as PlayerSource[]) : (['playtorrio', 'simplstream', 'vidy', 'mediafusion'] as PlayerSource[])).map((s) => (
+            {((isOnePiece(String((selectedMedia as any)?.title||'')) ? (['onepace'] as PlayerSource[]) : (isAnimeItem(selectedMedia) ? ANIME_SOURCES : MOVIE_TV_SOURCES))).map((s) => (
               <button key={s} type="button" onClick={() => { setPlayerSource(s); try { localStorage.setItem('mfy-player-engine', s) } catch {} }}
                 style={{ background: playerSource === s ? '#FF1493' : 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', fontSize: 11, cursor: 'pointer' }}>
                 {s === 'playtorrio' ? 'Auto' : s === 'simplstream' ? '1080' : s === 'vidy' ? 'Vidy' : s === 'zangetsu' ? 'Zangetsu' : s === 'miruro' ? 'Miruro' : s === 'mediafusion' ? 'Fusion' : 'Manga'}
@@ -476,6 +502,12 @@ export default function PlayerPage() {
             ))}
             <button type="button" onClick={() => setSubSize((n) => (n <= 0.55 ? 0.9 : 0.55))} style={{ background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>Subs {subSize <= 0.6 ? 'S' : 'M'}</button>
             <button type="button" onClick={() => setSubBg((v) => !v)} style={{ background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>Sub bg {subBg ? 'on' : 'off'}</button>
+            {(['contain','cover','fill'] as const).map((f) => (
+              <button key={f} type="button" onClick={() => setFit(f)} style={{ background: fit===f ? '#FF1493' : 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>{f}</button>
+            ))}
+            {picks.filter((x)=>/2160|1080|720|4k/i.test(x.quality+x.title)).slice(0,4).map((x) => (
+              <button key={x.url} type="button" onClick={() => setStreamUrl(x.url)} style={{ background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>{/2160|4k/i.test(x.quality+x.title)?'4K':/1080/i.test(x.quality+x.title)?'1080':'720'}</button>
+            ))}
             <button type="button" onClick={toggleFullscreen} style={{ background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>{fullscreen ? 'Exit' : 'Full'}</button>
           </div>
         )}

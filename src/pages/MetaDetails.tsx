@@ -8,6 +8,7 @@ import { fetchMdblistRatings, type MdblistRating } from '../api/mdblist'
 import { vidyUrl, getPlayerUrl } from '../api/vidy'
 import { isAnimeItem } from '../lib/trackers'
 import { useStore } from '../store'
+import { trailerUrl, isOnePiece } from '../api/stremioAddons'
 import { sourceDot, reportBroken } from '../lib/playerStatus'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 
@@ -195,7 +196,8 @@ export default function MetaDetails() {
     }
     const kind = selectedMedia.type === 'movie' ? 'movie' : 'tv'
     const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
-    const pick = anime && !['zangetsu', 'miruro', 'mangayomi'].includes(playerPick) ? 'zangetsu' : playerPick
+    const op = isOnePiece((detail as any)?.title || (detail as any)?.name || (selectedMedia as any)?.title)
+    const pick = op ? 'onepace' : (anime && !['zangetsu', 'miruro', 'mangayomi', 'mediafusion', 'flix', 'nyaa', 'animeflv'].includes(playerPick) ? 'zangetsu' : playerPick)
     const url = getPlayerUrl(pick as any, kind, selectedMedia.id as number, activeSeason, selectedMedia.episode || 1, anime)
     setSelectedMedia({ ...selectedMedia, season: activeSeason, episode: selectedMedia.episode, title: (detail as any)?.title || (detail as any)?.name, poster_path: (detail as any)?.poster_path } as any)
     setCurrentStreamUrl(url)
@@ -388,7 +390,13 @@ export default function MetaDetails() {
             )}
 
             <div className="flex flex-wrap items-center gap-1.5 mb-3">
-              {PLAYERS.map((p) => (
+              {(PLAYERS.filter((p) => {
+                const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
+                const op = isOnePiece(detail?.title || detail?.name || (selectedMedia as any)?.title)
+                if (op) return p.id === 'onepace'
+                if (anime) return ['zangetsu','miruro','mangayomi','mediafusion','flix','nyaa','animeflv','sportsstreams'].includes(p.id)
+                return ['playtorrio','simplstream','vidy','mediafusion','flix'].includes(p.id)
+              })).map((p) => (
                 <button
                   key={p.id}
                   type="button"
@@ -418,9 +426,22 @@ export default function MetaDetails() {
                 {resolving ? 'Finding…' : 'Play'}
               </button>
               <button type="button" className="h-11 px-4 rounded-full bg-white/10 text-xs" onClick={() => { reportBroken(detail?.title || detail?.name || 'title', playerPick); alert('Reported. Next Play will try another source.') }}>Report broken</button>
+              <button type="button" className="h-11 px-4 rounded-full bg-white/10 text-xs" onClick={async () => {
+                const imdb = (detail as any)?.imdb_id || (detail as any)?.external_ids?.imdb_id || selectedMedia?.id
+                const url = await trailerUrl(String(imdb), selectedMedia?.type === 'movie' ? 'movie' : 'series')
+                if (!url) return alert('No trailer')
+                setCurrentStreamUrl(url.includes('watch?v=') ? `https://www.youtube-nocookie.com/embed/${url.split('v=')[1].split('&')[0]}?autoplay=1` : url)
+                setCurrentPage('player')
+              }}>Trailer</button>
               {pickOpen && (
                 <div className="w-full mt-3 rounded-2xl bg-black/55 border border-white/10 p-3 space-y-2">
-                  {PLAYERS.map((p) => (
+                  {(PLAYERS.filter((p) => {
+                const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
+                const op = isOnePiece(detail?.title || detail?.name || (selectedMedia as any)?.title)
+                if (op) return p.id === 'onepace'
+                if (anime) return ['zangetsu','miruro','mangayomi','mediafusion','flix','nyaa','animeflv','sportsstreams'].includes(p.id)
+                return ['playtorrio','simplstream','vidy','mediafusion','flix'].includes(p.id)
+              })).map((p) => (
                     <button key={p.id} type="button" className="w-full flex items-center justify-between h-10 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-left" onClick={() => {
                       setPlayerPick(p.id)
                       try { localStorage.setItem('mfy-player-engine', p.id) } catch {}
