@@ -17,18 +17,26 @@ function isPrint(item: any) {
   return /manga|manhwa|manhua|novel|book|comic/i.test(t)
 }
 
-export function PosterMarks({ item }: { item: any }) {
+export function PosterMarks({ item, rank }: { item: any; rank?: number }) {
   const pct = item.progressPct ?? (item.progress && item.duration ? Math.round((item.progress / Math.max(item.duration, 1)) * 100) : 0)
   const score = scoreOf(item)
   const quality = String(item.quality || item.resolution || '').toUpperCase()
   const show4k = quality.includes('4K') || quality.includes('2160')
   const showHd = !isPrint(item) && (quality.includes('HD') || quality.includes('1080') || quality.includes('720'))
+  const fan = score >= 8.3
   return (
     <>
+      <div className="absolute top-1.5 right-1.5 z-10 flex flex-col items-end gap-1">
+        {rank && rank <= 10 && (
+          <span className="text-[10px] font-bold bg-[#3b82f6] text-white px-2 py-0.5 rounded-md shadow">#{rank} Today</span>
+        )}
+        {fan && (
+          <span className="text-[9px] font-semibold bg-[#2563eb] text-white px-2 py-0.5 rounded-md shadow">Fan Favorite</span>
+        )}
+      </div>
       <div className="absolute top-1 left-1 flex gap-1 z-10">
         {show4k && <span className="text-[8px] font-black bg-black/70 text-[#f5c518] px-1 rounded">4K</span>}
         {showHd && !show4k && <span className="text-[8px] font-black bg-black/70 text-white px-1 rounded">HD</span>}
-        {score > 0 && <span className="text-[8px] font-black bg-[#f5c518] text-black px-1 rounded">{score.toFixed(1)}</span>}
       </div>
       {pct > 0 && (
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 z-10">

@@ -298,8 +298,17 @@ a:focus-visible,
 }
 .scroll-row::-webkit-scrollbar { height: 0; display: none; }
 
+.poster-wrap {
+  flex: 0 0 auto; scroll-snap-align: start; width: 154px;
+}
+.poster-caption { margin-top: 8px; padding: 0 2px; }
+.poster-caption-title {
+  font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.poster-caption-sub { font-size: 11px; color: rgba(255,255,255,.45); margin-top: 2px; }
 .poster-card {
-  flex: 0 0 auto; scroll-snap-align: start; width: 154px; cursor: pointer;
+  width: 100%; cursor: pointer;
   position: relative; border-radius: 12px; overflow: hidden;
   border: 1px solid rgba(255, 35, 151, 0.18); background: var(--mfy-surface);
   transition: transform var(--transition-spring), box-shadow var(--transition-fast), border-color var(--transition-fast);
