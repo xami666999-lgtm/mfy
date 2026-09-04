@@ -187,8 +187,11 @@ export default function MetaDetails() {
     { id: 'simplstream', label: 'SimplStream', q: 'Works' },
     { id: 'vidy', label: 'Vidy', q: 'Works' },
     { id: 'moviebox', label: 'MovieBox', q: 'Works' },
+    { id: 'vixsrc', label: 'Vixsrc', q: 'Works' },
+    { id: 'vidnest', label: 'Vidnest', q: 'Works' },
     { id: 'zangetsu', label: 'Zangetsu', q: 'Anime' },
     { id: 'miruro', label: 'Miruro', q: 'Anime' },
+    { id: 'animepahe', label: 'AnimePahe', q: 'Anime' },
   ]
   const [playerPick, setPlayerPick] = useState(() => {
     try { return localStorage.getItem('mfy-player-engine') || 'playtorrio' } catch { return 'playtorrio' }
@@ -204,11 +207,15 @@ export default function MetaDetails() {
     const kind = selectedMedia.type === 'movie' ? 'movie' : 'tv'
     const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
     const op = isOnePiece((detail as any)?.title || (detail as any)?.name || (selectedMedia as any)?.title)
-    const pick = op ? 'onepace' : (anime && !['zangetsu', 'miruro'].includes(playerPick) ? 'zangetsu' : playerPick)
+    const pick = op ? 'onepace' : (anime && !['zangetsu', 'miruro', 'animepahe'].includes(playerPick) ? 'zangetsu' : playerPick)
     let url = getPlayerUrl(pick as any, kind, selectedMedia.id as number, activeSeason, selectedMedia.episode || 1, anime)
     if (pick === 'moviebox') {
       const name = (detail as any)?.title || (detail as any)?.name || String(selectedMedia.id)
       url = `https://moviebox.ph/web/searchResult?keyword=${encodeURIComponent(name)}`
+    }
+    if (pick === 'animepahe') {
+      const name = (detail as any)?.title || (detail as any)?.name || String(selectedMedia.id)
+      url = `https://animepahe.ru/`
     }
     setSelectedMedia({ ...selectedMedia, season: activeSeason, episode: selectedMedia.episode, title: (detail as any)?.title || (detail as any)?.name, poster_path: (detail as any)?.poster_path } as any)
     setCurrentStreamUrl(url)
@@ -393,8 +400,8 @@ export default function MetaDetails() {
                 const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
                 const op = isOnePiece(detail?.title || detail?.name || (selectedMedia as any)?.title)
                 if (op) return p.id === 'onepace'
-                if (anime) return ['zangetsu','miruro'].includes(p.id)
-                return ['playtorrio','simplstream','vidy','moviebox'].includes(p.id)
+                if (anime) return ['zangetsu','miruro','animepahe'].includes(p.id)
+                return ['playtorrio','simplstream','vidy','moviebox','vixsrc','vidnest'].includes(p.id)
               })).map((p) => (
                 <button
                   key={p.id}
@@ -435,8 +442,8 @@ export default function MetaDetails() {
                 const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
                 const op = isOnePiece(detail?.title || detail?.name || (selectedMedia as any)?.title)
                 if (op) return p.id === 'onepace'
-                if (anime) return ['zangetsu','miruro'].includes(p.id)
-                return ['playtorrio','simplstream','vidy','moviebox'].includes(p.id)
+                if (anime) return ['zangetsu','miruro','animepahe'].includes(p.id)
+                return ['playtorrio','simplstream','vidy','moviebox','vixsrc','vidnest'].includes(p.id)
               })).map((p) => (
                     <button key={p.id} type="button" className="w-full flex items-center justify-between h-10 px-3 rounded-xl bg-[#1a1016] border border-white/10 hover:border-[#FF1493]/50 text-left text-white" onClick={() => {
                       setPlayerPick(p.id)
