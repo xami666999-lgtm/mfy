@@ -71,6 +71,7 @@ export default function PlayerPage() {
   const [meta, setMeta] = useState<{ title: string; overview: string; poster: string; backdrop: string } | null>(null)
   const [nextUp, setNextUp] = useState<{ season: number; episode: number; name: string; still?: string } | null>(null)
   const [showNext, setShowNext] = useState(false)
+  const [expectedSec, setExpectedSec] = useState(0)
   const failTried = useRef<string[]>([])
   const [playerSource, setPlayerSource] = useState<PlayerSource>(() => {
     try {
@@ -389,6 +390,34 @@ export default function PlayerPage() {
   }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
 
   useEffect(() => {
+    setExpectedSec(0)
+    if (!selectedMedia?.id) return
+    ;(async () => {
+      try {
+        if (selectedMedia.type === 'movie') {
+          const d = await tmdb.getMovieDetail(selectedMedia.id as number).catch(() => null)
+          const mins = Number(d?.runtime || 0)
+          if (mins >= 40) setExpectedSec(mins * 60)
+          return
+        }
+        if (selectedMedia.type === 'tv' || (selectedMedia as any).isAnime) {
+          const s = selectedMedia.season || 1
+          const e = selectedMedia.episode || 1
+          const season = await tmdb.getSeasonDetail(selectedMedia.id as number, s).catch(() => null)
+          const ep = (season?.episodes || []).find((x: any) => x.episode_number === e)
+          const mins = Number(ep?.runtime || 0)
+          if (mins >= 15) setExpectedSec(mins * 60)
+          else {
+            const show = await tmdb.getTVDetail(selectedMedia.id as number).catch(() => null)
+            const avg = Number(show?.episode_run_time?.[0] || 0)
+            if (avg >= 15) setExpectedSec(avg * 60)
+          }
+        }
+      } catch {}
+    })()
+  }, [selectedMedia?.id, selectedMedia?.type, selectedMedia?.season, selectedMedia?.episode])
+
+  useEffect(() => {
     const id = setInterval(async () => {
       if (!nextUp) return
       let p = progress
@@ -399,7 +428,9 @@ export default function PlayerPage() {
         if (got && Number(got.d) > 30) { p = Number(got.p); d = Number(got.d) }
       } catch {}
       const sessionSec = (Date.now() - startedAt.current) / 1000
-      if (sessionSec > 90 && d > 120 && p > 60 && d - p <= 30 && d - p >= 0) setShowNext(true)
+      const truth = expectedSec > 0 ? Math.max(d, expectedSec) : d
+      if (expectedSec > 180 && p < expectedSec * 0.85) return
+      if (sessionSec > 120 && truth > 120 && p > 60 && truth - p <= 30 && truth - p >= 0) setShowNext(true)
     }, 2000)
     return () => clearInterval(id)
   }, [nextUp, progress, dur])
@@ -421,6 +452,8 @@ export default function PlayerPage() {
   }
 
   async function handleEnded() {
+    const p = progress
+    if (expectedSec > 180 && p < expectedSec * 0.85) return
     saveProgress(true).catch(() => {})
     if (nextUp) { playNextEpisode(); return }
     if (autoplayNext && selectedMedia?.type === 'tv' && !autoNextBusy) {
@@ -597,10 +630,29 @@ export default function PlayerPage() {
       if (got && Number(got.p) > 1) { p = Number(got.p); if (Number.isFinite(Number(got.d)) && Number(got.d) > 1) d = Number(got.d) }
     } catch {}
     const sessionSec = (Date.now() - startedAt.current) / 1000
-    const realDur = Number.isFinite(d) && d >= 90
-    const looksLiveClock = realDur && Math.abs(p - d) < 1.5 && sessionSec < 90
-    if (looksLiveClock) return
-    const reallyDone = forceDone || (realDur && sessionSec > 90 && p / d >= 0.92)
+    const truth = expectedSec > 0 ? Math.max(d, expectedSec) : d
+    const embedIsShort = expectedSec > 0 && d > 0 && d < expectedSec * 0.85
+    if (embedIsShort) d = expectedSec
+    const realDur = Number.isFinite(truth) && truth >= 90
+    const looksLiveClock = realDur && Math.abs(p - (embedIsShort ? d : truth)) < 1.5 && sessionSec < 120
+    if (looksLiveClock || embedIsShort && p >= d * 0.9 && p < expectedSec * 0.85) {
+      upsertHistory({
+        id: `${selectedMedia.id}-${selectedMedia.type}-${selectedMedia.season || 0}-${selectedMedia.episode || 0}`,
+        mediaId: selectedMedia.id,
+        mediaType: selectedMedia.type === 'movie' ? 'movie' : 'tv',
+        title: String((selectedMedia as any).title || (selectedMedia as any).name || selectedMedia.id),
+        posterPath: (selectedMedia as any).poster_path || null,
+        progress: p,
+        duration: expectedSec || truth,
+        season: selectedMedia.season,
+        episode: selectedMedia.episode,
+        watchedAt: new Date().toISOString(),
+        profileId: useStore.getState().currentProfile?.id || 'default',
+        completed: false,
+      })
+      return
+    }
+    const reallyDone = forceDone || (realDur && sessionSec > 120 && p / (expectedSec || truth) >= 0.92 && (!expectedSec || p >= expectedSec * 0.85))
     if (reallyDone && selectedMedia.type !== 'movie') {
       const base = {
         mediaId: String(selectedMedia.id),
