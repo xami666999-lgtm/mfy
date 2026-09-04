@@ -43,6 +43,8 @@ interface AppState {
   watchHistory: WatchHistoryItem[]
   setWatchHistory: (history: WatchHistoryItem[]) => void
   upsertHistory: (item: WatchHistoryItem) => void
+  removeHistory: (mediaId: number | string, mediaType?: string) => void
+  clearHistory: () => void
   init: () => void
 
   customLists: CustomList[]
@@ -248,6 +250,15 @@ export const useStore = create<AppState>((set, get) => ({
     const next = [item, ...rest].slice(0, 50)
     set({ watchHistory: next })
     persist('watchHistory', next)
+  },
+  removeHistory: (mediaId, mediaType) => {
+    const next = get().watchHistory.filter((h) => !(String(h.mediaId) === String(mediaId) && (!mediaType || h.mediaType === mediaType)))
+    set({ watchHistory: next })
+    persist('watchHistory', next)
+  },
+  clearHistory: () => {
+    set({ watchHistory: [] })
+    persist('watchHistory', [])
   },
 
   customLists: [],

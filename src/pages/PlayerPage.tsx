@@ -47,7 +47,7 @@ export default function PlayerPage() {
   const [subtitleLabel, setSubtitleLabel] = useState('')
   const [subtitleOffset, setSubtitleOffset] = useState(0)
   const [subSize, setSubSize] = useState(0.65)
-  const [subBg, setSubBg] = useState(true)
+  const [subBg, setSubBg] = useState(false)
   const [fit, setFit] = useState<'contain' | 'cover' | 'fill'>('contain')
   const [picks, setPicks] = useState<{ title: string; url: string; quality: string }[]>([])
   const [srcOpen, setSrcOpen] = useState(false)
@@ -93,8 +93,9 @@ export default function PlayerPage() {
     else if (anime && !(ANIME_SOURCES as string[]).includes(src) && src !== 'onepace') src = 'zangetsu'
     else if (!anime && !(MOVIE_TV_SOURCES as string[]).includes(src)) src = 'playtorrio'
     if (src === 'moviebox') {
-      const name = String((selectedMedia as any).title || (selectedMedia as any).name || title || selectedMedia.id)
-      setStreamUrl(`https://moviebox.ph/web/searchResult?keyword=${encodeURIComponent(name)}`)
+      const name = String((selectedMedia as any).title || (selectedMedia as any).name || title || '')
+      const q = name || String(selectedMedia.id)
+      setStreamUrl(`https://moviebox.ph/web/searchResult?keyword=${encodeURIComponent(q)}`)
       setLoaded(true)
       setLoading(false)
       setError('')
@@ -173,6 +174,12 @@ export default function PlayerPage() {
     setLoading(false)
     setError('')
   }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode, selectedMedia?.type, playerSource])
+
+  useEffect(() => {
+    if (loaded || error || !selectedMedia || selectedMedia.type === 'iptv') return
+    const t = setTimeout(() => tryNextSource(), 2500)
+    return () => clearTimeout(t)
+  }, [playerSource, selectedMedia?.id, selectedMedia?.episode, loaded, error])
 
   function tryNextSource() {
     if (!selectedMedia || selectedMedia.type === 'iptv') return
@@ -680,15 +687,17 @@ export default function PlayerPage() {
         )}
 
         {showUI && loaded && !error && isPlayerEmbedUrl(streamUrl) && (
-          <div style={{ position: 'absolute', bottom: 12, right: 12, zIndex: 30, display: 'flex', gap: 8 }}>
+          <div style={{ position: 'absolute', bottom: 12, left: 12, right: 12, zIndex: 90, display: 'flex', flexWrap: 'wrap', gap: 6, pointerEvents: 'auto' }}>
             {((isOnePiece(String((selectedMedia as any)?.title||'')) ? (['onepace'] as PlayerSource[]) : (isAnimeItem(selectedMedia) ? ANIME_SOURCES : MOVIE_TV_SOURCES))).map((s) => (
-              <button key={s} type="button" onClick={() => { setPlayerSource(s); try { localStorage.setItem('mfy-player-engine', s) } catch {} }}
+              <button key={s} type="button" onClick={() => { setPlayerSource(s); failTried.current = []; try { localStorage.setItem('mfy-player-engine', s) } catch {} }}
                 style={{ background: playerSource === s ? '#FF1493' : 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', fontSize: 11, cursor: 'pointer' }}>
-                {s === 'playtorrio' ? 'Auto' : s === 'simplstream' ? '1080' : s === 'vidy' ? 'Vidy' : s === 'zangetsu' ? 'Zangetsu' : s === 'miruro' ? 'Miruro' : s === 'mediafusion' ? 'Fusion' : 'Manga'}
+                {sourceNames[s] || s}
               </button>
             ))}
-            <button type="button" onClick={() => setSubSize((n) => (n <= 0.55 ? 0.9 : 0.55))} style={{ background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>Subs {subSize <= 0.6 ? 'S' : 'M'}</button>
-            <button type="button" onClick={() => setSubBg((v) => !v)} style={{ background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>Sub bg {subBg ? 'on' : 'off'}</button>
+            <button type="button" onClick={() => setSubSize((n) => Math.max(0.4, +(n - 0.1).toFixed(2)))} style={{ background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>Subs −</button>
+            <button type="button" onClick={() => setSubSize((n) => Math.min(1.4, +(n + 0.1).toFixed(2)))} style={{ background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>Subs +</button>
+            <button type="button" onClick={() => setSubBg(false)} style={{ background: !subBg ? '#FF1493' : 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>No sub bg</button>
+            <button type="button" onClick={() => setSubBg(true)} style={{ background: subBg ? '#FF1493' : 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>Sub bg</button>
             {(['contain','cover','fill'] as const).map((f) => (
               <button key={f} type="button" onClick={() => setFit(f)} style={{ background: fit===f ? '#FF1493' : 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>{f}</button>
             ))}

@@ -52,13 +52,13 @@ function titleOf(item: any) {
   return item.title?.english || item.title?.romaji || item.title || item.name || ''
 }
 
-function Shelf({ title, items, onOpen, viewAll }: { title: string; items: any[]; onOpen: (item: any) => void; viewAll?: () => void }) {
+function Shelf({ title, items, onOpen, viewAll, onRemove }: { title: string; items: any[]; onOpen: (item: any) => void; viewAll?: () => void; onRemove?: (item: any) => void }) {
   if (!items?.length) return null
   return (
     <section className="media-row">
       <div className="media-row-header">
         <h2 className="media-row-title">{title}</h2>
-        {viewAll && <button type="button" className="media-row-action" onClick={viewAll}>View All</button>}
+        {viewAll && <button type="button" className="media-row-action" onClick={viewAll}>{title === 'Continue Watching' ? 'Clear all' : 'View All'}</button>}
       </div>
       <div className="scroll-row">
         {items.filter(Boolean).map((item: any) => (
@@ -72,6 +72,13 @@ function Shelf({ title, items, onOpen, viewAll }: { title: string; items: any[];
               ? <img src={imgSrc(item)} alt="" referrerPolicy="no-referrer" loading="lazy" onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none'; el.parentElement?.classList.add('has-fallback') }} />
               : <div className="poster-fallback">{titleOf(item)}</div>}
             <PosterMarks item={item} />
+            {onRemove && (
+              <span
+                role="button"
+                className="absolute top-1 right-1 z-20 h-6 w-6 rounded-full bg-black/75 text-white text-xs grid place-items-center"
+                onClick={(e) => { e.stopPropagation(); onRemove(item) }}
+              >✕</span>
+            )}
             <div className="poster-overlay">
               <div className="poster-meta-title">{titleOf(item)}</div>
               {(item.season || item.episode || item.progressLabel) && (
@@ -86,7 +93,7 @@ function Shelf({ title, items, onOpen, viewAll }: { title: string; items: any[];
 }
 
 export default function Board() {
-  const { tmdbApiKey, setCurrentPage, setSelectedMedia, setSelectedProviderId, setCurrentStreamUrl, addToWatchlist, isInWatchlist, removeFromWatchlist, watchHistory, favorites } = useStore()
+  const { tmdbApiKey, setCurrentPage, setSelectedMedia, setSelectedProviderId, setCurrentStreamUrl, addToWatchlist, isInWatchlist, removeFromWatchlist, watchHistory, favorites, removeHistory, clearHistory } = useStore()
   const [hideWatched, setHideWatched] = useState(false)
   const [railOpen, setRailOpen] = useState(true)
   const [railQ, setRailQ] = useState('')
@@ -364,6 +371,8 @@ export default function Board() {
               return { id: h.mediaId, title: extra.title || h.title, poster_path: h.posterPath || extra.poster, media_type: h.mediaType, season: h.season, episode: h.episode, progressLabel: `${h.season ? `S${h.season}E${h.episode || 1} · ` : ''}${pct > 0 ? `${pct}%` : 'Resume'}`, progress: h.progress, duration: h.duration, progressPct: pct, vote_average: 0 }
             })}
             onOpen={(h) => { setSelectedMedia({ id: h.id, type: h.media_type, season: h.season, episode: h.episode }); setCurrentPage('detail') }}
+            onRemove={(h) => removeHistory(h.id, h.media_type)}
+            viewAll={() => clearHistory()}
           />
         )}
         <Shelf title="Top 10 Popular Movies" items={(nowPlaying.length ? nowPlaying : movies).slice(0, 10)} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
