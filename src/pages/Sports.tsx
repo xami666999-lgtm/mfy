@@ -33,6 +33,8 @@ export default function Sports() {
   const [matches, setMatches] = useState<SportMatch[]>([])
   const [live, setLive] = useState<SportMatch[]>([])
   const [multiView, setMultiView] = useState(false)
+  const [mvSlots, setMvSlots] = useState<{ id: string; title: string; url: string }[]>([])
+  const [mvGrid, setMvGrid] = useState<'1x2' | '2x1' | '2x2' | '1+2' | '3x3'>('2x2')
   const [partyCode, setPartyCode] = useState('')
   const [streams, setStreams] = useState<SportStream[] | null>(null)
   const [activeMatch, setActiveMatch] = useState<SportMatch | null>(null)
@@ -142,10 +144,17 @@ export default function Sports() {
     setResolving(false)
   }
 
-  function playEmbed(url: string) {
-    setMultiView(false)
+  function playEmbed(url: string, title?: string) {
     setActiveMatch(null)
     setStreams(null)
+    if (multiView) {
+      const cap = mvGrid === '1x2' || mvGrid === '2x1' ? 2 : mvGrid === '1+2' ? 3 : mvGrid === '3x3' ? 9 : 4
+      setMvSlots((cur) => {
+        const next = [...cur, { id: `${Date.now()}`, title: title || activeMatch?.title || 'Stream', url }]
+        return next.slice(0, cap)
+      })
+      return
+    }
     setWatchUrl(url)
   }
 
@@ -325,23 +334,50 @@ export default function Sports() {
       )}
 
       {multiView && (
-        <section className="mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-[11px] text-white/60">Multi-view</span>
-            <button
-              type="button"
-              onClick={() => setMultiView(false)}
-              className="ml-2 text-[10px] text-red-400 hover:text-red-300"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {live.slice(0, 4).map((m) => (
-              <MatchCard key={m.id} match={m} onOpen={() => openMatch(m)} formatDate={formatDate} />
+        <section className="mb-6 rounded-2xl border border-white/10 bg-black/50 p-3">
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            <span className="text-[11px] uppercase tracking-widest text-[#FF1493]">Multi-view</span>
+            {(['1x2', '2x1', '2x2', '1+2', '3x3'] as const).map((g) => (
+              <button key={g} type="button" onClick={() => setMvGrid(g)}
+                className={`h-7 px-2.5 rounded-full text-[11px] ${mvGrid === g ? 'bg-[#FF1493] text-white' : 'bg-white/10 text-white/70'}`}>
+                {g === '1x2' ? 'Side by side' : g === '2x1' ? 'Stacked' : g === '2x2' ? '2×2' : g === '1+2' ? 'Main + 2' : '3×3'}
+              </button>
             ))}
+            <button type="button" className="ml-auto text-[11px] text-white/50" onClick={() => setMvSlots([])}>Clear</button>
+            <button type="button" className="text-[11px] text-red-400" onClick={() => { setMultiView(false); setMvSlots([]) }}>Close</button>
           </div>
-          <p className="text-[10px] text-white/30 mt-2">Multi-view is opt-in. Click the button above to close.</p>
+          <div
+            className={
+              mvGrid === '1x2' ? 'grid grid-cols-2 gap-2 h-[52vh]' :
+              mvGrid === '2x1' ? 'grid grid-cols-1 grid-rows-2 gap-2 h-[70vh]' :
+              mvGrid === '1+2' ? 'grid grid-cols-3 grid-rows-2 gap-2 h-[62vh]' :
+              mvGrid === '3x3' ? 'grid grid-cols-3 grid-rows-3 gap-2 h-[72vh]' :
+              'grid grid-cols-2 grid-rows-2 gap-2 h-[62vh]'
+            }
+          >
+            {Array.from({ length: mvGrid === '1x2' || mvGrid === '2x1' ? 2 : mvGrid === '1+2' ? 3 : mvGrid === '3x3' ? 9 : 4 }).map((_, i) => {
+              const slot = mvSlots[i]
+              const extra = mvGrid === '1+2' && i === 0 ? 'col-span-2 row-span-2' : ''
+              return (
+                <div key={i} className={`relative rounded-xl overflow-hidden bg-[#0c0c12] border border-white/10 ${extra}`}>
+                  {slot?.url ? (
+                    <>
+                      <iframe title={slot.title} src={slot.url} className="w-full h-full" allow="autoplay; fullscreen" allowFullScreen />
+                      <div className="absolute top-1 left-1 right-1 flex justify-between text-[10px] text-white">
+                        <span className="bg-black/60 px-2 py-0.5 rounded">{slot.title}</span>
+                        <button type="button" className="bg-black/60 px-2 py-0.5 rounded" onClick={() => setMvSlots((s) => s.filter((x) => x.id !== slot.id))}>✕</button>
+                      </div>
+                    </>
+                  ) : (
+                    <button type="button" className="w-full h-full text-white/35 text-xs" onClick={() => live[i] && openMatch(live[i])}>
+                      Click a match below to fill this pane
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          <p className="text-[11px] text-white/40 mt-2">Open matches while Multi-view is on — they drop into empty panes instead of taking the whole screen.</p>
         </section>
       )}
 
