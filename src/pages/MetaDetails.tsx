@@ -8,7 +8,8 @@ import { fetchMdblistRatings, type MdblistRating } from '../api/mdblist'
 import { vidyUrl, getPlayerUrl } from '../api/vidy'
 import { isAnimeItem } from '../lib/trackers'
 import { useStore } from '../store'
-import { trailerUrl, isOnePiece } from '../api/stremioAddons'
+import { trailerUrl, isOnePiece, pearioWatchUrl, pearioUserUrl } from '../api/stremioAddons'
+import { markLike, markDislike, isLiked, isDisliked } from '../lib/taste'
 import { sourceDot, reportBroken } from '../lib/playerStatus'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 
@@ -425,6 +426,30 @@ export default function MetaDetails() {
                 <Play className="w-4 h-4" fill="black" />
                 {resolving ? 'Finding…' : 'Play'}
               </button>
+              <button type="button" className="h-11 px-4 rounded-full bg-[#FF1493] text-xs font-semibold" onClick={() => {
+                markLike({ id: String(selectedMedia?.id), type: selectedMedia?.type || 'movie', title: title || '', poster: detail?.poster_path })
+                alert('We’ll show more like this on Home')
+              }}>See more like this</button>
+              <button type="button" className="h-11 px-4 rounded-full bg-white/10 text-xs" onClick={() => {
+                markDislike({ id: String(selectedMedia?.id), type: selectedMedia?.type || 'movie', title: title || '' })
+                alert('We’ll show less of this')
+              }}>See less like this</button>
+              <button type="button" className="h-11 px-4 rounded-full bg-white/10 text-xs" onClick={() => {
+                const imdb = (detail as any)?.imdb_id || (detail as any)?.external_ids?.imdb_id || selectedMedia?.id
+                const url = pearioWatchUrl(String(imdb), selectedMedia?.type === 'movie' ? 'movie' : 'series')
+                setCurrentStreamUrl(url)
+                setCurrentPage('player')
+              }}>Watch together</button>
+              <form className="flex items-center gap-1" onSubmit={(e) => {
+                e.preventDefault()
+                const name = String(new FormData(e.currentTarget).get('peer') || '').trim()
+                if (!name) return
+                setCurrentStreamUrl(pearioUserUrl(name))
+                setCurrentPage('player')
+              }}>
+                <input name="peer" placeholder="Peario username" className="h-11 px-3 rounded-full bg-[#1a1016] border border-white/15 text-xs w-36" />
+                <button type="submit" className="h-11 px-3 rounded-full bg-white/10 text-xs">Find</button>
+              </form>
               <button type="button" className="h-11 px-4 rounded-full bg-white/10 text-xs" onClick={() => { reportBroken(detail?.title || detail?.name || 'title', playerPick); alert('Reported. Next Play will try another source.') }}>Report broken</button>
               <button type="button" className="h-11 px-4 rounded-full bg-white/10 text-xs" onClick={async () => {
                 const imdb = (detail as any)?.imdb_id || (detail as any)?.external_ids?.imdb_id || selectedMedia?.id

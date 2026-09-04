@@ -6,6 +6,7 @@ import { useStore } from '../store'
 import { SkeletonPoster, SkeletonHero } from '../components/Skeleton'
 import { streamingServices } from '../api/streaming'
 import { addonCatalog } from '../api/stremioAddons'
+import { getTaste } from '../lib/taste'
 import { PosterMarks } from '../components/PosterMarks'
 import { getPlayerUrl } from '../api/vidy'
 import { isFinished, watchPercent } from '../lib/watchProgress'
@@ -100,6 +101,8 @@ export default function Board() {
   const [swCat, setSwCat] = useState<any[]>([])
   const [hpCat, setHpCat] = useState<any[]>([])
   const [nfsCat, setNfsCat] = useState<any[]>([])
+  const [nickCat, setNickCat] = useState<any[]>([])
+  const [tasteRecs, setTasteRecs] = useState<any[]>([])
   const [trending, setTrending] = useState<any[]>(HOME_CACHE?.trending || [])
   const [movies, setMovies] = useState<any[]>(HOME_CACHE?.movies || [])
   const [shows, setShows] = useState<any[]>(HOME_CACHE?.shows || [])
@@ -204,6 +207,13 @@ export default function Board() {
     addonCatalog('starwars').then(setSwCat).catch(() => {})
     tmdb.searchMovies('Harry Potter').then((d) => setHpCat(d?.results || [])).catch(() => {})
     tmdb.searchMovies('Need for Speed').then((d) => setNfsCat(d?.results || [])).catch(() => {})
+    addonCatalog('nick').then(setNickCat).catch(() => {})
+    const likes = getTaste().likes || []
+    if (likes.length) {
+      Promise.all(likes.slice(0, 4).map((s: any) => (s.type === 'tv' ? tmdb.getTVDetail(s.id) : tmdb.getMovieDetail(s.id))))
+        .then((details) => setTasteRecs(details.flatMap((d: any) => d?.recommendations?.results || []).slice(0, 16)))
+        .catch(() => {})
+    }
   }
 
   async function loadGenres() {
@@ -324,9 +334,10 @@ export default function Board() {
               { id: 'starwars', name: 'Star Wars' },
               { id: 'hp', name: 'Harry Potter' },
               { id: 'nfs', name: 'Need for Speed' },
+              { id: 'nick', name: 'Nickelodeon' },
             ].map((f) => (
               <button key={f.id} type="button" className="shrink-0 h-16 px-5 rounded-2xl bg-[#FF1493]/15 border border-[#FF1493]/30 text-sm font-semibold" onClick={() => {
-                if (f.id === 'marvel' || f.id === 'dc' || f.id === 'starwars') {
+                if (f.id === 'marvel' || f.id === 'dc' || f.id === 'starwars' || f.id === 'nick') {
                   addonCatalog(f.id as any).then((list) => {
                     const hit = list[0]
                     if (hit) { setSelectedMedia({ id: hit.id, type: hit.media_type === 'tv' ? 'tv' : 'movie', title: hit.title } as any); setCurrentPage('detail') }
@@ -357,6 +368,8 @@ export default function Board() {
         <Shelf title="Star Wars" items={swCat} onOpen={(i) => goDetail(i, i.media_type === 'tv' ? 'tv' : 'movie')} />
         <Shelf title="Harry Potter" items={hpCat} onOpen={(i) => goDetail(i, 'movie')} />
         <Shelf title="Need for Speed" items={nfsCat} onOpen={(i) => goDetail(i, 'movie')} />
+        <Shelf title="Nickelodeon" items={nickCat} onOpen={(i) => goDetail(i, i.media_type === 'tv' ? 'tv' : 'movie')} />
+        <Shelf title="Because you liked" items={tasteRecs} onOpen={(i) => goDetail(i, i.media_type === 'tv' ? 'tv' : 'movie')} />
         <Shelf title="MCU" items={mcu} onOpen={(i) => goDetail(i, 'movie')} />
         <Shelf title="Studio Ghibli" items={ghibli} onOpen={(i) => goDetail(i, 'movie')} />
         <Shelf title="One sitting" items={shorties} onOpen={(i) => goDetail(i, 'movie')} />

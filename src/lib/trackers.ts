@@ -74,10 +74,17 @@ export async function syncRating(opts: {
   if (opts.type === 'movie') {
     try {
       const api = (window as any).electronAPI
-      const url = letterboxdUrl(title || String(opts.title))
-      if (api?.openExternal) api.openExternal(url)
-      else window.open(url, '_blank')
+      const user = (() => { try { return localStorage.getItem('mfy-letterboxd-user') || '' } catch { return '' } })()
+      const url = user
+        ? `https://letterboxd.com/${encodeURIComponent(user)}/`
+        : letterboxdUrl(title || String(opts.title))
+      const multi = user
+        ? `https://multiboxd.affogo.fyi/${encodeURIComponent(user)}/`
+        : 'https://multiboxd.affogo.fyi/configure'
+      if (api?.openExternal) { api.openExternal(url); api.openExternal(multi) }
+      else { window.open(url, '_blank'); window.open(multi, '_blank') }
       notes.push('Letterboxd')
+      notes.push('Multiboxd')
     } catch {}
   }
   return notes

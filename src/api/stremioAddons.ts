@@ -26,6 +26,11 @@ export const ADDONS = {
   nyaa: { base: 'https://c5541ffce7d3-aniscraper.baby-beamup.club' },
   animeflv: { base: 'https://pigamer37.alwaysdata.net' },
   youtubio: { base: 'https://youtubio.elfhosted.com' },
+  nick: { base: 'https://e1fc7808b5de-stremio-nickelodeon.baby-beamup.club', type: 'movie', catalog: 'nickelodeon_movies' },
+  nickTv: { base: 'https://e1fc7808b5de-stremio-nickelodeon.baby-beamup.club', type: 'series', catalog: 'nickelodeon_series' },
+  nuvio: { base: 'https://nuvio.moaqeel6679.my.id', type: 'tv', catalog: 'nuvio_sports_live' },
+  peario: { base: 'https://addon.peario.xyz' },
+  multiboxd: { base: 'https://multiboxd.affogo.fyi' },
 }
 
 export function toCard(m: any) {
@@ -92,6 +97,20 @@ export const STREAM_HOST = {
   onepace: ADDONS.onepace.base,
   streamsppv: ADDONS.sportsstreams.base,
   sportsstreams: ADDONS.sportsstreams.base,
+  nuvio: ADDONS.nuvio.base,
+}
+
+export function pearioWatchUrl(imdbOrTmdb: string, type: 'movie' | 'series' = 'movie') {
+  const id = String(imdbOrTmdb).startsWith('tt') ? String(imdbOrTmdb) : `tmdb:${imdbOrTmdb}`
+  return `https://peario.xyz/stream/${type}/${id}`
+}
+
+export function pearioUserUrl(username: string) {
+  return `https://peario.xyz/?q=${encodeURIComponent(username.trim())}`
+}
+
+export function multiboxdUser(username: string) {
+  return `https://multiboxd.affogo.fyi/${encodeURIComponent(username.trim())}/manifest.json`
 }
 
 export async function onePaceStreams(season = 1, episode = 1) {

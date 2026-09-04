@@ -3,6 +3,7 @@ import { Trophy, Radio, ExternalLink, Loader2, Activity, Flag, Volleyball, Targe
 import { sportsApi, badgeUrl, posterUrl, type SportCategory, type SportMatch, type SportStream } from '../api/sports'
 import { iptvEnhancedApi } from '../api/iptv-enhanced'
 import { useStore } from '../store'
+import { addonCatalog, addonStreams, ADDONS } from '../api/stremioAddons'
 import { cn } from '../lib/utils'
 
 const SPORT_META: Record<string, { icon: any; color: string }> = {
@@ -40,7 +41,8 @@ export default function Sports() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
-  const [engine, setEngine] = useState<'streamed' | 'metegol'>('streamed')
+  const [engine, setEngine] = useState<'streamed' | 'metegol' | 'nuvio'>('streamed')
+  const [nuvio, setNuvio] = useState<any[]>([])
   const [watchUrl, setWatchUrl] = useState('')
   const [metegol, setMetegol] = useState<any[]>([])
   const [when, setWhen] = useState<'live' | 'upcoming' | 'finished'>('live')
@@ -64,6 +66,7 @@ export default function Sports() {
   }, [matches, searchQuery, when])
 
   useEffect(() => {
+    addonCatalog('nuvio').then(setNuvio).catch(() => setNuvio([]))
     iptvEnhancedApi.getMetegolEvents().then(setMetegol).catch(() => {
       fetch('./data/metegol.json').then((r) => r.json()).then((d) => setMetegol(d.events || [])).catch(() => setMetegol([]))
     })
@@ -185,9 +188,9 @@ export default function Sports() {
           {(['live', 'upcoming', 'finished'] as const).map((w) => (
             <button key={w} type="button" onClick={() => setWhen(w)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold', when === w ? 'bg-white text-black' : 'bg-white/10 text-white/45')}>{w}</button>
           ))}
-          {(['streamed', 'metegol'] as const).map((e) => (
+          {(['streamed', 'metegol', 'nuvio'] as const).map((e) => (
             <button key={e} type="button" onClick={() => setEngine(e)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold', engine === e ? 'bg-[#FF1493] text-white' : 'bg-white/10 text-white/45')}>
-              {e === 'streamed' ? 'Streamed' : 'Metegol'}
+              {e === 'streamed' ? 'Streamed' : e === 'metegol' ? 'Metegol' : 'Nuvio'}
             </button>
           ))}
         </div>
@@ -247,6 +250,35 @@ export default function Sports() {
         })}
       </div>
 
+      {engine === 'nuvio' && (
+        <section className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Radio className="w-3.5 h-3.5 text-[#FF1493]" />
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#FF1493]">Nuvio Live Sports</span>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
+            {nuvio.map((e: any) => (
+              <button
+                key={e.id}
+                type="button"
+                className="text-left rounded-xl border border-white/10 bg-white/[0.03] p-3 hover:border-[#FF1493]/40"
+                onClick={async () => {
+                  const rows = await addonStreams(ADDONS.nuvio.base, 'tv', String(e.stremioId || e.id))
+                  const hit = rows.find((r) => /^https?:/i.test(r.url)) || rows[0]
+                  if (hit?.url) {
+                    setCurrentStreamUrl(hit.url)
+                    setCurrentPage('player')
+                  }
+                }}
+              >
+                <p className="text-sm font-semibold text-white line-clamp-2">{e.title || e.name}</p>
+                <p className="text-[11px] text-white/40 mt-1">Nuvio</p>
+              </button>
+            ))}
+            {!nuvio.length && <p className="text-white/40 text-sm">No Nuvio events right now.</p>}
+          </div>
+        </section>
+      )}
       {engine === 'metegol' && (
         <section className="mb-8">
           <div className="flex items-center gap-2 mb-3">
