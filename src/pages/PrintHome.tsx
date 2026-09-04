@@ -110,13 +110,21 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' | 'novels
         setPopular(flat.length ? flat.slice(0, 24) : offlineComics())
         return
       }
-      const [top, ani, novels, light, ff] = await Promise.all([
+      const [top1, ani, novels, light, ff] = await Promise.all([
         jikan.topManga(1).catch(() => []),
         anilist.getPopular('MANGA', 1, 40).then((p) => (p?.media || []).map(aniCard)).catch(() => []),
         jikan.topByType('novel', 1).catch(() => []),
         jikan.topByType('lightnovel', 1).catch(() => []),
         fireflyManga.latest().catch(() => []),
       ])
+      const more: any[] = []
+      for (const page of [2, 3, 4]) {
+        const bag = await jikan.topManga(page).catch(() => [])
+        more.push(...bag)
+        await sleep(350)
+        if (!live) return
+      }
+      const top = [...top1, ...more].filter((x: any) => x.media_type !== 'tv' && x.media_type !== 'movie')
       if (!live) return
       const extra: Record<string, any[]> = {
         'Top manga': top.length ? top : offlineCards(),
@@ -128,7 +136,7 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' | 'novels
       const livePop = (top.length ? top : ani).filter((x: any) => x.image || x.coverImage || x.poster_path)
       setPopular(livePop.length ? livePop : offlineCards())
       setRows({ ...extra })
-      const titles = ['One Piece', 'Naruto', 'Berserk', 'Vagabond', 'Chainsaw Man', 'Jujutsu Kaisen']
+      const titles = ['One Piece', 'Naruto', 'Berserk', 'Vagabond', 'Chainsaw Man', 'Jujutsu Kaisen', 'Bleach', 'Hunter x Hunter', 'Tokyo Ghoul', 'Demon Slayer', 'My Hero Academia', 'Death Note']
       for (const q of titles) {
         extra[q] = await jikan.searchManga(q, 1).catch(() => [])
         await sleep(350)

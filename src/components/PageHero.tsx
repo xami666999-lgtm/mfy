@@ -15,7 +15,9 @@ export default function PageHero({
   const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useStore()
   if (!item) return null
   const bg = item.backdrop_path ? `${BACKDROP_URL}${item.backdrop_path}` : imgSrc(item)
-  const type = (item.media_type === 'tv' || item.first_air_date || item.name) ? 'tv' : 'movie'
+  const type = item.media_type === 'manga' || item.media_type === 'novel' || item.media_type === 'comics' || /manga|novel|comic/i.test(kicker)
+    ? (item.media_type || 'manga')
+    : (item.media_type === 'tv' || item.first_air_date) ? 'tv' : (item.media_type || 'movie')
   const inLib = item.id ? isInWatchlist(item.id, type) : false
   return (
     <section className="hero" style={{ minHeight: "70vh" }}>

@@ -54,7 +54,7 @@ export default function Sports() {
   const filteredMatches = useMemo(() => {
     const now = Date.now()
     let list = matches
-    if (when === 'live') list = matches.filter((m) => m.live) 
+    if (when === 'live') list = matches.filter((m) => m.live || m.popular || Math.abs(Number(m.date) - Date.now()) < 4 * 60 * 60 * 1000) 
     else if (when === 'upcoming') list = matches.filter((m) => !m.live && Number(m.date) * (String(m.date).length < 13 ? 1000 : 1) > now)
     else list = matches.filter((m) => !m.live && Number(m.date) * (String(m.date).length < 13 ? 1000 : 1) <= now)
     if (searchQuery.trim()) {
@@ -87,19 +87,37 @@ export default function Sports() {
       { id: 'tennis', name: 'Tennis' },
       { id: 'fight', name: 'Fight' },
     ]))
-    sportsApi
-      .getLive()
-      .then((m) => setLive((Array.isArray(m) ? m : []).map((x) => ({ ...x, live: true }))))
-      .catch(() => setLive([]))
+    Promise.all([
+      sportsApi.getLivePopular().catch(() => []),
+      sportsApi.getLive().catch(() => []),
+    ]).then(([a, b]) => {
+      const seen = new Set<string>()
+      const rows = [...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])].filter((x) => {
+        const id = String(x.id)
+        if (seen.has(id)) return false
+        seen.add(id)
+        return true
+      }).map((x) => ({ ...x, live: true, popular: true }))
+      setLive(rows)
+    }).catch(() => setLive([]))
   }, [])
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    sportsApi
-      .getMatches(sportId)
-      .then((m) => {
-        if (!cancelled) setMatches(Array.isArray(m) ? m : [])
+    Promise.all([
+      sportsApi.getMatchesPopular(sportId).catch(() => []),
+      sportsApi.getMatches(sportId).catch(() => []),
+    ]).then(([pop, all]) => {
+        if (cancelled) return
+        const seen = new Set<string>()
+        const rows = [...(Array.isArray(pop) ? pop : []), ...(Array.isArray(all) ? all : [])].filter((x) => {
+          const id = String(x.id)
+          if (seen.has(id)) return false
+          seen.add(id)
+          return true
+        })
+        setMatches(rows)
       })
       .catch(() => {
         if (!cancelled) setMatches([])
@@ -123,25 +141,21 @@ export default function Sports() {
     }
     setResolving(true)
     try {
-      const jobs = sources.slice(0, 3).map((s) => sportsApi.getStreams(s.source, s.id).then((list) => (Array.isArray(list) ? list : [])).catch(() => [] as SportStream[]))
-      const first = await Promise.race([
-        Promise.any(jobs.map(async (j) => {
-          const list = await j
-          if (list[0]?.embedUrl) return list
-          throw new Error('empty')
-        })),
-        new Promise<SportStream[]>((resolve) => setTimeout(() => resolve([]), 3500)),
-      ])
-      if (first[0]?.embedUrl) {
-        playEmbed(first[0].embedUrl)
-        setResolving(false)
-        return
-      }
-      const all = (await Promise.all(jobs)).flat()
+      const bags = await Promise.all(sources.map(async (s) => {
+        const list = await sportsApi.getStreams(s.source, s.id).catch(() => [] as SportStream[])
+        if (Array.isArray(list) && list.some((x) => x.embedUrl)) {
+          return list.map((x) => ({ ...x, source: x.source || s.source }))
+        }
+        return [
+          { id: `${s.source}-embed`, streamNo: 1, language: 'English', hd: true, source: s.source, embedUrl: `https://embed.st/embed/${s.source}/${s.id}/1` },
+          { id: `${s.source}-watch`, streamNo: 1, language: 'Watch page', hd: true, source: s.source, embedUrl: `https://streamed.pk/watch/${match.id}/${s.source}/1` },
+        ] as SportStream[]
+      }))
+      const all = bags.flat()
       setStreams(all)
-      if (!all.length) setStreamError('No live embeds available for this match right now.')
+      if (!all.length) setStreamError('No players listed for this match right now.')
     } catch {
-      setStreamError('Could not load streams.')
+      setStreamError('Could not load players.')
     }
     setResolving(false)
   }
@@ -203,12 +217,7 @@ export default function Sports() {
         </div>
         <div className="flex gap-2">
           {(['live', 'upcoming', 'finished'] as const).map((w) => (
-            <button key={w} type="button" onClick={() => setWhen(w)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold', when === w ? 'bg-white text-black' : 'bg-white/10 text-white/45')}>{w}</button>
-          ))}
-          {(['streamed', 'metegol', 'nuvio'] as const).map((e) => (
-            <button key={e} type="button" onClick={() => setEngine(e)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold', engine === e ? 'bg-[#FF1493] text-white' : 'bg-white/10 text-white/45')}>
-              {e === 'streamed' ? 'Streamed' : e === 'metegol' ? 'Metegol' : 'Nuvio'}
-            </button>
+            <button key={w} type="button" onClick={() => setWhen(w)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold capitalize', when === w ? 'bg-white text-black' : 'bg-white/10 text-white/45')}>{w}</button>
           ))}
         </div>
       </div>
@@ -268,7 +277,7 @@ export default function Sports() {
         })}
       </div>
 
-      {engine === 'nuvio' && (
+      {false && engine === 'nuvio' && (
         <section className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <Radio className="w-3.5 h-3.5 text-[#FF1493]" />
@@ -299,7 +308,7 @@ export default function Sports() {
           </div>
         </section>
       )}
-      {engine === 'metegol' && (
+      {false && engine === 'metegol' && (
         <section className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <Radio className="w-3.5 h-3.5 text-[#FF1493]" />
@@ -342,7 +351,7 @@ export default function Sports() {
         </section>
       )}
 
-      {engine === 'streamed' && live.length > 0 && (
+      {live.length > 0 && (
         <section className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <Radio className="w-3.5 h-3.5 text-red-400" />
@@ -417,8 +426,9 @@ export default function Sports() {
             className="w-full max-w-md rounded-2xl bg-[#12121a] border border-white/10 p-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-sm font-semibold text-white mb-1">{activeMatch?.title}</h3>
-            <p className="text-[10px] text-white/30 mb-4">{activeMatch?.category}</p>
+            <h3 className="text-sm font-semibold text-white mb-1">Watch with</h3>
+            <p className="text-xs text-white/70 mb-1">{activeMatch?.title}</p>
+            <p className="text-[10px] text-white/30 mb-4">Pick a player for this match</p>
             {resolving && (
               <div className="flex items-center gap-2 text-xs text-white/40 py-6 justify-center">
                 <Loader2 className="w-4 h-4 animate-spin" /> Finding streams…
@@ -441,7 +451,7 @@ export default function Sports() {
                       </span>
                       <div className="min-w-0">
                         <div className="text-xs text-white/85">
-                          {s.language || `Stream ${s.streamNo || i + 1}`}
+                          {(s.source || 'Streamed').toString().replace(/^\w/, (c) => c.toUpperCase())} · {s.language || `Feed ${s.streamNo || i + 1}`}
                           {s.hd ? (
                             <span className="ml-1.5 text-[9px] px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-400">HD</span>
                           ) : null}

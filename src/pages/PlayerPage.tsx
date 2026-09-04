@@ -327,7 +327,9 @@ export default function PlayerPage() {
   useEffect(() => {
     const onFullscreen = () => setFullscreen(Boolean(document.fullscreenElement))
     document.addEventListener('fullscreenchange', onFullscreen)
-    return () => document.removeEventListener('fullscreenchange', onFullscreen)
+    const again = () => setTimeout(() => { try { const w=document.querySelector('webview') as any; w?.executeJavaScript?.(`document.querySelectorAll('video').forEach(v=>{v.style.objectFit=getComputedStyle(v).objectFit})`) } catch {} }, 200)
+    document.addEventListener('fullscreenchange', again)
+    return () => { document.removeEventListener('fullscreenchange', onFullscreen); document.removeEventListener('fullscreenchange', again) }
   }, [])
 
   useEffect(() => {
@@ -732,15 +734,11 @@ export default function PlayerPage() {
               </div>
             )}
             <button type="button" title="Sources" onClick={() => setSrcOpen((v) => !v)} style={{ width: 36, height: 36, borderRadius: 8, border: 'none', background: 'rgba(0,0,0,0.55)', color: '#fff', cursor: 'pointer' }}>⋯</button>
-            <button type="button" title="Fit / Crop / Full" onClick={() => {
-              setFit((f) => {
-                const next = f === 'contain' ? 'cover' : f === 'cover' ? 'fill' : f === 'fill' ? 'full' : 'contain'
-                if (next === 'full') toggleFullscreen()
-                else if (f === 'full') { try { (window as any).electronAPI?.exitFullscreen?.() } catch {}; try { document.exitFullscreen?.() } catch {} }
-                return next
-              })
-            }} style={{ minWidth: 52, height: 36, borderRadius: 8, border: 'none', background: '#FF1493', color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
-              {fit === 'cover' ? 'Crop' : fit === 'fill' ? 'Fill' : fit === 'full' ? 'Full' : 'Fit'}
+            <button type="button" title="Fit / Crop / Fill" onClick={() => setFit((f) => f === 'contain' ? 'cover' : f === 'cover' ? 'fill' : 'contain')} style={{ minWidth: 52, height: 36, borderRadius: 8, border: 'none', background: '#FF1493', color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
+              {fit === 'cover' ? 'Crop' : fit === 'fill' ? 'Fill' : 'Fit'}
+            </button>
+            <button type="button" title="Fullscreen" onClick={() => toggleFullscreen()} style={{ minWidth: 52, height: 36, borderRadius: 8, border: 'none', background: 'rgba(0,0,0,0.65)', color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
+              {fullscreen ? 'Exit' : 'Full'}
             </button>
           </div>
         )}
