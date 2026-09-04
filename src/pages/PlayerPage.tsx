@@ -3,6 +3,7 @@ import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Settings2, Maximi
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 import { tmdb, POSTER_URL, BACKDROP_URL } from '../api/tmdb'
 import { vidyUrl, getPlayerUrl, isPlayerEmbed, getFallbackSources, PlayerSource } from '../api/vidy'
+import { mediafusionStreams } from '../api/mediafusion'
 import { useStore } from '../store'
 import RateModal from '../components/RateModal'
 import { syncRating, isAnimeItem } from '../lib/trackers'
@@ -65,8 +66,36 @@ export default function PlayerPage() {
     }
     const anime = isAnimeItem(selectedMedia)
     const src: PlayerSource = anime
-      ? (['zangetsu', 'miruro', 'mangayomi'].includes(playerSource) ? playerSource : 'zangetsu')
+      ? (['zangetsu', 'miruro', 'mangayomi', 'mediafusion'].includes(playerSource) ? playerSource : 'zangetsu')
       : playerSource
+    if (src === 'mediafusion') {
+      setLoading(true)
+      setLoaded(false)
+      setError('')
+      mediafusionStreams({
+        type: selectedMedia.type === 'movie' ? 'movie' : 'tv',
+        tmdbId: selectedMedia.id,
+        season: selectedMedia.season,
+        episode: selectedMedia.episode,
+        anime,
+        malId: (selectedMedia as any).mal_id,
+      }).then((rows) => {
+        const pick = rows.find((r) => /^https?:/i.test(r.url)) || rows[0]
+        if (!pick) {
+          setError('MediaFusion found no stream. Switch source.')
+          setLoading(false)
+          return
+        }
+        setStreamUrl(pick.url)
+        setCurrentStreamUrl(pick.url)
+        setLoaded(true)
+        setLoading(false)
+      }).catch(() => {
+        setError('MediaFusion failed')
+        setLoading(false)
+      })
+      return
+    }
     const url = getPlayerUrl(
       src,
       selectedMedia.type === 'movie' ? 'movie' : 'tv',
@@ -403,6 +432,7 @@ export default function PlayerPage() {
               <option value="zangetsu">Zangetsu</option>
               <option value="miruro">Miruro</option>
               <option value="vidy">Vidy</option>
+              <option value="mediafusion">MediaFusion</option>
             </select>
             <button type="button" onClick={tryNextSource} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 6, padding: '6px 10px', color: 'white', fontSize: 11, cursor: 'pointer' }}>Switch source</button>
             <Zap size={12} style={{ color: '#FFD24C' }} />
@@ -438,10 +468,10 @@ export default function PlayerPage() {
 
         {showUI && loaded && !error && isPlayerEmbedUrl(streamUrl) && (
           <div style={{ position: 'absolute', bottom: 12, right: 12, zIndex: 30, display: 'flex', gap: 8 }}>
-            {(isAnimeItem(selectedMedia) ? (['zangetsu', 'miruro', 'mangayomi'] as PlayerSource[]) : (['playtorrio', 'simplstream', 'vidy'] as PlayerSource[])).map((s) => (
+            {(isAnimeItem(selectedMedia) ? (['zangetsu', 'miruro', 'mangayomi', 'mediafusion'] as PlayerSource[]) : (['playtorrio', 'simplstream', 'vidy', 'mediafusion'] as PlayerSource[])).map((s) => (
               <button key={s} type="button" onClick={() => { setPlayerSource(s); try { localStorage.setItem('mfy-player-engine', s) } catch {} }}
                 style={{ background: playerSource === s ? '#FF1493' : 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', fontSize: 11, cursor: 'pointer' }}>
-                {s === 'playtorrio' ? 'Auto' : s === 'simplstream' ? '1080' : s === 'vidy' ? 'Vidy' : s === 'zangetsu' ? 'Zangetsu' : s === 'miruro' ? 'Miruro' : 'Manga'}
+                {s === 'playtorrio' ? 'Auto' : s === 'simplstream' ? '1080' : s === 'vidy' ? 'Vidy' : s === 'zangetsu' ? 'Zangetsu' : s === 'miruro' ? 'Miruro' : s === 'mediafusion' ? 'Fusion' : 'Manga'}
               </button>
             ))}
             <button type="button" onClick={() => setSubSize((n) => (n <= 0.55 ? 0.9 : 0.55))} style={{ background: 'rgba(0,0,0,0.65)', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', cursor: 'pointer' }}>Subs {subSize <= 0.6 ? 'S' : 'M'}</button>

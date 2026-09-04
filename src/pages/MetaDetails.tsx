@@ -180,6 +180,7 @@ export default function MetaDetails() {
     { id: 'miruro', label: 'Miruro', q: '1080p · Anime' },
     { id: 'mangayomi', label: 'Mangayomi', q: 'Reader / 1080p' },
     { id: 'vidy', label: 'Vidy', q: '1080p · 720p' },
+    { id: 'mediafusion', label: 'MediaFusion', q: 'P2P · Debrid · Anime' },
   ]
   const [playerPick, setPlayerPick] = useState(() => {
     try { return localStorage.getItem('mfy-player-engine') || 'zangetsu' } catch { return 'zangetsu' }

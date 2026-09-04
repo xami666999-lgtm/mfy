@@ -23,7 +23,7 @@ export function vidyAnimeUrl(anilistId: number | string, episode = 1): string {
   return `${VIDY_BASE}/anime/${anilistId}/${episode}`
 }
 
-export type PlayerSource = 'vidy' | 'playtorrio' | 'simplstream' | 'zangetsu' | 'miruro' | 'mangayomi'
+export type PlayerSource = 'vidy' | 'playtorrio' | 'simplstream' | 'zangetsu' | 'miruro' | 'mangayomi' | 'mediafusion'
 
 export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId: number | string, season?: number, episode?: number, anime = false): string {
   const s = season ?? 1
@@ -46,6 +46,9 @@ export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId:
   if (anime) {
     return `https://player.videasy.net/tv/${tmdbId}/${s}/${e}`
   }
+  if (source === 'mediafusion') {
+    return `mfusion:${type}:${tmdbId}:${s}:${e}`
+  }
   if (source === 'playtorrio') {
     return type === 'movie' ? `https://vidsrc.xyz/embed/movie/${tmdbId}` : `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}`
   }
@@ -63,6 +66,6 @@ export function isPlayerEmbed(url: string): boolean {
 
 export function getFallbackSources(type: 'movie' | 'tv', tmdbId: number | string | undefined, season?: number, episode?: number): { source: PlayerSource; url: string }[] {
   if (!tmdbId) return []
-  const sources: PlayerSource[] = ['playtorrio', 'simplstream', 'vidy', 'zangetsu', 'miruro']
+  const sources: PlayerSource[] = ['playtorrio', 'simplstream', 'vidy', 'zangetsu', 'miruro', 'mediafusion']
   return sources.map((source) => ({ source, url: getPlayerUrl(source, type, tmdbId, season, episode) }))
 }
