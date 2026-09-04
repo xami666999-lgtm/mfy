@@ -65,7 +65,13 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' | 'novels
 
   function open(item: any) {
     const name = item.title?.english || item.title?.romaji || item.title || item.name || String(item.id)
-    setSelectedMedia({ id: item.id || name, type: kind === 'comics' ? 'comics' : 'manga', title: name, poster_path: item.poster_path || item.image } as any)
+    setSelectedMedia({
+      id: item.id || item.mal_id || name,
+      type: kind === 'comics' ? 'comics' : kind === 'novels' ? 'novel' : 'manga',
+      title: name,
+      poster_path: item.poster_path || item.image || (typeof item.coverImage === 'string' ? item.coverImage : item.coverImage?.large),
+      overview: item.overview || item.description,
+    } as any)
     setCurrentPage('manga-detail')
   }
 

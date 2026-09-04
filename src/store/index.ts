@@ -153,9 +153,11 @@ interface AppState {
 
 function persist(key: string, value: unknown) {
   try {
+    localStorage.setItem('mfy-' + key, JSON.stringify(value))
+  } catch { /* ignore */ }
+  try {
     const api = (window as any).electronAPI
     if (api?.set) api.set(key, value)
-    else localStorage.setItem('mfy-' + key, JSON.stringify(value))
   } catch { /* ignore */ }
 }
 
@@ -245,9 +247,19 @@ export const useStore = create<AppState>((set, get) => ({
   },
   upsertHistory: (item) => {
     const rest = get().watchHistory.filter(
-      (h) => !(h.mediaId === item.mediaId && h.mediaType === item.mediaType && h.season === item.season && h.episode === item.episode)
+      (h) => !(String(h.mediaId) === String(item.mediaId) && String(h.mediaType || '') === String(item.mediaType || '') && Number(h.season || 0) === Number(item.season || 0) && Number(h.episode || 0) === Number(item.episode || 0))
     )
-    const next = [item, ...rest].slice(0, 50)
+    const prev = get().watchHistory.find((h) => String(h.mediaId) === String(item.mediaId) && Number(h.season || 0) === Number(item.season || 0) && Number(h.episode || 0) === Number(item.episode || 0))
+    const merged = {
+      ...prev,
+      ...item,
+      mediaId: String(item.mediaId),
+      title: item.title || prev?.title,
+      posterPath: item.posterPath || prev?.posterPath || null,
+      progress: Number(item.progress) > 2 ? Number(item.progress) : Number(prev?.progress || 0),
+      duration: Number(item.duration) > 30 ? Number(item.duration) : Number(prev?.duration || 0),
+    }
+    const next = [merged, ...rest].slice(0, 50)
     set({ watchHistory: next })
     persist('watchHistory', next)
   },

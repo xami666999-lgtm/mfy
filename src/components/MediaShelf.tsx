@@ -5,7 +5,7 @@ import { watchPercent } from '../lib/watchProgress'
 
 function proxy(url: string) {
   if (!url) return ''
-  if (/image\.tmdb\.org|ytimg\.com|openlibrary\.org|weserv\.nl|wsrv\.nl/.test(url)) return url
+  if (/image\.tmdb\.org|ytimg\.com|openlibrary\.org|weserv\.nl|wsrv\.nl|myanimelist\.net|anilist\.co|anilistcdn|mangadex\.org|mangaupdates/.test(url)) return url
   return `https://wsrv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ''))}&w=400`
 }
 

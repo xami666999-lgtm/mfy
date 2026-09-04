@@ -331,7 +331,7 @@ export default function PlayerPage() {
   }, [])
 
   useEffect(() => {
-    const id = setInterval(() => { saveProgress().catch(() => {}) }, 20000)
+    const id = setInterval(() => { saveProgress().catch(() => {}) }, 8000)
     return () => clearInterval(id)
   }, [selectedMedia?.id, selectedMedia?.episode, playerSource])
 
@@ -499,7 +499,7 @@ export default function PlayerPage() {
     try {
       const w = document.querySelector('webview') as any
       const got = await w?.executeJavaScript?.(`(() => { const v = document.querySelector('video'); if (!v) return null; return { p: v.currentTime || 0, d: v.duration || 0 } })()`)
-      if (got && Number(got.d) > 1) { p = Number(got.p); d = Number(got.d) }
+      if (got && Number(got.p) > 1) { p = Number(got.p); if (Number(got.d) > 1) d = Number(got.d) }
     } catch {}
     if (forceDone && d > 30) p = d
     const prev = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia.id))
@@ -717,7 +717,7 @@ export default function PlayerPage() {
         )}
 
         {loaded && !error && isPlayerEmbedUrl(streamUrl) && (
-          <div style={{ position: 'absolute', bottom: 52, left: 16, zIndex: 90, display: 'flex', alignItems: 'center', gap: 8, pointerEvents: 'auto' }}>
+          <div style={{ position: 'absolute', bottom: 10, right: 168, zIndex: 2147483646, display: 'flex', alignItems: 'center', gap: 8, pointerEvents: 'auto' }}>
             {srcOpen && (
               <div style={{ position: 'absolute', bottom: 42, left: 0, background: '#120a12', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 8, minWidth: 160 }}>
                 {((isOnePiece(String((selectedMedia as any)?.title||'')) ? (['onepace'] as PlayerSource[]) : (isAnimeItem(selectedMedia) ? ANIME_SOURCES : MOVIE_TV_SOURCES))).map((s) => (

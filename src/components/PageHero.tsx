@@ -19,7 +19,8 @@ export default function PageHero({
   const inLib = item.id ? isInWatchlist(item.id, type) : false
   return (
     <section className="hero" style={{ minHeight: "70vh" }}>
-      <div className="hero-backdrop" style={{ backgroundImage: bg ? `url(${bg})` : undefined }} />
+      <div className="hero-backdrop" style={{ backgroundImage: bg ? `url(${bg})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center top' }} />
+      {bg ? <img src={bg} alt="" referrerPolicy="no-referrer" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.35, pointerEvents: 'none' }} /> : null}
       <div className="hero-overlay" />
       <div className="hero-content">
         <div className="hero-copy">
