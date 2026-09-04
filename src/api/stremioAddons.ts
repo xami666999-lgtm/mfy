@@ -31,6 +31,9 @@ export const ADDONS = {
   nuvio: { base: 'https://nuvio.moaqeel6679.my.id', type: 'tv', catalog: 'nuvio_sports_live' },
   peario: { base: 'https://addon.peario.xyz' },
   multiboxd: { base: 'https://multiboxd.affogo.fyi' },
+  pengu: { base: 'https://pengu.uk/%7B%22auth_token%22%3A%225B0z2eJw8gXTJ9l7p5E88BhUUgwJQr3LrAfrGZPXccc%22%7D' },
+  nova: { base: 'https://nova.livebx.net', type: 'tv', catalog: 'live-events' },
+  nebula: { base: 'https://sports.nebulapro.xyz/sports/i/free', type: 'sports', catalog: 'all' },
 }
 
 export function toCard(m: any) {
@@ -98,6 +101,7 @@ export const STREAM_HOST = {
   streamsppv: ADDONS.sportsstreams.base,
   sportsstreams: ADDONS.sportsstreams.base,
   nuvio: ADDONS.nuvio.base,
+  pengu: ADDONS.pengu.base,
 }
 
 export function pearioWatchUrl(imdbOrTmdb: string, type: 'movie' | 'series' = 'movie') {

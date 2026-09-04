@@ -31,6 +31,7 @@ export default function MetaDetails() {
   const [imdbId, setImdbId] = useState<string | null>(null)
   const [mdblistRatings, setMdblistRatings] = useState<MdblistRating[] | null>(null)
   const [aggRatings, setAggRatings] = useState<AggRating[]>([])
+  const [watchLogos, setWatchLogos] = useState<{ name: string; logo: string }[]>([])
   const [listOpen, setListOpen] = useState(false)
   const [newListName, setNewListName] = useState('')
 
@@ -86,6 +87,18 @@ export default function MetaDetails() {
             setTrailerKey(key || null)
           }).catch(() => setTrailerKey(null))
         }
+        tmdb.getWatchProviders(selectedMedia.type === 'movie' ? 'movie' : 'tv', d.id).then((w) => {
+          const us = w?.results?.US || w?.results?.GB || Object.values(w?.results || {})[0] as any
+          const list = [...(us?.flatrate || []), ...(us?.ads || []), ...(us?.free || [])]
+          const seen = new Set<string>()
+          const logos: { name: string; logo: string }[] = []
+          for (const p of list) {
+            if (!p?.provider_name || seen.has(p.provider_name)) continue
+            seen.add(p.provider_name)
+            if (p.logo_path) logos.push({ name: p.provider_name, logo: `https://image.tmdb.org/t/p/w92${p.logo_path}` })
+          }
+          setWatchLogos(logos.slice(0, 6))
+        }).catch(() => setWatchLogos([]))
         if (d.seasons?.length) {
           const sNum = d.seasons.find((s: any) => s.season_number > 0)?.season_number || 0
           setActiveSeason(sNum)
@@ -198,6 +211,7 @@ export default function MetaDetails() {
     { id: 'moviebox', label: 'MovieBox', q: 'Works' },
     { id: 'vixsrc', label: 'Vixsrc', q: 'Works' },
     { id: 'vidnest', label: 'Vidnest', q: 'Works' },
+    { id: 'pengu', label: 'Pengu', q: 'Works' },
     { id: 'zangetsu', label: 'Zangetsu', q: 'Anime' },
     { id: 'miruro', label: 'Miruro', q: 'Anime' },
     { id: 'animepahe', label: 'AnimePahe', q: 'Anime' },
@@ -377,6 +391,11 @@ export default function MetaDetails() {
                   {r.label} {r.value}
                 </span>
               ))}
+              {watchLogos.map((p) => (
+                <span key={p.name} title={p.name} className="inline-flex items-center h-7 px-1.5 rounded-md bg-black/40 border border-white/10">
+                  <img src={p.logo} alt={p.name} className="h-5 w-5 object-contain" />
+                </span>
+              ))}
               {rtExtra?.audience && (
                 <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-[#fa320a]/10 border border-[#fa320a]/25 text-[11px] font-bold text-[#ff8a6a]">
                   Audience {rtExtra.audience}
@@ -409,7 +428,7 @@ export default function MetaDetails() {
                 const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
                 const op = isOnePiece(detail?.title || detail?.name || (selectedMedia as any)?.title)
                 if (op) return p.id === 'onepace'
-                if (anime) return ['zangetsu','miruro','animepahe','playtorrio','simplstream','vidy','vixsrc','vidnest','moviebox'].includes(p.id)
+                if (anime) return ['zangetsu','miruro','animepahe','playtorrio','simplstream','vidy','vixsrc','vidnest','moviebox','pengu'].includes(p.id)
                 return ['playtorrio','simplstream','vidy','moviebox','vixsrc','vidnest'].includes(p.id)
               })).map((p) => (
                 <button
@@ -451,7 +470,7 @@ export default function MetaDetails() {
                 const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
                 const op = isOnePiece(detail?.title || detail?.name || (selectedMedia as any)?.title)
                 if (op) return p.id === 'onepace'
-                if (anime) return ['zangetsu','miruro','animepahe','playtorrio','simplstream','vidy','vixsrc','vidnest','moviebox'].includes(p.id)
+                if (anime) return ['zangetsu','miruro','animepahe','playtorrio','simplstream','vidy','vixsrc','vidnest','moviebox','pengu'].includes(p.id)
                 return ['playtorrio','simplstream','vidy','moviebox','vixsrc','vidnest'].includes(p.id)
               })).map((p) => (
                     <button key={p.id} type="button" className="w-full flex items-center justify-between h-10 px-3 rounded-xl bg-[#1a1016] border border-white/10 hover:border-[#FF1493]/50 text-left text-white" onClick={() => {

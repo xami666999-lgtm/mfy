@@ -87,6 +87,27 @@ export default function Anime() {
             <button key={a} type="button" className={`h-8 px-3 rounded-full text-xs ${audio === a ? 'bg-[#FF1493]' : 'bg-white/10'}`} onClick={() => setAudio(a)}>{a.toUpperCase()}</button>
           ))}
         </div>
+        <section className="media-row">
+          <div className="media-row-header"><h2 className="media-row-title">Anime franchises</h2></div>
+          <div className="scroll-row">
+            {[
+              { q: 'One Piece', name: 'One Piece' },
+              { q: 'Naruto', name: 'Naruto' },
+              { q: 'Demon Slayer', name: 'Demon Slayer' },
+              { q: 'Jujutsu Kaisen', name: 'Jujutsu Kaisen' },
+              { q: 'Studio Ghibli', name: 'Ghibli' },
+              { q: 'Pokemon', name: 'Pokémon' },
+              { q: 'Attack on Titan', name: 'Attack on Titan' },
+            ].map((f) => (
+              <button key={f.q} type="button" className="mfy-live-chip shrink-0 h-14 px-4 rounded-2xl bg-white/5 border border-white/10 text-sm hover:scale-105 transition-transform" onClick={() => {
+                tmdb.searchMulti(f.q).then((d) => {
+                  const hit = (d?.results || []).find((x: any) => x.media_type === 'tv' || x.media_type === 'movie')
+                  if (hit) open(hit)
+                }).catch(() => {})
+              }}>{f.name}</button>
+            ))}
+          </div>
+        </section>
         <MediaShelf title="Airing calendar" items={calendar} onOpen={open} />
         <MediaShelf title="Popular Anime" items={(() => {
           const list = audio === 'dub'

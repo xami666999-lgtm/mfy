@@ -66,7 +66,11 @@ export default function Sports() {
   }, [matches, searchQuery, when])
 
   useEffect(() => {
-    addonCatalog('nuvio').then(setNuvio).catch(() => setNuvio([]))
+    Promise.all([
+      addonCatalog('nuvio').catch(() => []),
+      addonCatalog('nova').catch(() => []),
+      addonCatalog('nebula').catch(() => []),
+    ]).then(([a, b, c]) => setNuvio([...(a || []), ...(b || []), ...(c || [])]))
     iptvEnhancedApi.getMetegolEvents().then(setMetegol).catch(() => {
       fetch('./data/metegol.json').then((r) => r.json()).then((d) => setMetegol(d.events || [])).catch(() => setMetegol([]))
     })

@@ -318,7 +318,7 @@ export default function Board() {
           <div className="media-row-header"><h2 className="media-row-title">Providers</h2></div>
           <div className="scroll-row">
             {streamingServices.map((s) => (
-              <button key={s.id} type="button" className="shrink-0 h-16 px-5 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3 hover:bg-white/10" onClick={() => { setSelectedProviderId(s.id); setCurrentPage('provider') }}>
+              <button key={s.id} type="button" className="mfy-live-chip shrink-0 h-16 px-5 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3 hover:bg-white/10 hover:scale-105 transition-transform" onClick={() => { setSelectedProviderId(s.id); setCurrentPage('provider') }}>
                 <img src={s.logo} alt="" className="w-8 h-8 object-contain" />
                 <span className="text-sm">{s.name}</span>
               </button>
@@ -336,7 +336,7 @@ export default function Board() {
               { id: 'nfs', name: 'Need for Speed', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Need_for_Speed_logo.svg/320px-Need_for_Speed_logo.svg.png' },
               { id: 'nick', name: 'Nickelodeon', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Nickelodeon_2009_logo.svg/320px-Nickelodeon_2009_logo.svg.png' },
             ].map((f) => (
-              <button key={f.id} type="button" className="shrink-0 h-16 px-4 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3 hover:bg-white/10" onClick={() => {
+              <button key={f.id} type="button" className="mfy-live-chip shrink-0 h-16 px-4 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3 hover:bg-white/10 hover:scale-105 transition-transform" onClick={() => {
                 if (f.id === 'marvel' || f.id === 'dc' || f.id === 'starwars' || f.id === 'nick') {
                   addonCatalog(f.id as any).then((list) => {
                     const hit = list[0]

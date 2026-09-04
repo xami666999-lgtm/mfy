@@ -311,7 +311,15 @@ a:focus-visible,
   box-shadow: 0 16px 40px rgba(0,0,0,.55), 0 0 24px var(--mfy-pink-soft);
   z-index: 5;
 }
-.poster-card img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; display: block; background: var(--mfy-surface-2); }
+.poster-card img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; display: block; background: var(--mfy-surface-2); transition: transform 4s ease; }
+.poster-card:hover img { transform: scale(1.12); }
+@keyframes mfy-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+.mfy-live-chip {
+  animation: mfy-float 3.2s ease-in-out infinite;
+}
 .poster-card.has-fallback { background: linear-gradient(160deg, #1a1520, #0e0c14); }
 .poster-card.has-fallback::before {
   content: ''; position: absolute; inset: 0;
