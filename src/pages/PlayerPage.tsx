@@ -119,7 +119,6 @@ export default function PlayerPage() {
         : addonStreams(addonBase, kind, want)
       load.then((rows) => {
         setPicks(rows)
-        const q = rows.find((r: any) => /^https?:/i.test(r.url)) || rows[0]
         const playable = rows.find((r: any) => /^https?:/i.test(r.url) && !/pengu\.uk\/direct|attachment|download/i.test(r.url))
         const q = playable || (src === 'pengu' ? null : rows[0])
         if (!q || /pengu\.uk\/direct/i.test(q.url || '')) {
@@ -713,9 +712,9 @@ export default function PlayerPage() {
         )}
 
         {loaded && !error && isPlayerEmbedUrl(streamUrl) && (
-          <div style={{ position: 'absolute', bottom: 14, right: 14, zIndex: 90, display: 'flex', alignItems: 'center', gap: 8, pointerEvents: 'auto' }}>
+          <div style={{ position: 'absolute', bottom: 52, left: 16, zIndex: 90, display: 'flex', alignItems: 'center', gap: 8, pointerEvents: 'auto' }}>
             {srcOpen && (
-              <div style={{ position: 'absolute', bottom: 42, right: 0, background: '#120a12', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 8, minWidth: 160 }}>
+              <div style={{ position: 'absolute', bottom: 42, left: 0, background: '#120a12', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 8, minWidth: 160 }}>
                 {((isOnePiece(String((selectedMedia as any)?.title||'')) ? (['onepace'] as PlayerSource[]) : (isAnimeItem(selectedMedia) ? ANIME_SOURCES : MOVIE_TV_SOURCES))).map((s) => (
                   <button key={s} type="button" onClick={() => { setPlayerSource(s); failTried.current = []; setSrcOpen(false); try { localStorage.setItem('mfy-player-engine', s) } catch {} }}
                     style={{ display: 'block', width: '100%', textAlign: 'left', background: playerSource === s ? '#FF1493' : 'transparent', border: 'none', borderRadius: 8, padding: '8px 10px', color: 'white', fontSize: 12, cursor: 'pointer' }}>
