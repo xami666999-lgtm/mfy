@@ -803,11 +803,15 @@ export default function PlayerPage() {
         <RateModal title={title} kind={isAnimeItem(selectedMedia) ? 'anime' : (selectedMedia?.type === 'movie' ? 'movie' : 'tv')} onSubmit={(s, n) => finishRate(s, n)} onSkip={() => finishRate()} />
       )}
         <div className="mfy-player" onMouseMove={onMouseMove} onMouseLeave={hideChrome} style={{ background: '#000', minHeight: '100vh', cursor: showUI ? 'default' : 'none' }}>
-      {showUI && <div className="player-topbar visible" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 90, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
-        <div className="flex items-center gap-2">
-        <button onClick={goBack} className="player-back flex items-center gap-2 text-white/80 hover:text-white" style={{ background: 'rgba(0,0,0,0.5)', padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>
-          <ArrowLeft size={16} /> Back
+      {showUI && (
+        <button type="button" onClick={goBack} title="Exit player"
+          style={{ position: 'fixed', top: 14, left: 14, zIndex: 200, background: '#FF1493', color: '#fff', border: 'none', borderRadius: 999, padding: '8px 16px', cursor: 'pointer', fontWeight: 800, fontSize: 12, letterSpacing: 0.4, boxShadow: '0 6px 20px rgba(255,20,147,0.35)' }}>
+          ← Exit
         </button>
+      )}
+      {showUI && <div className="player-topbar visible" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 90, padding: '12px 16px 12px 108px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
+        <div className="flex items-center gap-2">
+        <button type="button" onClick={() => setShowRate(true)} style={{ background: '#FF1493', padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white' }}>Mark watched</button>
         <button type="button" onClick={() => setShowRate(true)} style={{ background: '#FF1493', padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white' }}>Mark watched</button>
         </div>
         <div className="player-title text-white font-medium truncate" style={{ maxWidth: 400 }}>{title}</div>
