@@ -325,6 +325,18 @@ export default function PlayerPage() {
   }, [gate, selectedMedia?.id, selectedMedia?.episode])
 
   useEffect(() => {
+    const leave = (e: MouseEvent) => {
+      if (!e.relatedTarget && (e.clientY <= 0 || e.clientX <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight)) hideChrome()
+    }
+    window.addEventListener('mouseout', leave)
+    document.addEventListener('mouseleave', hideChrome as any)
+    return () => {
+      window.removeEventListener('mouseout', leave)
+      document.removeEventListener('mouseleave', hideChrome as any)
+    }
+  }, [])
+
+  useEffect(() => {
     const onFullscreen = () => setFullscreen(Boolean(document.fullscreenElement))
     document.addEventListener('fullscreenchange', onFullscreen)
     const again = () => setTimeout(() => { try { const w=document.querySelector('webview') as any; w?.executeJavaScript?.(`document.querySelectorAll('video').forEach(v=>{v.style.objectFit=getComputedStyle(v).objectFit})`) } catch {} }, 200)
@@ -451,10 +463,15 @@ export default function PlayerPage() {
     return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}` : `${m}:${String(sec).padStart(2, '0')}`
   }
 
+  function hideChrome() {
+    if (timer.current) clearTimeout(timer.current)
+    setShowUI(false)
+    setSrcOpen(false)
+  }
   function onMouseMove() {
     setShowUI(true)
     if (timer.current) clearTimeout(timer.current)
-    timer.current = setTimeout(() => setShowUI(false), 2200)
+    timer.current = setTimeout(() => hideChrome(), 1800)
   }
 
   useEffect(() => {
@@ -607,8 +624,8 @@ export default function PlayerPage() {
     {showRate && (
         <RateModal title={title} kind={isAnimeItem(selectedMedia) ? 'anime' : (selectedMedia?.type === 'movie' ? 'movie' : 'tv')} onSubmit={(s, n) => finishRate(s, n)} onSkip={() => finishRate()} />
       )}
-        <div className="mfy-player" onMouseMove={onMouseMove} style={{ background: '#000', minHeight: '100vh' }}>
-      <div className={cn('player-topbar', showUI ? 'visible' : 'hidden')} style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 90, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
+        <div className="mfy-player" onMouseMove={onMouseMove} onMouseLeave={hideChrome} style={{ background: '#000', minHeight: '100vh', cursor: showUI ? 'default' : 'none' }}>
+      {showUI && <div className="player-topbar visible" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 90, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
         <div className="flex items-center gap-2">
         <button onClick={goBack} className="player-back flex items-center gap-2 text-white/80 hover:text-white" style={{ background: 'rgba(0,0,0,0.5)', padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>
           <ArrowLeft size={16} /> Back
@@ -651,7 +668,7 @@ export default function PlayerPage() {
           </div>
           <button className="player-icon-button" onClick={toggleFullscreen} style={{ background: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white' }}><Maximize size={18} /></button>
         </div>
-      </div>
+      </div>}
 
       <div className="player-stage" onClick={togglePlay} style={{ position: 'relative', width: '100%', height: '100vh', minHeight: '100vh', overflow: 'hidden' }}>
         {(gate || (!loaded && !error)) && (
