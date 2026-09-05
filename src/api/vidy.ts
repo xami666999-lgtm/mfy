@@ -27,54 +27,54 @@ export type PlayerSource = 'vidy' | 'playtorrio' | 'simplstream' | 'zangetsu' | 
 
 export const ANIME_SOURCES: PlayerSource[] = ['zangetsu', 'miruro', 'animepahe', 'playtorrio', 'simplstream', 'vidy', 'vixsrc', 'vidnest', 'moviebox', 'pengu']
 export const MOVIE_TV_SOURCES: PlayerSource[] = ['playtorrio', 'simplstream', 'vidy', 'moviebox', 'vixsrc', 'vidnest', 'pengu']
+export const ALL_PLAY_SOURCES: PlayerSource[] = ['playtorrio', 'simplstream', 'vidy', 'moviebox', 'vixsrc', 'vidnest', 'pengu', 'zangetsu', 'miruro', 'animepahe']
 
 export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId: number | string, season?: number, episode?: number, anime = false): string {
   const s = season ?? 1
   const e = episode ?? 1
-  if (source === 'zangetsu' || (anime && source === 'zangetsu')) {
-    return type === 'movie'
-      ? `https://vidfast.pro/movie/${tmdbId}`
-      : `https://vidfast.pro/tv/${tmdbId}/${s}/${e}`
+  const movie = type === 'movie'
+  const dub = anime ? 'dub=true&' : ''
+  if (source === 'zangetsu') {
+    return movie
+      ? `https://player.videasy.net/movie/${tmdbId}?${dub}color=FF1493`
+      : `https://player.videasy.net/tv/${tmdbId}/${s}/${e}?${dub}color=FF1493`
   }
-  if (source === 'miruro' || (anime && source === 'miruro')) {
-    return type === 'movie'
-      ? `https://vidsrc.to/embed/movie/${tmdbId}`
-      : `https://vidsrc.to/embed/tv/${tmdbId}/${s}/${e}`
+  if (source === 'miruro') {
+    return movie
+      ? `https://vidsrc.cc/v2/embed/movie/${tmdbId}?autoPlay=true`
+      : `https://vidsrc.cc/v2/embed/tv/${tmdbId}/${s}/${e}?autoPlay=true`
   }
-  if (source === 'mangayomi' || (anime && source === 'mangayomi')) {
-    return type === 'movie'
-      ? `https://vidsrc.to/embed/movie/${tmdbId}`
-      : `https://vidsrc.to/embed/tv/${tmdbId}/${s}/${e}`
-  }
-  if (anime) {
-    return `https://vidfast.pro/tv/${tmdbId}/${s}/${e}`
+  if (source === 'animepahe' || source === 'mangayomi') {
+    return movie
+      ? `https://vidsrc.xyz/embed/movie/${tmdbId}`
+      : (anime ? `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}` : `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}`)
   }
   if (source === 'moviebox') {
-    return type === 'movie' ? `https://embed.su/embed/movie/${tmdbId}` : `https://embed.su/embed/tv/${tmdbId}/${s}/${e}`
+    return movie ? `https://embed.su/embed/movie/${tmdbId}` : `https://embed.su/embed/tv/${tmdbId}/${s}/${e}`
   }
   if (source === 'pengu') {
-    return type === 'movie' ? `https://vidsrc.cc/v2/embed/movie/${tmdbId}` : `https://vidsrc.cc/v2/embed/tv/${tmdbId}/${s}/${e}`
+    return movie ? `https://vidsrc.cc/v2/embed/movie/${tmdbId}` : `https://vidsrc.cc/v2/embed/tv/${tmdbId}/${s}/${e}`
   }
   if (source === 'vixsrc') {
-    return type === 'movie' ? `https://vixsrc.to/movie/${tmdbId}` : `https://vixsrc.to/tv/${tmdbId}/${s}/${e}`
+    return movie ? `https://vixsrc.to/movie/${tmdbId}` : `https://vixsrc.to/tv/${tmdbId}/${s}/${e}`
   }
   if (source === 'vidnest') {
-    return type === 'movie' ? `https://vidnest.fun/movie/${tmdbId}` : `https://vidnest.fun/tv/${tmdbId}/${s}/${e}`
-  }
-  if (source === 'animepahe') {
-    return type === 'movie' ? `https://vidsrc.cc/v2/embed/movie/${tmdbId}` : `https://vidsrc.cc/v2/embed/tv/${tmdbId}/${s}/${e}`
+    return movie ? `https://vidnest.fun/movie/${tmdbId}` : `https://vidnest.fun/tv/${tmdbId}/${s}/${e}`
   }
   if (source === 'mediafusion') {
     return `mfusion:${type}:${tmdbId}:${s}:${e}`
   }
   if (source === 'playtorrio') {
-    return type === 'movie' ? `https://vidsrc.me/embed/movie/${tmdbId}` : `https://vidsrc.me/embed/tv/${tmdbId}/${s}/${e}`
+    return movie ? `https://vidsrc.me/embed/movie/${tmdbId}` : `https://vidsrc.me/embed/tv/${tmdbId}/${s}/${e}`
   }
   if (source === 'simplstream') {
-    const extra = 'autoPlay=true&muted=false&autoplay=1'
-    return type === 'movie' ? `https://vidlink.pro/movie/${tmdbId}?${extra}` : `https://vidlink.pro/tv/${tmdbId}/${s}/${e}?${extra}`
+    const extra = `${dub}autoPlay=true&muted=false&autoplay=1`
+    return movie ? `https://vidlink.pro/movie/${tmdbId}?${extra}` : `https://vidlink.pro/tv/${tmdbId}/${s}/${e}?${extra}`
   }
-  if (type === 'movie') return `https://vidsrc.me/embed/movie/${tmdbId}`
+  if (source === 'vidy') {
+    return movie ? `https://vidsrc.xyz/embed/movie/${tmdbId}` : `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}`
+  }
+  if (movie) return `https://vidsrc.me/embed/movie/${tmdbId}`
   return `https://vidsrc.me/embed/tv/${tmdbId}/${s}/${e}`
 }
 

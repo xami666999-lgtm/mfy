@@ -5,7 +5,7 @@ import { tmdb, POSTER_URL, BACKDROP_URL } from '../api/tmdb'
 import { vidyUrl, getPlayerUrl, isPlayerEmbed, getFallbackSources, PlayerSource } from '../api/vidy'
 import { mediafusionStreams } from '../api/mediafusion'
 import { addonStreams, isOnePiece, STREAM_HOST, onePaceStreams } from '../api/stremioAddons'
-import { ANIME_SOURCES, MOVIE_TV_SOURCES } from '../api/vidy'
+import { ANIME_SOURCES, MOVIE_TV_SOURCES, ALL_PLAY_SOURCES } from '../api/vidy'
 import { useStore } from '../store'
 import RateModal from '../components/RateModal'
 import TogetherPanel from '../components/TogetherPanel'
@@ -221,7 +221,7 @@ export default function PlayerPage() {
         w.insertCSS(`
           html, body { width:100% !important; height:100% !important; margin:0 !important; background:#000 !important; overflow:hidden !important; }
           video, iframe { width:100vw !important; height:100vh !important; max-width:none !important; max-height:none !important; object-fit:${fit === 'full' ? 'contain' : fit} !important; background:#000 !important; }
-          video::cue, ::cue { font-size: ${subSize}em !important; line-height: 1.25; background: ${subBg ? 'rgba(0,0,0,0.55)' : 'transparent'} !important; color: #fff !important; }
+          video::cue, ::cue { font-size: ${subSize}em !important; line-height: 1.25; background: ${subBg ? 'rgba(0,0,0,0.55)' : 'transparent'} !important; background-color: ${subBg ? 'rgba(0,0,0,0.55)' : 'transparent'} !important; text-shadow: none !important; -webkit-text-stroke: 0 !important; color: #fff !important; }
           video::-webkit-media-controls, video::-webkit-media-controls-enclosure, .vjs-control-bar, .jw-controlbar { display: none !important; opacity: 0 !important; height: 0 !important; }
         `)
         w.executeJavaScript(`document.querySelectorAll('video').forEach(v=>{
@@ -244,15 +244,22 @@ export default function PlayerPage() {
     if (!w?.executeJavaScript) return
     const row = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id) && h.season === selectedMedia?.season && h.episode === selectedMedia?.episode)
     const at = Number((selectedMedia as any)?.resumeAt || row?.progress || 0)
-    const done = !!(row as any)?.completed || (Number(row?.duration) > 90 && at / Number(row?.duration) >= 0.9)
+    const cap = expectedSec > 60 ? expectedSec * 0.85 : Number(row?.duration || 0) * 0.85
+    const done = !!(row as any)?.completed || (cap > 60 && at >= cap)
     if (!(at > 12) || done) return
+    const seekTo = cap > 0 ? Math.min(at, cap) : at
     const id = setTimeout(() => {
       try {
-        w.executeJavaScript(`(() => { const v = document.querySelector('video'); if (v && v.currentTime < 8) v.currentTime = ${at}; })()`)
+        w.executeJavaScript(`(() => { const v = document.querySelector('video'); if (v && v.currentTime < 8) v.currentTime = ${seekTo}; })()`)
       } catch {}
     }, 1800)
     return () => clearTimeout(id)
-  }, [streamUrl, selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
+  }, [streamUrl, selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode, expectedSec])
+
+  useEffect(() => {
+    const id = setInterval(() => { saveProgress(false).catch(() => {}) }, 20000)
+    return () => clearInterval(id)
+  }, [selectedMedia?.id, selectedMedia?.episode, streamUrl])
 
   useEffect(() => {
     const v = videoRef.current
@@ -716,20 +723,19 @@ export default function PlayerPage() {
       if (got && Number(got.p) > 1) { p = Number(got.p); if (Number.isFinite(Number(got.d)) && Number(got.d) > 1) d = Number(got.d) }
     } catch {}
     const sessionSec = (Date.now() - startedAt.current) / 1000
-    const truth = expectedSec > 0 ? Math.max(d, expectedSec) : d
-    const embedIsShort = expectedSec > 0 && d > 0 && d < expectedSec * 0.85
-    if (embedIsShort) d = expectedSec
-    const realDur = Number.isFinite(truth) && truth >= 90
-    const looksLiveClock = realDur && Math.abs(p - (embedIsShort ? d : truth)) < 1.5 && sessionSec < 120
-    if (looksLiveClock || embedIsShort && p >= d * 0.9 && p < expectedSec * 0.85) {
+    const truth = expectedSec > 8 * 60 ? expectedSec : (d > 8 * 60 ? d : expectedSec || d)
+    if (d > 0 && expectedSec > 8 * 60 && d < expectedSec * 0.7) d = expectedSec
+    if (p > truth && truth > 0) p = Math.min(p, truth)
+    const realDur = Number.isFinite(truth) && truth >= 8 * 60
+    if (!realDur || sessionSec < 8) {
       upsertHistory({
         id: `${selectedMedia.id}-${selectedMedia.type}-${selectedMedia.season || 0}-${selectedMedia.episode || 0}`,
         mediaId: selectedMedia.id,
         mediaType: selectedMedia.type === 'movie' ? 'movie' : 'tv',
         title: String((selectedMedia as any).title || (selectedMedia as any).name || selectedMedia.id),
         posterPath: (selectedMedia as any).poster_path || null,
-        progress: p,
-        duration: expectedSec || truth,
+        progress: Math.min(p, sessionSec + 2),
+        duration: truth || expectedSec || 0,
         season: selectedMedia.season,
         episode: selectedMedia.episode,
         watchedAt: new Date().toISOString(),
@@ -738,7 +744,7 @@ export default function PlayerPage() {
       })
       return
     }
-    const reallyDone = forceDone || (realDur && sessionSec > 120 && p / (expectedSec || truth) >= 0.92 && (!expectedSec || p >= expectedSec * 0.85))
+    const reallyDone = forceDone || (realDur && sessionSec > 90 && p / truth >= 0.92)
     if (reallyDone && selectedMedia.type !== 'movie') {
       const base = {
         mediaId: String(selectedMedia.id),
@@ -788,10 +794,17 @@ export default function PlayerPage() {
     })
   }
 
+  const ratedRef = useRef(false)
   function leavePlayer(page: 'detail' | 'home' | 'sports' | 'anime' | 'movies' | 'tv') {
     saveProgress().catch(() => {})
     try { (window as any).electronAPI?.exitFullscreen?.() } catch {}
     try { if (document.fullscreenElement) document.exitFullscreen() } catch {}
+    const sessionSec = (Date.now() - startedAt.current) / 1000
+    if (!ratedRef.current && sessionSec > 90 && selectedMedia && selectedMedia.type !== 'iptv') {
+      setShowRate(true)
+      ;(window as any).__mfyLeavePage = page
+      return
+    }
     setShowRate(false)
     setCurrentStreamUrl('')
     setCurrentPage(page)
@@ -832,7 +845,10 @@ export default function PlayerPage() {
       }).catch(() => {})
     }
     setShowRate(false)
-    leavePlayer(selectedMedia?.id ? 'detail' : 'home')
+    ratedRef.current = true
+    const dest = (window as any).__mfyLeavePage || (selectedMedia?.id ? 'detail' : 'home')
+    setCurrentStreamUrl('')
+    setCurrentPage(dest)
   }
 
   const title = meta?.title || String((selectedMedia as any)?.title || (selectedMedia as any)?.name || '') || (selectedMedia ? `${selectedMedia.type === 'movie' ? 'Movie' : 'Series'} ${selectedMedia.id}` : 'MFY Player')
@@ -914,7 +930,7 @@ export default function PlayerPage() {
             </button>
             {srcOpen && (
               <div style={{ position: 'absolute', right: 0, top: 40, width: 220, background: '#12080d', border: '1px solid rgba(255,20,147,0.45)', borderRadius: 16, padding: 8, zIndex: 80, boxShadow: '0 16px 40px rgba(0,0,0,0.55)' }}>
-                {(isOnePiece(String((selectedMedia as any)?.title || '')) ? (['onepace'] as PlayerSource[]) : (isAnimeItem(selectedMedia) ? ANIME_SOURCES : MOVIE_TV_SOURCES)).map((s) => (
+                {(isOnePiece(String((selectedMedia as any)?.title || '')) ? (['onepace', ...ALL_PLAY_SOURCES] as PlayerSource[]) : ALL_PLAY_SOURCES).map((s) => (
                   <button
                     key={s}
                     type="button"
@@ -941,6 +957,10 @@ export default function PlayerPage() {
               </button>
             ) : null}
             <button type="button" onClick={() => seekBy(90)} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>Skip intro</button>
+            <button type="button" onClick={() => setFit((f) => f === 'contain' ? 'cover' : f === 'cover' ? 'fill' : 'contain')} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>{fit === 'cover' ? 'Crop' : fit === 'fill' ? 'Fill' : 'Fit'}</button>
+            <button type="button" onClick={() => {
+              try { (window as any).electronAPI?.openVlc?.(streamUrl) || (window as any).electronAPI?.openExternal?.(streamUrl) } catch {}
+            }} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>VLC</button>
             <div className="relative">
               <button type="button" onClick={() => setSubOpen((v) => !v)} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>
                 Subs {subtitleLabel ? `· ${subtitleLabel.slice(0, 10)}` : ''}

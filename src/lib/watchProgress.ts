@@ -8,8 +8,11 @@ export function watchPercent(h?: { progress?: number; duration?: number } | null
 
 export function isFinished(h?: { progress?: number; duration?: number; completed?: boolean } | null) {
   if (!h) return false
-  if (h.completed) return true
-  return watchPercent(h) >= 90
+  const d = Number(h.duration) || 0
+  const p = Number(h.progress) || 0
+  if (d < 8 * 60) return false
+  if (h.completed && p >= d * 0.88) return true
+  return watchPercent(h) >= 92
 }
 
 export function isEpisodeWatched(hist: any[] | undefined, mediaId: any, season?: number, episode?: number) {

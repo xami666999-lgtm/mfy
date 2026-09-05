@@ -303,6 +303,24 @@ ipcMain.handle('window-is-maximized', () => mainWindow?.isMaximized() ?? false)
 
 // Open external URL
 ipcMain.on('open-external', (_event, url: string) => shell.openExternal(url))
+ipcMain.on('open-vlc', (_event, url: string) => {
+  try {
+    const { spawn } = require('child_process') as typeof import('child_process')
+    const candidates = ['vlc', 'C:\\Program Files\\VideoLAN\\VLC\\vlc.exe', 'C:\\Program Files (x86)\\VideoLAN\\VLC\\vlc.exe']
+    let started = false
+    for (const bin of candidates) {
+      try {
+        const child = spawn(bin, [String(url || '')], { detached: true, stdio: 'ignore' })
+        child.unref()
+        started = true
+        break
+      } catch {}
+    }
+    if (!started) shell.openExternal(String(url || ''))
+  } catch {
+    shell.openExternal(String(url || ''))
+  }
+})
 
 ipcMain.handle('fetch-json', async (_event, url: string, init?: { method?: string; headers?: Record<string, string>; body?: string; timeoutMs?: number }) => {
   const timeout = init?.timeoutMs || 8000

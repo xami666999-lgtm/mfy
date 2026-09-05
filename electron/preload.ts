@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // External
   openExternal: (url: string) => ipcRenderer.send('open-external', url),
+  openVlc: (url: string) => ipcRenderer.send('open-vlc', url),
 
   // CORS-free text fetch (IPTV playlists)
   fetchText: (url: string, timeoutMs?: number) => ipcRenderer.invoke('fetch-text', url, timeoutMs),

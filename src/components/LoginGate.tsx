@@ -8,7 +8,11 @@ function validEmail(v: string) {
 export default function LoginGate() {
   const { profiles, addProfile, setProfilePin, switchProfile, setAuthenticated, setCurrentPage } = useStore()
   const hasAccount = profiles.length > 0
-  const [step, setStep] = useState<'auth' | 'who'>(hasAccount ? 'who' : 'auth')
+  const [step, setStep] = useState<'auth' | 'trackers' | 'who'>(hasAccount ? 'who' : 'auth')
+  const [anilistTok, setAnilistTok] = useState('')
+  const [letterboxd, setLetterboxd] = useState('')
+  const [serializdMail, setSerializdMail] = useState('')
+  const [serializdPass, setSerializdPass] = useState('')
   const [mode, setMode] = useState<'signin' | 'create' | 'reset'>(hasAccount ? 'signin' : 'create')
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
@@ -34,7 +38,7 @@ export default function LoginGate() {
     const id = addProfile(username.trim(), '', email.trim().toLowerCase())
     setProfilePin(id, password)
     setPicked(id)
-    setStep('who')
+    setStep('trackers')
   }
 
   function signin() {
@@ -44,7 +48,7 @@ export default function LoginGate() {
     if (!p) return setErr('No account for that Gmail / username.')
     if (p.pin && p.pin !== password) return setErr('Wrong password.')
     setPicked(p.id)
-    setStep('who')
+    setStep('trackers')
   }
 
   function sendReset() {
@@ -66,6 +70,30 @@ export default function LoginGate() {
   }
 
   const field = 'w-full h-11 px-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder-white/30 outline-none focus:border-[#FF1493]/50'
+
+  if (step === 'trackers') {
+    return (
+      <div className="h-screen grid place-items-center bg-[#08080e] text-white px-6">
+        <div className="w-full max-w-md">
+          <p className="text-[#FF1493] text-xs tracking-[0.35em] font-bold mb-2">MFY</p>
+          <h1 className="text-2xl font-bold mb-2">Connect your trackers</h1>
+          <p className="text-sm text-white/50 mb-5">After each movie / episode you can rate and sync: AniList for anime, Serializd for series, Letterboxd for movies.</p>
+          <input className={field + ' mb-2'} placeholder="AniList token" value={anilistTok} onChange={(e) => setAnilistTok(e.target.value)} />
+          <input className={field + ' mb-2'} placeholder="Letterboxd username" value={letterboxd} onChange={(e) => setLetterboxd(e.target.value)} />
+          <input className={field + ' mb-2'} placeholder="Serializd email" value={serializdMail} onChange={(e) => setSerializdMail(e.target.value)} />
+          <input className={field + ' mb-4'} type="password" placeholder="Serializd password" value={serializdPass} onChange={(e) => setSerializdPass(e.target.value)} />
+          <button type="button" className="w-full h-11 rounded-xl bg-[#FF1493] font-semibold" onClick={() => {
+            try {
+              if (anilistTok) localStorage.setItem('mfy-anilist-token', anilistTok)
+              if (letterboxd) localStorage.setItem('mfy-letterboxd-user', letterboxd)
+              if (serializdMail) useStore.getState().setSerializdEmail(serializdMail)
+            } catch {}
+            setStep('who')
+          }}>Save and continue</button>
+        </div>
+      </div>
+    )
+  }
 
   if (step === 'who') {
     return (
