@@ -8,6 +8,34 @@ export function setRuntimeSubtitleKey(key: string) {
   runtimeKey = key || ''
 }
 
+const STREMIO_SUBS = [
+  'https://opensubtitles-v3.strem.io',
+  'https://2ecbbd610840-opensubtitles.baby-beamup.club',
+]
+
+export async function searchStremioSubtitles(kind: 'movie' | 'series', imdb: string, season?: number, episode?: number) {
+  const id = String(imdb || '').startsWith('tt') ? imdb : `tt${imdb}`
+  const path = kind === 'movie'
+    ? `/subtitles/movie/${id}.json`
+    : `/subtitles/series/${id}:${season || 1}:${episode || 1}.json`
+  const api = typeof window !== 'undefined' ? (window as any).electronAPI : null
+  for (const base of STREMIO_SUBS) {
+    try {
+      const url = base + path
+      const d = api?.fetchJson ? (await api.fetchJson(url, { timeoutMs: 12000 }))?.json : await (await fetch(url)).json()
+      const rows = d?.subtitles || []
+      if (!rows.length) continue
+      return rows.slice(0, 24).map((s: any) => ({
+        url: String(s.url || ''),
+        name: s.subtitleFileName || s.lang || 'sub',
+        lang: s.lang || 'und',
+        format: String(s.subtitleFileName || s.url || '').split('.').pop() || 'srt',
+      })).filter((s: any) => s.url)
+    } catch {}
+  }
+  return []
+}
+
 function getKey(): string {
   return runtimeKey || (import.meta as any).env?.VITE_OPENSUBTITLES_API_KEY || ''
 }

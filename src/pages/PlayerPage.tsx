@@ -11,6 +11,7 @@ import RateModal from '../components/RateModal'
 import TogetherPanel from '../components/TogetherPanel'
 import { syncRating, isAnimeItem } from '../lib/trackers'
 import { markSource } from '../lib/playerStatus'
+import { searchStremioSubtitles } from '../api/subtitles'
 
 function isPlayerEmbedUrl(url: string) {
   return isPlayerEmbed(url)
@@ -48,6 +49,8 @@ export default function PlayerPage() {
   const [subtitleOffset, setSubtitleOffset] = useState(0)
   const [subSize, setSubSize] = useState(0.65)
   const [subBg, setSubBg] = useState(false)
+  const [subList, setSubList] = useState<{ url: string; name: string; lang: string; format: string }[]>([])
+  const [subOpen, setSubOpen] = useState(false)
   const [fit, setFit] = useState<'contain' | 'cover' | 'fill' | 'full'>('contain')
   const [picks, setPicks] = useState<{ title: string; url: string; quality: string }[]>([])
   const [srcOpen, setSrcOpen] = useState(false)
@@ -397,6 +400,56 @@ export default function PlayerPage() {
       if (first) setNextUp({ season: ns.season_number, episode: first.episode_number, name: first.name, still: first.still_path })
     })()
   }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
+
+  useEffect(() => {
+    setSubList([])
+    if (!selectedMedia?.id || selectedMedia.type === 'iptv') return
+    ;(async () => {
+      let imdb = String((selectedMedia as any).imdb || '')
+      if (!imdb.startsWith('tt')) {
+        try {
+          const ids = await tmdb.getExternalIds(selectedMedia.type === 'movie' ? 'movie' : 'tv', Number(selectedMedia.id))
+          imdb = ids?.imdb_id || imdb
+        } catch {}
+      }
+      if (!imdb) return
+      const rows = await searchStremioSubtitles(
+        selectedMedia.type === 'movie' ? 'movie' : 'series',
+        imdb,
+        selectedMedia.season,
+        selectedMedia.episode,
+      )
+      setSubList(rows)
+    })()
+  }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode, selectedMedia?.type])
+
+  async function applySub(item: { url: string; name: string; format: string }) {
+    setSubtitleLabel(item.name)
+    setSubtitleEnabled(true)
+    setSubOpen(false)
+    try {
+      const api = (window as any).electronAPI
+      const raw = api?.fetchText ? (await api.fetchText(item.url, 15000))?.text : await (await fetch(item.url)).text()
+      if (!raw) return
+      let vtt = raw
+      if (!/^WEBVTT/m.test(raw)) {
+        vtt = 'WEBVTT\n\n' + raw.replace(/\r/g, '').replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2')
+      }
+      const w = document.querySelector('webview') as any
+      const payload = JSON.stringify(vtt)
+      await w?.executeJavaScript?.(`(() => {
+        const v = document.querySelector('video'); if (!v) return false;
+        [...v.querySelectorAll('track[data-mfy]')].forEach((t) => t.remove());
+        const blob = new Blob([${payload}], { type: 'text/vtt' });
+        const url = URL.createObjectURL(blob);
+        const t = document.createElement('track');
+        t.kind = 'subtitles'; t.label = 'MFY'; t.srclang = 'en'; t.default = true; t.dataset.mfy = '1'; t.src = url;
+        v.appendChild(t);
+        t.addEventListener('load', () => { try { v.textTracks[v.textTracks.length-1].mode = 'showing' } catch(e) {} });
+        return true;
+      })()`)
+    } catch {}
+  }
 
   useEffect(() => {
     setExpectedSec(0)
@@ -887,6 +940,28 @@ export default function PlayerPage() {
                 Next ep {nextUp ? `S${nextUp.season}E${nextUp.episode}` : `E${(selectedMedia.episode || 1) + 1}`}
               </button>
             ) : null}
+            <button type="button" onClick={() => seekBy(90)} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>Skip intro</button>
+            <div className="relative">
+              <button type="button" onClick={() => setSubOpen((v) => !v)} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>
+                Subs {subtitleLabel ? `· ${subtitleLabel.slice(0, 10)}` : ''}
+              </button>
+              {subOpen && (
+                <div style={{ position: 'absolute', right: 0, top: 36, width: 260, maxHeight: 280, overflow: 'auto', background: '#12080d', border: '1px solid rgba(255,20,147,0.4)', borderRadius: 12, padding: 8, zIndex: 90 }}>
+                  <p style={{ fontSize: 10, color: '#FF1493', marginBottom: 6 }}>OpenSubtitles · formats</p>
+                  {subList.length === 0 && <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>No tracks yet</p>}
+                  {subList.map((s) => (
+                    <button key={s.url} type="button" onClick={() => applySub(s)} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 'none', color: '#fff', padding: '7px 8px', fontSize: 12, cursor: 'pointer' }}>
+                      {(s.lang || '').toUpperCase()} · {s.format} · {s.name}
+                    </button>
+                  ))}
+                  <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                    <button type="button" onClick={() => setSubSize((n) => Math.max(0.4, +(n - 0.1).toFixed(2)))} style={{ flex: 1, background: '#1a1016', border: 'none', color: '#fff', padding: 6, fontSize: 11, cursor: 'pointer' }}>Smaller</button>
+                    <button type="button" onClick={() => setSubSize((n) => Math.min(1.6, +(n + 0.1).toFixed(2)))} style={{ flex: 1, background: '#1a1016', border: 'none', color: '#fff', padding: 6, fontSize: 11, cursor: 'pointer' }}>Bigger</button>
+                    <button type="button" onClick={() => setSubBg((v) => !v)} style={{ flex: 1, background: '#1a1016', border: 'none', color: '#fff', padding: 6, fontSize: 11, cursor: 'pointer' }}>{subBg ? 'Box' : 'Clean'}</button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           <button className="player-icon-button" onClick={toggleFullscreen} style={{ background: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white' }}><Maximize size={18} /></button>
         </div>
@@ -953,7 +1028,7 @@ export default function PlayerPage() {
               background: '#000',
               transform: fit === 'cover' ? 'scale(1.28)' : fit === 'fill' ? 'scaleX(1.12) scaleY(1.18)' : 'scale(1)',
               transformOrigin: 'center center',
-              pointerEvents: 'none',
+              pointerEvents: 'auto',
             }}
             allowpopups="false"
             allowfullscreen="true"
@@ -965,7 +1040,7 @@ export default function PlayerPage() {
           <video ref={videoRef} playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: fit, background: '#000' }} />
         )}
 
-        {showUI && loaded && !error && (
+        {showUI && loaded && !error && !isPlayerEmbedUrl(streamUrl) && (
           <div className="mfy-bar" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 300, padding: '18px 22px 20px', background: 'linear-gradient(0deg, rgba(0,0,0,0.92) 0%, transparent 100%)', pointerEvents: 'auto' }}
             onClick={(e) => e.stopPropagation()}>
             {(() => {
