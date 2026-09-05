@@ -12,6 +12,8 @@ import TogetherPanel from '../components/TogetherPanel'
 import { syncRating, isAnimeItem } from '../lib/trackers'
 import { markSource } from '../lib/playerStatus'
 import { searchStremioSubtitles } from '../api/subtitles'
+import { resolveFromTorrentio } from '../api/streams'
+import { pickBestFile, isTorrentInput } from '../api/torrent'
 
 function isPlayerEmbedUrl(url: string) {
   return isPlayerEmbed(url)
@@ -51,6 +53,9 @@ export default function PlayerPage() {
   const [subBg, setSubBg] = useState(false)
   const [subList, setSubList] = useState<{ url: string; name: string; lang: string; format: string }[]>([])
   const [subOpen, setSubOpen] = useState(false)
+  const [torrents, setTorrents] = useState<{ url: string; name: string; quality: string; size?: string; seeds?: string }[]>([])
+  const [magnetBox, setMagnetBox] = useState('')
+  const [torrentBusy, setTorrentBusy] = useState('')
   const [fit, setFit] = useState<'contain' | 'cover' | 'fill' | 'full'>('contain')
   const [picks, setPicks] = useState<{ title: string; url: string; quality: string }[]>([])
   const [srcOpen, setSrcOpen] = useState(false)
@@ -59,7 +64,7 @@ export default function PlayerPage() {
     playtorrio: 'PlayTorrio', simplstream: 'SimplStream', vidy: 'Vidy',
     zangetsu: 'Zangetsu', miruro: 'Miruro', mangayomi: 'Mangayomi',
     mediafusion: 'MediaFusion', flix: 'Flix', nyaa: 'Nyaa', animeflv: 'AnimeFLV',
-    onepace: 'One Pace', streamsppv: 'StreamsPPV', sportsstreams: 'Sports Streams', moviebox: 'MovieBox', vixsrc: 'Vixsrc', vidnest: 'Vidnest', animepahe: 'AnimePahe', pengu: 'Pengu',
+    onepace: 'One Pace', streamsppv: 'StreamsPPV', sportsstreams: 'Sports Streams', moviebox: 'MovieBox', vixsrc: 'Vixsrc', vidnest: 'Vidnest', animepahe: 'AnimePahe', pengu: 'Pengu', webtorrent: 'WebTorrent',
   }
   const trackRef = useRef<HTMLTrackElement>(null)
 
@@ -97,8 +102,15 @@ export default function PlayerPage() {
     const title = String((selectedMedia as any).title || (selectedMedia as any).name || '')
     let src: PlayerSource = playerSource
     if (isOnePiece(title)) src = 'onepace'
-    else if (anime && !(ANIME_SOURCES as string[]).includes(src) && src !== 'onepace') src = 'zangetsu'
-    else if (!anime && !(MOVIE_TV_SOURCES as string[]).includes(src)) src = 'playtorrio'
+    else if (src === 'webtorrent') src = 'webtorrent'
+    else if (anime && !(ANIME_SOURCES as string[]).includes(src) && src !== 'onepace' && src !== 'webtorrent') src = 'zangetsu'
+    else if (!anime && !(MOVIE_TV_SOURCES as string[]).includes(src) && src !== 'webtorrent') src = 'playtorrio'
+    if (src === 'webtorrent') {
+      setLoaded(true)
+      setLoading(false)
+      setError('')
+      return
+    }
     if (src === 'moviebox' || src === 'animepahe' || src === 'pengu') {
       setStreamUrl(getPlayerUrl(src, selectedMedia.type === 'movie' ? 'movie' : 'tv', selectedMedia.id, selectedMedia.season, selectedMedia.episode, anime))
       setLoaded(true)
@@ -430,6 +442,53 @@ export default function PlayerPage() {
     })()
   }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode, selectedMedia?.type])
 
+  useEffect(() => {
+    if (!selectedMedia?.id || selectedMedia.type === 'iptv') return
+    ;(async () => {
+      let imdb = String((selectedMedia as any).imdb || '')
+      if (!imdb.startsWith('tt')) {
+        try {
+          const ids = await tmdb.getExternalIds(selectedMedia.type === 'movie' ? 'movie' : 'tv', Number(selectedMedia.id))
+          imdb = ids?.imdb_id || imdb
+        } catch {}
+      }
+      if (!imdb) return
+      const rows = await resolveFromTorrentio(selectedMedia.type === 'movie' ? 'movie' : 'tv', imdb, {
+        season: selectedMedia.season,
+        episode: selectedMedia.episode,
+      })
+      const ranked = rows
+        .map((s: any) => ({
+          url: s.url,
+          name: s.name || s.title || 'Torrent',
+          quality: s.quality || '',
+          size: s.size,
+          seeds: s.seeds,
+        }))
+        .sort((a, b) => {
+          const rank = (q: string) => /2160|4k/i.test(q) ? 4 : /1080/i.test(q) ? 3 : /720/i.test(q) ? 2 : 1
+          return rank(b.quality) - rank(a.quality) || Number(b.seeds || 0) - Number(a.seeds || 0)
+        })
+      setTorrents(ranked.slice(0, 20))
+    })()
+  }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode, selectedMedia?.type])
+
+  async function playMagnet(link: string, label?: string) {
+    if (!link) return
+    setTorrentBusy(label || 'Starting WebTorrent…')
+    try {
+      const picked = await pickBestFile(link)
+      if (!picked?.streamUrl) { setTorrentBusy('No video file in that torrent'); return }
+      setStreamUrl(picked.streamUrl)
+      setCurrentStreamUrl(picked.streamUrl)
+      setLoaded(true)
+      setError('')
+      setTorrentBusy(picked.name || 'Playing')
+    } catch {
+      setTorrentBusy('Torrent failed')
+    }
+  }
+
   async function applySub(item: { url: string; name: string; format: string }) {
     setSubtitleLabel(item.name)
     setSubtitleEnabled(true)
@@ -537,6 +596,10 @@ export default function PlayerPage() {
       return
     }
     saveProgress(true).catch(() => {})
+    if (!ratedRef.current) {
+      setShowRate(true)
+      return
+    }
     if (nextUp) { playNextEpisode(); return }
     if (autoplayNext && selectedMedia?.type === 'tv' && !autoNextBusy) {
       autoNextCount.current += 1
@@ -800,11 +863,6 @@ export default function PlayerPage() {
     try { (window as any).electronAPI?.exitFullscreen?.() } catch {}
     try { if (document.fullscreenElement) document.exitFullscreen() } catch {}
     const sessionSec = (Date.now() - startedAt.current) / 1000
-    if (!ratedRef.current && sessionSec > 90 && selectedMedia && selectedMedia.type !== 'iptv') {
-      setShowRate(true)
-      ;(window as any).__mfyLeavePage = page
-      return
-    }
     setShowRate(false)
     setCurrentStreamUrl('')
     setCurrentPage(page)
@@ -846,6 +904,11 @@ export default function PlayerPage() {
     }
     setShowRate(false)
     ratedRef.current = true
+    if (nextUp && selectedMedia?.type !== 'movie') {
+      playNextEpisode()
+      ratedRef.current = false
+      return
+    }
     const dest = (window as any).__mfyLeavePage || (selectedMedia?.id ? 'detail' : 'home')
     setCurrentStreamUrl('')
     setCurrentPage(dest)
@@ -961,6 +1024,7 @@ export default function PlayerPage() {
             <button type="button" onClick={() => {
               try { (window as any).electronAPI?.openVlc?.(streamUrl) || (window as any).electronAPI?.openExternal?.(streamUrl) } catch {}
             }} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>VLC</button>
+            <button type="button" onClick={() => setPlayerSource('webtorrent')} style={{ background: playerSource === 'webtorrent' ? '#FF1493' : '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>P2P</button>
             <div className="relative">
               <button type="button" onClick={() => setSubOpen((v) => !v)} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>
                 Subs {subtitleLabel ? `· ${subtitleLabel.slice(0, 10)}` : ''}
@@ -987,6 +1051,21 @@ export default function PlayerPage() {
         </div>
       </div>}
 
+      {(playerSource === 'webtorrent' || magnetBox) && (
+        <div style={{ position: 'fixed', right: 16, top: 70, width: 320, maxHeight: '70vh', overflow: 'auto', zIndex: 120, background: '#12080d', border: '1px solid rgba(255,20,147,0.35)', borderRadius: 16, padding: 12 }}>
+          <p style={{ color: '#FF1493', fontSize: 11, fontWeight: 800, letterSpacing: 1 }}>WEBTORRENT</p>
+          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, marginBottom: 8 }}>Paste a magnet or pick a ranked file. No VLC install needed.</p>
+          <input value={magnetBox} onChange={(e) => setMagnetBox(e.target.value)} placeholder="magnet:?xt=urn:btih:…" style={{ width: '100%', background: '#1a1016', color: '#fff', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', fontSize: 12, marginBottom: 8 }} />
+          <button type="button" onClick={() => playMagnet(magnetBox)} style={{ width: '100%', background: '#FF1493', color: '#fff', border: 'none', borderRadius: 8, padding: 8, fontWeight: 700, marginBottom: 10 }}>Play link</button>
+          {torrentBusy && <p style={{ fontSize: 11, color: '#fff', marginBottom: 8 }}>{torrentBusy}</p>}
+          {torrents.slice(0, 12).map((t) => (
+            <button key={t.url} type="button" onClick={() => playMagnet(t.url, t.name)} style={{ width: '100%', textAlign: 'left', background: 'rgba(255,255,255,0.04)', border: 'none', color: '#fff', borderRadius: 8, padding: '8px 10px', marginBottom: 6, cursor: 'pointer' }}>
+              <div style={{ fontSize: 12, fontWeight: 700 }}>{t.quality || 'Auto'} {t.size ? `· ${t.size}` : ''}</div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>{t.seeds ? `${t.seeds} seeds · ` : ''}{t.name}</div>
+            </button>
+          ))}
+        </div>
+      )}
       <div className="player-stage" style={{ position: 'relative', width: '100%', height: '100vh', minHeight: '100vh', overflow: 'hidden' }}
         onMouseMove={onMouseMove}
         onClick={(e) => { if ((e.target as HTMLElement).closest('button, input, a, .mfy-bar')) return; togglePlay() }}

@@ -23,11 +23,11 @@ export function vidyAnimeUrl(anilistId: number | string, episode = 1): string {
   return `${VIDY_BASE}/anime/${anilistId}/${episode}`
 }
 
-export type PlayerSource = 'vidy' | 'playtorrio' | 'simplstream' | 'zangetsu' | 'miruro' | 'mangayomi' | 'mediafusion' | 'flix' | 'nyaa' | 'animeflv' | 'onepace' | 'streamsppv' | 'sportsstreams' | 'moviebox' | 'vixsrc' | 'vidnest' | 'animepahe' | 'pengu' | 'pengu'
+export type PlayerSource = 'vidy' | 'playtorrio' | 'simplstream' | 'zangetsu' | 'miruro' | 'mangayomi' | 'mediafusion' | 'flix' | 'nyaa' | 'animeflv' | 'onepace' | 'streamsppv' | 'sportsstreams' | 'moviebox' | 'vixsrc' | 'vidnest' | 'animepahe' | 'pengu' | 'webtorrent'
 
 export const ANIME_SOURCES: PlayerSource[] = ['zangetsu', 'miruro', 'animepahe', 'playtorrio', 'simplstream', 'vidy', 'vixsrc', 'vidnest', 'moviebox', 'pengu']
 export const MOVIE_TV_SOURCES: PlayerSource[] = ['playtorrio', 'simplstream', 'vidy', 'moviebox', 'vixsrc', 'vidnest', 'pengu']
-export const ALL_PLAY_SOURCES: PlayerSource[] = ['playtorrio', 'simplstream', 'vidy', 'moviebox', 'vixsrc', 'vidnest', 'pengu', 'zangetsu', 'miruro', 'animepahe']
+export const ALL_PLAY_SOURCES: PlayerSource[] = ['playtorrio', 'simplstream', 'vidy', 'moviebox', 'vixsrc', 'vidnest', 'pengu', 'zangetsu', 'miruro', 'animepahe', 'webtorrent']
 
 export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId: number | string, season?: number, episode?: number, anime = false): string {
   const s = season ?? 1
@@ -80,8 +80,9 @@ export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId:
 
 export function isPlayerEmbed(url: string): boolean {
   if (!url) return false
+  if (/127\.0\.0\.1|localhost|magnet:/i.test(url)) return false
   if (/pengu\.uk\/signin|signin\.mp4/i.test(url)) return false
-  if (/pengu\.uk|vixsrc\.to|vidnest\.fun|vidsrc\.|vidlink\.pro|vidfast\.pro|moviebox\.ph|youtube|youtu\.be|invidious|nadeko|embed|player\.|epiembeds/i.test(url)) return true
+  if (/pengu\.uk|vixsrc\.to|vidnest\.fun|vidsrc\.|vidlink\.pro|vidfast\.pro|moviebox\.ph|youtube|youtu\.be|invidious|nadeko|embed|player\.|videasy|epiembeds/i.test(url)) return true
   if (/^https?:/i.test(url) && !/\.(mp4|m3u8|mkv|webm|avi)(\?|$)/i.test(url)) return true
   return false
 }
