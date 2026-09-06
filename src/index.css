@@ -67,9 +67,18 @@ a:focus-visible,
 ::-webkit-scrollbar-thumb:hover { background: rgba(255, 20, 147, 0.45); }
 * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.12) transparent; }
 
-.titlebar { height: 1px; display: flex; background: transparent; -webkit-app-region: drag; }
+.titlebar {
+  height: 36px;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 400;
+  display: flex;
+  align-items: stretch;
+  background: rgba(8,8,14,0.55);
+  -webkit-app-region: drag;
+}
 .titlebar-spacer { flex: 1; }
-.titlebar-controls { position: fixed; top: 0; right: 0; display: flex; z-index: 100; -webkit-app-region: no-drag; }
+.titlebar-controls { display: flex; margin-left: auto; z-index: 401; -webkit-app-region: no-drag; }
 .titlebar-button {
   width: 46px; height: 34px; display: grid; place-items: center;
   color: rgba(255,255,255,.72); background: transparent;
@@ -80,6 +89,7 @@ a:focus-visible,
 .titlebar-button.close:hover { background: #d92b46; color: #fff; }
 
 .mfy-navbar {
+  margin-top: 36px;
   height: 56px; min-height: 56px;
   display: flex; align-items: center; gap: 10px; padding: 0 12px; flex-wrap: nowrap; overflow: hidden;
   background: var(--glass-bg);

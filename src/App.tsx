@@ -244,8 +244,8 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
           </button>
         </div>
       )}
-      {currentPage !== 'player' && <TitleBar />}
-      <div className="flex-1 min-h-0 relative">
+      <TitleBar />
+      <div className="flex-1 min-h-0 relative" style={{ paddingTop: 36 }}>
       {currentPage !== 'player' && currentPage !== 'detail' && <AppleRail />}
       <main className="absolute inset-0 overflow-y-auto overflow-x-hidden">
         {currentPage === 'home' && <Board />}

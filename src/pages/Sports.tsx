@@ -164,7 +164,8 @@ export default function Sports() {
           return list.map((x) => ({ ...x, source: x.source || s.source }))
         }
         return [
-          { id: `${s.source}-embed`, streamNo: 1, language: 'English', hd: true, source: s.source, embedUrl: `https://embed.st/embed/${s.source}/${s.id}/1` },
+          { id: `${s.source}-embed`, streamNo: 1, language: 'English', hd: true, source: 'Nuvio Live', embedUrl: `https://embed.st/embed/${s.source}/${s.id}/1` },
+          { id: `${s.source}-footy`, streamNo: 1, language: 'WatchFooty', hd: true, source: 'Nuvio Live', embedUrl: `https://sportsembed.su/embed/${s.source}/${s.id}` },
           { id: `${s.source}-watch`, streamNo: 1, language: 'Watch page', hd: true, source: s.source, embedUrl: `https://streamed.pk/watch/${match.id}/${s.source}/1` },
         ] as SportStream[]
       }))
@@ -304,6 +305,9 @@ export default function Sports() {
           {(['live', 'upcoming', 'finished'] as const).map((w) => (
             <button key={w} type="button" onClick={() => setWhen(w)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold capitalize', when === w ? 'bg-white text-black' : 'bg-white/10 text-white/45')}>{w}</button>
           ))}
+          {(['streamed', 'nuvio', 'metegol'] as const).map((e) => (
+            <button key={e} type="button" onClick={() => setEngine(e)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold capitalize', engine === e ? 'bg-[#FF1493] text-white' : 'bg-white/10 text-white/45')}>{e === 'nuvio' ? 'Nuvio Live' : e}</button>
+          ))}
         </div>
       </div>
       <div className="flex items-center gap-2 mb-3">
@@ -362,7 +366,7 @@ export default function Sports() {
         })}
       </div>
 
-      {false && engine === 'nuvio' && (
+      {engine === 'nuvio' && (
         <section className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <Radio className="w-3.5 h-3.5 text-[#FF1493]" />
@@ -393,7 +397,7 @@ export default function Sports() {
           </div>
         </section>
       )}
-      {false && engine === 'metegol' && (
+      {engine === 'metegol' && (
         <section className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <Radio className="w-3.5 h-3.5 text-[#FF1493]" />

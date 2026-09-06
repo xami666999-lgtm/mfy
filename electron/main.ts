@@ -59,10 +59,13 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
-    minWidth: 1100,
-    minHeight: 700,
+    minWidth: 900,
+    minHeight: 600,
     frame: false,
     titleBarStyle: 'hidden',
+    movable: true,
+    resizable: true,
+    fullscreenable: true,
     backgroundColor: '#050810',
     icon: resolveIcon('icons', 'mfy-256.png'),
     webPreferences: {
@@ -276,10 +279,28 @@ ipcMain.on('window-maximize', () => {
 })
 ipcMain.on('window-fullscreen', () => {
   if (!mainWindow) return
-  mainWindow.setFullScreen(!mainWindow.isFullScreen())
+  if (mainWindow.isFullScreen()) {
+    mainWindow.setFullScreen(false)
+    mainWindow.setMovable(true)
+    return
+  }
+  mainWindow.setFullScreen(true)
 })
 ipcMain.on('window-exit-fullscreen', () => {
   mainWindow?.setFullScreen(false)
+  mainWindow?.setMovable(true)
+})
+ipcMain.on('window-move-display', () => {
+  if (!mainWindow) return
+  const { screen } = require('electron')
+  const displays = screen.getAllDisplays()
+  if (displays.length < 2) return
+  const cur = screen.getDisplayMatching(mainWindow.getBounds())
+  const next = displays.find((d: any) => d.id !== cur.id) || displays[0]
+  const b = next.workArea
+  mainWindow.setFullScreen(false)
+  mainWindow.setMovable(true)
+  mainWindow.setBounds({ x: b.x + 40, y: b.y + 40, width: Math.min(1400, b.width - 80), height: Math.min(900, b.height - 80) })
 })
 ipcMain.on('window-close', () => mainWindow?.close())
 ipcMain.handle('window-is-maximized', () => mainWindow?.isMaximized() ?? false)

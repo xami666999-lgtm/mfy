@@ -10,6 +10,9 @@ export default function TitleBar() {
         <button className="titlebar-button" onClick={() => api?.minimize()} aria-label="Minimize">
           <Minus />
         </button>
+        <button className="titlebar-button" onClick={() => api?.moveDisplay?.()} aria-label="Move to other screen" title="Move to other screen">
+          ⧉
+        </button>
         <button className="titlebar-button" onClick={() => api?.maximize()} aria-label="Maximize">
           <Square />
         </button>
