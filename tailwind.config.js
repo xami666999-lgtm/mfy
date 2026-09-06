@@ -25,8 +25,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Poppins', 'system-ui', 'sans-serif'],
+        sans: ['Figtree', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        display: ['Figtree', '-apple-system', 'sans-serif'],
       },
       boxShadow: {
         'neon-pink': '0 0 10px rgba(255, 20, 147, 0.5), 0 0 30px rgba(255, 20, 147, 0.2)',

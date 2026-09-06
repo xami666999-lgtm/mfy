@@ -61,25 +61,8 @@ export default function Franchise() {
         <ArrowLeft className="w-3.5 h-3.5" /> Board
       </button>
 
-      <div
-        className="relative h-56 sm:h-64 flex items-end p-6 md:p-10 bg-cover bg-center"
-        style={{
-          backgroundImage:
-            items.find((i) => i.backdropPath)?.backdropPath
-              ? `linear-gradient(to bottom, rgba(8,8,14,0.2), rgba(8,8,14,0.95)), url(${POSTER_URL.replace('/w500', '/w1280')}${items.find((i) => i.backdropPath)?.backdropPath})`
-              : undefined,
-        }}
-      >
-        <div className="flex items-center gap-4">
-          <div className="w-20 h-20 rounded-2xl bg-white/[0.06] border border-white/10 flex items-center justify-center overflow-hidden p-3 flex-shrink-0" style={{ background: franchise.color }}>
-            <img src={franchise.logo} alt="" className="max-w-full max-h-full object-contain" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-white tracking-tight" style={{ color: franchise.color }}>{franchise.name}</h2>
-            <p className="text-xs text-white/40 mt-1">{franchise.tagline}</p>
-            <p className="text-[11px] text-white/25 mt-2">{items.length} titles · in chronological order</p>
-          </div>
-        </div>
+      <div className="relative h-40 sm:h-48 flex items-center justify-center" style={{ background: franchise.color }}>
+        <img src={franchise.logo} alt={franchise.name} className="h-16 sm:h-20 w-auto max-w-[70%] object-contain drop-shadow-lg" />
       </div>
 
       <div className="px-6 md:px-10 pb-12">

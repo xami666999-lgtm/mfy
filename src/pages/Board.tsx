@@ -72,10 +72,13 @@ function Shelf({ title, items, onOpen, viewAll, onRemove }: { title: string; ite
               ? <img src={imgSrc(item)} alt="" referrerPolicy="no-referrer" loading="lazy" onError={(e) => { const el = e.currentTarget; el.onerror = null; el.style.display = 'none'; el.parentElement?.classList.add('has-fallback') }} />
               : <div className="poster-fallback">{titleOf(item)}</div>}
             <PosterMarks item={item} />
+            {(item.season || item.episode) && (
+              <span className="cw-badge">S{item.season || 1} E{item.episode || 1}</span>
+            )}
             {onRemove && (
               <span
                 role="button"
-                className="absolute top-1 right-1 z-20 h-6 w-6 rounded-full bg-black/75 text-white text-xs grid place-items-center"
+                className="absolute top-1 left-1 z-20 h-6 w-6 rounded-full bg-black/75 text-white text-xs grid place-items-center"
                 onClick={(e) => { e.stopPropagation(); onRemove(item) }}
               >✕</span>
             )}
@@ -84,8 +87,8 @@ function Shelf({ title, items, onOpen, viewAll, onRemove }: { title: string; ite
               {String(item.release_date || item.first_air_date || '').slice(0, 4) && (
                 <div className="text-[10px] text-white/55">{String(item.release_date || item.first_air_date || '').slice(0, 4)}</div>
               )}
-              {(item.season || item.episode || item.progressLabel) && (
-                <div className="text-[10px] text-[#FF1493]">{item.progressLabel || `S${item.season || 1} E${item.episode || 1}`}</div>
+              {item.progressLabel && !item.season && !item.episode && (
+                <div className="text-[10px] text-[#FF1493]">{item.progressLabel}</div>
               )}
             </div>
           </button>
@@ -328,9 +331,8 @@ export default function Board() {
           <div className="media-row-header"><h2 className="media-row-title">Providers</h2></div>
           <div className="scroll-row">
             {streamingServices.map((s, i) => (
-              <button key={s.id} type="button" className="mfy-brand-tile shrink-0 h-20 w-40 rounded-2xl border flex flex-col items-center justify-center gap-1 px-3" style={{ borderColor: s.color + '66', animationDelay: `${i * 0.18}s`, background: `${s.color}14` }} onClick={() => { setSelectedProviderId(s.id); setCurrentPage('provider') }}>
-                <img src={s.logo} alt="" className="h-8 w-auto max-w-[110px] object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
-                <span className="text-[11px] text-white/80">{s.name}</span>
+              <button key={s.id} type="button" className="mfy-brand-tile shrink-0 h-28 w-48 rounded-2xl border flex items-center justify-center px-4" style={{ borderColor: s.color + '55', animationDelay: `${i * 0.2}s` }} onClick={() => { setSelectedProviderId(s.id); setCurrentPage('provider') }}>
+                <img src={s.logo} alt={s.name} className="h-10 w-auto max-w-[140px] object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
               </button>
             ))}
           </div>
@@ -346,12 +348,11 @@ export default function Board() {
               { id: 'fast-furious', name: 'Fast & Furious', logo: '/logos/fast-furious.png', color: '#FF3B00' },
               { id: 'nickelodeon', name: 'Nickelodeon', logo: '/logos/nickelodeon.svg', color: '#EA5B0C' },
             ].map((f, i) => (
-              <button key={f.id} type="button" className="mfy-brand-tile shrink-0 h-20 w-44 rounded-2xl border flex flex-col items-center justify-center gap-1 px-3" style={{ borderColor: f.color + '88', animationDelay: `${i * 0.18}s`, background: `${f.color}22` }} onClick={() => {
+              <button key={f.id} type="button" className="mfy-brand-tile shrink-0 h-28 w-52 rounded-2xl border flex items-center justify-center px-4" style={{ borderColor: f.color + '77', animationDelay: `${i * 0.2}s` }} onClick={() => {
                 setSelectedFranchiseId(f.id)
                 setCurrentPage('franchise')
               }}>
-                <img src={f.logo} alt={f.name} className="h-9 w-auto max-w-[120px] object-contain" onError={(e) => { const el = e.currentTarget; if (!el.src.includes('./logos')) { el.src = '.' + f.logo } }} />
-                <span className="text-[11px] text-white/85">{f.name}</span>
+                <img src={f.logo} alt={f.name} className="h-12 w-auto max-w-[160px] object-contain" onError={(e) => { const el = e.currentTarget; if (!el.src.includes('./logos')) { el.src = '.' + f.logo } }} />
               </button>
             ))}
           </div>
@@ -362,7 +363,7 @@ export default function Board() {
             items={watchHistory.filter((h: any) => !isFinished(h)).slice(0, 16).map((h: any) => {
               const pct = watchPercent(h)
               const extra = cwExtra[String(h.mediaId)] || {}
-              return { id: h.mediaId, title: extra.title || h.title, poster_path: h.posterPath || extra.poster, media_type: h.mediaType, season: h.season, episode: h.episode, progressLabel: `${h.season ? `S${h.season}E${h.episode || 1} · ` : ''}${pct > 0 ? `${pct}%` : 'Resume'}`, progress: h.progress, duration: h.duration, progressPct: pct, vote_average: 0 }
+              return { id: h.mediaId, title: extra.title || h.title, poster_path: h.posterPath || extra.poster, media_type: h.mediaType, season: Number(h.season) || (h.mediaType === 'movie' ? 0 : 1), episode: Number(h.episode) || (h.mediaType === 'movie' ? 0 : 1), progressLabel: pct > 0 ? `${pct}%` : 'Resume', progress: h.progress, duration: h.duration, progressPct: pct, vote_average: 0 }
             })}
             onOpen={(h) => {
               setSelectedMedia({ id: h.id, type: h.media_type, season: h.season, episode: h.episode, title: h.title, poster_path: h.poster_path, resumeAt: h.progress } as any)
