@@ -233,8 +233,8 @@ export default function PlayerPage() {
         w.insertCSS(`
           html, body { width:100% !important; height:100% !important; margin:0 !important; background:#000 !important; overflow:hidden !important; }
           video, iframe { width:100vw !important; height:100vh !important; max-width:none !important; max-height:none !important; object-fit:${fit === 'full' ? 'contain' : fit} !important; background:#000 !important; }
-          video::cue, ::cue { font-size: ${subSize}em !important; line-height: 1.25; background: ${subBg ? 'rgba(0,0,0,0.55)' : 'transparent'} !important; background-color: ${subBg ? 'rgba(0,0,0,0.55)' : 'transparent'} !important; text-shadow: none !important; -webkit-text-stroke: 0 !important; color: #fff !important; }
-          video::-webkit-media-controls, video::-webkit-media-controls-enclosure, .vjs-control-bar, .jw-controlbar { display: none !important; opacity: 0 !important; height: 0 !important; }
+          video::cue, ::cue { font-size: ${subSize}em !important; line-height: 1.25; background: none !important; background-color: ${subBg ? 'rgba(0,0,0,0.45)' : 'transparent'} !important; text-shadow: none !important; -webkit-text-stroke: 0 !important; color: #fff !important; }
+          video::-webkit-media-controls, video::-webkit-media-controls-enclosure, video::-webkit-media-controls-panel, .vjs-control-bar, .jw-controlbar, .ytp-chrome-bottom, .plyr__controls { display: none !important; opacity: 0 !important; height: 0 !important; pointer-events: none !important; }
         `)
         w.executeJavaScript(`document.querySelectorAll('video').forEach(v=>{
           v.style.objectFit='${fit === 'full' ? 'contain' : fit}';
@@ -281,7 +281,8 @@ export default function PlayerPage() {
     v.load()
     v.play().catch(() => {})
     const onMeta = () => {
-      const at = Number((selectedMedia as any)?.resumeAt || useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id))?.progress || 0)
+      const row = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id) && Number(h.season || 0) === Number(selectedMedia?.season || 0) && Number(h.episode || 0) === Number(selectedMedia?.episode || 0))
+      const at = Number((selectedMedia as any)?.resumeAt || row?.progress || 0)
       if (at > 8 && v.currentTime < 5) v.currentTime = at
     }
     const onTime = () => { setProgress(v.currentTime || 0); setDur(Number.isFinite(v.duration) ? v.duration : 0) }
@@ -570,12 +571,16 @@ export default function PlayerPage() {
     setShowNext(false)
     setGate(true)
     setLoaded(false)
+    startedAt.current = Date.now()
+    setProgress(0)
+    setDur(0)
     setSelectedMedia({
       ...selectedMedia,
       type: 'tv',
       season,
       episode,
       title: (selectedMedia as any).title,
+      resumeAt: 0,
     } as any)
     const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, season, episode, isAnimeItem(selectedMedia))
     setCurrentStreamUrl(url)
@@ -933,7 +938,7 @@ export default function PlayerPage() {
       <TogetherPanel streamUrl={streamUrl} imdbOrId={String((selectedMedia as any)?.imdb || selectedMedia?.id || '')} type={selectedMedia?.type === 'movie' ? 'movie' : 'series'} onClose={() => setTogether(false)} onSplitSports={() => { setTogether(false); setCurrentPage('sports') }} />
     )}
     {showNext && nextUp && (
-      <div style={{ position: 'fixed', left: 24, bottom: 88, zIndex: 80, width: 420, maxWidth: 'calc(100vw - 48px)', background: 'rgba(12,8,14,0.94)', border: '1px solid rgba(255,20,147,0.35)', borderRadius: 16, padding: 12, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 12px 40px rgba(0,0,0,0.45)' }}>
+      <div style={{ position: 'fixed', right: 24, bottom: 88, zIndex: 80, width: 360, maxWidth: 'calc(100vw - 48px)', background: 'rgba(12,8,14,0.94)', border: '1px solid rgba(255,20,147,0.35)', borderRadius: 16, padding: 12, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 12px 40px rgba(0,0,0,0.45)' }}>
         {nextUp.still ? <img src={`${POSTER_URL.replace('/w500','/w300')}${nextUp.still}`} alt="" style={{ width: 120, height: 68, objectFit: 'cover', borderRadius: 10, flexShrink: 0 }} /> : <div style={{ width: 120, height: 68, borderRadius: 10, background: '#1a1016' }} />}
         <div style={{ minWidth: 0, flex: 1 }}>
           <p style={{ fontSize: 11, color: '#FF1493', fontWeight: 700, marginBottom: 2 }}>Next on {(selectedMedia as any)?.title || 'this show'}</p>

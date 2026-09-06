@@ -42,9 +42,25 @@ export interface SportStream {
 
 export function badgeUrl(badge?: string) {
   if (!badge) return ''
-  if (badge.startsWith('http')) return badge
-  if (badge.startsWith('/')) return `https://api.watchfooty.st${badge}`
-  return `${BASE}/api/images/proxy/${encodeURIComponent(badge)}.webp`
+  const raw = String(badge).trim()
+  if (/^https?:\/\//i.test(raw)) return raw
+  if (raw.startsWith('//')) return `https:${raw}`
+  const path = raw.startsWith('/') ? raw : `/${raw}`
+  if (path.startsWith('/api/')) return `${BASE}${path}`
+  const id = raw.replace(/^\/+/, '').replace(/\.(webp|png|jpe?g|svg)$/i, '')
+  return `${BASE}/api/images/badge/${encodeURIComponent(id)}.webp`
+}
+
+export function badgeFallbacks(badge?: string) {
+  if (!badge) return []
+  const raw = String(badge).trim()
+  const id = raw.replace(/^https?:\/\/[^/]+\//, '').replace(/^\/+/, '').replace(/\.(webp|png|jpe?g|svg)$/i, '')
+  return [
+    badgeUrl(badge),
+    `${BASE}/api/images/proxy/${encodeURIComponent(id)}.webp`,
+    `${BASE}/api/images/badge/${encodeURIComponent(id)}.png`,
+    `https://api.watchfooty.st/badges/${encodeURIComponent(id)}`,
+  ].filter((u, i, a) => u && a.indexOf(u) === i)
 }
 
 export function posterUrl(poster?: string) {

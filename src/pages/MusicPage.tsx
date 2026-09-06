@@ -250,7 +250,7 @@ export default function MusicPage() {
       <aside className="w-44 flex-shrink-0 bg-black p-4">
         <p className="text-[10px] tracking-[0.28em] text-[#FF1493] font-bold">MFY MUSIC</p>
         <p className="text-[10px] text-white/30 mb-5">Muffon layout</p>
-        {['Dashboard', 'Search', 'Charts', 'Favorites', 'Zuno'].map((n) => (
+        {['Dashboard', 'Search', 'Charts', 'Favorites', 'Zuno', 'ArtistGrid'].map((n) => (
           <button key={n} type="button" onClick={() => setTab(n)} className={`w-full text-left h-10 px-3 rounded-lg text-sm mb-1 ${tab === n ? 'bg-[#FF1493] text-white' : 'text-white/50 hover:text-white'}`}>{n}</button>
         ))}
       </aside>
@@ -263,7 +263,13 @@ export default function MusicPage() {
           </div>
         </form>
 
-        {tab === 'Zuno' ? (
+        {tab === 'ArtistGrid' ? (
+          <div className="rounded-2xl overflow-hidden bg-black min-h-[70vh]">
+            <p className="text-xs text-[#FF1493] mb-2">ArtistGrid · unreleased / tracker sheets</p>
+            {/* @ts-expect-error Electron webview */}
+            <webview src="https://artistgrid.cx" partition="persist:mfy-music" style={{ width: '100%', height: '72vh', background: '#000' }} allowpopups="true" />
+          </div>
+        ) : tab === 'Zuno' ? (
           <div className="rounded-2xl overflow-hidden bg-black min-h-[70vh]">
             <p className="text-xs text-[#FF1493] mb-2">Zuno · YouTube Music</p>
             {/* @ts-expect-error Electron webview */}

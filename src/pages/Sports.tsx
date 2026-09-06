@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Trophy, Radio, ExternalLink, Loader2, Activity, Flag, Volleyball, Target, Gauge, Swords, Medal, Siren, Dumbbell, Skull, Bike, Sparkles, PlayCircle, X, Search, Filter, SkipBack, SkipForward } from 'lucide-react'
-import { sportsApi, badgeUrl, posterUrl, timStreamsApi, watchfootyApi, type SportCategory, type SportMatch, type SportStream } from '../api/sports'
+import { sportsApi, badgeUrl, badgeFallbacks, posterUrl, timStreamsApi, watchfootyApi, type SportCategory, type SportMatch, type SportStream } from '../api/sports'
 import { iptvEnhancedApi } from '../api/iptv-enhanced'
 import { useStore } from '../store'
 import { addonCatalog, addonStreams, ADDONS } from '../api/stremioAddons'
@@ -60,6 +60,8 @@ export default function Sports() {
   const [timChannels, setTimChannels] = useState<any[]>([])
   const [footy, setFooty] = useState<any[]>([])
   const [timGenres, setTimGenres] = useState<any[]>([])
+  const [sportChrome, setSportChrome] = useState(true)
+  const [sportFull, setSportFull] = useState(false)
 
   const filteredMatches = useMemo(() => {
     const now = Date.now()
@@ -273,14 +275,18 @@ export default function Sports() {
       </aside>
       <div className="flex-1 p-5 min-w-0">
       {watchUrl && (
-        <div className="mb-5">
-          <button type="button" className="h-9 px-3 mb-2 rounded-full bg-white text-black text-sm font-semibold" onClick={() => { setWatchUrl(''); setWatchList([]) }}>Back</button>
-          <div className="aspect-video rounded-xl overflow-hidden bg-black relative">
+        <div className={sportFull ? 'fixed inset-0 z-[90] bg-black' : 'mb-5'} onMouseMove={() => setSportChrome(true)} onMouseLeave={() => setSportChrome(false)}>
+          {sportChrome && (
+            <button type="button" className="h-9 px-3 mb-2 rounded-full bg-white text-black text-sm font-semibold" onClick={() => { setWatchUrl(''); setWatchList([]); setSportFull(false) }}>Back</button>
+          )}
+          <div className={sportFull ? 'w-full h-full bg-black relative' : 'aspect-video rounded-xl overflow-hidden bg-black relative'}>
             {/* @ts-expect-error Electron webview */}
             <webview className="mfy-sport" src={watchUrl} partition="persist:mfy" style={{ width: '100%', height: '100%', pointerEvents: 'auto' }} allowpopups="false" />
+            {sportChrome && (
             <div className="absolute left-0 right-0 bottom-0 z-20 flex items-center gap-2 px-3 py-2 bg-gradient-to-t from-black/90 to-transparent">
               <button type="button" className="h-8 px-3 rounded-lg bg-white/10 text-white text-xs" onClick={() => sportSeek(-5)}>−5s</button>
               <button type="button" className="h-8 px-3 rounded-lg bg-white/10 text-white text-xs" onClick={() => sportSeek(5)}>+5s</button>
+              <button type="button" className="h-8 px-3 rounded-lg bg-white/10 text-white text-xs" onClick={() => setSportFull((v) => !v)}>{sportFull ? 'Exit full' : 'Fullscreen'}</button>
               <select
                 className="ml-auto h-8 rounded-lg bg-[#12121a] text-white text-xs border border-white/15 px-2"
                 value={watchQuality || watchUrl}
@@ -293,6 +299,7 @@ export default function Sports() {
                 ))}
               </select>
             </div>
+            )}
           </div>
         </div>
       )}
@@ -745,7 +752,7 @@ export default function Sports() {
       {filteredMatches.length === 0 && searchQuery && !loading && (
         <p className="text-xs text-white/25 text-center py-10">No matches found for "<span className="text-white/60">{searchQuery}</span>"</p>
       )}
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         {filteredMatches.map((m) => (
           <MatchCard key={m.id} match={m} onOpen={() => openMatch(m)} formatDate={formatDate} />
         ))}
@@ -758,6 +765,24 @@ export default function Sports() {
       </div>
     </div>
     </>
+  )
+}
+
+function TeamCrest({ badge, name }: { badge?: string; name?: string }) {
+  const list = badgeFallbacks(badge)
+  const [i, setI] = useState(0)
+  const src = list[i]
+  if (!src) {
+    return <div className="w-11 h-11 rounded-full bg-white/10 grid place-items-center text-[9px] font-bold text-white/70">{(name || '?').slice(0, 2).toUpperCase()}</div>
+  }
+  return (
+    <img
+      src={src}
+      alt=""
+      className="w-11 h-11 object-contain"
+      referrerPolicy="no-referrer"
+      onError={() => setI((n) => n + 1)}
+    />
   )
 }
 
@@ -775,24 +800,25 @@ function MatchCard({
   const parsed = String(match.title || '').match(/(\d+)\s*[-–]\s*(\d+)/)
   const hs = match.score?.home ?? parsed?.[1]
   const as = match.score?.away ?? parsed?.[2]
+  const homeName = home?.name || match.title.split(/vs|v\s/i)[0] || ''
+  const awayName = away?.name || match.title.split(/vs|v\s/i)[1] || ''
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="flex items-center gap-3 p-3 rounded-xl bg-[#0e141c] border border-white/10 hover:border-[#22c55e]/40 text-left transition-all w-full"
+      className="flex items-center gap-2 p-3 rounded-2xl bg-[#1b2433] border border-white/8 hover:border-[#22c55e]/40 text-left transition-all w-full"
     >
       <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
-        <div className="text-xs text-white/80 truncate text-right">{home?.name || match.title.split(/vs|v\s/i)[0]}</div>
-        {home?.badge ? <img src={badgeUrl(home.badge)} alt="" className="w-9 h-9 object-contain bg-white/5 rounded-full" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} /> : <div className="w-9 h-9 rounded-full bg-white/10" />}
+        <div className="text-xs text-white truncate text-right">{homeName}</div>
+        <TeamCrest badge={home?.badge} name={homeName} />
       </div>
-      <div className="flex flex-col items-center w-16 flex-shrink-0">
-        {match.live && <span className="text-[8px] text-red-400 font-bold tracking-widest">LIVE</span>}
-        <div className="text-lg font-bold text-white tabular-nums">{hs != null && as != null ? `${hs} - ${as}` : 'VS'}</div>
-        <div className="text-[9px] text-white/30">{match.date ? formatDate(match.date) : match.category}</div>
+      <div className="flex flex-col items-center w-[72px] flex-shrink-0">
+        {match.live ? <span className="text-[9px] text-white bg-red-500 px-1.5 rounded font-bold">LIVE</span> : <span className="text-[9px] text-white/40">{formatDate(match.date)}</span>}
+        <div className="text-xl font-bold text-white tabular-nums leading-tight">{hs != null && as != null ? `${hs}  ${as}` : 'VS'}</div>
       </div>
       <div className="flex-1 flex items-center gap-2 min-w-0">
-        {away?.badge ? <img src={badgeUrl(away.badge)} alt="" className="w-9 h-9 object-contain bg-white/5 rounded-full" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} /> : <div className="w-9 h-9 rounded-full bg-white/10" />}
-        <div className="text-xs text-white/80 truncate">{away?.name || match.title.split(/vs|v\s/i)[1] || ''}</div>
+        <TeamCrest badge={away?.badge} name={awayName} />
+        <div className="text-xs text-white truncate">{awayName}</div>
       </div>
     </button>
   )
