@@ -53,6 +53,8 @@ export default function PlayerPage() {
   const [subBg, setSubBg] = useState(false)
   const [subList, setSubList] = useState<{ url: string; name: string; lang: string; format: string }[]>([])
   const [subOpen, setSubOpen] = useState(false)
+  const cuesRef = useRef<{ start: number; end: number; text: string }[]>([])
+  const [cueText, setCueText] = useState('')
   const [torrents, setTorrents] = useState<{ url: string; name: string; quality: string; size?: string; seeds?: string }[]>([])
   const [magnetBox, setMagnetBox] = useState('')
   const [torrentBusy, setTorrentBusy] = useState('')
@@ -206,9 +208,10 @@ export default function PlayerPage() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (e.repeat) return
       if (e.code === 'Space') { e.preventDefault(); togglePlay() }
-      if (e.key === 'ArrowRight') seekBy(5)
-      if (e.key === 'ArrowLeft') seekBy(-5)
+      if (e.key === 'ArrowRight') { e.preventDefault(); seekBy(5) }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); seekBy(-5) }
       if (e.key === 'f' || e.key === 'F') toggleFullscreen()
       if (e.key === 'n' || e.key === 'N') setShowRate(true)
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); goBack() }
@@ -272,6 +275,16 @@ export default function PlayerPage() {
     const id = setInterval(() => { saveProgress(false).catch(() => {}) }, 20000)
     return () => clearInterval(id)
   }, [selectedMedia?.id, selectedMedia?.episode, streamUrl])
+
+  useEffect(() => {
+    if (!subtitleEnabled) { setCueText(''); return }
+    const id = setInterval(() => {
+      const t = progress
+      const hit = cuesRef.current.find((c) => t >= c.start && t <= c.end)
+      setCueText(hit?.text || '')
+    }, 200)
+    return () => clearInterval(id)
+  }, [subtitleEnabled, progress])
 
   useEffect(() => {
     const v = videoRef.current
@@ -490,10 +503,31 @@ export default function PlayerPage() {
     }
   }
 
+  function parseVtt(raw: string) {
+    const toSec = (s: string) => {
+      const p = s.trim().replace(',', '.').split(':').map(Number)
+      if (p.length === 3) return p[0] * 3600 + p[1] * 60 + p[2]
+      if (p.length === 2) return p[0] * 60 + p[1]
+      return 0
+    }
+    const blocks = raw.replace(/\r/g, '').split(/\n\n+/)
+    const out: { start: number; end: number; text: string }[] = []
+    for (const b of blocks) {
+      const line = b.split('\n').find((l) => l.includes('-->'))
+      if (!line) continue
+      const [a, c] = line.split('-->')
+      const text = b.split('\n').filter((l) => l && !l.includes('-->') && !/^\d+$/.test(l) && l !== 'WEBVTT').join('\n').trim()
+      if (!text) continue
+      out.push({ start: toSec(a), end: toSec(c), text })
+    }
+    return out
+  }
+
   async function applySub(item: { url: string; name: string; format: string }) {
     setSubtitleLabel(item.name)
     setSubtitleEnabled(true)
     setSubOpen(false)
+    setCueText('')
     try {
       const api = (window as any).electronAPI
       const raw = api?.fetchText ? (await api.fetchText(item.url, 15000))?.text : await (await fetch(item.url)).text()
@@ -502,17 +536,11 @@ export default function PlayerPage() {
       if (!/^WEBVTT/m.test(raw)) {
         vtt = 'WEBVTT\n\n' + raw.replace(/\r/g, '').replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2')
       }
+      cuesRef.current = parseVtt(vtt)
       const w = document.querySelector('webview') as any
-      const payload = JSON.stringify(vtt)
       await w?.executeJavaScript?.(`(() => {
         const v = document.querySelector('video'); if (!v) return false;
-        [...v.querySelectorAll('track[data-mfy]')].forEach((t) => t.remove());
-        const blob = new Blob([${payload}], { type: 'text/vtt' });
-        const url = URL.createObjectURL(blob);
-        const t = document.createElement('track');
-        t.kind = 'subtitles'; t.label = 'MFY'; t.srclang = 'en'; t.default = true; t.dataset.mfy = '1'; t.src = url;
-        v.appendChild(t);
-        t.addEventListener('load', () => { try { v.textTracks[v.textTracks.length-1].mode = 'showing' } catch(e) {} });
+        [...v.querySelectorAll('track')].forEach((t) => { try { t.track.mode = 'hidden' } catch(e) {} t.remove(); });
         return true;
       })()`)
     } catch {}
@@ -661,8 +689,12 @@ export default function PlayerPage() {
     seekBy(t - (progress || 0))
   }
 
+  const lastSeekAt = useRef(0)
   function seekBy(delta: number) {
     if (!Number.isFinite(delta) || !delta) return
+    const now = Date.now()
+    if (now - lastSeekAt.current < 280) return
+    lastSeekAt.current = now
     try {
       const w = document.querySelector('webview') as any
       w?.executeJavaScript?.(`document.querySelectorAll('video').forEach(v => { v.currentTime = Math.max(0, (v.currentTime || 0) + (${delta})); })`)
@@ -802,8 +834,8 @@ export default function PlayerPage() {
         mediaType: selectedMedia.type === 'movie' ? 'movie' : 'tv',
         title: String((selectedMedia as any).title || (selectedMedia as any).name || selectedMedia.id),
         posterPath: (selectedMedia as any).poster_path || null,
-        progress: Math.min(p, sessionSec + 2),
-        duration: truth || expectedSec || 0,
+        progress: Math.max(p, sessionSec > 20 ? sessionSec : p),
+        duration: Math.max(truth || 0, expectedSec || 0),
         season: selectedMedia.season,
         episode: selectedMedia.episode,
         watchedAt: new Date().toISOString(),
@@ -881,6 +913,24 @@ export default function PlayerPage() {
   }
 
   function finishRate(score?: number, note?: string) {
+    saveProgress(true).catch(() => {})
+    if (selectedMedia && !nextUp && selectedMedia.type !== 'movie') {
+      upsertHistory({
+        id: `${selectedMedia.id}-${selectedMedia.type}-series`,
+        mediaId: selectedMedia.id,
+        mediaType: 'tv',
+        title: String((selectedMedia as any).title || selectedMedia.id),
+        posterPath: (selectedMedia as any).poster_path || null,
+        progress: expectedSec || 1,
+        duration: expectedSec || 1,
+        season: selectedMedia.season,
+        episode: selectedMedia.episode,
+        watchedAt: new Date().toISOString(),
+        profileId: useStore.getState().currentProfile?.id || 'default',
+        completed: true,
+        seriesCompleted: true,
+      } as any)
+    }
     if (selectedMedia && isAnimeItem(selectedMedia)) {
       const name = String((selectedMedia as any).title || (selectedMedia as any).name || selectedMedia.id)
       const url = `https://anisync.qzz.io/?title=${encodeURIComponent(name)}&ep=${selectedMedia.episode || 1}`
@@ -1075,6 +1125,11 @@ export default function PlayerPage() {
         onMouseMove={onMouseMove}
         onClick={(e) => { if ((e.target as HTMLElement).closest('button, input, a, .mfy-bar')) return; togglePlay() }}
       >
+        {subtitleEnabled && cueText && (
+          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 92, zIndex: 50, textAlign: 'center', pointerEvents: 'none' }}>
+            <span style={{ display: 'inline-block', maxWidth: '80%', color: '#fff', fontSize: `${Math.round(18 * subSize)}px`, fontWeight: 600, lineHeight: 1.35, background: subBg ? 'rgba(0,0,0,0.55)' : 'transparent', padding: subBg ? '4px 10px' : 0, borderRadius: 8, whiteSpace: 'pre-wrap' }}>{cueText}</span>
+          </div>
+        )}
         {(gate || (!loaded && !error)) && (
           <div style={{
             position: 'absolute', inset: 0, zIndex: 40,

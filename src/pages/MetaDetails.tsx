@@ -353,6 +353,9 @@ export default function MetaDetails() {
               style={{ fontFamily: 'system-ui, Segoe UI, sans-serif' }}
             >
               {title}
+              {watchHistory.some((h) => String(h.mediaId) === String(selectedMedia?.id) && ((h as any).seriesCompleted || (selectedMedia?.type === 'movie' && h.completed))) && (
+                <span className="ml-3 inline-flex w-8 h-8 rounded-full bg-emerald-500 text-white text-lg items-center justify-center align-middle">✓</span>
+              )}
             </h1>
 
             <div className="flex flex-wrap items-center gap-2 text-[12px] text-white/55 mb-3">

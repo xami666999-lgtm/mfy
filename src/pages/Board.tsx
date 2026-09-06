@@ -63,7 +63,7 @@ function Shelf({ title, items, onOpen, viewAll, onRemove }: { title: string; ite
       <div className="scroll-row">
         {items.filter(Boolean).map((item: any) => (
           <button
-            key={`${title}-${item.id || titleOf(item)}`}
+            key={`${title}-${item.id}-${item.season || 0}-${item.episode || 0}-${item.media_type || ''}`}
             type="button"
             className="poster-card"
             onClick={() => onOpen(item)}
@@ -360,7 +360,16 @@ export default function Board() {
         {watchHistory.length > 0 && (
           <Shelf
             title="Continue Watching"
-            items={watchHistory.filter((h: any) => !isFinished(h)).slice(0, 16).map((h: any) => {
+            items={(() => {
+              const seen = new Map<string, any>()
+              for (const h of watchHistory) {
+                if (isFinished(h) || (h as any).seriesCompleted) continue
+                const key = `${h.mediaType}-${h.mediaId}`
+                const prev = seen.get(key)
+                if (!prev || new Date(h.watchedAt || 0).getTime() > new Date(prev.watchedAt || 0).getTime()) seen.set(key, h)
+              }
+              return [...seen.values()].slice(0, 16)
+            })().map((h: any) => {
               const pct = watchPercent(h)
               const extra = cwExtra[String(h.mediaId)] || {}
               return { id: h.mediaId, title: extra.title || h.title, poster_path: h.posterPath || extra.poster, media_type: h.mediaType, season: Number(h.season) || (h.mediaType === 'movie' ? 0 : 1), episode: Number(h.episode) || (h.mediaType === 'movie' ? 0 : 1), progressLabel: pct > 0 ? `${pct}%` : 'Resume', progress: h.progress, duration: h.duration, progressPct: pct, vote_average: 0 }

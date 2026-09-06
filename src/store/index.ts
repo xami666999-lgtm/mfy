@@ -256,8 +256,16 @@ export const useStore = create<AppState>((set, get) => ({
       mediaId: String(item.mediaId),
       title: item.title || prev?.title,
       posterPath: item.posterPath || prev?.posterPath || null,
-      progress: Number(item.progress) > 2 ? Number(item.progress) : Number(prev?.progress || 0),
-      duration: Number(item.duration) > 30 ? Number(item.duration) : Number(prev?.duration || 0),
+      progress: (() => {
+        const np = Number(item.progress) || 0
+        const op = Number(prev?.progress) || 0
+        if (item.completed) return Math.max(np, op, Number(item.duration || prev?.duration || 0) * 0.99)
+        if (op > 45 && np > 0 && np < op - 40 && np < op * 0.7) return op
+        return Math.max(np, op > 2 && np < 2 ? op : np)
+      })(),
+      duration: Math.max(Number(item.duration) || 0, Number(prev?.duration) || 0),
+      completed: !!(item.completed || prev?.completed),
+      seriesCompleted: !!(item.seriesCompleted || prev?.seriesCompleted),
     }
     const next = [merged, ...rest].slice(0, 50)
     set({ watchHistory: next })

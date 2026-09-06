@@ -6,12 +6,11 @@ export function watchPercent(h?: { progress?: number; duration?: number } | null
   return Math.max(0, Math.min(100, Math.round((p / d) * 100)))
 }
 
-export function isFinished(h?: { progress?: number; duration?: number; completed?: boolean } | null) {
+export function isFinished(h?: { progress?: number; duration?: number; completed?: boolean; seriesCompleted?: boolean } | null) {
   if (!h) return false
+  if (h.completed || h.seriesCompleted) return true
   const d = Number(h.duration) || 0
-  const p = Number(h.progress) || 0
   if (d < 8 * 60) return false
-  if (h.completed && p >= d * 0.88) return true
   return watchPercent(h) >= 92
 }
 
