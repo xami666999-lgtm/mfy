@@ -74,6 +74,9 @@ export default function PlayerPage() {
   const [stillWatching, setStillWatching] = useState<null | 'idle' | 'next'>(null)
   const autoNextCount = useRef(0)
   const startedAt = useRef(Date.now())
+  const bestProgress = useRef(0)
+  const bestDuration = useRef(0)
+  const progressKey = useRef('')
   const [showRate, setShowRate] = useState(false)
   const [countdown, setCountdown] = useState(5)
   const [gate, setGate] = useState(true)
@@ -257,19 +260,20 @@ export default function PlayerPage() {
   useEffect(() => {
     const w = document.querySelector('webview') as any
     if (!w?.executeJavaScript) return
-    const row = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id) && h.season === selectedMedia?.season && h.episode === selectedMedia?.episode)
-    const at = Number((selectedMedia as any)?.resumeAt || row?.progress || 0)
-    const cap = expectedSec > 60 ? expectedSec * 0.85 : Number(row?.duration || 0) * 0.85
-    const done = !!(row as any)?.completed || (cap > 60 && at >= cap)
-    if (!(at > 12) || done) return
-    const seekTo = cap > 0 ? Math.min(at, cap) : at
-    const id = setTimeout(() => {
+    const row = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id) && Number(h.season || 0) === Number(selectedMedia?.season || 0) && Number(h.episode || 0) === Number(selectedMedia?.episode || 0))
+    const at = Math.max(Number((selectedMedia as any)?.resumeAt || 0), Number(row?.progress || 0), bestProgress.current)
+    if (!(at > 15) || (row as any)?.completed) return
+    const seekTo = at
+    let tries = 0
+    const id = setInterval(() => {
+      tries += 1
       try {
-        w.executeJavaScript(`(() => { const v = document.querySelector('video'); if (v && v.currentTime < 8) v.currentTime = ${seekTo}; })()`)
+        w.executeJavaScript(`(() => { const v = document.querySelector('video'); if (!v) return; if (v.readyState >= 1 && Math.abs((v.currentTime||0) - ${seekTo}) > 8) v.currentTime = ${seekTo}; })()`)
       } catch {}
-    }, 1800)
-    return () => clearTimeout(id)
-  }, [streamUrl, selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode, expectedSec])
+      if (tries >= 8) clearInterval(id)
+    }, 900)
+    return () => clearInterval(id)
+  }, [streamUrl, selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
 
   useEffect(() => {
     const id = setInterval(() => { saveProgress(false).catch(() => {}) }, 20000)
@@ -385,8 +389,16 @@ export default function PlayerPage() {
   }, [])
 
   useEffect(() => {
-    const id = setInterval(() => { saveProgress().catch(() => {}) }, 8000)
-    return () => clearInterval(id)
+    const id = setInterval(() => { saveProgress(false).catch(() => {}) }, 4000)
+    const onHide = () => { saveProgress(false).catch(() => {}) }
+    window.addEventListener('beforeunload', onHide)
+    document.addEventListener('visibilitychange', onHide)
+    return () => {
+      clearInterval(id)
+      window.removeEventListener('beforeunload', onHide)
+      document.removeEventListener('visibilitychange', onHide)
+      saveProgress(false).catch(() => {})
+    }
   }, [selectedMedia?.id, selectedMedia?.episode, playerSource])
 
   useEffect(() => {
@@ -395,8 +407,21 @@ export default function PlayerPage() {
         const w = document.querySelector('webview') as any
         const got = await w?.executeJavaScript?.(`(() => { const v = document.querySelector('video'); if (!v) return null; return { p: v.currentTime || 0, d: v.duration || 0, paused: !!v.paused } })()`)
         if (got) {
-          if (Number(got.p) >= 0) setProgress(Number(got.p))
-          if (Number.isFinite(Number(got.d)) && Number(got.d) > 1) setDur(Number(got.d))
+          const cur = Number(got.p) || 0
+          const d = Number(got.d)
+          if (cur >= bestProgress.current - 12) {
+            bestProgress.current = Math.max(bestProgress.current, cur)
+            setProgress(cur)
+          } else if (bestProgress.current > 30 && cur < 12) {
+            setProgress(bestProgress.current)
+          } else {
+            setProgress(cur)
+            if (cur > 0) bestProgress.current = cur
+          }
+          if (Number.isFinite(d) && d > 60) {
+            bestDuration.current = Math.max(bestDuration.current, d)
+            setDur(d)
+          }
           setPlaying(!got.paused)
         }
       } catch {}
@@ -405,11 +430,22 @@ export default function PlayerPage() {
   }, [streamUrl])
 
   useEffect(() => {
+    const key = `${selectedMedia?.id}-${selectedMedia?.season || 0}-${selectedMedia?.episode || 0}`
+    if (progressKey.current !== key) {
+      progressKey.current = key
+      const row = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id) && Number(h.season || 0) === Number(selectedMedia?.season || 0) && Number(h.episode || 0) === Number(selectedMedia?.episode || 0))
+      let backup = { p: 0, d: 0 }
+      try { backup = JSON.parse(localStorage.getItem(`mfy-ep-${selectedMedia?.id}-${selectedMedia?.season || 0}-${selectedMedia?.episode || 0}`) || '{}') } catch {}
+      bestProgress.current = Math.max(Number((selectedMedia as any)?.resumeAt || 0), Number(row?.progress || 0), Number(backup.p || 0), 0)
+      bestDuration.current = Math.max(Number(row?.duration || 0), Number(backup.d || 0), 0)
+      setProgress(bestProgress.current)
+      if (bestDuration.current > 0) setDur(bestDuration.current)
+    }
     startedAt.current = Date.now()
     setShowUI(true)
     const id = setTimeout(() => setShowUI(false), 2500)
     return () => clearTimeout(id)
-  }, [streamUrl])
+  }, [streamUrl, selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
 
   useEffect(() => {
     setShowNext(false)
@@ -600,6 +636,9 @@ export default function PlayerPage() {
     setGate(true)
     setLoaded(false)
     startedAt.current = Date.now()
+    bestProgress.current = 0
+    bestDuration.current = 0
+    progressKey.current = `${selectedMedia.id}-${season}-${episode}`
     setProgress(0)
     setDur(0)
     setSelectedMedia({
@@ -815,69 +854,25 @@ export default function PlayerPage() {
 
   async function saveProgress(forceDone = false) {
     if (!selectedMedia || selectedMedia.type === 'iptv') return
-    let p = progress
-    let d = dur
+    let p = Math.max(progress, bestProgress.current)
+    let d = Math.max(Number.isFinite(dur) ? dur : 0, bestDuration.current, expectedSec || 0)
     try {
       const w = document.querySelector('webview') as any
       const got = await w?.executeJavaScript?.(`(() => { const v = document.querySelector('video'); if (!v) return null; return { p: v.currentTime || 0, d: v.duration || 0 } })()`)
-      if (got && Number(got.p) > 1) { p = Number(got.p); if (Number.isFinite(Number(got.d)) && Number(got.d) > 1) d = Number(got.d) }
+      if (got) {
+        const cur = Number(got.p) || 0
+        const vd = Number(got.d)
+        if (cur >= bestProgress.current - 15) p = Math.max(p, cur)
+        if (Number.isFinite(vd) && vd > 60) d = Math.max(d, vd)
+      }
     } catch {}
-    const sessionSec = (Date.now() - startedAt.current) / 1000
-    const truth = expectedSec > 8 * 60 ? expectedSec : (d > 8 * 60 ? d : expectedSec || d)
-    if (d > 0 && expectedSec > 8 * 60 && d < expectedSec * 0.7) d = expectedSec
-    if (p > truth && truth > 0) p = Math.min(p, truth)
-    const realDur = Number.isFinite(truth) && truth >= 8 * 60
-    if (!realDur || sessionSec < 8) {
-      upsertHistory({
-        id: `${selectedMedia.id}-${selectedMedia.type}-${selectedMedia.season || 0}-${selectedMedia.episode || 0}`,
-        mediaId: selectedMedia.id,
-        mediaType: selectedMedia.type === 'movie' ? 'movie' : 'tv',
-        title: String((selectedMedia as any).title || (selectedMedia as any).name || selectedMedia.id),
-        posterPath: (selectedMedia as any).poster_path || null,
-        progress: Math.max(p, sessionSec > 20 ? sessionSec : p),
-        duration: Math.max(truth || 0, expectedSec || 0),
-        season: selectedMedia.season,
-        episode: selectedMedia.episode,
-        watchedAt: new Date().toISOString(),
-        profileId: useStore.getState().currentProfile?.id || 'default',
-        completed: false,
-      })
-      return
-    }
-    const reallyDone = forceDone || (realDur && sessionSec > 90 && p / truth >= 0.92)
-    if (reallyDone && selectedMedia.type !== 'movie') {
-      const base = {
-        mediaId: String(selectedMedia.id),
-        mediaType: 'tv' as const,
-        title: String((selectedMedia as any).title || (selectedMedia as any).name || selectedMedia.id),
-        posterPath: (selectedMedia as any).poster_path || null,
-        watchedAt: new Date().toISOString(),
-        profileId: useStore.getState().currentProfile?.id || 'default',
-      }
-      upsertHistory({
-        ...base,
-        id: `${selectedMedia.id}-tv-${selectedMedia.season || 1}-${selectedMedia.episode || 1}`,
-        progress: Math.max(d, p, 1),
-        duration: Math.max(d, 1),
-        season: selectedMedia.season || 1,
-        episode: selectedMedia.episode || 1,
-        completed: true,
-      })
-      if (nextUp) {
-        upsertHistory({
-          ...base,
-          id: `${selectedMedia.id}-tv-${nextUp.season}-${nextUp.episode}`,
-          progress: 1,
-          duration: 0,
-          season: nextUp.season,
-          episode: nextUp.episode,
-          completed: false,
-        })
-      }
-      return
-    }
-    if (reallyDone && d > 30) p = d
-    const prev = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia.id))
+    p = Math.max(p, bestProgress.current)
+    if (p > 0) bestProgress.current = Math.max(bestProgress.current, p)
+    if (d > 0) bestDuration.current = Math.max(bestDuration.current, d)
+    const prev = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia.id) && Number(h.season || 0) === Number(selectedMedia.season || 0) && Number(h.episode || 0) === Number(selectedMedia.episode || 0))
+    d = Math.max(d, Number(prev?.duration || 0), bestDuration.current)
+    p = Math.max(p, Number(prev?.progress || 0) < p ? p : (p >= (Number(prev?.progress || 0) - 15) ? p : Number(prev?.progress || 0)))
+    const reallyDone = !!(forceDone || (d >= 15 * 60 && p / d >= 0.92))
     upsertHistory({
       id: `${selectedMedia.id}-${selectedMedia.type}-${selectedMedia.season || 0}-${selectedMedia.episode || 0}`,
       mediaId: selectedMedia.id,
@@ -890,8 +885,9 @@ export default function PlayerPage() {
       episode: selectedMedia.episode,
       watchedAt: new Date().toISOString(),
       profileId: useStore.getState().currentProfile?.id || 'default',
-      completed: reallyDone,
+      completed: reallyDone || !!prev?.completed,
     })
+    try { localStorage.setItem(`mfy-ep-${selectedMedia.id}-${selectedMedia.season || 0}-${selectedMedia.episode || 0}`, JSON.stringify({ p, d, completed: reallyDone, at: Date.now() })) } catch {}
   }
 
   const ratedRef = useRef(false)
@@ -1203,7 +1199,7 @@ export default function PlayerPage() {
           <div className="mfy-bar" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 300, padding: '18px 22px 20px', background: 'linear-gradient(0deg, rgba(0,0,0,0.92) 0%, transparent 100%)', pointerEvents: 'auto' }}
             onClick={(e) => e.stopPropagation()}>
             {(() => {
-              const total = expectedSec > 0 ? Math.max(expectedSec, Number.isFinite(dur) ? dur : 0) : (Number.isFinite(dur) ? dur : 0)
+              const total = Math.max(expectedSec || 0, Number.isFinite(dur) ? dur : 0, bestDuration.current || 0, progress || 0)
               const left = Math.max(0, total - progress)
               const pct = total > 0 ? Math.min(100, (progress / total) * 100) : 0
               return (
