@@ -256,20 +256,22 @@ export const useStore = create<AppState>((set, get) => ({
       mediaId: String(item.mediaId),
       title: item.title || prev?.title,
       posterPath: item.posterPath || prev?.posterPath || null,
-      progress: (() => {
-        const np = Number(item.progress) || 0
-        const op = Number(prev?.progress) || 0
-        if (item.completed) return Math.max(np, op, Number(item.duration || prev?.duration || 0) * 0.99)
-        if (op > 45 && np > 0 && np < op - 40 && np < op * 0.7) return op
-        return Math.max(np, op > 2 && np < 2 ? op : np)
-      })(),
+      progress: Math.max(Number(item.progress) || 0, Number(prev?.progress) || 0),
       duration: Math.max(Number(item.duration) || 0, Number(prev?.duration) || 0),
       completed: !!(item.completed || prev?.completed),
       seriesCompleted: !!(item.seriesCompleted || prev?.seriesCompleted),
     }
-    const next = [merged, ...rest].slice(0, 50)
+    const next = [merged, ...rest].slice(0, 2000)
     set({ watchHistory: next })
     persist('watchHistory', next)
+    try {
+      const st = get()
+      ;(window as any).electronAPI?.saveProgressRow?.({
+        ...merged,
+        profileId: merged.profileId || st.currentProfile?.id || 'default',
+        email: (st.currentProfile as any)?.email || '',
+      })
+    } catch {}
   },
   removeHistory: (mediaId, mediaType) => {
     const next = get().watchHistory.filter((h) => !(String(h.mediaId) === String(mediaId) && (!mediaType || h.mediaType === mediaType)))
@@ -497,7 +499,31 @@ export const useStore = create<AppState>((set, get) => ({
         } catch {}
       }
     }
-    loadKey('watchHistory', (v) => set({ watchHistory: v as WatchHistoryItem[] }))
+    loadKey('watchHistory', (v) => {
+      const rows = Array.isArray(v) ? v as WatchHistoryItem[] : []
+      set({ watchHistory: rows })
+      const api = (window as any).electronAPI
+      const email = (get().currentProfile as any)?.email
+      const profileId = get().currentProfile?.id
+      api?.loadProgress?.(email, profileId)?.then((disk: any[]) => {
+        if (!Array.isArray(disk) || !disk.length) return
+        const map = new Map<string, WatchHistoryItem>()
+        for (const h of [...rows, ...disk]) {
+          const k = `${h.mediaType || 'tv'}|${h.mediaId}|${Number(h.season || 0)}|${Number(h.episode || 0)}`
+          const prev = map.get(k)
+          map.set(k, {
+            ...(prev || {}),
+            ...h,
+            progress: Math.max(Number(prev?.progress) || 0, Number(h.progress) || 0),
+            duration: Math.max(Number(prev?.duration) || 0, Number(h.duration) || 0),
+            completed: !!(prev?.completed || (h as any).completed),
+          } as WatchHistoryItem)
+        }
+        const merged = [...map.values()].sort((a, b) => Date.parse(b.watchedAt || '') - Date.parse(a.watchedAt || ''))
+        set({ watchHistory: merged })
+        persist('watchHistory', merged)
+      }).catch(() => {})
+    })
     loadKey('watchlist', (v) => set({ watchlist: v as WatchlistItem[] }))
     loadKey('favorites', (v) => set({ favorites: v as WatchlistItem[] }))
     loadKey('profiles', (v) => set({ profiles: v as UserProfile[] }))

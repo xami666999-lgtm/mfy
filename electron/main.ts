@@ -4,6 +4,7 @@ import Store from 'electron-store'
 import fs from 'fs'
 import { setupTorrentEngine } from './torrent'
 import { setupAdBlocker } from './adblock'
+import { loadAllProgress, saveProgressRow, saveProgressList } from './progress'
 
 // Auto-updater (only active in packaged builds)
 let autoUpdater: any = null
@@ -268,6 +269,13 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
+app.on('before-quit', () => {
+  try {
+    const rows = store.get('watchHistory') as any[]
+    if (Array.isArray(rows)) saveProgressList(rows)
+  } catch {}
+})
+
 // Window controls
 ipcMain.on('window-minimize', () => mainWindow?.minimize())
 ipcMain.on('window-maximize', () => {
@@ -318,6 +326,9 @@ ipcMain.handle('window-is-maximized', () => mainWindow?.isMaximized() ?? false)
     return true
   })
   ipcMain.handle('store-delete', (_event, key: string) => store.delete(key))
+  ipcMain.handle('progress-load', (_event, email?: string, profileId?: string) => loadAllProgress(email, profileId))
+  ipcMain.handle('progress-save', (_event, row: any) => saveProgressRow(row))
+  ipcMain.handle('progress-save-all', (_event, rows: any[], email?: string, profileId?: string) => saveProgressList(rows, email, profileId))
 
   // Create desktop shortcut
   ipcMain.handle('createDesktopShortcut', async () => addDesktopShortcut())

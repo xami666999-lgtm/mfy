@@ -67,6 +67,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Desktop shortcut
   createDesktopShortcut: () => ipcRenderer.invoke('createDesktopShortcut'),
+  loadProgress: (email?: string, profileId?: string) => ipcRenderer.invoke('progress-load', email, profileId),
+  saveProgressRow: (row: unknown) => ipcRenderer.invoke('progress-save', row),
+  saveProgressAll: (rows: unknown[], email?: string, profileId?: string) => ipcRenderer.invoke('progress-save-all', rows, email, profileId),
 })
 
 contextBridge.exposeInMainWorld('torrentAPI', {
