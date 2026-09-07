@@ -129,6 +129,13 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
     api.get('jellyfinApiKey').then((k: string) => { if (k) setJellyfinApiKey(k) })
     api.get('watchlist').then((list: any) => { if (Array.isArray(list)) setWatchlist(list) })
     api.get('watchHistory').then((list: any) => { if (Array.isArray(list)) setWatchHistory(list) })
+    api.loadProgress?.().then((disk: any[]) => { if (Array.isArray(disk) && disk.length) setWatchHistory(disk) }).catch(() => {})
+    api.onFlushProgress?.(() => {
+      try {
+        const rows = useStore.getState().watchHistory
+        api.saveProgressAll?.(rows)
+      } catch {}
+    })
     api.get('profiles').then(async (list: any) => {
       const loaded: any[] = Array.isArray(list) ? list : []
       if (loaded.length) setProfiles(loaded)

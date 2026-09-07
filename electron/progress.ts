@@ -1,4 +1,5 @@
 import fs from 'fs'
+import os from 'os'
 import path from 'path'
 import { app } from 'electron'
 
@@ -18,27 +19,20 @@ export type ProgressRow = {
   email?: string
 }
 
-type FileShape = {
-  updatedAt: string
-  items: Record<string, ProgressRow>
-}
+type FileShape = { updatedAt: string; items: Record<string, ProgressRow> }
 
 function keyOf(r: Pick<ProgressRow, 'mediaId' | 'mediaType' | 'season' | 'episode'>) {
-  return `${r.mediaType || 'tv'}|${r.mediaId}|${Number(r.season || 0)}|${Number(r.episode || 0)}`
+  return `${r.mediaType || 'tv'}|${String(r.mediaId)}|${Number(r.season || 0)}|${Number(r.episode || 0)}`
 }
 
-function userDataFile() {
-  return path.join(app.getPath('userData'), 'watch.json')
-}
-
-function roamingFile() {
-  return path.join(app.getPath('appData'), 'MFY', 'watch.json')
-}
-
-function documentsFile() {
-  const dir = path.join(app.getPath('documents'), 'MFY')
-  try { fs.mkdirSync(dir, { recursive: true }) } catch {}
-  return path.join(dir, 'watch.json')
+function paths() {
+  const home = os.homedir()
+  return [
+    path.join(home, 'MFY-watch.json'),
+    path.join(home, 'Documents', 'MFY', 'watch.json'),
+    path.join(app.getPath('appData'), 'MFY', 'watch.json'),
+    path.join(app.getPath('userData'), 'watch.json'),
+  ]
 }
 
 function readFile(p: string): FileShape {
@@ -59,7 +53,10 @@ function writeFile(p: string, data: FileShape) {
   try {
     fs.mkdirSync(path.dirname(p), { recursive: true })
     const tmp = p + '.tmp'
-    fs.writeFileSync(tmp, JSON.stringify(data, null, 2))
+    fs.writeFileSync(tmp, JSON.stringify(data), { encoding: 'utf8' })
+    const fd = fs.openSync(tmp, 'r+')
+    try { fs.fsyncSync(fd) } catch {}
+    fs.closeSync(fd)
     fs.renameSync(tmp, p)
   } catch {}
 }
@@ -97,28 +94,26 @@ function better(a?: ProgressRow, b?: ProgressRow): ProgressRow {
   return merged
 }
 
-function allFiles() {
-  const extra: string[] = []
-  try { extra.push(path.join(app.getPath('userData'), 'progress.json')) } catch {}
-  try { extra.push(path.join(app.getPath('documents'), 'MFY', 'progress.json')) } catch {}
-  return [documentsFile(), roamingFile(), userDataFile(), ...extra]
-}
-
-export function loadAllProgress(_email?: string, _profileId?: string) {
+export function loadAllProgress() {
   const items: Record<string, ProgressRow> = {}
-  for (const f of allFiles()) {
-    const data = readFile(f)
-    for (const row of Object.values(data.items || {})) {
+  for (const f of paths()) {
+    for (const row of Object.values(readFile(f).items || {})) {
       const k = keyOf(row)
       items[k] = better(items[k], row)
     }
   }
-  return Object.values(items)
+  return Object.values(items).filter((r) => Number(r.progress) > 5)
 }
 
 export function saveProgressRow(row: ProgressRow) {
+  if (!row?.mediaId) return false
+  if (!(Number(row.progress) > 5)) {
+    const existing = loadAllProgress().find((r) => keyOf(r) === keyOf(row))
+    if (existing) row = better(existing, { ...row, progress: existing.progress })
+    else return false
+  }
   const k = keyOf(row)
-  for (const f of [documentsFile(), roamingFile(), userDataFile()]) {
+  for (const f of paths()) {
     const data = readFile(f)
     data.items[k] = better(data.items[k], row)
     data.updatedAt = new Date().toISOString()

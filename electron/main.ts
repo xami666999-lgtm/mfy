@@ -125,9 +125,12 @@ mainWindow.once('ready-to-show', () => {
   })
 
   mainWindow.on('close', (e) => {
+    try { mainWindow?.webContents.send('mfy-flush') } catch {}
+    try { flushWatch() } catch {}
     if (!(app as any).isQuitting) {
       e.preventDefault()
-      mainWindow?.hide()
+      ;(app as any).isQuitting = true
+      setTimeout(() => app.quit(), 500)
     }
   })
 

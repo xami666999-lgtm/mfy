@@ -70,6 +70,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadProgress: (email?: string, profileId?: string) => ipcRenderer.invoke('progress-load', email, profileId),
   saveProgressRow: (row: unknown) => ipcRenderer.invoke('progress-save', row),
   saveProgressAll: (rows: unknown[], email?: string, profileId?: string) => ipcRenderer.invoke('progress-save-all', rows, email, profileId),
+  onFlushProgress: (cb: () => void) => {
+    const listener = () => cb()
+    ipcRenderer.on('mfy-flush', listener)
+    return () => ipcRenderer.removeListener('mfy-flush', listener)
+  },
 })
 
 contextBridge.exposeInMainWorld('torrentAPI', {

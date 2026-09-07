@@ -472,6 +472,12 @@ export default function PlayerPage() {
     return () => { document.removeEventListener('fullscreenchange', onFullscreen); document.removeEventListener('fullscreenchange', again) }
   }, [])
 
+
+  useEffect(() => {
+    const off = (window as any).electronAPI?.onFlushProgress?.(() => { saveProgress(false).catch(() => {}) })
+    return () => { try { off?.() } catch {} }
+  }, [selectedMedia?.id, selectedMedia?.episode])
+
   useEffect(() => {
     const id = setInterval(() => { saveProgress(false).catch(() => {}) }, 4000)
     const onHide = () => { saveProgress(false).catch(() => {}) }
@@ -993,6 +999,20 @@ export default function PlayerPage() {
       completed: reallyDone || !!prev?.completed,
     })
     try { localStorage.setItem(`mfy-ep-${selectedMedia.id}-${selectedMedia.season || 0}-${selectedMedia.episode || 0}`, JSON.stringify({ p, d, completed: reallyDone, at: Date.now() })) } catch {}
+    try {
+      await (window as any).electronAPI?.saveProgressRow?.({
+        mediaId: String(selectedMedia.id),
+        mediaType: selectedMedia.type === 'movie' ? 'movie' : 'tv',
+        season: selectedMedia.season || 0,
+        episode: selectedMedia.episode || 0,
+        progress: p,
+        duration: d,
+        title: String((selectedMedia as any).title || (selectedMedia as any).name || selectedMedia.id),
+        posterPath: (selectedMedia as any).poster_path || prev?.posterPath || null,
+        watchedAt: new Date().toISOString(),
+        completed: reallyDone,
+      })
+    } catch {}
   }
 
   const ratedRef = useRef(false)
