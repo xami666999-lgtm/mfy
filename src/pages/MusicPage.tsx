@@ -1,164 +1,180 @@
-import { useEffect, useRef, useState } from 'react'
-import { Play, Pause, Search, Heart, SkipBack, SkipForward, Shuffle, Repeat, Plus, Volume2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Home, Compass, Radio, Library, ListMusic, Search, Play, Pause, SkipBack, SkipForward, Volume2, Mic2 } from 'lucide-react'
+import { flixCatalog, searchMusic, streamUrl, type Track } from '../api/musicAddons'
+import { youtubioSearch } from '../api/youtubio'
 
-type Track = { id: string; title: string; artist: string; album?: string; image?: string; url?: string; yt?: string }
+type Tab = 'home' | 'browse' | 'radio' | 'library' | 'playlists'
 
-const INVIDIOUS = ['https://inv.nadeko.net', 'https://yewtu.be', 'https://invidious.flokinet.to', 'https://vid.puffyan.us']
-const PIPED = ['https://pipedapi.kavin.rocks', 'https://pipedapi.adminforge.de']
+export default function MusicPage() {
+  const [tab, setTab] = useState<Tab>('home')
+  const [q, setQ] = useState('')
+  const [top, setTop] = useState<Track[]>([])
+  const [trend, setTrend] = useState<Track[]>([])
+  const [hits, setHits] = useState<Track[]>([])
+  const [now, setNow] = useState<Track | null>(null)
+  const [queue, setQueue] = useState<Track[]>([])
+  const [playing, setPlaying] = useState(false)
+  const [focus, setFocus] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [dur, setDur] = useState(0)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const ytId = useRef('')
 
-async function jsonGet(url: string) {
-  const api = typeof window !== 'undefined' ? (window as any).electronAPI : null
-  if (api?.fetchJson) {
-    const r = await api.fetchJson(url, { timeoutMs: 14000 })
-    return r?.json || {}
-  }
-  try { return (await fetch(url)).json() } catch { return {} }
-}
+  useEffect(() => {
+    flixCatalog('top').then(setTop)
+    flixCatalog('trending').then(setTrend)
+  }, [])
 
-async function ytAudio(videoId: string): Promise<string> {
-  for (const h of INVIDIOUS) {
-    try {
-      const d = await jsonGet(`${h}/api/v1/videos/${videoId}`)
-      const audio = (d.adaptiveFormats || d.adaptive_formats || []).find((f: any) => String(f.type || f.mimeType || '').includes('audio'))
-      if (audio?.url) return audio.url
-      if (d.videoId) return `${h}/latest_version?id=${videoId}&itag=140`
-    } catch {}
-  }
-  for (const h of PIPED) {
-    try {
-      const d = await jsonGet(`${h}/streams/${videoId}`)
-      const a = (d.audioStreams || []).sort((x: any, y: any) => (y.bitrate || 0) - (x.bitrate || 0))[0]
-      if (a?.url) return a.url
-    } catch {}
-  }
-  return ''
-}
-
-async function ytSearch(term: string): Promise<Track[]> {
-  for (const h of INVIDIOUS) {
-    try {
-      const d = await jsonGet(`${h}/api/v1/search?q=${encodeURIComponent(term + ' official audio')}&type=video`)
-      const rows = Array.isArray(d) ? d : []
-      if (!rows.length) continue
-      return rows.slice(0, 16).map((v: any) => ({
-        id: 'yt-' + v.videoId,
-        title: v.title,
-        artist: v.author,
-        image: `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`,
-        yt: v.videoId,
-      }))
-    } catch {}
-  }
-  return []
-}
-
-function uniq(list: Track[]) {
-  const seen = new Set<string>()
-  return list.filter((t) => {
-    const k = `${t.title}|${t.artist}`.toLowerCase()
-    if (seen.has(k)) return false
-    seen.add(k)
-    return true
-  })
-}
-
-async function searchTracks(term: string): Promise<Track[]> {
-  const q = term || 'top hits'
-  const [it, yt] = await Promise.all([
-    jsonGet(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=24`),
-    ytSearch(q),
-  ])
-  const out: Track[] = []
-  for (const s of it.results || []) {
-    out.push({
-      id: 'it-' + s.trackId,
-      title: s.trackName,
-      artist: s.artistName,
-      album: s.collectionName,
-      image: String(s.artworkUrl100 || '').replace('100x100bb', '600x600bb'),
-    })
-  }
-  try {
-    const d = await jsonGet(`https://discoveryprovider.audius.co/v1/tracks/search?query=${encodeURIComponent(q)}&app_name=mfy`)
-    for (const s of d.data || []) {
-      out.push({
-        id: 'au-' + s.id,
-        title: s.title,
-        artist: s.user?.name,
-        image: s.artwork?.['480x480'] || s.artwork?.['150x150'],
-        url: `https://discoveryprovider.audius.co/v1/tracks/${s.id}/stream?app_name=mfy`,
-      })
+  async function play(track: Track, list: Track[] = []) {
+    setNow(track)
+    setQueue(list.length ? list : [track])
+    setPlaying(true)
+    const url = await streamUrl(track)
+    if (url && audioRef.current) {
+      ytId.current = ''
+      audioRef.current.src = url
+      audioRef.current.play().catch(() => {})
+      return
     }
-  } catch {}
-  return uniq([...out, ...yt])
-}
+    const yt = await youtubioSearch(`${track.artist} ${track.title} official audio`)
+    ytId.current = yt[0]?.id || ''
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.removeAttribute('src')
+    }
+  }
 
-async function loadDashboard() {
-  const [songs, albums, chart, trending] = await Promise.all([
-    jsonGet('https://itunes.apple.com/search?term=top+hits+2026&entity=song&limit=12'),
-    jsonGet('https://itunes.apple.com/us/rss/topalbums/limit=18/json'),
-    jsonGet('https://api.deezer.com/chart/0/albums'),
-    jsonGet('https://discoveryprovider.audius.co/v1/tracks/trending?app_name=mfy'),
-  ])
-  const featured: Track[] = (songs.results || []).map((s: any) => ({
-    id: 'it-' + s.trackId,
-    title: s.trackName,
-    artist: s.artistName,
-    album: s.collectionName,
-    image: String(s.artworkUrl100 || '').replace('100x100bb', '600x600bb'),
-  }))
-  const topAlbums: Track[] = [
-    ...(albums.feed?.entry || []).map((e: any, i: number) => ({
-      id: 'al-' + i + (e.id?.label || ''),
-      title: e['im:name']?.label,
-      artist: e['im:artist']?.label,
-      image: e['im:image']?.[2]?.label,
-    })),
-    ...(chart.data || []).map((a: any) => ({
-      id: 'dz-' + a.id,
-      title: a.title,
-      artist: a.artist?.name,
-      image: a.cover_medium,
-    })),
-  ]
-  const releases: Track[] = (trending.data || []).map((s: any) => ({
-    id: 'au-' + s.id,
-    title: s.title,
-    artist: s.user?.name,
-    image: s.artwork?.['480x480'] || s.artwork?.['150x150'],
-    url: `https://discoveryprovider.audius.co/v1/tracks/${s.id}/stream?app_name=mfy`,
-  }))
-  return { featured: uniq(featured), topAlbums: uniq(topAlbums).slice(0, 18), releases: uniq(releases).slice(0, 18) }
-}
+  function toggle() {
+    if (!now) return
+    if (ytId.current) { setPlaying((p) => !p); return }
+    const a = audioRef.current
+    if (!a) return
+    if (a.paused) { a.play().catch(() => {}); setPlaying(true) }
+    else { a.pause(); setPlaying(false) }
+  }
 
-function fmt(n: number) {
-  if (!Number.isFinite(n) || n < 0) return '0:00'
-  const m = Math.floor(n / 60)
-  const s = Math.floor(n % 60)
-  return `${m}:${String(s).padStart(2, '0')}`
-}
+  function skip(dir: 1 | -1) {
+    if (!now || !queue.length) return
+    const i = queue.findIndex((t) => t.id === now.id)
+    const n = queue[i + dir] || queue[dir === 1 ? 0 : queue.length - 1]
+    if (n) play(n, queue)
+  }
 
-function Shelf({ title, badge, items, onPlay }: { title: string; badge?: string; items: Track[]; onPlay: (t: Track, list: Track[]) => void }) {
-  const ref = useRef<HTMLDivElement | null>(null)
+  async function onSearch(e: React.FormEvent) {
+    e.preventDefault()
+    if (!q.trim()) return
+    setTab('browse')
+    setHits(await searchMusic(q.trim()))
+  }
+
+  const bg = now?.poster || trend[0]?.poster || ''
+
   return (
-    <section className="mb-7">
-      <div className="flex items-center gap-2 mb-3">
-        <h2 className="text-lg font-bold">{title}</h2>
-        {badge && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FF1493]/20 text-[#FF1493]">{badge}</span>}
-        <div className="ml-auto flex gap-1">
-          <button type="button" className="w-7 h-7 rounded-full bg-white/10 grid place-items-center" onClick={() => ref.current?.scrollBy({ left: -360, behavior: 'smooth' })}><ChevronLeft size={14} /></button>
-          <button type="button" className="w-7 h-7 rounded-full bg-white/10 grid place-items-center" onClick={() => ref.current?.scrollBy({ left: 360, behavior: 'smooth' })}><ChevronRight size={14} /></button>
-        </div>
+    <div className="h-full min-h-[100%] text-white overflow-hidden" style={{ fontFamily: 'Inter, SF Pro Display, system-ui, sans-serif' }}>
+      <div className="flex h-[calc(100vh-96px)]">
+        <aside className="w-56 shrink-0 backdrop-blur-md bg-black/40 border-r border-white/10 p-4 flex flex-col gap-1">
+          <div className="text-[#FF1493] font-black tracking-tight text-lg mb-4">MFY Music</div>
+          {([
+            ['home', 'Home', Home],
+            ['browse', 'Browse', Compass],
+            ['radio', 'Radio', Radio],
+            ['library', 'Library', Library],
+            ['playlists', 'Playlists', ListMusic],
+          ] as const).map(([id, label, Icon]) => (
+            <button key={id} type="button" onClick={() => setTab(id)} className={`flex items-center gap-3 h-10 px-3 rounded-xl text-sm tracking-tight ${tab === id ? 'bg-white/10 text-white' : 'text-white/55 hover:bg-white/5'}`}>
+              <Icon size={16} /> {label}
+            </button>
+          ))}
+        </aside>
+        <main className="flex-1 overflow-auto relative">
+          <div className="pointer-events-none absolute inset-0" style={{ background: bg ? `radial-gradient(80% 50% at 20% 0%, rgba(255,20,147,.28), transparent 55%), url(${bg}) center/cover` : 'radial-gradient(70% 40% at 10% 0%, rgba(255,20,147,.25), transparent)' }} />
+          <div className="pointer-events-none absolute inset-0 backdrop-blur-3xl bg-black/55" />
+          <div className="relative p-6 pb-28">
+            <form onSubmit={onSearch} className="flex items-center gap-2 h-11 px-4 rounded-full bg-black/40 border border-white/10 max-w-xl mb-6">
+              <Search size={15} className="text-white/40" />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search Crunch + Flix Music" className="flex-1 bg-transparent outline-none text-sm tracking-tight" />
+            </form>
+            {tab === 'browse' ? (
+              <section>
+                <h2 className="text-2xl font-bold tracking-tight mb-4">Search</h2>
+                <Grid tracks={hits} onPlay={(t) => play(t, hits)} />
+              </section>
+            ) : (
+              <>
+                <h2 className="text-2xl font-bold tracking-tight mb-4">Home</h2>
+                <Row title="Flix · Trending" tracks={trend} onPlay={play} />
+                <Row title="Flix · Top" tracks={top} onPlay={play} />
+              </>
+            )}
+          </div>
+        </main>
       </div>
-      <div ref={ref} className="flex gap-3 overflow-x-auto pb-2 scroll-row">
-        {items.map((t) => (
-          <button key={t.id} type="button" onClick={() => onPlay(t, items)} className="shrink-0 w-36 text-left group">
-            <div className="w-36 h-36 rounded-xl overflow-hidden bg-white/10 relative">
-              {t.image && <img src={t.image} alt="" className="w-full h-full object-cover" />}
-              <span className="absolute inset-0 hidden group-hover:grid place-items-center bg-black/40"><Play size={22} fill="white" /></span>
+
+      <div className="fixed left-4 right-4 bottom-3 z-40 h-[72px] rounded-2xl backdrop-blur-xl bg-neutral-900/70 border border-white/10 shadow-2xl flex items-center px-4 gap-4">
+        {now ? (
+          <>
+            <button type="button" onClick={() => setFocus(true)} className="w-12 h-12 rounded-lg overflow-hidden shadow-lg shadow-black/50">
+              {now.poster ? <img src={now.poster} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-white/10" />}
+            </button>
+            <div className="w-40 min-w-0">
+              <div className="text-sm font-semibold truncate tracking-tight">{now.title}</div>
+              <div className="text-xs text-white/45 truncate">{now.artist}</div>
             </div>
-            <p className="text-xs font-semibold mt-2 line-clamp-1">{t.title}</p>
-            <p className="text-[11px] text-white/40 line-clamp-1">{t.artist}</p>
+          </>
+        ) : <div className="text-sm text-white/40">Choose a track</div>}
+        <div className="flex-1 flex flex-col items-center">
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={() => skip(-1)} className="text-white/70 hover:text-white"><SkipBack size={18} /></button>
+            <button type="button" onClick={toggle} className="w-10 h-10 rounded-full bg-white text-black grid place-items-center hover:scale-105 transition-transform">
+              {playing ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
+            </button>
+            <button type="button" onClick={() => skip(1)} className="text-white/70 hover:text-white"><SkipForward size={18} /></button>
+          </div>
+          <div className="w-full max-w-md h-1 rounded-full bg-white/15 mt-2 overflow-hidden">
+            <div className="h-full bg-[#FF1493]" style={{ width: dur ? `${Math.min(100, (progress / dur) * 100)}%` : playing ? '12%' : '0%' }} />
+          </div>
+        </div>
+        <button type="button" onClick={() => setFocus(true)} className="text-white/50 hover:text-white"><Mic2 size={16} /></button>
+        <Volume2 size={16} className="text-white/40" />
+      </div>
+
+      <audio ref={audioRef} onTimeUpdate={(e) => setProgress(e.currentTarget.currentTime)} onDurationChange={(e) => setDur(e.currentTarget.duration || 0)} onEnded={() => skip(1)} />
+      {ytId.current && playing && (
+        <iframe title="yt-audio" className="hidden" src={`https://www.youtube-nocookie.com/embed/${ytId.current}?autoplay=1`} allow="autoplay" />
+      )}
+
+      {focus && now && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          <img src={now.poster} alt="" className="absolute inset-0 w-full h-full object-cover scale-125 brightness-50 blur-3xl" />
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative h-full flex items-center gap-16 px-16">
+            <img src={now.poster} alt="" className="w-[38vh] h-[38vh] object-cover rounded-2xl shadow-2xl shadow-black" />
+            <div className="flex-1 max-w-xl">
+              <div className="text-white/50 text-sm mb-2">{now.artist}</div>
+              <div className="text-3xl font-bold tracking-tight line-clamp-2 mb-8">{now.title}</div>
+              <LyricLines title={now.title} playing={playing} />
+              <button type="button" className="mt-10 text-sm text-white/50" onClick={() => setFocus(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function Row({ title, tracks, onPlay }: { title: string; tracks: Track[]; onPlay: (t: Track, list: Track[]) => void }) {
+  return (
+    <section className="mb-8">
+      <h3 className="text-lg font-semibold tracking-tight mb-3">{title}</h3>
+      <div className="flex gap-4 overflow-x-auto pb-2">
+        {tracks.map((t) => (
+          <button key={t.id} type="button" onClick={() => onPlay(t, tracks)} className="group flex-none w-36 text-left rounded-xl bg-white/5 hover:bg-white/10 p-2 transition-all duration-300">
+            <div className="relative">
+              <img src={t.poster} alt="" className="w-32 h-32 object-cover rounded-xl shadow-lg shadow-black/50 group-hover:scale-105 transition-transform" />
+              <span className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-[#FF1493] grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity"><Play size={14} /></span>
+            </div>
+            <p className="text-sm mt-2 truncate tracking-tight">{t.title}</p>
+            <p className="text-[11px] text-white/40 truncate">{t.artist}</p>
           </button>
         ))}
       </div>
@@ -166,200 +182,30 @@ function Shelf({ title, badge, items, onPlay }: { title: string; badge?: string;
   )
 }
 
-export default function MusicPage() {
-  const [tab, setTab] = useState('Dashboard')
-  const [q, setQ] = useState('')
-  const [tracks, setTracks] = useState<Track[]>([])
-  const [featured, setFeatured] = useState<Track[]>([])
-  const [albums, setAlbums] = useState<Track[]>([])
-  const [releases, setReleases] = useState<Track[]>([])
-  const [queue, setQueue] = useState<Track[]>([])
-  const [favs, setFavs] = useState<Track[]>(() => {
-    try { return JSON.parse(localStorage.getItem('mfy-music-favs') || '[]') } catch { return [] }
-  })
-  const [now, setNow] = useState<Track | null>(null)
-  const [playing, setPlaying] = useState(false)
-  const [shuffle, setShuffle] = useState(false)
-  const [repeat, setRepeat] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [vol, setVol] = useState(0.9)
-  const [tcur, setTcur] = useState(0)
-  const [tdur, setTdur] = useState(0)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-
-  useEffect(() => {
-    loadDashboard().then((d) => {
-      setFeatured(d.featured)
-      setAlbums(d.topAlbums)
-      setReleases(d.releases)
-      setTracks(d.featured)
-    })
-  }, [])
-
-  function persistFavs(next: Track[]) {
-    setFavs(next)
-    try { localStorage.setItem('mfy-music-favs', JSON.stringify(next.slice(0, 80))) } catch {}
-  }
-
-  async function resolve(t: Track): Promise<string> {
-    if (t.url && /audius|latest_version|googlevideo|audio/i.test(t.url)) return t.url
-    if (t.yt) {
-      const u = await ytAudio(t.yt)
-      if (u) return u
-    }
-    const hits = await ytSearch(`${t.title} ${t.artist}`)
-    const id = hits[0]?.yt
-    if (id) return ytAudio(id)
-    return t.url || ''
-  }
-
-  async function play(t: Track, list?: Track[]) {
-    setNow(t)
-    setBusy(true)
-    const base = list || (queue.length ? queue : tracks)
-    setQueue([t, ...base.filter((x) => x.id !== t.id)].slice(0, 40))
-    const el = audioRef.current
-    try {
-      const src = await resolve(t)
-      if (!el || !src) { setBusy(false); return }
-      el.src = src
-      el.volume = vol
-      await el.play()
-      setPlaying(true)
-    } catch {
-      setPlaying(false)
-    }
-    setBusy(false)
-  }
-
-  function skip(dir: number) {
-    const list = queue.length ? queue : tracks
-    if (!list.length) return
-    if (shuffle) {
-      play(list[Math.floor(Math.random() * list.length)], list)
-      return
-    }
-    const i = Math.max(0, list.findIndex((x) => x.id === now?.id))
-    play(list[(i + dir + list.length) % list.length], list)
-  }
-
-  const shown = tab === 'Favorites' ? favs : tab === 'Search' ? tracks : tab === 'Charts' ? albums : featured
-
+function Grid({ tracks, onPlay }: { tracks: Track[]; onPlay: (t: Track, list?: Track[]) => void }) {
   return (
-    <div className="flex min-h-full bg-[#0d0a0c] text-white">
-      <aside className="w-44 flex-shrink-0 bg-black p-4">
-        <p className="text-[10px] tracking-[0.28em] text-[#FF1493] font-bold">MFY MUSIC</p>
-        <p className="text-[10px] text-white/30 mb-5">Muffon layout</p>
-        {['Dashboard', 'Search', 'Charts', 'Favorites', 'Zuno', 'ArtistGrid'].map((n) => (
-          <button key={n} type="button" onClick={() => setTab(n)} className={`w-full text-left h-10 px-3 rounded-lg text-sm mb-1 ${tab === n ? 'bg-[#FF1493] text-white' : 'text-white/50 hover:text-white'}`}>{n}</button>
-        ))}
-      </aside>
+    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      {tracks.map((t) => (
+        <button key={t.id} type="button" onClick={() => onPlay(t, tracks)} className="group text-left rounded-xl bg-white/5 hover:bg-white/10 p-2 transition-all">
+          <div className="relative">
+            <img src={t.poster} alt="" className="w-full aspect-square object-cover rounded-xl shadow-lg shadow-black/50 group-hover:scale-105 transition-transform" />
+            <span className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-[#FF1493] grid place-items-center opacity-0 group-hover:opacity-100"><Play size={14} /></span>
+          </div>
+          <p className="text-sm mt-2 truncate">{t.title}</p>
+          <p className="text-[11px] text-white/40 truncate">{t.artist}</p>
+        </button>
+      ))}
+    </div>
+  )
+}
 
-      <div className="flex-1 min-w-0 p-5 overflow-y-auto pb-28">
-        <form className="mb-5" onSubmit={(e) => { e.preventDefault(); searchTracks(q || 'top hits').then(setTracks); setTab('Search') }}>
-          <div className="flex items-center gap-2 h-11 px-4 rounded-full bg-white text-black">
-            <Search className="w-4 h-4" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search any song or artist" className="flex-1 bg-transparent text-sm outline-none" />
-          </div>
-        </form>
-
-        {tab === 'ArtistGrid' ? (
-          <div className="rounded-2xl overflow-hidden bg-black min-h-[70vh]">
-            <p className="text-xs text-[#FF1493] mb-2">ArtistGrid · unreleased / tracker sheets</p>
-            {/* @ts-expect-error Electron webview */}
-            <webview src="https://artistgrid.cx" partition="persist:mfy-music" style={{ width: '100%', height: '72vh', background: '#000' }} allowpopups="true" />
-          </div>
-        ) : tab === 'Zuno' ? (
-          <div className="rounded-2xl overflow-hidden bg-black min-h-[70vh]">
-            <p className="text-xs text-[#FF1493] mb-2">Zuno · YouTube Music</p>
-            {/* @ts-expect-error Electron webview */}
-            <webview src="https://music.youtube.com" partition="persist:mfy-music" style={{ width: '100%', height: '72vh', background: '#000' }} allowpopups="true" />
-          </div>
-        ) : tab === 'Dashboard' ? (
-          <>
-            <h1 className="text-2xl font-black mb-4">Dashboard</h1>
-            <Shelf title="Featured" items={featured} onPlay={play} />
-            <Shelf title="Top Albums" badge="iTunes · Deezer" items={albums} onPlay={(t) => searchTracks(`${t.title} ${t.artist}`).then((rows) => { setTracks(rows); setTab('Search'); if (rows[0]) play(rows[0], rows) })} />
-            <Shelf title="New Releases" badge="Audius" items={releases} onPlay={play} />
-          </>
-        ) : (
-          <div className="space-y-0.5">
-            {shown.map((t, i) => (
-              <div key={t.id} className={`flex items-center gap-3 px-3 h-14 rounded-lg hover:bg-white/5 ${now?.id === t.id ? 'bg-[#FF1493]/15' : ''}`}>
-                <span className="w-6 text-xs text-white/30">{i + 1}</span>
-                <button type="button" onClick={() => play(t, shown)} className="w-10 h-10 rounded overflow-hidden bg-white/10 shrink-0">
-                  {t.image ? <img src={t.image} alt="" className="w-full h-full object-cover" /> : <Play size={14} className="m-auto" />}
-                </button>
-                <button type="button" className="flex-1 text-left min-w-0" onClick={() => play(t, shown)}>
-                  <p className="text-sm truncate">{t.title}</p>
-                  <p className="text-xs text-white/40 truncate">{t.artist}{t.album ? ` · ${t.album}` : ''}</p>
-                </button>
-                <button type="button" onClick={() => persistFavs(favs.some((f) => f.id === t.id) ? favs.filter((f) => f.id !== t.id) : [t, ...favs])} className={favs.some((f) => f.id === t.id) ? 'text-[#FF1493]' : 'text-white/30'}>
-                  <Heart size={14} fill={favs.some((f) => f.id === t.id) ? 'currentColor' : 'none'} />
-                </button>
-                <button type="button" className="text-white/30" onClick={() => setQueue((qq) => [t, ...qq.filter((x) => x.id !== t.id)])}><Plus size={14} /></button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <aside className="w-64 flex-shrink-0 bg-black/70 border-l border-white/10 p-3 hidden lg:block overflow-y-auto pb-28">
-        <p className="text-[11px] tracking-widest text-[#FF1493] font-bold mb-3">QUEUE</p>
-        {(queue.length ? queue : featured.slice(0, 10)).map((t) => (
-          <button key={t.id} type="button" onClick={() => play(t, queue.length ? queue : featured)} className={`w-full flex items-center gap-2 p-2 rounded-lg mb-1 text-left ${now?.id === t.id ? 'bg-[#FF1493]/20' : 'hover:bg-white/5'}`}>
-            <div className="w-10 h-10 rounded bg-white/10 overflow-hidden shrink-0">{t.image && <img src={t.image} alt="" className="w-full h-full object-cover" />}</div>
-            <div className="min-w-0">
-              <p className="text-xs truncate">{t.title}</p>
-              <p className="text-[10px] text-white/40 truncate">{t.artist}</p>
-            </div>
-          </button>
-        ))}
-      </aside>
-
-      <div className="fixed bottom-0 left-0 right-0 h-[76px] bg-[#0a0a0d]/95 border-t border-white/10 flex items-center px-5 gap-4 z-20">
-        <div className="w-12 h-12 rounded bg-white/10 overflow-hidden">{now?.image && <img src={now.image} alt="" className="w-full h-full object-cover" />}</div>
-        <div className="w-44 min-w-0">
-          <p className="text-sm truncate">{now?.title || (busy ? 'Loading…' : 'Nothing playing')}</p>
-          <p className="text-xs text-white/40 truncate">{now?.artist || ''}</p>
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center justify-center gap-4 mb-1">
-            <button type="button" className={shuffle ? 'text-[#FF1493]' : 'text-white/50'} onClick={() => setShuffle((v) => !v)}><Shuffle size={14} /></button>
-            <button type="button" onClick={() => skip(-1)}><SkipBack size={18} /></button>
-            <button type="button" className="w-10 h-10 rounded-full bg-[#FF1493] grid place-items-center" onClick={() => {
-              const el = audioRef.current
-              if (!el) return
-              if (playing) { el.pause(); setPlaying(false) } else { el.play(); setPlaying(true) }
-            }}>{playing ? <Pause size={16} /> : <Play size={16} fill="white" />}</button>
-            <button type="button" onClick={() => skip(1)}><SkipForward size={18} /></button>
-            <button type="button" className={repeat ? 'text-[#FF1493]' : 'text-white/50'} onClick={() => setRepeat((v) => !v)}><Repeat size={14} /></button>
-          </div>
-          <div className="flex items-center gap-2 text-[10px] text-white/40">
-            <span>{fmt(tcur)}</span>
-            <input type="range" min={0} max={tdur || 1} value={tcur} className="flex-1 accent-[#FF1493]" onChange={(e) => {
-              const v = Number(e.target.value)
-              if (audioRef.current) audioRef.current.currentTime = v
-              setTcur(v)
-            }} />
-            <span>{fmt(tdur)}</span>
-          </div>
-        </div>
-        <div className="hidden md:flex items-center gap-2 w-32">
-          <Volume2 size={14} className="text-white/50" />
-          <input type="range" min={0} max={1} step={0.05} value={vol} className="flex-1 accent-[#FF1493]" onChange={(e) => {
-            const v = Number(e.target.value)
-            setVol(v)
-            if (audioRef.current) audioRef.current.volume = v
-          }} />
-        </div>
-        <audio
-          ref={audioRef}
-          onTimeUpdate={(e) => setTcur((e.target as HTMLAudioElement).currentTime)}
-          onLoadedMetadata={(e) => setTdur((e.target as HTMLAudioElement).duration || 0)}
-          onEnded={() => { if (repeat && now) play(now); else skip(1) }}
-        />
-      </div>
+function LyricLines({ title, playing }: { title: string; playing: boolean }) {
+  const lines = [title, 'Playing on MFY Music', 'Crunch + Flix catalogs', playing ? 'Now playing' : 'Paused']
+  return (
+    <div className="space-y-4">
+      {lines.map((l, i) => (
+        <div key={l} className={`text-3xl font-bold tracking-tight transition-all ${i === (playing ? 1 : 0) ? 'text-white scale-105 opacity-100' : 'text-white/40 opacity-50'}`}>{l}</div>
+      ))}
     </div>
   )
 }
