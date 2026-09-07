@@ -250,24 +250,16 @@ export default function MetaDetails() {
       const name = (detail as any)?.title || (detail as any)?.name || String(selectedMedia.id)
       url = `https://animepahe.ru/`
     }
-    setSelectedMedia({ ...selectedMedia, season: activeSeason, episode: selectedMedia.episode, title: (detail as any)?.title || (detail as any)?.name, poster_path: (detail as any)?.poster_path } as any)
+    const saved = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia.id) && Number(h.season || 0) === Number(activeSeason || 0) && Number(h.episode || 0) === Number(selectedMedia.episode || 0))
+    setSelectedMedia({
+      ...selectedMedia,
+      season: activeSeason,
+      episode: selectedMedia.episode,
+      title: (detail as any)?.title || (detail as any)?.name,
+      poster_path: (detail as any)?.poster_path,
+      resumeAt: Number((saved as any)?.progress || (selectedMedia as any)?.resumeAt || 0),
+    } as any)
     setCurrentStreamUrl(url)
-    try {
-      const st = useStore.getState()
-      st.upsertHistory({
-        id: `${selectedMedia.id}-${kind}-${activeSeason || 0}-${selectedMedia.episode || 0}`,
-        mediaId: selectedMedia.id,
-        mediaType: kind,
-        title: (detail as any)?.title || (detail as any)?.name || String(selectedMedia.id),
-        posterPath: (detail as any)?.poster_path || null,
-        progress: 0,
-        duration: 0,
-        season: activeSeason,
-        episode: selectedMedia.episode,
-        watchedAt: new Date().toISOString(),
-        profileId: st.currentProfile?.id || 'default',
-      })
-    } catch {}
     setCurrentPage('player')
   }
 

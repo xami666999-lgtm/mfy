@@ -323,23 +323,33 @@ export default function PlayerPage() {
   }, [subSize, subBg, streamUrl, fit])
 
   useEffect(() => {
-    const w = document.querySelector('webview') as any
-    if (!w?.executeJavaScript) return
     const row = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id) && Number(h.season || 0) === Number(selectedMedia?.season || 0) && Number(h.episode || 0) === Number(selectedMedia?.episode || 0))
     const at = Math.max(Number((selectedMedia as any)?.resumeAt || 0), Number(row?.progress || 0), bestProgress.current)
     if (!(at > 15)) return
     const dur = Math.max(Number(row?.duration || 0), bestDuration.current)
     if (dur >= 600 && at / dur >= 0.95) return
-    const seekTo = at
-    let tries = 0
-    const id = setInterval(() => {
-      tries += 1
+    bestProgress.current = Math.max(bestProgress.current, at)
+    const ping = () => {
+      const w = document.querySelector('webview') as any
+      try { w?.send?.('mfy-seek', at) } catch {}
       try {
-        w.executeJavaScript(`(() => { const v = document.querySelector('video'); if (!v) return false; if (v.readyState >= 1 && Math.abs((v.currentTime||0) - ${seekTo}) > 8) { v.currentTime = ${seekTo}; return true } return v.readyState >= 1 })()`)
+        w?.executeJavaScript?.(`(() => { const v = document.querySelector('video'); if (!v || v.readyState < 1) return; if (Math.abs((v.currentTime||0) - ${at}) > 4) v.currentTime = ${at}; })()`)
       } catch {}
-      if (tries >= 25) clearInterval(id)
-    }, 800)
-    return () => clearInterval(id)
+      if (videoRef.current && videoRef.current.readyState >= 1) {
+        try { if (Math.abs(videoRef.current.currentTime - at) > 4) videoRef.current.currentTime = at } catch {}
+      }
+    }
+    ping()
+    const id = setInterval(ping, 700)
+    const t = setTimeout(() => clearInterval(id), 22000)
+    const w = document.querySelector('webview') as any
+    w?.addEventListener?.('dom-ready', ping)
+    w?.addEventListener?.('did-finish-load', ping)
+    return () => {
+      clearInterval(id)
+      clearTimeout(t)
+      try { w?.removeEventListener?.('dom-ready', ping); w?.removeEventListener?.('did-finish-load', ping) } catch {}
+    }
   }, [streamUrl, selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
 
   useEffect(() => {
