@@ -10,7 +10,9 @@ export function setRuntimeSubtitleKey(key: string) {
 
 const STREMIO_SUBS = [
   'https://opensubtitles-v3.strem.io',
+  'https://opensubtitlesv3-pro.dexter21767.com',
   'https://2ecbbd610840-opensubtitles.baby-beamup.club',
+  'https://opensubtitles.strem.io',
 ]
 
 export async function searchStremioSubtitles(kind: 'movie' | 'series', imdb: string, season?: number, episode?: number) {
@@ -19,21 +21,28 @@ export async function searchStremioSubtitles(kind: 'movie' | 'series', imdb: str
     ? `/subtitles/movie/${id}.json`
     : `/subtitles/series/${id}:${season || 1}:${episode || 1}.json`
   const api = typeof window !== 'undefined' ? (window as any).electronAPI : null
-  for (const base of STREMIO_SUBS) {
+  const seen = new Set<string>()
+  const out: { url: string; name: string; lang: string; format: string }[] = []
+  await Promise.all(STREMIO_SUBS.map(async (base) => {
     try {
       const url = base + path
-      const d = api?.fetchJson ? (await api.fetchJson(url, { timeoutMs: 12000 }))?.json : await (await fetch(url)).json()
-      const rows = d?.subtitles || []
-      if (!rows.length) continue
-      return rows.slice(0, 24).map((s: any) => ({
-        url: String(s.url || ''),
-        name: s.subtitleFileName || s.lang || 'sub',
-        lang: s.lang || 'und',
-        format: String(s.subtitleFileName || s.url || '').split('.').pop() || 'srt',
-      })).filter((s: any) => s.url)
+      const d = api?.fetchJson ? (await api.fetchJson(url, { timeoutMs: 10000 }))?.json : await (await fetch(url)).json()
+      const rows = d?.subtitles || d?.streams || []
+      for (const s of rows) {
+        const href = String(s.url || s.externalUrl || '')
+        if (!href || seen.has(href)) continue
+        seen.add(href)
+        out.push({
+          url: href,
+          name: s.subtitleFileName || s.lang || s.langCode || 'sub',
+          lang: String(s.lang || s.langCode || 'und').toLowerCase(),
+          format: String(s.subtitleFileName || href).split('.').pop() || 'srt',
+        })
+      }
     } catch {}
-  }
-  return []
+  }))
+  const rank = (l: string) => /^(eng|en|english)$/i.test(l) ? 0 : /^(und|unknown)$/i.test(l) ? 2 : 1
+  return out.sort((a, b) => rank(a.lang) - rank(b.lang)).slice(0, 30)
 }
 
 function getKey(): string {

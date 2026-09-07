@@ -282,13 +282,20 @@ export default function PlayerPage() {
 
   useEffect(() => {
     if (!subtitleEnabled) { setCueText(''); return }
-    const id = setInterval(() => {
-      const t = progress
-      const hit = cuesRef.current.find((c) => t >= c.start && t <= c.end)
-      setCueText(hit?.text || '')
-    }, 200)
-    return () => clearInterval(id)
-  }, [subtitleEnabled, progress])
+    let raf = 0
+    const tick = () => {
+      const t = (progress || 0) + (Number(subtitleOffset) || 0)
+      const list = cuesRef.current
+      let hit = ''
+      for (let i = 0; i < list.length; i++) {
+        if (t >= list[i].start && t <= list[i].end) { hit = list[i].text; break }
+      }
+      setCueText((prev) => prev === hit ? prev : hit)
+      raf = window.setTimeout(tick, 80)
+    }
+    tick()
+    return () => clearTimeout(raf)
+  }, [subtitleEnabled, progress, subtitleOffset])
 
   useEffect(() => {
     const v = videoRef.current
@@ -489,6 +496,8 @@ export default function PlayerPage() {
         selectedMedia.episode,
       )
       setSubList(rows)
+      const en = rows.find((s) => /^(eng|en|english)$/i.test(s.lang)) || rows[0]
+      if (en) applySub(en)
     })()
   }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode, selectedMedia?.type])
 
@@ -541,18 +550,19 @@ export default function PlayerPage() {
 
   function parseVtt(raw: string) {
     const toSec = (s: string) => {
-      const p = s.trim().replace(',', '.').split(':').map(Number)
-      if (p.length === 3) return p[0] * 3600 + p[1] * 60 + p[2]
-      if (p.length === 2) return p[0] * 60 + p[1]
+      const t = s.trim().split(/\s+/)[0].replace(',', '.')
+      const p = t.split(':')
+      if (p.length === 3) return Number(p[0]) * 3600 + Number(p[1]) * 60 + Number(p[2])
+      if (p.length === 2) return Number(p[0]) * 60 + Number(p[1])
       return 0
     }
-    const blocks = raw.replace(/\r/g, '').split(/\n\n+/)
+    const blocks = raw.replace(/\r/g, '').replace(/\{\\an\d\}/g, '').split(/\n\n+/)
     const out: { start: number; end: number; text: string }[] = []
     for (const b of blocks) {
       const line = b.split('\n').find((l) => l.includes('-->'))
       if (!line) continue
       const [a, c] = line.split('-->')
-      const text = b.split('\n').filter((l) => l && !l.includes('-->') && !/^\d+$/.test(l) && l !== 'WEBVTT').join('\n').trim()
+      const text = b.split('\n').filter((l) => l && !l.includes('-->') && !/^\d+$/.test(l) && l !== 'WEBVTT' && !/^NOTE/.test(l)).join('\n').replace(/<[^>]+>/g, '').trim()
       if (!text) continue
       out.push({ start: toSec(a), end: toSec(c), text })
     }
@@ -577,6 +587,10 @@ export default function PlayerPage() {
       await w?.executeJavaScript?.(`(() => {
         const v = document.querySelector('video'); if (!v) return false;
         [...v.querySelectorAll('track')].forEach((t) => { try { t.track.mode = 'hidden' } catch(e) {} t.remove(); });
+        if (v.textTracks) for (let i=0;i<v.textTracks.length;i++) v.textTracks[i].mode = 'hidden';
+        let s = document.getElementById('mfy-hide-subs');
+        if (!s) { s = document.createElement('style'); s.id='mfy-hide-subs'; document.documentElement.appendChild(s); }
+        s.textContent = 'video::cue{opacity:0!important;background:none!important} ::cue{opacity:0!important}';
         return true;
       })()`)
     } catch {}
@@ -1123,7 +1137,7 @@ export default function PlayerPage() {
       >
         {subtitleEnabled && cueText && (
           <div style={{ position: 'absolute', left: 0, right: 0, bottom: 92, zIndex: 50, textAlign: 'center', pointerEvents: 'none' }}>
-            <span style={{ display: 'inline-block', maxWidth: '80%', color: '#fff', fontSize: `${Math.round(18 * subSize)}px`, fontWeight: 600, lineHeight: 1.35, background: subBg ? 'rgba(0,0,0,0.55)' : 'transparent', padding: subBg ? '4px 10px' : 0, borderRadius: 8, whiteSpace: 'pre-wrap' }}>{cueText}</span>
+            <span style={{ display: 'inline-block', maxWidth: '78%', color: '#fff', fontSize: `${Math.round(20 * (subSize || 1))}px`, fontWeight: 700, lineHeight: 1.3, background: 'transparent', padding: 0, textShadow: '0 1px 2px #000, 0 0 6px #000, 0 0 10px #000', whiteSpace: 'pre-wrap' }}>{cueText}</span>
           </div>
         )}
         {(gate || (!loaded && !error)) && (
