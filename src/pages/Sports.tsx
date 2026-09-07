@@ -83,10 +83,11 @@ export default function Sports() {
 
   useEffect(() => {
     Promise.all([
+      addonCatalog('sportsstreams').catch(() => []),
       addonCatalog('nuvio').catch(() => []),
       addonCatalog('nova').catch(() => []),
       addonCatalog('nebula').catch(() => []),
-    ]).then(([a, b, c]) => setNuvio([...(a || []), ...(b || []), ...(c || [])]))
+    ]).then(([hf, a, b, c]) => setNuvio([...(hf || []), ...(a || []), ...(b || []), ...(c || [])]))
     iptvEnhancedApi.getMetegolEvents().then(setMetegol).catch(() => {
       fetch('./data/metegol.json').then((r) => r.json()).then((d) => setMetegol(d.events || [])).catch(() => setMetegol([]))
     })
@@ -182,7 +183,22 @@ export default function Sports() {
           embedUrl: s.url,
           source: 'WatchFooty',
         })))
-      setStreams([...extra, ...all])
+      const hfHits = nuvio.filter((e: any) => {
+        const n = String(e.title || e.name || '').toLowerCase()
+        const part = needle.split(' vs')[0].slice(0, 10)
+        return part && n.includes(part)
+      })
+      const hfStreams = (await Promise.all(hfHits.slice(0, 4).map((e: any) =>
+        addonStreams(ADDONS.sportsstreams.base, 'sport', String(e.stremioId || e.id)).catch(() => [])
+      ))).flat().map((s, i) => ({
+        id: `hf-${i}`,
+        streamNo: i + 1,
+        language: s.quality || 'HD',
+        hd: true,
+        embedUrl: s.url,
+        source: 'Sports Streams',
+      }))
+      setStreams([...hfStreams, ...extra, ...all])
       if (!all.length) setStreamError('No players listed for this match right now.')
     } catch {
       setStreamError('Could not load players.')
@@ -377,7 +393,7 @@ export default function Sports() {
         <section className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <Radio className="w-3.5 h-3.5 text-[#FF1493]" />
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#FF1493]">Nuvio Live Sports</span>
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#FF1493]">Nuvio · Sports Streams</span>
           </div>
           <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
             {nuvio.map((e: any) => (
@@ -387,13 +403,18 @@ export default function Sports() {
                 className="text-left rounded-xl border border-white/10 bg-white/[0.03] p-3 hover:border-[#FF1493]/40"
                 onClick={async () => {
                   const nid = String(e.stremioId || e.id || '')
-                  const rows = await addonStreams(ADDONS.nuvio.base, 'tv', nid).catch(() => [])
+                  const bags = await Promise.all([
+                    addonStreams(ADDONS.sportsstreams.base, 'sport', nid).catch(() => []),
+                    addonStreams(ADDONS.nuvio.base, 'tv', nid).catch(() => []),
+                    addonStreams(ADDONS.nova.base, 'tv', nid).catch(() => []),
+                  ])
+                  const rows = bags.flat()
                   const hit = rows.find((r) => /^https?:/i.test(r.url)) || rows[0]
                   if (hit?.url) {
                     playEmbed(hit.url, e.title || e.name)
                     return
                   }
-                  if (nid) playEmbed(`https://nuvio.moaqeel6679.my.id/watch?id=${encodeURIComponent(nid)}`, e.title || e.name)
+                  if (nid) playEmbed(`https://sports.highfly.dev/watch/${encodeURIComponent(nid)}`, e.title || e.name)
                 }}
               >
                 <p className="text-sm font-semibold text-white line-clamp-2">{e.title || e.name}</p>
