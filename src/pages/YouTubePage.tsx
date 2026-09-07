@@ -8,6 +8,8 @@ const ROWS = [
   { id: 'gm', title: 'Gaming', q: 'gaming' },
   { id: 'nw', title: 'News', q: 'news today' },
   { id: 'lf', title: 'Lofi / chill', q: 'lofi hip hop' },
+  { id: 'mv', title: 'Music videos', q: 'official music video' },
+  { id: 'sp', title: 'Sports', q: 'sports highlights' },
 ]
 
 export default function YouTubePage() {
@@ -40,7 +42,7 @@ export default function YouTubePage() {
   }
 
   return (
-    <div className="min-h-full bg-[#0c080e] text-white">
+    <div className="min-h-full bg-[#0c080e] text-white pl-[300px]">
       <div className="h-14 px-5 flex items-center gap-3 border-b border-white/10">
         <span className="w-8 h-6 rounded-sm bg-[#FF1493] grid place-items-center text-[11px] font-black">M</span>
         <div>

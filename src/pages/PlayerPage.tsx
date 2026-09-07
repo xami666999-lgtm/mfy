@@ -584,13 +584,21 @@ export default function PlayerPage() {
       }
       cuesRef.current = parseVtt(vtt)
       const w = document.querySelector('webview') as any
+      const payload = JSON.stringify(vtt)
       await w?.executeJavaScript?.(`(() => {
         const v = document.querySelector('video'); if (!v) return false;
         [...v.querySelectorAll('track')].forEach((t) => { try { t.track.mode = 'hidden' } catch(e) {} t.remove(); });
-        if (v.textTracks) for (let i=0;i<v.textTracks.length;i++) v.textTracks[i].mode = 'hidden';
-        let s = document.getElementById('mfy-hide-subs');
-        if (!s) { s = document.createElement('style'); s.id='mfy-hide-subs'; document.documentElement.appendChild(s); }
-        s.textContent = 'video::cue{opacity:0!important;background:none!important} ::cue{opacity:0!important}';
+        if (v.textTracks) for (let i=0;i<v.textTracks.length;i++) try { v.textTracks[i].mode = 'hidden' } catch(e) {}
+        const blob = new Blob([${payload}], { type: 'text/vtt' });
+        const url = URL.createObjectURL(blob);
+        const tr = document.createElement('track');
+        tr.kind = 'subtitles'; tr.label = 'MFY'; tr.srclang = 'en'; tr.default = true; tr.src = url;
+        v.appendChild(tr);
+        const show = () => { try { if (tr.track) tr.track.mode = 'showing' } catch(e) {} };
+        tr.addEventListener('load', show); setTimeout(show, 200);
+        let s = document.getElementById('mfy-cue');
+        if (!s) { s = document.createElement('style'); s.id = 'mfy-cue'; document.documentElement.appendChild(s); }
+        s.textContent = 'video::cue{background:transparent!important;background-color:transparent!important;color:#fff!important;text-shadow:0 1px 2px #000,0 0 8px #000;font-weight:700} ::cue{background:none!important}';
         return true;
       })()`)
     } catch {}
@@ -1135,11 +1143,7 @@ export default function PlayerPage() {
         onMouseMove={onMouseMove}
         onClick={(e) => { if ((e.target as HTMLElement).closest('button, input, a, .mfy-bar')) return; togglePlay() }}
       >
-        {subtitleEnabled && cueText && (
-          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 92, zIndex: 50, textAlign: 'center', pointerEvents: 'none' }}>
-            <span style={{ display: 'inline-block', maxWidth: '78%', color: '#fff', fontSize: `${Math.round(20 * (subSize || 1))}px`, fontWeight: 700, lineHeight: 1.3, background: 'transparent', padding: 0, textShadow: '0 1px 2px #000, 0 0 6px #000, 0 0 10px #000', whiteSpace: 'pre-wrap' }}>{cueText}</span>
-          </div>
-        )}
+        {null}
         {(gate || (!loaded && !error)) && (
           <div style={{
             position: 'absolute', inset: 0, zIndex: 40,

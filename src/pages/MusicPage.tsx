@@ -11,6 +11,7 @@ export default function MusicPage() {
   const [top, setTop] = useState<Track[]>([])
   const [trend, setTrend] = useState<Track[]>([])
   const [hits, setHits] = useState<Track[]>([])
+  const [shelves, setShelves] = useState<{ title: string; tracks: Track[] }[]>([])
   const [now, setNow] = useState<Track | null>(null)
   const [queue, setQueue] = useState<Track[]>([])
   const [playing, setPlaying] = useState(false)
@@ -23,6 +24,11 @@ export default function MusicPage() {
   useEffect(() => {
     flixCatalog('top').then(setTop)
     flixCatalog('trending').then(setTrend)
+    const extra = ['pop hits', 'hip hop', 'rnb', 'rock', 'electronic', 'latin', 'afrobeats', 'kpop', 'indie', 'jazz']
+    extra.forEach(async (term) => {
+      const tracks = await searchMusic(term)
+      if (tracks.length) setShelves((prev) => prev.some((s) => s.title === term) ? prev : [...prev, { title: term, tracks }])
+    })
   }, [])
 
   async function play(track: Track, list: Track[] = []) {
@@ -70,26 +76,24 @@ export default function MusicPage() {
   const bg = now?.poster || trend[0]?.poster || ''
 
   return (
-    <div className="h-full min-h-[100%] text-white overflow-hidden" style={{ fontFamily: 'Inter, SF Pro Display, system-ui, sans-serif' }}>
+    <div className="h-full min-h-[100%] text-white overflow-hidden pl-[300px]" style={{ fontFamily: 'Inter, SF Pro Display, system-ui, sans-serif' }}>
       <div className="flex h-[calc(100vh-96px)]">
-        <aside className="w-56 shrink-0 backdrop-blur-md bg-black/40 border-r border-white/10 p-4 flex flex-col gap-1">
-          <div className="text-[#FF1493] font-black tracking-tight text-lg mb-4">MFY Music</div>
-          {([
-            ['home', 'Home', Home],
-            ['browse', 'Browse', Compass],
-            ['radio', 'Radio', Radio],
-            ['library', 'Library', Library],
-            ['playlists', 'Playlists', ListMusic],
-          ] as const).map(([id, label, Icon]) => (
-            <button key={id} type="button" onClick={() => setTab(id)} className={`flex items-center gap-3 h-10 px-3 rounded-xl text-sm tracking-tight ${tab === id ? 'bg-white/10 text-white' : 'text-white/55 hover:bg-white/5'}`}>
-              <Icon size={16} /> {label}
-            </button>
-          ))}
-        </aside>
         <main className="flex-1 overflow-auto relative">
           <div className="pointer-events-none absolute inset-0" style={{ background: bg ? `radial-gradient(80% 50% at 20% 0%, rgba(255,20,147,.28), transparent 55%), url(${bg}) center/cover` : 'radial-gradient(70% 40% at 10% 0%, rgba(255,20,147,.25), transparent)' }} />
           <div className="pointer-events-none absolute inset-0 backdrop-blur-3xl bg-black/55" />
           <div className="relative p-6 pb-28">
+            <div className="relative h-56 rounded-3xl overflow-hidden mb-6 border border-white/10">
+              <div className="absolute inset-0 grid grid-cols-8">
+                {[...trend, ...top].slice(0, 24).map((t) => (
+                  <img key={t.id} src={t.poster} alt="" className="w-full h-full object-cover" />
+                ))}
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+              <div className="absolute bottom-5 left-6">
+                <div className="text-[#FF1493] text-xs font-bold tracking-widest">MFY MUSIC</div>
+                <div className="text-3xl font-black tracking-tight">Crunch + Flix</div>
+              </div>
+            </div>
             <form onSubmit={onSearch} className="flex items-center gap-2 h-11 px-4 rounded-full bg-black/40 border border-white/10 max-w-xl mb-6">
               <Search size={15} className="text-white/40" />
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search Crunch + Flix Music" className="flex-1 bg-transparent outline-none text-sm tracking-tight" />
@@ -101,9 +105,9 @@ export default function MusicPage() {
               </section>
             ) : (
               <>
-                <h2 className="text-2xl font-bold tracking-tight mb-4">Home</h2>
-                <Row title="Flix · Trending" tracks={trend} onPlay={play} />
-                <Row title="Flix · Top" tracks={top} onPlay={play} />
+                <Row title="Trending" tracks={trend} onPlay={play} />
+                <Row title="Top" tracks={top} onPlay={play} />
+                {shelves.map((s) => <Row key={s.title} title={s.title} tracks={s.tracks} onPlay={play} />)}
               </>
             )}
           </div>
