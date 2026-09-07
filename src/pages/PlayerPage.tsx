@@ -520,6 +520,33 @@ export default function PlayerPage() {
   }, [streamUrl])
 
   useEffect(() => {
+    const bind = () => {
+      const w = document.querySelector('webview') as any
+      if (!w || w.__mfyTime) return
+      w.__mfyTime = true
+      w.addEventListener('ipc-message', (e: any) => {
+        if (e.channel !== 'mfy-time') return
+        const row = e.args?.[0] || {}
+        const cur = Number(row.p) || 0
+        const d = Number(row.d) || 0
+        if (cur > 3) {
+          if (cur >= bestProgress.current - 20) {
+            bestProgress.current = Math.max(bestProgress.current, cur)
+            setProgress(cur)
+          }
+        }
+        if (d > 60) {
+          bestDuration.current = Math.max(bestDuration.current, d)
+          setDur(d)
+        }
+      })
+    }
+    bind()
+    const id = setInterval(bind, 1000)
+    return () => clearInterval(id)
+  }, [streamUrl])
+
+  useEffect(() => {
     const key = `${selectedMedia?.id}-${selectedMedia?.season || 0}-${selectedMedia?.episode || 0}`
     if (progressKey.current !== key) {
       progressKey.current = key

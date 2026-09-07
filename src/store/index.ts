@@ -159,6 +159,16 @@ function persist(key: string, value: unknown) {
     const api = (window as any).electronAPI
     if (api?.set) api.set(key, value)
   } catch { /* ignore */ }
+  if (key === 'watchHistory') {
+    try {
+      const req = indexedDB.open('mfy', 1)
+      req.onupgradeneeded = () => req.result.createObjectStore('kv')
+      req.onsuccess = () => {
+        const tx = req.result.transaction('kv', 'readwrite')
+        tx.objectStore('kv').put(value, 'watchHistory')
+      }
+    } catch {}
+  }
 }
 
 function uid() {
@@ -515,6 +525,15 @@ export const useStore = create<AppState>((set, get) => ({
         } catch {}
       }
     }
+    try {
+      const req = indexedDB.open('mfy', 1)
+      req.onupgradeneeded = () => req.result.createObjectStore('kv')
+      req.onsuccess = () => {
+        const tx = req.result.transaction('kv', 'readonly')
+        const g = tx.objectStore('kv').get('watchHistory')
+        g.onsuccess = () => { if (Array.isArray(g.result) && g.result.length) set({ watchHistory: g.result as WatchHistoryItem[] }) }
+      }
+    } catch {}
     loadKey('watchHistory', (v) => {
       const rows = Array.isArray(v) ? v as WatchHistoryItem[] : []
       set({ watchHistory: rows })

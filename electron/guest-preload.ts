@@ -15,14 +15,16 @@ window.addEventListener('mousedown', (e) => {
 let target = 0
 let until = 0
 
+function videos(): HTMLVideoElement[] {
+  return Array.from(document.querySelectorAll('video'))
+}
+
 function seekVideos(sec: number) {
   const n = Number(sec)
   if (!(n > 10)) return
-  document.querySelectorAll('video').forEach((v) => {
+  videos().forEach((v) => {
     try {
-      if (v.readyState >= 1 && Math.abs((v.currentTime || 0) - n) > 4) {
-        v.currentTime = n
-      }
+      if (v.readyState >= 1 && Math.abs((v.currentTime || 0) - n) > 4) v.currentTime = n
     } catch {}
   })
 }
@@ -35,4 +37,11 @@ ipcRenderer.on('mfy-seek', (_e, sec) => {
 
 setInterval(() => {
   if (target > 10 && Date.now() < until) seekVideos(target)
-}, 600)
+  const v = videos().sort((a, b) => (b.currentTime || 0) - (a.currentTime || 0))[0]
+  if (!v) return
+  const p = Number(v.currentTime) || 0
+  const d = Number(v.duration) || 0
+  if (p > 3) {
+    try { ipcRenderer.sendToHost('mfy-time', { p, d: Number.isFinite(d) ? d : 0 }) } catch {}
+  }
+}, 800)
