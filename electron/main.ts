@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, Notification, Tray, Menu, nativeImage } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, shell, Notification, Tray, Menu, nativeImage, powerMonitor } from 'electron'
 import path from 'path'
 import Store from 'electron-store'
 import fs from 'fs'
@@ -269,12 +269,19 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
-app.on('before-quit', () => {
+function flushWatch() {
   try {
     const rows = store.get('watchHistory') as any[]
     if (Array.isArray(rows)) saveProgressList(rows)
   } catch {}
-})
+}
+
+app.on('before-quit', () => flushWatch())
+app.on('will-quit', () => flushWatch())
+try {
+  powerMonitor.on('suspend', () => flushWatch())
+  powerMonitor.on('lock-screen', () => flushWatch())
+} catch {}
 
 // Window controls
 ipcMain.on('window-minimize', () => mainWindow?.minimize())

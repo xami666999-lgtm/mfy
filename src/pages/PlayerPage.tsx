@@ -327,16 +327,18 @@ export default function PlayerPage() {
     if (!w?.executeJavaScript) return
     const row = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id) && Number(h.season || 0) === Number(selectedMedia?.season || 0) && Number(h.episode || 0) === Number(selectedMedia?.episode || 0))
     const at = Math.max(Number((selectedMedia as any)?.resumeAt || 0), Number(row?.progress || 0), bestProgress.current)
-    if (!(at > 15) || (row as any)?.completed) return
+    if (!(at > 15)) return
+    const dur = Math.max(Number(row?.duration || 0), bestDuration.current)
+    if (dur >= 600 && at / dur >= 0.95) return
     const seekTo = at
     let tries = 0
     const id = setInterval(() => {
       tries += 1
       try {
-        w.executeJavaScript(`(() => { const v = document.querySelector('video'); if (!v) return; if (v.readyState >= 1 && Math.abs((v.currentTime||0) - ${seekTo}) > 8) v.currentTime = ${seekTo}; })()`)
+        w.executeJavaScript(`(() => { const v = document.querySelector('video'); if (!v) return false; if (v.readyState >= 1 && Math.abs((v.currentTime||0) - ${seekTo}) > 8) { v.currentTime = ${seekTo}; return true } return v.readyState >= 1 })()`)
       } catch {}
-      if (tries >= 8) clearInterval(id)
-    }, 900)
+      if (tries >= 25) clearInterval(id)
+    }, 800)
     return () => clearInterval(id)
   }, [streamUrl, selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
 
@@ -965,7 +967,7 @@ export default function PlayerPage() {
     const prev = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia.id) && Number(h.season || 0) === Number(selectedMedia.season || 0) && Number(h.episode || 0) === Number(selectedMedia.episode || 0))
     d = Math.max(d, Number(prev?.duration || 0), bestDuration.current)
     p = Math.max(p, Number(prev?.progress || 0) < p ? p : (p >= (Number(prev?.progress || 0) - 15) ? p : Number(prev?.progress || 0)))
-    const reallyDone = !!(forceDone || (d >= 15 * 60 && p / d >= 0.92))
+    const reallyDone = !!(forceDone || (d >= 10 * 60 && p / d >= 0.95))
     upsertHistory({
       id: `${selectedMedia.id}-${selectedMedia.type}-${selectedMedia.season || 0}-${selectedMedia.episode || 0}`,
       mediaId: selectedMedia.id,

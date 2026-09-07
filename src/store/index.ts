@@ -242,8 +242,24 @@ export const useStore = create<AppState>((set, get) => ({
 
   watchHistory: [],
   setWatchHistory: (history) => {
-    set({ watchHistory: history })
-    persist('watchHistory', history)
+    const cur = get().watchHistory || []
+    const map = new Map<string, WatchHistoryItem>()
+    for (const h of [...cur, ...(history || [])]) {
+      const k = `${h.mediaType || 'tv'}|${h.mediaId}|${Number(h.season || 0)}|${Number(h.episode || 0)}`
+      const prev = map.get(k)
+      const progress = Math.max(Number(prev?.progress) || 0, Number(h.progress) || 0)
+      const duration = Math.max(Number(prev?.duration) || 0, Number(h.duration) || 0)
+      map.set(k, {
+        ...(prev || {}),
+        ...h,
+        progress,
+        duration,
+        completed: duration >= 600 && progress / duration >= 0.95,
+      } as WatchHistoryItem)
+    }
+    const next = [...map.values()]
+    set({ watchHistory: next })
+    persist('watchHistory', next)
   },
   upsertHistory: (item) => {
     const rest = get().watchHistory.filter(
@@ -258,7 +274,7 @@ export const useStore = create<AppState>((set, get) => ({
       posterPath: item.posterPath || prev?.posterPath || null,
       progress: Math.max(Number(item.progress) || 0, Number(prev?.progress) || 0),
       duration: Math.max(Number(item.duration) || 0, Number(prev?.duration) || 0),
-      completed: !!(item.completed || prev?.completed),
+      completed: Math.max(Number(item.progress) || 0, Number(prev?.progress) || 0) >= 0.95 * Math.max(Number(item.duration) || 0, Number(prev?.duration) || 0, 1) && Math.max(Number(item.duration) || 0, Number(prev?.duration) || 0) >= 600,
       seriesCompleted: !!(item.seriesCompleted || prev?.seriesCompleted),
     }
     const next = [merged, ...rest].slice(0, 2000)
@@ -516,7 +532,7 @@ export const useStore = create<AppState>((set, get) => ({
             ...h,
             progress: Math.max(Number(prev?.progress) || 0, Number(h.progress) || 0),
             duration: Math.max(Number(prev?.duration) || 0, Number(h.duration) || 0),
-            completed: !!(prev?.completed || (h as any).completed),
+            completed: Math.max(Number(prev?.progress) || 0, Number(h.progress) || 0) >= 0.95 * Math.max(Number(prev?.duration) || 0, Number(h.duration) || 0, 1) && Math.max(Number(prev?.duration) || 0, Number(h.duration) || 0) >= 600,
           } as WatchHistoryItem)
         }
         const merged = [...map.values()].sort((a, b) => Date.parse(b.watchedAt || '') - Date.parse(a.watchedAt || ''))
