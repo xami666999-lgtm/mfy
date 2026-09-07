@@ -4,6 +4,7 @@ import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 import { tmdb, POSTER_URL, BACKDROP_URL } from '../api/tmdb'
 import { vidyUrl, getPlayerUrl, isPlayerEmbed, getFallbackSources, PlayerSource } from '../api/vidy'
 import { mediafusionStreams } from '../api/mediafusion'
+import { aggregateStreams, bestPlayable } from '../api/stremioAgg'
 import { addonStreams, isOnePiece, STREAM_HOST, onePaceStreams } from '../api/stremioAddons'
 import { ANIME_SOURCES, MOVIE_TV_SOURCES, ALL_PLAY_SOURCES } from '../api/vidy'
 import { useStore } from '../store'
@@ -66,7 +67,7 @@ export default function PlayerPage() {
     playtorrio: 'PlayTorrio', simplstream: 'SimplStream', vidy: 'Vidy',
     zangetsu: 'Zangetsu', miruro: 'Miruro', mangayomi: 'Mangayomi',
     mediafusion: 'MediaFusion', flix: 'Flix', nyaa: 'Nyaa', animeflv: 'AnimeFLV',
-    onepace: 'One Pace', streamsppv: 'StreamsPPV', sportsstreams: 'Sports Streams', moviebox: 'MovieBox', vixsrc: 'Vixsrc', vidnest: 'Vidnest', animepahe: 'AnimePahe', pengu: 'Pengu', webtorrent: 'WebTorrent',
+    onepace: 'One Pace', streamsppv: 'StreamsPPV', sportsstreams: 'Sports Streams', moviebox: 'MovieBox', vixsrc: 'Vixsrc', vidnest: 'Vidnest', animepahe: 'AnimePahe', pengu: 'Pengu', webtorrent: 'WebTorrent', pipe: 'Pipe', torrentio: 'Torrentio', comet: 'Comet', kitsu: 'Kitsu', vlc: 'VLC',
   }
   const trackRef = useRef<HTMLTrackElement>(null)
 
@@ -144,6 +145,41 @@ export default function PlayerPage() {
       }).catch(() => {
         const fallback = getPlayerUrl('playtorrio', selectedMedia.type === 'movie' ? 'movie' : 'tv', selectedMedia.id, selectedMedia.season, selectedMedia.episode, anime)
         setStreamUrl(fallback); setLoaded(true); setLoading(false); setError('')
+      })
+      return
+    }
+    if (src === 'pipe' || src === 'torrentio' || src === 'comet' || src === 'vlc' || src === 'kitsu') {
+      setLoading(true)
+      setLoaded(false)
+      setError('')
+      aggregateStreams({
+        type: selectedMedia.type === 'movie' ? 'movie' : 'tv',
+        tmdbId: selectedMedia.id,
+        season: selectedMedia.season,
+        episode: selectedMedia.episode,
+        anime,
+        title,
+      }).then((rows) => {
+        setPicks(rows)
+        const pick = rows.find((r) => /^https?:/i.test(r.url)) || rows[0]
+        if (!pick) {
+          setError('No Pipe/Torrentio/Comet stream')
+          setLoading(false)
+          return
+        }
+        if (src === 'vlc') {
+          try { (window as any).electronAPI?.openVlc?.(pick.url) } catch {}
+          setLoaded(true)
+          setLoading(false)
+          return
+        }
+        setStreamUrl(pick.url)
+        setCurrentStreamUrl(pick.url)
+        setLoaded(true)
+        setLoading(false)
+      }).catch(() => {
+        setError('Aggregator failed')
+        setLoading(false)
       })
       return
     }
@@ -1094,8 +1130,19 @@ export default function PlayerPage() {
             ) : null}
             <button type="button" onClick={() => seekBy(90)} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>Skip intro</button>
             <button type="button" onClick={() => setFit((f) => f === 'contain' ? 'cover' : f === 'cover' ? 'fill' : 'contain')} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>{fit === 'cover' ? 'Crop' : fit === 'fill' ? 'Fill' : 'Fit'}</button>
-            <button type="button" onClick={() => {
-              try { (window as any).electronAPI?.openVlc?.(streamUrl) || (window as any).electronAPI?.openExternal?.(streamUrl) } catch {}
+            <button type="button" onClick={async () => {
+              if (!selectedMedia) return
+              const pick = await bestPlayable({
+                type: selectedMedia.type === 'movie' ? 'movie' : 'tv',
+                tmdbId: selectedMedia.id,
+                season: selectedMedia.season,
+                episode: selectedMedia.episode,
+                anime: isAnimeItem(selectedMedia),
+                title: String((selectedMedia as any).title || ''),
+              })
+              const url = pick?.url || streamUrl
+              if (!url) return
+              try { (window as any).electronAPI?.openVlc?.(url) } catch {}
             }} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>VLC</button>
             <button type="button" onClick={() => setPlayerSource('webtorrent')} style={{ background: playerSource === 'webtorrent' ? '#FF1493' : '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>P2P</button>
             <div className="relative">
@@ -1124,6 +1171,21 @@ export default function PlayerPage() {
         </div>
       </div>}
 
+      {picks.length > 0 && (
+        <div style={{ position: 'fixed', left: 16, top: 70, width: 300, maxHeight: '55vh', overflow: 'auto', zIndex: 120, background: '#12080d', border: '1px solid rgba(255,20,147,0.35)', borderRadius: 16, padding: 12 }}>
+          <p style={{ color: '#FF1493', fontSize: 11, fontWeight: 800 }}>PIPE · TORRENTIO · COMET</p>
+          {picks.slice(0, 16).map((p) => (
+            <button key={p.url} type="button" onClick={() => {
+              setStreamUrl(p.url)
+              setCurrentStreamUrl(p.url)
+              if (/^magnet:/i.test(p.url)) setPlayerSource('webtorrent')
+            }} style={{ width: '100%', textAlign: 'left', background: 'rgba(255,255,255,0.04)', border: 'none', color: '#fff', borderRadius: 8, padding: '7px 8px', marginTop: 6, cursor: 'pointer' }}>
+              <div style={{ fontSize: 11, fontWeight: 700 }}>{p.quality || p.addon} · {p.addon}</div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>{p.title.slice(0, 80)}</div>
+            </button>
+          ))}
+        </div>
+      )}
       {(playerSource === 'webtorrent' || magnetBox) && (
         <div style={{ position: 'fixed', right: 16, top: 70, width: 320, maxHeight: '70vh', overflow: 'auto', zIndex: 120, background: '#12080d', border: '1px solid rgba(255,20,147,0.35)', borderRadius: 16, padding: 12 }}>
           <p style={{ color: '#FF1493', fontSize: 11, fontWeight: 800, letterSpacing: 1 }}>WEBTORRENT</p>
