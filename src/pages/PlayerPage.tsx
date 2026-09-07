@@ -273,20 +273,49 @@ export default function PlayerPage() {
     const apply = () => {
       try {
         w.insertCSS(`
-          html, body { width:100% !important; height:100% !important; margin:0 !important; background:#000 !important; overflow:hidden !important; }
-          video, iframe { width:100vw !important; height:100vh !important; max-width:none !important; max-height:none !important; object-fit:${fit === 'full' ? 'contain' : fit} !important; background:#000 !important; }
-          video::cue, ::cue { font-size: ${subSize}em !important; line-height: 1.25; background: none !important; background-color: ${subBg ? 'rgba(0,0,0,0.45)' : 'transparent'} !important; text-shadow: none !important; -webkit-text-stroke: 0 !important; color: #fff !important; }
-          video::-webkit-media-controls, video::-webkit-media-controls-enclosure, video::-webkit-media-controls-panel, .vjs-control-bar, .jw-controlbar, .ytp-chrome-bottom, .plyr__controls { display: none !important; opacity: 0 !important; height: 0 !important; pointer-events: none !important; }
+          html, body { width:100% !important; height:100% !important; margin:0 !important; background:#000 !important; }
+          video::cue, ::cue { font-size: ${subSize}em !important; line-height: 1.25; background: none !important; background-color: ${subBg ? 'rgba(0,0,0,0.45)' : 'transparent'} !important; text-shadow: none !important; color: #fff !important; }
+          #mfy-inplayer { position:fixed; right:16px; bottom:18px; z-index:2147483646; display:flex; gap:8px; font-family:Inter,system-ui,sans-serif; }
+          #mfy-inplayer button { background:rgba(18,8,13,.82); color:#fff; border:1px solid rgba(255,255,255,.18); border-radius:999px; padding:8px 12px; font-size:12px; font-weight:700; cursor:pointer; }
+          #mfy-inplayer button.active { background:#FF1493; border-color:#FF1493; }
         `)
-        w.executeJavaScript(`document.querySelectorAll('video').forEach(v=>{
-          v.style.objectFit='${fit === 'full' ? 'contain' : fit}';
-          v.style.width='100vw'; v.style.height='100vh';
-          try {
-            const tracks = v.textTracks || []
-            for (let i = 0; i < tracks.length; i++) tracks[i].mode = i === 0 ? 'showing' : 'hidden'
-          } catch {}
-        })`)
-        w.executeJavaScript(`document.querySelectorAll('video').forEach(v=>{ v.muted=false; v.volume=1; const p=v.play(); if(p&&p.catch) p.catch(()=>{}); })`)
+        w.executeJavaScript(`(() => {
+          const fit = '${fit === 'full' ? 'contain' : fit}';
+          const applyFit = (mode) => {
+            document.querySelectorAll('video').forEach(v => {
+              v.style.objectFit = mode;
+              v.style.width = '100%';
+              v.style.height = '100%';
+              v.style.maxWidth = 'none';
+              v.style.maxHeight = 'none';
+            });
+            window.__mfyFit = mode;
+            document.querySelectorAll('#mfy-inplayer button[data-fit]').forEach(b => {
+              b.classList.toggle('active', b.getAttribute('data-fit') === mode);
+            });
+          };
+          if (!document.getElementById('mfy-inplayer')) {
+            const bar = document.createElement('div');
+            bar.id = 'mfy-inplayer';
+            bar.innerHTML = '<button data-fit="contain">Fit</button><button data-fit="cover">Crop</button><button data-fit="fill">Fill</button><button data-full="1">Full</button>';
+            bar.addEventListener('click', (e) => {
+              const t = e.target;
+              if (!t || !t.getAttribute) return;
+              if (t.getAttribute('data-fit')) applyFit(t.getAttribute('data-fit'));
+              if (t.getAttribute('data-full')) {
+                const v = document.querySelector('video') || document.documentElement;
+                if (document.fullscreenElement) document.exitFullscreen();
+                else (v.requestFullscreen || v.webkitRequestFullscreen || document.documentElement.requestFullscreen).call(v || document.documentElement);
+              }
+            });
+            document.body.appendChild(bar);
+          }
+          applyFit(fit);
+          document.querySelectorAll('video').forEach(v => {
+            v.muted = false; v.volume = 1;
+            const p = v.play(); if (p && p.catch) p.catch(() => {});
+          });
+        })()`)
       } catch {}
     }
     w.addEventListener('dom-ready', apply)
@@ -870,8 +899,14 @@ export default function PlayerPage() {
   function onMouseMove() {
     setShowUI(true)
     if (timer.current) clearTimeout(timer.current)
-    timer.current = setTimeout(() => hideChrome(), 1800)
+    timer.current = setTimeout(() => hideChrome(), 1400)
   }
+
+  useEffect(() => {
+    if (!loaded || error) return
+    const t = setTimeout(() => hideChrome(), 900)
+    return () => clearTimeout(t)
+  }, [loaded, streamUrl])
 
   useEffect(() => {
     let idle: ReturnType<typeof setTimeout>
@@ -1077,11 +1112,13 @@ export default function PlayerPage() {
         <RateModal title={title} kind={isAnimeItem(selectedMedia) ? 'anime' : (selectedMedia?.type === 'movie' ? 'movie' : 'tv')} onSubmit={(s, n) => finishRate(s, n)} onSkip={() => finishRate()} />
       )}
         <div className="mfy-player" onMouseMove={onMouseMove} style={{ background: '#000', minHeight: '100vh', cursor: showUI ? 'default' : 'none' }}>
+      {showUI && (
       <button type="button" onClick={goBack} title="Exit player"
-        style={{ position: 'fixed', top: 14, left: 14, zIndex: 400, background: '#FF1493', color: '#fff', border: 'none', borderRadius: 999, padding: '8px 16px', cursor: 'pointer', fontWeight: 800, fontSize: 12, letterSpacing: 0.4, boxShadow: '0 6px 20px rgba(255,20,147,0.35)', opacity: showUI ? 1 : 0.92 }}>
+        style={{ position: 'fixed', top: 14, left: 14, zIndex: 400, background: '#FF1493', color: '#fff', border: 'none', borderRadius: 999, padding: '8px 16px', cursor: 'pointer', fontWeight: 800, fontSize: 12, letterSpacing: 0.4, boxShadow: '0 6px 20px rgba(255,20,147,0.35)' }}>
         ← Exit
       </button>
-      {showUI && <div className="player-topbar visible" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 90, padding: '12px 16px 12px 108px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
+      )}
+      {showUI && <div className="player-topbar visible" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 90, padding: '12px 16px 12px 108px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)', pointerEvents: 'auto' }}>
         <div className="flex items-center gap-2">
         <button type="button" onClick={() => setShowRate(true)} style={{ background: '#FF1493', padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white' }}>Mark watched</button>
         </div>
@@ -1171,7 +1208,7 @@ export default function PlayerPage() {
         </div>
       </div>}
 
-      {picks.length > 0 && (
+      {showUI && picks.length > 0 && (
         <div style={{ position: 'fixed', left: 16, top: 70, width: 300, maxHeight: '55vh', overflow: 'auto', zIndex: 120, background: '#12080d', border: '1px solid rgba(255,20,147,0.35)', borderRadius: 16, padding: 12 }}>
           <p style={{ color: '#FF1493', fontSize: 11, fontWeight: 800 }}>PIPE · TORRENTIO · COMET</p>
           {picks.slice(0, 16).map((p) => (
@@ -1261,8 +1298,6 @@ export default function PlayerPage() {
               width: '100%',
               height: '100%',
               background: '#000',
-              transform: fit === 'cover' ? 'scale(1.28)' : fit === 'fill' ? 'scaleX(1.12) scaleY(1.18)' : 'scale(1)',
-              transformOrigin: 'center center',
               pointerEvents: 'auto',
             }}
             allowpopups="false"
