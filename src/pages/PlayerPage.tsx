@@ -275,43 +275,13 @@ export default function PlayerPage() {
         w.insertCSS(`
           html, body { width:100% !important; height:100% !important; margin:0 !important; background:#000 !important; }
           video::cue, ::cue { font-size: ${subSize}em !important; line-height: 1.25; background: none !important; background-color: ${subBg ? 'rgba(0,0,0,0.45)' : 'transparent'} !important; text-shadow: none !important; color: #fff !important; }
-          #mfy-inplayer { position:fixed; right:16px; bottom:18px; z-index:2147483646; display:flex; gap:8px; font-family:Inter,system-ui,sans-serif; }
-          #mfy-inplayer button { background:rgba(18,8,13,.82); color:#fff; border:1px solid rgba(255,255,255,.18); border-radius:999px; padding:8px 12px; font-size:12px; font-weight:700; cursor:pointer; }
-          #mfy-inplayer button.active { background:#FF1493; border-color:#FF1493; }
+          #mfy-inplayer { display:none !important; }
         `)
         w.executeJavaScript(`(() => {
-          const fit = '${fit === 'full' ? 'contain' : fit}';
-          const applyFit = (mode) => {
-            document.querySelectorAll('video').forEach(v => {
-              v.style.objectFit = mode;
-              v.style.width = '100%';
-              v.style.height = '100%';
-              v.style.maxWidth = 'none';
-              v.style.maxHeight = 'none';
-            });
-            window.__mfyFit = mode;
-            document.querySelectorAll('#mfy-inplayer button[data-fit]').forEach(b => {
-              b.classList.toggle('active', b.getAttribute('data-fit') === mode);
-            });
-          };
-          if (!document.getElementById('mfy-inplayer')) {
-            const bar = document.createElement('div');
-            bar.id = 'mfy-inplayer';
-            bar.innerHTML = '<button data-fit="contain">Fit</button><button data-fit="cover">Crop</button><button data-fit="fill">Fill</button><button data-full="1">Full</button>';
-            bar.addEventListener('click', (e) => {
-              const t = e.target;
-              if (!t || !t.getAttribute) return;
-              if (t.getAttribute('data-fit')) applyFit(t.getAttribute('data-fit'));
-              if (t.getAttribute('data-full')) {
-                const v = document.querySelector('video') || document.documentElement;
-                if (document.fullscreenElement) document.exitFullscreen();
-                else (v.requestFullscreen || v.webkitRequestFullscreen || document.documentElement.requestFullscreen).call(v || document.documentElement);
-              }
-            });
-            document.body.appendChild(bar);
-          }
-          applyFit(fit);
+          const bar = document.getElementById('mfy-inplayer');
+          if (bar && bar.parentNode) bar.parentNode.removeChild(bar);
           document.querySelectorAll('video').forEach(v => {
+            v.style.objectFit = '${fit === 'full' ? 'contain' : fit}';
             v.muted = false; v.volume = 1;
             const p = v.play(); if (p && p.catch) p.catch(() => {});
           });
