@@ -260,7 +260,7 @@ export default function Sports() {
   }
 
   function playEmbed(url: string, title?: string) {
-    if (!url || /play\.google|apple\.com/app|microsoft\.com|apk|bluestacks|github\.io\/iptv|stremio:|magnet:|vlc:\/\//i.test(url)) return
+    if (!url || /play\.google|apple\.com\/app|microsoft\.com|\.apk|bluestacks|github\.io\/iptv|stremio:|magnet:|vlc:/i.test(url)) return
     if (!/embed\.st\/embed\//i.test(url) && !/embedme\.top|watchfooty/i.test(url)) {
       const m = url.match(/embed\/([^/]+)\/([^/]+)(?:\/(\d+))?/)
       if (!m) return
