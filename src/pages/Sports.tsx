@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Trophy, Radio, ExternalLink, Loader2, Activity, Flag, Volleyball, Target, Gauge, Swords, Medal, Siren, Dumbbell, Skull, Bike, Sparkles, PlayCircle, X, Search, Filter, SkipBack, SkipForward } from 'lucide-react'
-import { sportsApi, badgeUrl, badgeFallbacks, posterUrl, timStreamsApi, watchfootyApi, type SportCategory, type SportMatch, type SportStream } from '../api/sports'
+import { sportsApi, badgeUrl, badgeFallbacks, posterUrl, sportIcon, timStreamsApi, watchfootyApi, type SportCategory, type SportMatch, type SportStream } from '../api/sports'
 import { iptvEnhancedApi } from '../api/iptv-enhanced'
 import { useStore } from '../store'
 import { addonCatalog, addonStreams, ADDONS } from '../api/stremioAddons'
@@ -307,8 +307,9 @@ export default function Sports() {
       <aside className="w-52 flex-shrink-0 bg-[#0a0e12] border-r border-white/10 p-3 hidden md:block">
         <p className="text-[10px] tracking-[0.25em] text-[#FF1493] font-bold mb-3">MFY SPORTS</p>
         {sports.map((s) => (
-          <button key={s.id} type="button" onClick={() => setSportId(s.id)} className={cn('w-full text-left px-3 py-2 rounded-md text-sm mb-0.5', sportId === s.id ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white')}>
-            {s.name || s.id}
+          <button key={s.id} type="button" onClick={() => setSportId(s.id)} className={cn('w-full text-left px-3 py-2 rounded-md text-sm mb-0.5 flex items-center gap-2', sportId === s.id ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white')}>
+            <img src={sportIcon(s.id)} alt="" className="w-5 h-5 object-contain flex-shrink-0" />
+            <span className="truncate">{s.name || s.id}</span>
           </button>
         ))}
       </aside>
@@ -798,17 +799,37 @@ export default function Sports() {
 function TeamCrest({ badge, name }: { badge?: string; name?: string }) {
   const list = badgeFallbacks(badge)
   const [i, setI] = useState(0)
-  const src = list[i]
+  const [extra, setExtra] = useState('')
+  useEffect(() => {
+    setI(0)
+    setExtra('')
+    const n = String(name || '').trim()
+    if (!n) return
+    const ctrl = new AbortController()
+    fetch(`https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(n)}`, { signal: ctrl.signal })
+      .then((r) => r.json())
+      .then((d) => {
+        const b = d?.teams?.[0]?.strBadge || d?.teams?.[0]?.strLogo
+        if (b) setExtra(b)
+      })
+      .catch(() => {})
+    return () => ctrl.abort()
+  }, [badge, name])
+  const src = list[i] || extra
   if (!src) {
     return <div className="w-11 h-11 rounded-full bg-white/10 grid place-items-center text-[9px] font-bold text-white/70">{(name || '?').slice(0, 2).toUpperCase()}</div>
   }
   return (
     <img
       src={src}
-      alt=""
-      className="w-11 h-11 object-contain"
+      alt={name || ''}
+      className="w-11 h-11 object-contain bg-white/5 rounded-full p-0.5"
       referrerPolicy="no-referrer"
-      onError={() => setI((n) => n + 1)}
+      onError={() => {
+        if (i + 1 < list.length) setI(i + 1)
+        else if (extra && src !== extra) setI(list.length)
+        else setI(999)
+      }}
     />
   )
 }
