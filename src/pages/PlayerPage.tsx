@@ -77,6 +77,7 @@ export default function PlayerPage() {
   const startedAt = useRef(Date.now())
   const bestProgress = useRef(0)
   const bestDuration = useRef(0)
+  const lastVideoAt = useRef(0)
   const progressKey = useRef('')
   const [showRate, setShowRate] = useState(false)
   const [countdown, setCountdown] = useState(5)
@@ -369,6 +370,7 @@ export default function PlayerPage() {
       const cur = v.currentTime || 0
       const d = Number.isFinite(v.duration) ? v.duration : 0
       if (cur > 2) {
+        lastVideoAt.current = Date.now()
         bestProgress.current = Math.max(bestProgress.current, cur)
         setProgress(cur)
       }
@@ -516,6 +518,7 @@ export default function PlayerPage() {
       w.__mfyTime = true
       w.addEventListener('ipc-message', (e: any) => {
         if (e.channel !== 'mfy-time') return
+        lastVideoAt.current = Date.now()
         const row = e.args?.[0] || {}
         const cur = Number(row.p) || 0
         const d = Number(row.d) || 0
@@ -547,8 +550,8 @@ export default function PlayerPage() {
       bestDuration.current = Math.max(Number(row?.duration || 0), Number(backup.d || 0), 0)
       setProgress(bestProgress.current)
       if (bestDuration.current > 0) setDur(bestDuration.current)
+      startedAt.current = Date.now() - bestProgress.current * 1000
     }
-    startedAt.current = Date.now()
     setShowUI(true)
     const id = setTimeout(() => setShowUI(false), 2500)
     return () => clearTimeout(id)
@@ -982,7 +985,9 @@ export default function PlayerPage() {
 
   async function saveProgress(forceDone = false) {
     if (!selectedMedia || selectedMedia.type === 'iptv') return
+    const wall = Math.max(0, (Date.now() - startedAt.current) / 1000)
     let p = Math.max(progress, bestProgress.current)
+    if (Date.now() - lastVideoAt.current > 3000) p = Math.max(p, wall)
     let d = Math.max(Number.isFinite(dur) ? dur : 0, bestDuration.current, expectedSec || 0)
     try {
       const w = document.querySelector('webview') as any
@@ -1013,7 +1018,7 @@ export default function PlayerPage() {
       episode: selectedMedia.episode,
       watchedAt: new Date().toISOString(),
       profileId: useStore.getState().currentProfile?.id || 'default',
-      completed: reallyDone || !!prev?.completed,
+      completed: reallyDone,
     })
     try { localStorage.setItem(`mfy-ep-${selectedMedia.id}-${selectedMedia.season || 0}-${selectedMedia.episode || 0}`, JSON.stringify({ p, d, completed: reallyDone, at: Date.now() })) } catch {}
     try {
