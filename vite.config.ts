@@ -1,46 +1,20 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import electron from 'vite-plugin-electron'
-import electronRenderer from 'vite-plugin-electron-renderer'
 import path from 'path'
 
 export default defineConfig({
-  plugins: [
-    react(),
-    electron([
-      {
-        entry: 'electron/main.ts',
-        vite: {
-          build: {
-            outDir: 'dist-electron',
-            rollupOptions: {
-              external: ['playwright', 'playwright-core', 'kerberos', '@nestjs/microservices', '@nestjs/platform-socket.io', 'redis', 'nats', 'amqplib', 'mqtt', 'grpc', 'node-fetch', 'better-sqlite3'],
-            },
-          },
-        },
-      },
-      {
-        entry: 'electron/preload.ts',
-        onstart(options) {
-          options.reload()
-        },
-        vite: {
-          build: {
-            outDir: 'dist-electron',
-          },
-        },
-      },
-    ]),
-    electronRenderer(),
-  ],
+  plugins: [react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
   build: {
-    rollupOptions: {
-      external: ['playwright', 'playwright-core'],
-    },
+    outDir: 'dist',
+    emptyOutDir: true,
+  },
+  server: {
+    port: 5173,
+    strictPort: true,
   },
 })

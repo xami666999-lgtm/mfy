@@ -1,242 +1,329 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { Track, Playlist, PlaybackState, AppSettings, Statistics, Page } from '../types'
-import { audioEngine } from '../services/audioEngine'
+import type { Game, System, Emulator, ControllerProfile, SaveFile, SaveBackup, Theme, Download, ScanFolder, Collection, PlaySession, AppSettings, Statistics, GameSettings, EmulatorCapabilities } from '../types'
+import { databaseService } from '../services/database'
 
-interface AppStore {
-  currentPage: Page
-  setCurrentPage: (page: Page) => void
+// Simplified store - database loading happens in App.tsx useEffect
+interface EmulatorStore {
+  installedEmulators: Emulator[]
+  availableEmulators: Emulator[]
+  selectedEmulator: Emulator | null
+  setInstalledEmulators: (emulators: Emulator[]) => void
+  setAvailableEmulators: (emulators: Emulator[]) => void
+  setSelectedEmulator: (emulator: Emulator | null) => void
+  emulatorSearchQuery: string
+  setEmulatorSearchQuery: (query: string) => void
+  emulatorSearchResults: Emulator[]
+  setEmulatorSearchResults: (results: Emulator[]) => void
+}
 
+interface ControllerStore {
+  detectedControllers: ControllerProfile[]
+  selectedControllerProfile: ControllerProfile | null
+  setDetectedControllers: (controllers: ControllerProfile[]) => void
+  setSelectedControllerProfile: (profile: ControllerProfile | null) => void
+  controllerSearchQuery: string
+  setControllerSearchQuery: (query: string) => void
+  controllerSearchResults: ControllerProfile[]
+  setControllerSearchResults: (results: ControllerProfile[]) => void
+}
+
+interface DownloadStore {
+  activeDownloads: Download[]
+  pendingDownloads: Download[]
+  completedDownloads: Download[]
+  failedDownloads: Download[]
+  downloadHistory: Download[]
+  setActiveDownloads: (downloads: Download[]) => void
+  setPendingDownloads: (downloads: Download[]) => void
+  setCompletedDownloads: (downloads: Download[]) => void
+  setFailedDownloads: (downloads: Download[]) => void
+  addToHistory: (download: Download) => void
+}
+
+interface ScanFolderStore {
+  scanFolders: ScanFolder[]
+  selectedScanFolder: ScanFolder | null
+  setScanFolders: (folders: ScanFolder[]) => void
+  setSelectedScanFolder: (folder: ScanFolder | null) => void
+}
+
+interface StatisticsStore {
+  statistics: Statistics | null
+  setStatistics: (stats: Statistics) => void
+}
+
+interface GameLibraryStore {
+  allGames: Game[]
+  favorites: Game[]
+  recentlyAdded: Game[]
+  recentlyPlayed: Game[]
+  collections: Collection[]
+  gameViewState: {
+    viewMode: 'grid' | 'list' | 'compact' | 'carousel' | 'xmb'
+    sortField: 'name' | 'releaseDate' | 'playtime' | 'lastPlayed' | 'addedAt' | 'launchCount' | 'rating'
+    sortDirection: 'asc' | 'desc'
+    filters: {
+      systems: string[]
+      genres: string[]
+      developers: string[]
+      publishers: string[]
+      years: number[]
+      emulators: string[]
+      favoritesOnly: boolean
+      installedOnly: boolean
+      uninstalledOnly: boolean
+      searchQuery: string
+      hasSaves: boolean
+    }
+    groupBy: 'none' | 'system' | 'genre' | 'year' | 'developer' | 'publisher' | 'emulator'
+  }
+  setAllGames: (games: Game[]) => void
+  setFavorites: (games: Game[]) => void
+  setRecentlyAdded: (games: Game[]) => void
+  setRecentlyPlayed: (games: Game[]) => void
+  setCollections: (collections: Collection[]) => void
+  setGameViewState: (state: any) => void
+  addGame: (game: Game) => void
+  removeGame: (id: string) => void
+  updateGame: (game: Game) => void
+  searchGames: (query: string) => void
+  filterGames: (filters: any) => void
+  sortGames: (sortField: string, sortDirection: string) => void
+}
+
+interface SystemStore {
+  systems: System[]
+  selectedSystem: System | null
+  setSystems: (systems: System[]) => void
+  setSelectedSystem: (system: System | null) => void
+}
+
+export interface AppStore {
+  // Navigation
+  currentPage: 'home' | 'games' | 'systems' | 'emulators' | 'themes' | 'downloads' | 'saves' | 'controllers' | 'settings' | 'game-detail' | 'system-detail' | 'emulator-detail' | 'search'
+  setCurrentPage: (page: AppStore['currentPage']) => void
   sidebarCollapsed: boolean
   toggleSidebar: () => void
   setSidebarCollapsed: (collapsed: boolean) => void
-
-  lyricsPanelOpen: boolean
-  toggleLyricsPanel: () => void
-  setLyricsPanelOpen: (open: boolean) => void
-
-  queueDrawerOpen: boolean
-  toggleQueueDrawer: () => void
-  setQueueDrawerOpen: (open: boolean) => void
-
   searchQuery: string
   setSearchQuery: (query: string) => void
-  searchResults: { tracks: Track[]; artists: any[]; albums: any[] }
-  setSearchResults: (results: { tracks: Track[]; artists: any[]; albums: any[] }) => void
+  searchResults: { games: Game[]; systems: System[]; emulators: Emulator[]; themes: Theme[] }
+  setSearchResults: (results: { games: Game[]; systems: System[]; emulators: Emulator[]; themes: Theme[] }) => void
   searchDebounceTimer: number | null
   setSearchDebounceTimer: (timer: number | null) => void
-
   miniPlayerOpen: boolean
   toggleMiniPlayer: () => void
   setMiniPlayerOpen: (open: boolean) => void
 
+  // Emulator state
+  emulator: EmulatorStore
+
+  // Controller state
+  controller: ControllerStore
+
+  // Download state
+  downloads: DownloadStore
+
+  // Scan folder state
+  scanFolders: ScanFolderStore
+
+  // Statistics state
+  statistics: StatisticsStore
+
+  // Game library state
+  gameLibrary: GameLibraryStore
+
+  // System state
+  systems: SystemStore
+
+  // Theme
   theme: 'dark' | 'light' | 'system'
   setTheme: (theme: 'dark' | 'light' | 'system') => void
-
-  playbackState: PlaybackState
-  setPlaybackState: (state: Partial<PlaybackState>) => void
-
-  playlists: Playlist[]
-  setPlaylists: (playlists: Playlist[]) => void
-  addPlaylist: (playlist: Playlist) => void
-  updatePlaylist: (playlist: Playlist) => void
-  deletePlaylist: (id: string) => void
-
-  favorites: Track[]
-  setFavorites: (favorites: Track[]) => void
-  addFavorite: (track: Track) => void
-  removeFavorite: (trackId: string) => void
-
-  history: Track[]
-  setHistory: (history: Track[]) => void
-
-  statistics: Statistics | null
-  setStatistics: (stats: Statistics) => void
-
-  settings: AppSettings
-  setSettings: (settings: Partial<AppSettings>) => void
-
-  trendingTracks: Track[]
-  setTrendingTracks: (tracks: Track[]) => void
-
-  recentlyPlayed: Track[]
-  setRecentlyPlayed: (tracks: Track[]) => void
-
-  initAudioEngine: () => Promise<void>
 }
 
-const defaultSettings: AppSettings = {
+const defaultStore: AppStore = {
+  // Navigation
+  currentPage: 'home',
+  setCurrentPage: (page: AppStore['currentPage']) => {},
+  sidebarCollapsed: false,
+  toggleSidebar: () => {},
+  setSidebarCollapsed: (collapsed: boolean) => {},
+  searchQuery: '',
+  setSearchQuery: (query: string) => {},
+  searchResults: { games: [], systems: [], emulators: [], themes: [] },
+  setSearchResults: (results: { games: Game[]; systems: System[]; emulators: Emulator[]; themes: Theme[] }) => {},
+
+  // Mini player
+  miniPlayerOpen: false,
+  toggleMiniPlayer: () => {},
+  setMiniPlayerOpen: (open: boolean) => {},
+
+  // Emulator state - initialized empty, loaded from database later
+  emulator: {
+    installedEmulators: [],
+    availableEmulators: [],
+    selectedEmulator: null,
+    setInstalledEmulators: (emulators: Emulator[]) => {},
+    setAvailableEmulators: (emulators: Emulator[]) => {},
+    setSelectedEmulator: (emulator: Emulator | null) => {},
+    emulatorSearchQuery: '',
+    setEmulatorSearchQuery: (query: string) => {},
+    emulatorSearchResults: [],
+    setEmulatorSearchResults: (results: Emulator[]) => {},
+  },
+
+  // Controller state
+  controller: {
+    detectedControllers: [],
+    selectedControllerProfile: null,
+    setDetectedControllers: (controllers: ControllerProfile[]) => {},
+    setSelectedControllerProfile: (profile: ControllerProfile | null) => {},
+    controllerSearchQuery: '',
+    setControllerSearchQuery: (query: string) => {},
+    controllerSearchResults: [],
+    setControllerSearchResults: (results: ControllerProfile[]) => {},
+  },
+
+  // Download state
+  downloads: {
+    activeDownloads: [],
+    pendingDownloads: [],
+    completedDownloads: [],
+    failedDownloads: [],
+    downloadHistory: [],
+    setActiveDownloads: (downloads: Download[]) => {},
+    setPendingDownloads: (downloads: Download[]) => {},
+    setCompletedDownloads: (downloads: Download[]) => {},
+    setFailedDownloads: (downloads: Download[]) => {},
+    addToHistory: (download: Download) => {},
+  },
+
+  // Scan folder state
+  scanFolders: {
+    scanFolders: [],
+    selectedScanFolder: null,
+    setScanFolders: (folders: ScanFolder[]) => {},
+    setSelectedScanFolder: (folder: ScanFolder | null) => {},
+  },
+
+  // Statistics state
+  statistics: {
+    statistics: null,
+    setStatistics: (stats: Statistics) => {},
+  },
+
+  // Game library state - initialized empty, loaded from database later
+  gameLibrary: {
+    allGames: [],
+    favorites: [],
+    recentlyAdded: [],
+    recentlyPlayed: [],
+    collections: [],
+    gameViewState: {
+      viewMode: 'grid',
+      sortField: 'name',
+      sortDirection: 'asc',
+      filters: {
+        systems: [],
+        genres: [],
+        developers: [],
+        publishers: [],
+        years: [],
+        emulators: [],
+        favoritesOnly: false,
+        installedOnly: false,
+        uninstalledOnly: false,
+        searchQuery: '',
+        hasSaves: false,
+      },
+      groupBy: 'none',
+    },
+    setAllGames: (games: Game[]) => {},
+    setFavorites: (games: Game[]) => {},
+    setRecentlyAdded: (games: Game[]) => {},
+    setRecentlyPlayed: (games: Game[]) => {},
+    setCollections: (collections: Collection[]) => {},
+    setGameViewState: (state: any) => {},
+    addGame: (game: Game) => {},
+    removeGame: (id: string) => {},
+    updateGame: (game: Game) => {},
+    searchGames: (query: string) => {},
+    filterGames: (filters: any) => {},
+    sortGames: (sortField: string, sortDirection: string) => {},
+  },
+
+  // System state - initialized empty, loaded from database later
+  systems: {
+    systems: [],
+    selectedSystem: null,
+    setSystems: (systems: System[]) => {},
+    setSelectedSystem: (system: System | null) => {},
+  },
+
+  // Theme
   theme: 'dark',
-  crossfadeEnabled: true,
-  crossfadeDuration: 5,
-  volume: 0.8,
-  miniPlayerEnabled: true,
-  notificationsEnabled: true,
-  notificationArtwork: true,
-  mediaKeysEnabled: true,
-  cacheEnabled: true,
-  cacheMaxSize: 5,
-  audioQuality: 'high',
-  pipedInstance: '',
-  ytmInstance: '',
-  lyricsEnabled: true,
-  lyricsSource: 'auto',
-  downloadQuality: 'high',
-  downloadPath: '',
-  startMinimized: false,
-  closeToTray: true,
-  shuffle: false,
-  repeatMode: 'off',
+  setTheme: (theme: 'dark' | 'light' | 'system') => {},
 }
 
-const defaultPlaybackState: PlaybackState = {
-  currentTrack: null,
-  queue: [],
-  queueIndex: -1,
-  isPlaying: false,
-  currentTime: 0,
-  duration: 0,
-  volume: 0.8,
-  isMuted: false,
-  repeatMode: 'off',
-  shuffle: false,
-  crossfadeEnabled: true,
-  crossfadeDuration: 5,
-}
-
+// Create the store with persistence
 export const useStore = create<AppStore>()(
   persist(
-    (set, get) => ({
-      currentPage: 'home',
-      setCurrentPage: (page) => set({ currentPage: page }),
-
-      sidebarCollapsed: false,
-      toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
-      setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
-
-      lyricsPanelOpen: false,
-      toggleLyricsPanel: () => set((state) => ({ lyricsPanelOpen: !state.lyricsPanelOpen })),
-      setLyricsPanelOpen: (open) => set({ lyricsPanelOpen: open }),
-
-      queueDrawerOpen: false,
-      toggleQueueDrawer: () => set((state) => ({ queueDrawerOpen: !state.queueDrawerOpen })),
-      setQueueDrawerOpen: (open) => set({ queueDrawerOpen: open }),
-
-      searchQuery: '',
-      setSearchQuery: (query) => set({ searchQuery: query }),
-      searchResults: { tracks: [], artists: [], albums: [] },
-      setSearchResults: (results) => set({ searchResults: results }),
-      searchDebounceTimer: null,
-      setSearchDebounceTimer: (timer) => set({ searchDebounceTimer: timer }),
-
-      miniPlayerOpen: false,
-      toggleMiniPlayer: () => set((state) => ({ miniPlayerOpen: !state.miniPlayerOpen })),
-      setMiniPlayerOpen: (open) => set({ miniPlayerOpen: open }),
-
-      theme: 'dark',
-      setTheme: (theme) => set({ theme }),
-
-      playbackState: defaultPlaybackState,
-      setPlaybackState: (state) => set((prev) => ({ playbackState: { ...prev.playbackState, ...state } })),
-
-      playlists: [],
-      setPlaylists: (playlists) => set({ playlists }),
-      addPlaylist: (playlist) => set((state) => ({ playlists: [...state.playlists, playlist] })),
-      updatePlaylist: (playlist) => set((state) => ({ 
-        playlists: state.playlists.map(p => p.id === playlist.id ? playlist : p) 
-      })),
-      deletePlaylist: (id) => set((state) => ({ 
-        playlists: state.playlists.filter(p => p.id !== id) 
-      })),
-
-      favorites: [],
-      setFavorites: (favorites) => set({ favorites }),
-      addFavorite: (track) => set((state) => ({ 
-        favorites: state.favorites.some(f => f.id === track.id) ? state.favorites : [...state.favorites, track] 
-      })),
-      removeFavorite: (trackId) => set((state) => ({ 
-        favorites: state.favorites.filter(f => f.id !== trackId) 
-      })),
-
-      history: [],
-      setHistory: (history) => set({ history }),
-
-      statistics: null,
-      setStatistics: (stats) => set({ statistics: stats }),
-
-      settings: defaultSettings,
-      setSettings: (settings) => set((state) => ({ settings: { ...state.settings, ...settings } })),
-
-      trendingTracks: [],
-      setTrendingTracks: (tracks) => set({ trendingTracks: tracks }),
-
-      recentlyPlayed: [],
-      setRecentlyPlayed: (tracks) => set({ recentlyPlayed: tracks }),
-
-      initAudioEngine: async () => {
-        await audioEngine.initialize()
-        
-        audioEngine.onPlaybackStateChange((state) => {
-          set({ playbackState: state })
-        })
-
-        audioEngine.onTrackEnd(async (track, completed) => {
-          if (completed) {
-            const { databaseService } = await import('../services/database')
-            await databaseService.insertHistory({
-              id: crypto.randomUUID(),
-              track_id: track.id,
-              played_at: Date.now(),
-              play_duration: track.duration,
-              completed: true,
-            })
-          }
-        })
-
-        audioEngine.onSilenceDetected(async (track, silenceStartTime) => {
-          const { streamService } = await import('../services/stream')
-          const nextIndex = get().playbackState.queueIndex + 1
-          if (nextIndex < get().playbackState.queue.length) {
-            const nextTrack = get().playbackState.queue[nextIndex]
-            if (nextTrack.sourceType === 'local' || nextTrack.sourceType === 'cached') {
-              // For local/cached tracks, no need to resolve stream
-              audioEngine.setQueue(get().playbackState.queue, get().playbackState.queueIndex)
-            } else {
-              const stream = await streamService.resolveStream(nextTrack.id, nextTrack.sourceUrl!, nextTrack.sourceType)
-              if (stream.success && stream.data) {
-                audioEngine.setQueue(get().playbackState.queue, get().playbackState.queueIndex)
-              }
-            }
-          }
-        })
-
-        const savedVolume = get().settings.volume
-        audioEngine.setVolume(savedVolume)
-        
-        const savedCrossfade = get().settings.crossfadeEnabled
-        const savedCrossfadeDuration = get().settings.crossfadeDuration
-        audioEngine.setCrossfade(savedCrossfade, savedCrossfadeDuration)
-      },
-    }),
+    (set) => ({ ...defaultStore }),
     {
-      name: 'mfy-music-store',
+      name: 'mfy-emulator-store',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
+      partialize: (state: any) => ({
+        // Persist only essential state
+        currentPage: state.currentPage,
         sidebarCollapsed: state.sidebarCollapsed,
-        lyricsPanelOpen: state.lyricsPanelOpen,
-        queueDrawerOpen: state.queueDrawerOpen,
-        theme: state.theme,
-        playbackState: {
-          volume: state.playbackState.volume,
-          isMuted: state.playbackState.isMuted,
-          repeatMode: state.playbackState.repeatMode,
-          shuffle: state.playbackState.shuffle,
-          crossfadeEnabled: state.playbackState.crossfadeEnabled,
-          crossfadeDuration: state.playbackState.crossfadeDuration,
-        },
-        settings: state.settings,
+        searchQuery: state.searchQuery,
+        searchResults: state.searchResults,
         miniPlayerOpen: state.miniPlayerOpen,
+        theme: state.theme,
+        // Emulator state
+        emulator: {
+          installedEmulators: state.emulator.installedEmulators,
+          availableEmulators: state.emulator.availableEmulators,
+          selectedEmulator: state.emulator.selectedEmulator,
+        },
+        // Controller state
+        controller: {
+          detectedControllers: state.controller.detectedControllers,
+          selectedControllerProfile: state.controller.selectedControllerProfile,
+        },
+        // Download state
+        downloads: {
+          activeDownloads: state.downloads.activeDownloads,
+          pendingDownloads: state.downloads.pendingDownloads,
+          completedDownloads: state.downloads.completedDownloads,
+          failedDownloads: state.downloads.failedDownloads,
+          downloadHistory: state.downloads.downloadHistory,
+        },
+        // Scan folders
+        scanFolders: {
+          scanFolders: state.scanFolders.scanFolders,
+          selectedScanFolder: state.scanFolders.selectedScanFolder,
+        },
+        // Statistics
+        statistics: state.statistics.statistics,
+        // Game library
+        gameLibrary: {
+          allGames: state.gameLibrary.allGames,
+          favorites: state.gameLibrary.favorites,
+          recentlyAdded: state.gameLibrary.recentlyAdded,
+          recentlyPlayed: state.gameLibrary.recentlyPlayed,
+          collections: state.gameLibrary.collections,
+          gameViewState: state.gameLibrary.gameViewState,
+        },
+        // Systems
+        systems: {
+          systems: state.systems.systems,
+          selectedSystem: state.systems.selectedSystem,
+        },
       }),
     }
   )
 )
+
+export default useStore

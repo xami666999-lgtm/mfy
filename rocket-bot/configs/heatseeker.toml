@@ -1,0 +1,69 @@
+# Heatseeker: You + Nexto (Blue) vs 2 All-Star bots (Orange)
+#:schema https://rlbot.org/schemas/match.json
+[rlbot]
+launcher = "Steam"
+auto_start_agents = true
+wait_for_agents = true
+
+[match]
+game_mode = "Heatseeker"
+game_map_upk = "Stadium_P"
+skip_replays = false
+start_without_countdown = false
+existing_match_behavior = "Restart"
+enable_rendering = false
+enable_state_setting = true
+auto_save_replay = false
+freeplay = false
+
+[mutators]
+match_length = "FiveMinutes"
+max_score = "Unlimited"
+multi_ball = "One"
+overtime = "Unlimited"
+game_speed = "Default"
+ball_max_speed = "Default"
+ball_type = "Default"
+ball_weight = "Default"
+ball_size = "Default"
+ball_bounciness = "Default"
+boost_amount = "NormalBoost"
+rumble = "Off"
+boost_strength = "One"
+gravity = "Default"
+demolish = "Default"
+respawn_time = "ThreeSeconds"
+max_time = "Unlimited"
+game_event = "Default"
+audio = "Default"
+ball_gravity = "Default"
+territory = "Off"
+stale_ball = "Unlimited"
+jump = "Default"
+dodge_timer = "OnePointTwentyFiveSeconds"
+possession_score = "Off"
+demolish_score = "Zero"
+normal_goal_score = "One"
+aerial_goal_score = "One"
+assist_goal_score = "Zero"
+input_restriction = "Default"
+
+[[cars]]
+type = "Human"
+team = "Blue"
+
+[[cars]]
+type = "RLBot"
+team = "Blue"
+config_file = "../bots/Nexto/bot.toml"
+auto_start = true
+
+[[cars]]
+type = "Psyonix"
+team = "Orange"
+skill = "AllStar"
+
+[[cars]]
+type = "Psyonix"
+team = "Orange"
+skill = "AllStar"

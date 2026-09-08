@@ -1,7 +1,7 @@
 {
-  "name": "mfy-music",
+  "name": "mfy-emulator",
   "version": "1.0.0",
-  "description": "MFY Music - High-performance cross-platform desktop music player with frosted-glass UI",
+  "description": "MFY.emulator - All-in-one emulator frontend and manager for Windows",
   "main": "dist-electron/main.js",
   "author": "MFY Team",
   "license": "MIT",
@@ -23,19 +23,29 @@
     "@radix-ui/react-separator": "^1.1.15",
     "@radix-ui/react-switch": "^1.3.7",
     "@radix-ui/react-tabs": "^1.1.21",
-    "better-sqlite3": "^11.8.1",
+    "@radix-ui/react-tooltip": "^1.2.7",
+    "better-sqlite3": "^13.0.3",
     "clsx": "^2.1.1",
     "electron-store": "^10.1.0",
     "framer-motion": "^12.12.2",
     "lucide-react": "^0.511.0",
+    "node-fetch": "^2.7.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hot-toast": "^2.5.2",
     "tailwind-merge": "^3.3.0",
-    "zustand": "^5.0.5"
+    "zustand": "^5.0.5",
+    "fuse.js": "^7.0.0",
+    "js-yaml": "^4.1.0",
+    "adm-zip": "^0.5.16",
+    "extract-zip": "^2.0.1",
+    "simple-git": "^3.27.0"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.5",
     "@types/better-sqlite3": "^7.6.12",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.5.5",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.5.2",
@@ -50,8 +60,8 @@
     "vite-plugin-electron-renderer": "^0.14.6"
   },
   "build": {
-    "appId": "com.mfy.music",
-    "productName": "MFY Music",
+    "appId": "com.mfy.emulator",
+    "productName": "MFY.emulator",
     "directories": {
       "output": "release"
     },
@@ -59,6 +69,10 @@
       "dist/**/*",
       "dist-electron/**/*"
     ],
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**/*"
+    ],
+    "nodeGypRebuild": false,
     "win": {
       "target": [
         {
@@ -73,14 +87,18 @@
             "x64"
           ]
         }
-      ]
+      ],
+      "icon": "public/icon.ico"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "MFY Music"
+      "shortcutName": "MFY.emulator",
+      "installerIcon": "public/icon.ico",
+      "uninstallerIcon": "public/icon.ico",
+      "license": "LICENSE.txt"
     }
   }
 }
