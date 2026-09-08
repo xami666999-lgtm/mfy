@@ -109,11 +109,16 @@ mainWindow.once('ready-to-show', () => {
   app.on('web-contents-created', (_evt, contents) => {
     contents.setWindowOpenHandler((details) => {
       try {
-        if (contents.getType() === 'webview' && details.url && /^https?:/i.test(details.url)) {
-          contents.loadURL(details.url)
-        }
+        const url = String(details.url || '')
+        const ok = /embed\.st|embedme\.top|streamed\.pk|sportsembed|watchfooty|weakstream|daddylive|streambtw|player\./i.test(url)
+        const bad = /google\.|gstatic\.com|recaptcha|doubleclick|facebook|twitter|instagram|bet365/i.test(url)
+        if (contents.getType() === 'webview' && ok && !bad) contents.loadURL(url)
       } catch {}
       return { action: 'deny' }
+    })
+    contents.on('will-navigate', (event, url) => {
+      if (contents.getType() !== 'webview') return
+      if (/google\.|gstatic\.com|recaptcha|doubleclick/i.test(url || '')) event.preventDefault()
     })
     contents.on('before-input-event', (_e, input) => {
       if (input.type === 'keyDown' && input.key === 'Escape') {

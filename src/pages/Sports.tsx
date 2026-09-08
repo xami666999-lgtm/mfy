@@ -236,6 +236,26 @@ export default function Sports() {
     setStreamError(feeds.length ? '' : 'No free feeds for this event.')
   }
 
+  useEffect(() => {
+    const w = document.querySelector('webview.mfy-sport') as any
+    if (!w || !watchUrl) return
+    const keep = watchUrl
+    const onNav = (e: any) => {
+      const u = String(e?.url || '')
+      if (!u) return
+      if (/google\.|gstatic\.com|recaptcha|doubleclick/i.test(u) || (/^https?:/i.test(u) && !/embed\.st|embedme|streamed\.pk|sportsembed|watchfooty|weakstream|daddylive|player\./i.test(u))) {
+        try { e.preventDefault?.() } catch {}
+        try { w.src = keep } catch {}
+      }
+    }
+    w.addEventListener('will-navigate', onNav)
+    w.addEventListener('did-navigate', onNav)
+    return () => {
+      w.removeEventListener('will-navigate', onNav)
+      w.removeEventListener('did-navigate', onNav)
+    }
+  }, [watchUrl])
+
   function sportSeek(delta: number) {
     try {
       const w = document.querySelector('webview.mfy-sport') as any
