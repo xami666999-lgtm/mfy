@@ -45,7 +45,7 @@ export default function Sports() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
-  const [engine, setEngine] = useState<'streamed' | 'metegol' | 'nuvio'>('streamed')
+  const [engine, setEngine] = useState<'streamed' | 'metegol' | 'nuvio' | 'sportzx' | 'ak47'>('streamed')
   const [nuvio, setNuvio] = useState<any[]>([])
   const [watchUrl, setWatchUrl] = useState('')
   const [watchQuality, setWatchQuality] = useState('')
@@ -198,7 +198,11 @@ export default function Sports() {
         embedUrl: s.url,
         source: 'Sports Streams',
       }))
-      setStreams([...hfStreams, ...extra, ...all])
+      const apps = [
+        { id: 'sportzx', streamNo: 1, language: 'SportzX', hd: true, embedUrl: 'https://sportzx.vercel.app', source: 'SportzX' },
+        { id: 'ak47', streamNo: 1, language: 'AK47 Sports', hd: true, embedUrl: 'https://www.ak47sports.net', source: 'AK47' },
+      ]
+      setStreams([...apps, ...hfStreams, ...extra, ...all])
       if (!all.length) setStreamError('No players listed for this match right now.')
     } catch {
       setStreamError('Could not load players.')
@@ -328,8 +332,8 @@ export default function Sports() {
           {(['live', 'upcoming', 'finished'] as const).map((w) => (
             <button key={w} type="button" onClick={() => setWhen(w)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold capitalize', when === w ? 'bg-white text-black' : 'bg-white/10 text-white/45')}>{w}</button>
           ))}
-          {(['streamed', 'nuvio', 'metegol'] as const).map((e) => (
-            <button key={e} type="button" onClick={() => setEngine(e)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold capitalize', engine === e ? 'bg-[#FF1493] text-white' : 'bg-white/10 text-white/45')}>{e === 'nuvio' ? 'Nuvio Live' : e}</button>
+          {(['streamed', 'nuvio', 'metegol', 'sportzx', 'ak47'] as const).map((e) => (
+            <button key={e} type="button" onClick={() => setEngine(e)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold capitalize', engine === e ? 'bg-[#FF1493] text-white' : 'bg-white/10 text-white/45')}>{e === 'nuvio' ? 'Nuvio Live' : e === 'sportzx' ? 'SportzX' : e === 'ak47' ? 'AK47' : e}</button>
           ))}
         </div>
       </div>
@@ -465,6 +469,25 @@ export default function Sports() {
             ))}
           </div>
           {metegol.length === 0 && <p className="text-sm text-white/30">No Metegol events loaded.</p>}
+        </section>
+      )}
+
+      {engine === 'sportzx' && (
+        <section className="mb-8">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#FF1493] mb-3">SportzX</p>
+          <div className="rounded-2xl overflow-hidden border border-white/10 bg-black" style={{ height: '70vh' }}>
+            {/* @ts-expect-error Electron webview */}
+            <webview src="https://sportzx.vercel.app" partition="persist:mfy" style={{ width: '100%', height: '100%' }} allowpopups="false" />
+          </div>
+        </section>
+      )}
+      {engine === 'ak47' && (
+        <section className="mb-8">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#FF1493] mb-3">AK47 Sports</p>
+          <div className="rounded-2xl overflow-hidden border border-white/10 bg-black" style={{ height: '70vh' }}>
+            {/* @ts-expect-error Electron webview */}
+            <webview src="https://www.ak47sports.net" partition="persist:mfy" style={{ width: '100%', height: '100%' }} allowpopups="false" />
+          </div>
         </section>
       )}
 
