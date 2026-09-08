@@ -231,7 +231,6 @@ function setupAutoUpdater() {
     })
   } catch {}
 
-  const enabled = store.get('autoUpdate', true) !== false
   autoUpdater.autoDownload = enabled
   autoUpdater.autoInstallOnAppQuit = enabled
 
