@@ -81,10 +81,9 @@ export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId:
 export function isPlayerEmbed(url: string): boolean {
   if (!url) return false
   if (/127\.0\.0\.1|localhost|magnet:/i.test(url)) return false
+  if (/\.(mp4|m3u8|mkv|webm|avi)(\?|$)/i.test(url)) return false
   if (/pengu\.uk\/signin|signin\.mp4/i.test(url)) return false
-  if (/pengu\.uk|vixsrc\.to|vidnest\.fun|vidsrc\.|vidlink\.pro|vidfast\.pro|moviebox\.ph|youtube|youtu\.be|invidious|nadeko|embed|player\.|videasy|epiembeds/i.test(url)) return true
-  if (/^https?:/i.test(url) && !/\.(mp4|m3u8|mkv|webm|avi)(\?|$)/i.test(url)) return true
-  return false
+  return /vidsrc|vidlink|vidfast|moviebox\.ph|youtube|youtu\.be|invidious|nadeko|vixsrc|vidnest|videasy|epiembeds|embed\/|\/player\./i.test(url)
 }
 
 export function getFallbackSources(type: 'movie' | 'tv', tmdbId: number | string | undefined, season?: number, episode?: number): { source: PlayerSource; url: string }[] {

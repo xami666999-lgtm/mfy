@@ -96,6 +96,15 @@ export default function PlayerPage() {
   })
 
   useEffect(() => {
+    const at = Number((selectedMedia as any)?.resumeAt || 0)
+    const row = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id) && Number(h.season || 0) === Number(selectedMedia?.season || 0) && Number(h.episode || 0) === Number(selectedMedia?.episode || 0))
+    const saved = Math.max(at, Number(row?.progress || 0))
+    if (saved > 20 && !['pipe', 'torrentio', 'comet', 'webtorrent'].includes(String(playerSource))) {
+      setPlayerSource('pipe')
+    }
+  }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
+
+  useEffect(() => {
     if (!selectedMedia || selectedMedia.type === 'iptv') {
       if (currentStreamUrl) {
         setStreamUrl(currentStreamUrl)
@@ -356,7 +365,18 @@ export default function PlayerPage() {
       const at = Number((selectedMedia as any)?.resumeAt || row?.progress || 0)
       if (at > 8 && v.currentTime < 5) v.currentTime = at
     }
-    const onTime = () => { setProgress(v.currentTime || 0); setDur(Number.isFinite(v.duration) ? v.duration : 0) }
+    const onTime = () => {
+      const cur = v.currentTime || 0
+      const d = Number.isFinite(v.duration) ? v.duration : 0
+      if (cur > 2) {
+        bestProgress.current = Math.max(bestProgress.current, cur)
+        setProgress(cur)
+      }
+      if (d > 30) {
+        bestDuration.current = Math.max(bestDuration.current, d)
+        setDur(d)
+      }
+    }
     const onPlay = () => setPlaying(true)
     const onPause = () => setPlaying(false)
     const onEnded = () => { setPlaying(false); handleEnded() }
