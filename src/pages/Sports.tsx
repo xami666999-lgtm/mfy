@@ -45,7 +45,7 @@ export default function Sports() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
-  const [engine, setEngine] = useState<'streamed' | 'metegol' | 'nuvio' | 'sportzx' | 'ak47'>('streamed')
+  const [engine, setEngine] = useState<'streamed' | 'metegol' | 'nuvio'>('streamed')
   const [nuvio, setNuvio] = useState<any[]>([])
   const [watchUrl, setWatchUrl] = useState('')
   const [watchQuality, setWatchQuality] = useState('')
@@ -333,8 +333,8 @@ export default function Sports() {
           {(['live', 'upcoming', 'finished'] as const).map((w) => (
             <button key={w} type="button" onClick={() => setWhen(w)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold capitalize', when === w ? 'bg-white text-black' : 'bg-white/10 text-white/45')}>{w}</button>
           ))}
-          {(['streamed', 'nuvio', 'metegol', 'sportzx', 'ak47'] as const).map((e) => (
-            <button key={e} type="button" onClick={() => setEngine(e)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold capitalize', engine === e ? 'bg-[#FF1493] text-white' : 'bg-white/10 text-white/45')}>{e === 'nuvio' ? 'Nuvio Live' : e === 'sportzx' ? 'SportzX' : e === 'ak47' ? 'AK47' : e}</button>
+          {(['streamed', 'nuvio', 'metegol'] as const).map((e) => (
+            <button key={e} type="button" onClick={() => setEngine(e)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold capitalize', engine === e ? 'bg-[#FF1493] text-white' : 'bg-white/10 text-white/45')}>{e === 'nuvio' ? 'Nuvio Live' : e}</button>
           ))}
         </div>
       </div>
@@ -473,24 +473,7 @@ export default function Sports() {
         </section>
       )}
 
-      {(engine === 'sportzx' || engine === 'ak47') && (
-        <div className="mb-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-sm font-semibold text-white">{engine === 'sportzx' ? 'SportzX' : 'AK47 Sports'} Android player</p>
-          <p className="text-[12px] text-white/45 mt-1 mb-3">Needs WSA or BlueStacks with ADB on. First tap can ask for the APK. Windows cannot run the APK inside the video frame — MFY starts their app and brings the window forward.</p>
-          <button
-            type="button"
-            className="h-10 px-4 rounded-full bg-[#FF1493] text-white text-sm font-semibold"
-            onClick={async () => {
-              const api = (window as any).electronAPI
-              const r = await api?.launchAndroidApp?.(engine)
-              if (!r?.ok) alert(r?.reason || 'Could not launch. Install BlueStacks or WSA first.')
-              else if (r.reason) alert(r.reason)
-            }}
-          >
-            Launch {engine === 'sportzx' ? 'SportzX' : 'AK47'}
-          </button>
-        </div>
-      )}
+
 
       <section className="mb-10">
         <div className="flex items-center gap-2 mb-4">
