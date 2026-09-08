@@ -315,7 +315,7 @@ export default function Sports() {
             <webview
               className="mfy-sport"
               src={watchUrl}
-              partition="persist:mfy"
+              partition="persist:mfy-sport"
               allowpopups="true"
               useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
               webpreferences="allowRunningInsecureContent, javascript=yes"
@@ -609,7 +609,7 @@ export default function Sports() {
                   {slot?.url ? (
                     <>
                       {/* @ts-expect-error Electron webview */}
-                      <webview title={slot.title} src={slot.url} partition="persist:mfy" className="w-full h-full" style={{ width: '100%', height: '100%' }} allowpopups="false" />
+                      <webview title={slot.title} src={slot.url} partition="persist:mfy-sport" className="w-full h-full" style={{ width: '100%', height: '100%' }} allowpopups="false" />
                       <div className="absolute top-1 left-1 right-1 flex justify-between text-[10px] text-white">
                         <span className="bg-black/60 px-2 py-0.5 rounded">{slot.title}</span>
                         <button type="button" className="bg-black/60 px-2 py-0.5 rounded" onClick={() => setMvSlots((s) => s.filter((x) => x.id !== slot.id))}>✕</button>

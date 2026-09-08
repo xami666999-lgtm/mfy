@@ -107,7 +107,14 @@ mainWindow.once('ready-to-show', () => {
     return { action: 'deny' }
   })
   app.on('web-contents-created', (_evt, contents) => {
-    contents.setWindowOpenHandler(() => ({ action: 'deny' }))
+    contents.setWindowOpenHandler((details) => {
+      try {
+        if (contents.getType() === 'webview' && details.url && /^https?:/i.test(details.url)) {
+          contents.loadURL(details.url)
+        }
+      } catch {}
+      return { action: 'deny' }
+    })
     contents.on('before-input-event', (_e, input) => {
       if (input.type === 'keyDown' && input.key === 'Escape') {
         mainWindow?.webContents.send('mfy-player-escape')

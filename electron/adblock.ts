@@ -68,7 +68,6 @@ const AD_DOMAINS = [
   'oath.com',
   'advertising.com',
   'matichtv.com',
-  'h5ast.stream',
   'ad-maven.com',
   'adexchangegate.com',
   'tsyndicate.com',
@@ -112,7 +111,7 @@ export function setupAdBlocker() {
   for (const d of EXTRA) {
     if (!AD_DOMAINS.includes(d)) AD_DOMAINS.push(d)
   }
-  const sessions = [session.defaultSession, session.fromPartition('persist:mfy'), session.fromPartition('persist:mfy-yt')]
+  const sessions = [session.defaultSession, session.fromPartition('persist:mfy'), session.fromPartition('persist:mfy-yt'), session.fromPartition('persist:mfy-sport')]
   for (const ses of sessions) {
   ses.webRequest.onBeforeRequest({ urls: ['*://*/*'] }, (details, callback) => {
     const url = details.url
