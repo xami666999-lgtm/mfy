@@ -151,15 +151,29 @@ export default function Sports() {
   }, [sportId])
 
   async function openMatch(match: SportMatch) {
+    const sources = match.sources || []
+    const first = sources[0]
+    if (first) {
+      const url = `https://embed.st/embed/${encodeURIComponent(first.source)}/${encodeURIComponent(first.id)}/1`
+      const more = sources.slice(0, 8).map((s, i) => ({
+        id: `${s.source}-${s.id}-${i}`,
+        streamNo: i + 1,
+        language: s.source,
+        hd: true,
+        source: s.source,
+        embedUrl: `https://embed.st/embed/${encodeURIComponent(s.source)}/${encodeURIComponent(s.id)}/1`,
+      }))
+      setWatchList(more)
+      setWatchQuality(url)
+      setActiveMatch(null)
+      setStreams(null)
+      setWatchUrl(url)
+      return
+    }
     setActiveMatch(match)
     setStreams(null)
-    setStreamError('')
-    const sources = match.sources || []
-    if (sources[0]) {
-      playEmbed(`https://embed.st/embed/${sources[0].source}/${sources[0].id}/1`, match.title)
-    }
+    setStreamError('No sources listed for this match.')
     if (!sources.length) {
-      setStreamError('No sources listed for this match.')
       return
     }
     setResolving(true)
@@ -235,29 +249,9 @@ export default function Sports() {
     setStreamError(feeds.length ? '' : 'No free feeds for this event.')
   }
 
-  useEffect(() => {
-    const w = document.querySelector('webview.mfy-sport') as any
-    if (!w || !watchUrl) return
-    const keep = watchUrl
-    const onNav = (e: any) => {
-      const u = String(e?.url || '')
-      if (!u) return
-      if (/google\.|gstatic\.com|recaptcha|doubleclick/i.test(u) || (/^https?:/i.test(u) && !/embed\.st|embedme|streamed\.pk|sportsembed|watchfooty|weakstream|daddylive|player\./i.test(u))) {
-        try { e.preventDefault?.() } catch {}
-        try { w.src = keep } catch {}
-      }
-    }
-    w.addEventListener('will-navigate', onNav)
-    w.addEventListener('did-navigate', onNav)
-    return () => {
-      w.removeEventListener('will-navigate', onNav)
-      w.removeEventListener('did-navigate', onNav)
-    }
-  }, [watchUrl])
-
   function sportSeek(delta: number) {
     try {
-      const w = document.querySelector('webview.mfy-sport') as any
+      const w = document.querySelector('iframe.mfy-sport') as any
       w?.executeJavaScript?.(`document.querySelectorAll('video').forEach(v => { v.currentTime = Math.max(0, (v.currentTime||0) + (${delta})) })`)
     } catch {}
   }
@@ -337,15 +331,14 @@ export default function Sports() {
             <span className="text-[11px] text-white/35 ml-auto">Use the player inside the video. MFY stays off it.</span>
           </div>
           <div className="flex-1 min-h-0 bg-black">
-            {/* @ts-expect-error Electron webview */}
-            <webview
+            <iframe
               className="mfy-sport"
               src={watchUrl}
-              partition="persist:mfy-sport"
-              allowpopups="true"
-              useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-              webpreferences="allowRunningInsecureContent, javascript=yes"
-              style={{ width: '100%', height: '100%', display: 'flex' }}
+              title="MFY Sports"
+              allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+              allowFullScreen
+              referrerPolicy="no-referrer"
+              style={{ width: '100%', height: '100%', border: 0, background: '#000' }}
             />
           </div>
         </div>
