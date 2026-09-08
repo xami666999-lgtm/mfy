@@ -198,10 +198,11 @@ export default function Sports() {
         embedUrl: s.url,
         source: 'Sports Streams',
       }))
-      const apps = [
-        { id: 'sportzx', streamNo: 1, language: 'SportzX', hd: true, embedUrl: 'https://sportzx.vercel.app', source: 'SportzX' },
-        { id: 'ak47', streamNo: 1, language: 'AK47 Sports', hd: true, embedUrl: 'https://www.ak47sports.net', source: 'AK47' },
-      ]
+      const first = sources[0]
+      const apps = first ? [
+        { id: 'sportzx', streamNo: 1, language: 'SportzX', hd: true, embedUrl: `https://embed.st/embed/${first.source}/${first.id}/1`, source: 'SportzX' },
+        { id: 'ak47', streamNo: 1, language: 'AK47', hd: true, embedUrl: `https://sportsembed.su/embed/${first.source}/${first.id}`, source: 'AK47' },
+      ] : []
       setStreams([...apps, ...hfStreams, ...extra, ...all])
       if (!all.length) setStreamError('No players listed for this match right now.')
     } catch {
@@ -472,23 +473,8 @@ export default function Sports() {
         </section>
       )}
 
-      {engine === 'sportzx' && (
-        <section className="mb-8">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#FF1493] mb-3">SportzX</p>
-          <div className="rounded-2xl overflow-hidden border border-white/10 bg-black" style={{ height: '70vh' }}>
-            {/* @ts-expect-error Electron webview */}
-            <webview src="https://sportzx.vercel.app" partition="persist:mfy" style={{ width: '100%', height: '100%' }} allowpopups="false" />
-          </div>
-        </section>
-      )}
-      {engine === 'ak47' && (
-        <section className="mb-8">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#FF1493] mb-3">AK47 Sports</p>
-          <div className="rounded-2xl overflow-hidden border border-white/10 bg-black" style={{ height: '70vh' }}>
-            {/* @ts-expect-error Electron webview */}
-            <webview src="https://www.ak47sports.net" partition="persist:mfy" style={{ width: '100%', height: '100%' }} allowpopups="false" />
-          </div>
-        </section>
+      {(engine === 'sportzx' || engine === 'ak47') && (
+        <p className="text-[12px] text-white/45 mb-4">{engine === 'sportzx' ? 'SportzX' : 'AK47'} plays live matches in the MFY player. Their APK sites are download pages only.</p>
       )}
 
       <section className="mb-10">
