@@ -313,15 +313,19 @@ app.whenReady().then(() => {
   try {
     session.fromPartition('persist:mfy').setUserAgent(chromeUA)
     session.fromPartition('persist:mfy').setPreloads([path.join(__dirname, 'guest-preload.js')])
+    session.fromPartition('persist:mfy-sport').setUserAgent(chromeUA)
   } catch {}
-  session.defaultSession.webRequest.onHeadersReceived((details: any, callback: any) => {
+  const stripFrame = (details: any, callback: any) => {
     const headers = { ...(details.responseHeaders || {}) }
     for (const key of Object.keys(headers)) {
       const k = key.toLowerCase()
       if (k === 'x-frame-options' || k === 'content-security-policy') delete headers[key]
     }
     callback({ responseHeaders: headers })
-  })
+  }
+  session.defaultSession.webRequest.onHeadersReceived(stripFrame)
+  try { session.fromPartition('persist:mfy').webRequest.onHeadersReceived(stripFrame) } catch {}
+  try { session.fromPartition('persist:mfy-sport').webRequest.onHeadersReceived(stripFrame) } catch {}
   createWindow()
   createTray()
   setupAutoUpdater()
