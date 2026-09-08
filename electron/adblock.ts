@@ -111,7 +111,7 @@ export function setupAdBlocker() {
   for (const d of EXTRA) {
     if (!AD_DOMAINS.includes(d)) AD_DOMAINS.push(d)
   }
-  const sessions = [session.defaultSession, session.fromPartition('persist:mfy'), session.fromPartition('persist:mfy-yt'), session.fromPartition('persist:mfy-sport')]
+  const sessions = [session.defaultSession, session.fromPartition('persist:mfy'), session.fromPartition('persist:mfy-yt'), session.fromPartition('persist:mfy-sport'), session.fromPartition('persist:mfy-embed')]
   for (const ses of sessions) {
   ses.webRequest.onBeforeRequest({ urls: ['*://*/*'] }, (details, callback) => {
     const url = details.url

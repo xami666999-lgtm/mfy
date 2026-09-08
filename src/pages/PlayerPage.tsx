@@ -96,14 +96,6 @@ export default function PlayerPage() {
     } catch { return 'playtorrio' }
   })
 
-  useEffect(() => {
-    const at = Number((selectedMedia as any)?.resumeAt || 0)
-    const row = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id) && Number(h.season || 0) === Number(selectedMedia?.season || 0) && Number(h.episode || 0) === Number(selectedMedia?.episode || 0))
-    const saved = Math.max(at, Number(row?.progress || 0))
-    if (saved > 20 && !['pipe', 'torrentio', 'comet', 'webtorrent'].includes(String(playerSource))) {
-      setPlayerSource('pipe')
-    }
-  }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
 
   useEffect(() => {
     if (!selectedMedia || selectedMedia.type === 'iptv') {
@@ -235,11 +227,6 @@ export default function PlayerPage() {
     setError('')
   }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode, selectedMedia?.type, playerSource])
 
-  useEffect(() => {
-    if (loaded || error || !selectedMedia || selectedMedia.type === 'iptv') return
-    const t = setTimeout(() => tryNextSource(), 2500)
-    return () => clearTimeout(t)
-  }, [playerSource, selectedMedia?.id, selectedMedia?.episode, loaded, error])
 
   function tryNextSource() {
     if (!selectedMedia || selectedMedia.type === 'iptv') return
@@ -1262,7 +1249,7 @@ export default function PlayerPage() {
         </div>
       </div>}
 
-      {showUI && picks.length > 0 && (
+      {showUI && picks.length > 0 && ['pipe','torrentio','comet','vlc'].includes(String(playerSource)) && (
         <div style={{ position: 'fixed', left: 16, top: 70, width: 300, maxHeight: '55vh', overflow: 'auto', zIndex: 120, background: '#12080d', border: '1px solid rgba(255,20,147,0.35)', borderRadius: 16, padding: 12 }}>
           <p style={{ color: '#FF1493', fontSize: 11, fontWeight: 800 }}>PIPE · TORRENTIO · COMET</p>
           {picks.slice(0, 16).map((p) => (
@@ -1347,7 +1334,7 @@ export default function PlayerPage() {
           <webview
             key={streamUrl}
             src={streamUrl}
-            partition="persist:mfy"
+            partition="persist:mfy-embed"
             style={{
               width: '100%',
               height: '100%',
