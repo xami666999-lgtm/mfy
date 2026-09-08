@@ -198,7 +198,10 @@ export default function Sports() {
         embedUrl: s.url,
         source: 'Sports Streams',
       }))
-      setStreams([...hfStreams, ...extra, ...all])
+      const playable = (u?: string) => !!u && /^https?:\/\//i.test(u) && !/^magnet:/i.test(u)
+      const official = all.filter((s) => playable(s.embedUrl) && /embed\.st|streamed|embedme|sportsembed|watchfooty/i.test(s.embedUrl || ''))
+      const rest = [...extra, ...hfStreams, ...all].filter((s) => playable(s.embedUrl) && !official.some((o) => o.embedUrl === s.embedUrl))
+      setStreams([...official, ...rest])
       if (!all.length) setStreamError('No players listed for this match right now.')
     } catch {
       setStreamError('Could not load players.')
@@ -291,31 +294,33 @@ export default function Sports() {
       </aside>
       <div className="flex-1 p-5 min-w-0">
       {watchUrl && (
-        <div className={sportFull ? 'fixed inset-0 z-[90] bg-black' : 'mb-5'} onMouseMove={() => setSportChrome(true)} onMouseLeave={() => setSportChrome(false)}>
-          {sportChrome && (
-            <button type="button" className="h-9 px-3 mb-2 rounded-full bg-white text-black text-sm font-semibold" onClick={() => { setWatchUrl(''); setWatchList([]); setSportFull(false) }}>Back</button>
-          )}
-          <div className={sportFull ? 'w-full h-full bg-black relative' : 'aspect-video rounded-xl overflow-hidden bg-black relative'}>
+        <div className="fixed inset-0 z-[90] bg-black flex flex-col">
+          <div className="h-11 flex-shrink-0 flex items-center gap-2 px-3 bg-[#0b0f14] border-b border-white/10">
+            <button type="button" className="h-8 px-3 rounded-full bg-white text-black text-sm font-semibold" onClick={() => { setWatchUrl(''); setWatchList([]); setSportFull(false) }}>Back</button>
+            <select
+              className="h-8 rounded-lg bg-[#12121a] text-white text-xs border border-white/15 px-2 max-w-md"
+              value={watchQuality || watchUrl}
+              onChange={(e) => { setWatchQuality(e.target.value); setWatchUrl(e.target.value) }}
+            >
+              {(watchList.length ? watchList : [{ embedUrl: watchUrl, language: 'Auto', hd: true, source: 'Live' } as SportStream]).map((s, i) => (
+                <option key={`${s.embedUrl}-${i}`} value={s.embedUrl || ''}>
+                  {(s.hd ? 'HD · ' : '') + (s.language || s.source || `Feed ${i + 1}`)}
+                </option>
+              ))}
+            </select>
+            <span className="text-[11px] text-white/35 ml-auto">Use the player inside the video. MFY stays off it.</span>
+          </div>
+          <div className="flex-1 min-h-0 bg-black">
             {/* @ts-expect-error Electron webview */}
-            <webview className="mfy-sport" src={watchUrl} partition="persist:mfy" style={{ width: '100%', height: '100%', pointerEvents: 'auto' }} allowpopups="false" />
-            {sportChrome && (
-            <div className="absolute left-0 right-0 bottom-0 z-20 flex items-center gap-2 px-3 py-2 bg-gradient-to-t from-black/90 to-transparent">
-              <button type="button" className="h-8 px-3 rounded-lg bg-white/10 text-white text-xs" onClick={() => sportSeek(-5)}>−5s</button>
-              <button type="button" className="h-8 px-3 rounded-lg bg-white/10 text-white text-xs" onClick={() => sportSeek(5)}>+5s</button>
-              <button type="button" className="h-8 px-3 rounded-lg bg-white/10 text-white text-xs" onClick={() => setSportFull((v) => !v)}>{sportFull ? 'Exit full' : 'Fullscreen'}</button>
-              <select
-                className="ml-auto h-8 rounded-lg bg-[#12121a] text-white text-xs border border-white/15 px-2"
-                value={watchQuality || watchUrl}
-                onChange={(e) => { setWatchQuality(e.target.value); setWatchUrl(e.target.value) }}
-              >
-                {(watchList.length ? watchList : [{ embedUrl: watchUrl, language: 'Auto', hd: true, source: 'Live' } as SportStream]).map((s, i) => (
-                  <option key={`${s.embedUrl}-${i}`} value={s.embedUrl || ''}>
-                    {(s.hd ? 'HD · ' : '') + (s.language || s.source || `Feed ${i + 1}`)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            )}
+            <webview
+              className="mfy-sport"
+              src={watchUrl}
+              partition="persist:mfy"
+              allowpopups="true"
+              useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+              webpreferences="allowRunningInsecureContent, javascript=yes"
+              style={{ width: '100%', height: '100%', display: 'flex' }}
+            />
           </div>
         </div>
       )}
