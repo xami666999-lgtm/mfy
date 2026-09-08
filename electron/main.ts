@@ -7,6 +7,7 @@ import { spawn } from 'child_process'
 import { setupTorrentEngine } from './torrent'
 import { setupAdBlocker } from './adblock'
 import { loadAllProgress, saveProgressRow, saveProgressList } from './progress'
+import { launchAndroidApp } from './android-apps'
 
 // Auto-updater (only active in packaged builds)
 let autoUpdater: any = null
@@ -506,6 +507,8 @@ ipcMain.handle('check-for-updates', async () => {
 })
 
 // Install a downloaded update (renderer "Restart & install" button)
+ipcMain.handle('launch-android-app', async (_e, key: 'sportzx' | 'ak47') => launchAndroidApp(key))
+
 ipcMain.handle('install-update', () => {
   if (!autoUpdater || isDev) return false
   try {

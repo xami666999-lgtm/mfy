@@ -474,7 +474,22 @@ export default function Sports() {
       )}
 
       {(engine === 'sportzx' || engine === 'ak47') && (
-        <p className="text-[12px] text-white/45 mb-4">{engine === 'sportzx' ? 'SportzX' : 'AK47'} plays live matches in the MFY player. Their APK sites are download pages only.</p>
+        <div className="mb-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <p className="text-sm font-semibold text-white">{engine === 'sportzx' ? 'SportzX' : 'AK47 Sports'} Android player</p>
+          <p className="text-[12px] text-white/45 mt-1 mb-3">Needs WSA or BlueStacks with ADB on. First tap can ask for the APK. Windows cannot run the APK inside the video frame — MFY starts their app and brings the window forward.</p>
+          <button
+            type="button"
+            className="h-10 px-4 rounded-full bg-[#FF1493] text-white text-sm font-semibold"
+            onClick={async () => {
+              const api = (window as any).electronAPI
+              const r = await api?.launchAndroidApp?.(engine)
+              if (!r?.ok) alert(r?.reason || 'Could not launch. Install BlueStacks or WSA first.')
+              else if (r.reason) alert(r.reason)
+            }}
+          >
+            Launch {engine === 'sportzx' ? 'SportzX' : 'AK47'}
+          </button>
+        </div>
       )}
 
       <section className="mb-10">
