@@ -2,6 +2,8 @@ import { app, BrowserWindow, ipcMain, dialog, shell, Notification, Tray, Menu, n
 import path from 'path'
 import Store from 'electron-store'
 import fs from 'fs'
+import https from 'https'
+import { spawn } from 'child_process'
 import { setupTorrentEngine } from './torrent'
 import { setupAdBlocker } from './adblock'
 import { loadAllProgress, saveProgressRow, saveProgressList } from './progress'
@@ -169,7 +171,57 @@ function createTray() {
   }
 }
 
+function downloadHttps(url: string, dest?: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const go = (u: string, hops = 0) => {
+      if (hops > 8) return reject(new Error('too many redirects'))
+      https.get(u, { headers: { 'User-Agent': 'MFY-Updater' } }, (res) => {
+        const loc = res.headers.location
+        if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && loc) {
+          res.resume()
+          return go(loc.startsWith('http') ? loc : new URL(loc, u).toString(), hops + 1)
+        }
+        if ((res.statusCode || 0) >= 400) return reject(new Error('http ' + res.statusCode))
+        if (dest) {
+          const out = fs.createWriteStream(dest)
+          res.pipe(out)
+          out.on('finish', () => resolve(dest))
+          out.on('error', reject)
+        } else {
+          const chunks: Buffer[] = []
+          res.on('data', (c) => chunks.push(c))
+          res.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
+        }
+      }).on('error', reject)
+    }
+    go(url)
+  })
+}
+
+async function mfySelfUpdate(installIfNewer = true) {
+  const current = app.getVersion()
+  const text = await downloadHttps('https://github.com/xami666999-lgtm/mfy/releases/latest/download/latest.yml')
+  const latest = (String(text).match(/version:\s*([0-9.]+)/) || [])[1] || current
+  const newer = latest.localeCompare(current, undefined, { numeric: true, sensitivity: 'base' }) > 0
+  const url = `https://github.com/xami666999-lgtm/mfy/releases/latest/download/MFY-Setup-${latest}.exe`
+  if (!newer) return { ok: true, current, latest, newer: false, url }
+  new Notification({ title: 'MFY Update', body: `Downloading ${latest}…` }).show()
+  mainWindow?.webContents.send('mfy:update-available', { version: latest })
+  if (!installIfNewer) return { ok: true, current, latest, newer: true, url }
+  const dest = path.join(app.getPath('temp'), `MFY-Setup-${latest}.exe`)
+  await downloadHttps(url, dest)
+  new Notification({ title: 'MFY Update Ready', body: `Installing ${latest}` }).show()
+  mainWindow?.webContents.send('mfy:update-downloaded', { version: latest })
+  spawn(dest, [], { detached: true, stdio: 'ignore' }).unref()
+  setTimeout(() => { ;(app as any).isQuitting = true; app.quit() }, 600)
+  return { ok: true, current, latest, newer: true, url, installing: true }
+}
+
 function setupAutoUpdater() {
+  const enabled = store.get('autoUpdate', true) !== false
+  if (enabled) {
+    setTimeout(() => { mfySelfUpdate(true).catch(() => {}) }, 4000)
+  }
   if (!autoUpdater || isDev) return
 
   try {
@@ -447,32 +499,10 @@ ipcMain.handle('set-setup-complete', () => store.set('setupComplete', true))
 
 // Manual update check from renderer
 ipcMain.handle('check-for-updates', async () => {
-  const current = app.getVersion()
-  const exeUrl = (ver: string) => `https://github.com/xami666999-lgtm/mfy/releases/download/v${ver}/MFY-Setup-${ver}.exe`
   try {
-    const res = await fetch('https://github.com/xami666999-lgtm/mfy/releases/latest/download/latest.yml', {
-      headers: { 'User-Agent': 'MFY', Accept: 'text/plain' },
-      redirect: 'follow',
-    } as any)
-    const text = await res.text()
-    const latest = (text.match(/version:\s*([0-9.]+)/) || [])[1] || current
-    const newer = latest.localeCompare(current, undefined, { numeric: true, sensitivity: 'base' }) > 0
-    if (autoUpdater && !isDev) {
-      try { await autoUpdater.checkForUpdates() } catch {}
-    }
-    if (newer) {
-      new Notification({ title: 'MFY Update', body: `Version ${latest} is available.` }).show()
-    }
-    return {
-      ok: true,
-      current,
-      latest,
-      newer,
-      url: exeUrl(latest),
-      name: `MFY-Setup-${latest}.exe`,
-    }
+    return await mfySelfUpdate(true)
   } catch (err: any) {
-    return { ok: false, current, reason: err?.message || 'unknown', url: 'https://github.com/xami666999-lgtm/mfy/releases/latest' }
+    return { ok: false, current: app.getVersion(), reason: err?.message || 'unknown', url: 'https://github.com/xami666999-lgtm/mfy/releases/latest' }
   }
 })
 
