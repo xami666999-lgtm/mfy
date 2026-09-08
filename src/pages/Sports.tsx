@@ -155,6 +155,9 @@ export default function Sports() {
     setStreams(null)
     setStreamError('')
     const sources = match.sources || []
+    if (sources[0]) {
+      playEmbed(`https://embed.st/embed/${sources[0].source}/${sources[0].id}/1`, match.title)
+    }
     if (!sources.length) {
       setStreamError('No sources listed for this match.')
       return
@@ -260,17 +263,18 @@ export default function Sports() {
   }
 
   function playEmbed(url: string, title?: string) {
-    if (!url || /play\.google|apple\.com\/app|microsoft\.com|\.apk|bluestacks|github\.io\/iptv|stremio:|magnet:|vlc:/i.test(url)) return
-    if (!/embed\.st\/embed\//i.test(url) && !/embedme\.top|watchfooty/i.test(url)) {
+    if (!url) return
+    if (/play\.google|apple\.com\/app|microsoft\.com|\.apk\b|bluestacks|stremio:|magnet:|vlc:/i.test(url)) return
+    if (!/^https?:\/\//i.test(url)) return
+    if (!/embed\.st\/embed\//i.test(url)) {
       const m = url.match(/embed\/([^/]+)\/([^/]+)(?:\/(\d+))?/)
-      if (!m) return
-      url = `https://embed.st/embed/${m[1]}/${m[2]}/${m[3] || 1}`
+      if (m) url = `https://embed.st/embed/${m[1]}/${m[2]}/${m[3] || 1}`
     }
     if (streams?.length) setWatchList(streams)
     setWatchQuality(url)
     setActiveMatch(null)
     setStreams(null)
-    if (multiView) {
+    if (multiView && addSlot != null) {
       const cap = mvGrid === '1x2' || mvGrid === '2x1' ? 2 : mvGrid === '1+2' ? 3 : mvGrid === '3x3' ? 9 : 4
       const item = { id: `${Date.now()}`, title: title || activeMatch?.title || 'Stream', url }
       setMvSlots((cur) => {
