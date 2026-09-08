@@ -167,9 +167,7 @@ export default function Sports() {
           return list.map((x) => ({ ...x, source: x.source || s.source }))
         }
         return [
-          { id: `${s.source}-embed`, streamNo: 1, language: 'English', hd: true, source: 'Nuvio Live', embedUrl: `https://embed.st/embed/${s.source}/${s.id}/1` },
-          { id: `${s.source}-footy`, streamNo: 1, language: 'WatchFooty', hd: true, source: 'Nuvio Live', embedUrl: `https://sportsembed.su/embed/${s.source}/${s.id}` },
-          { id: `${s.source}-watch`, streamNo: 1, language: 'Watch page', hd: true, source: s.source, embedUrl: `https://streamed.pk/watch/${match.id}/${s.source}/1` },
+          { id: `${s.source}-embed`, streamNo: 1, language: 'English', hd: true, source: s.source, embedUrl: `https://embed.st/embed/${s.source}/${s.id}/1` },
         ] as SportStream[]
       }))
       const all = bags.flat()
@@ -198,10 +196,8 @@ export default function Sports() {
         embedUrl: s.url,
         source: 'Sports Streams',
       }))
-      const playable = (u?: string) => !!u && /^https?:\/\//i.test(u) && !/^magnet:/i.test(u)
-      const official = all.filter((s) => playable(s.embedUrl) && /embed\.st|streamed|embedme|sportsembed|watchfooty/i.test(s.embedUrl || ''))
-      const rest = [...extra, ...hfStreams, ...all].filter((s) => playable(s.embedUrl) && !official.some((o) => o.embedUrl === s.embedUrl))
-      setStreams([...official, ...rest])
+      const playable = (u?: string) => !!u && /^https?:\/\//i.test(u) && /embed\.st\/embed\//i.test(u)
+      setStreams(all.filter((s) => playable(s.embedUrl)))
       if (!all.length) setStreamError('No players listed for this match right now.')
     } catch {
       setStreamError('Could not load players.')
@@ -264,6 +260,12 @@ export default function Sports() {
   }
 
   function playEmbed(url: string, title?: string) {
+    if (!url || /play\.google|apple\.com/app|microsoft\.com|apk|bluestacks|github\.io\/iptv|stremio:|magnet:|vlc:\/\//i.test(url)) return
+    if (!/embed\.st\/embed\//i.test(url) && !/embedme\.top|watchfooty/i.test(url)) {
+      const m = url.match(/embed\/([^/]+)\/([^/]+)(?:\/(\d+))?/)
+      if (!m) return
+      url = `https://embed.st/embed/${m[1]}/${m[2]}/${m[3] || 1}`
+    }
     if (streams?.length) setWatchList(streams)
     setWatchQuality(url)
     setActiveMatch(null)
@@ -427,19 +429,11 @@ export default function Sports() {
                 type="button"
                 className="text-left rounded-xl border border-white/10 bg-white/[0.03] p-3 hover:border-[#FF1493]/40"
                 onClick={async () => {
-                  const nid = String(e.stremioId || e.id || '')
-                  const bags = await Promise.all([
-                    addonStreams(ADDONS.sportsstreams.base, 'sport', nid).catch(() => []),
-                    addonStreams(ADDONS.nuvio.base, 'tv', nid).catch(() => []),
-                    addonStreams(ADDONS.nova.base, 'tv', nid).catch(() => []),
-                  ])
-                  const rows = bags.flat()
-                  const hit = rows.find((r) => /^https?:/i.test(r.url)) || rows[0]
-                  if (hit?.url) {
-                    playEmbed(hit.url, e.title || e.name)
-                    return
-                  }
-                  if (nid) playEmbed(`https://sports.highfly.dev/watch/${encodeURIComponent(nid)}`, e.title || e.name)
+                  const title = String(e.title || e.name || '')
+                  const hit = live.find((m) => title && m.title.toLowerCase().includes(title.split(' vs')[0].toLowerCase().slice(0, 10)))
+                    || matches.find((m) => title && m.title.toLowerCase().includes(title.split(' vs')[0].toLowerCase().slice(0, 10)))
+                    || live[0]
+                  if (hit) await openMatch(hit)
                 }}
               >
                 <p className="text-sm font-semibold text-white line-clamp-2">{e.title || e.name}</p>
@@ -463,23 +457,11 @@ export default function Sports() {
                 type="button"
                 className="text-left rounded-xl border border-white/10 bg-white/[0.03] p-3 hover:border-[#FF1493]/40"
                 onClick={async () => {
-                  const url = e.streams?.[0]?.url || e.url || e.embed || ''
                   const title = String(e.title || '')
-                  if (/\.m3u8($|\?)/i.test(url)) {
-                    playEmbed(url, title)
-                    return
-                  }
                   const liveHit = live.find((m) => title && m.title.toLowerCase().includes(title.split(' vs ')[0]?.toLowerCase?.() || '___nomatch'))
-                  if (liveHit) {
-                    await openMatch(liveHit)
-                    return
-                  }
-                  if (url && !/\.m3u($|\?)/i.test(url)) {
-                    playEmbed(url, title)
-                    return
-                  }
                   const foot = matches.find((m) => title && m.title.toLowerCase().includes(title.split(' ')[0].toLowerCase()))
-                  if (foot) await openMatch(foot)
+                  if (liveHit) await openMatch(liveHit)
+                  else if (foot) await openMatch(foot)
                   else if (live[0]) await openMatch(live[0])
                 }}
               >
