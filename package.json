@@ -1,6 +1,6 @@
 {
   "name": "mfy",
-  "version": "1.6.57",
+  "version": "1.6.58",
   "description": "MFY - Movies For You",
   "main": "dist-electron/main.js",
   "author": "xami666999-lgtm",
@@ -75,10 +75,8 @@
     },
     "publish": [
       {
-        "provider": "github",
-        "owner": "xami666999-lgtm",
-        "repo": "mfy",
-        "releaseType": "release"
+        "provider": "generic",
+        "url": "https://github.com/xami666999-lgtm/mfy/releases/latest/download"
       }
     ],
     "extraResources": [

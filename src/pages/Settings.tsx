@@ -171,7 +171,8 @@ export default function Settings() {
     try {
       const res = await api.checkForUpdates()
       if (res?.ok) {
-        setUpdateStatus(res.updateInfo ? `Update found: ${res.updateInfo.version}` : 'You are up to date.')
+        setUpdateStatus(res.newer ? `Update found: ${res.latest}` : `You are on ${res.current}.`)
+        if (res.newer && res.url) (window as any).electronAPI?.openExternal?.(res.url)
       } else {
         setUpdateStatus(res?.reason === 'dev-or-unavailable' ? 'Auto-update only works in packaged builds.' : (res?.reason || 'Check failed'))
       }
@@ -379,7 +380,7 @@ export default function Settings() {
               if (!r?.ok) { alert('Could not check updates.'); return }
               if (!r.newer) { alert(`You are on ${r.current}. That is the latest.`); return }
               if (r.url) api.openExternal(r.url)
-              alert(`Update ${r.latest} is out. Download started / opened. Unzip over MFY and reopen.`)
+              alert(`Update ${r.latest} is out. The installer download was opened.`)
             }}
           >
             Check for updates

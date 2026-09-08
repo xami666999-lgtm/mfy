@@ -172,6 +172,13 @@ function createTray() {
 function setupAutoUpdater() {
   if (!autoUpdater || isDev) return
 
+  try {
+    autoUpdater.setFeedURL({
+      provider: 'generic',
+      url: 'https://github.com/xami666999-lgtm/mfy/releases/latest/download',
+    })
+  } catch {}
+
   const enabled = store.get('autoUpdate', true) !== false
   autoUpdater.autoDownload = enabled
   autoUpdater.autoInstallOnAppQuit = enabled
@@ -441,29 +448,31 @@ ipcMain.handle('set-setup-complete', () => store.set('setupComplete', true))
 // Manual update check from renderer
 ipcMain.handle('check-for-updates', async () => {
   const current = app.getVersion()
+  const exeUrl = (ver: string) => `https://github.com/xami666999-lgtm/mfy/releases/download/v${ver}/MFY-Setup-${ver}.exe`
   try {
-    const res = await fetch('https://api.github.com/repos/xami666999-lgtm/mfy/releases/latest', {
-      headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'MFY' },
-    })
-    if (!res.ok) throw new Error('GitHub ' + res.status)
-    const data: any = await res.json()
-    const tag = String(data.tag_name || '').replace(/^v/, '')
-    const asset = (data.assets || []).find((a: any) => /win\.zip$/i.test(a.name)) || (data.assets || [])[0]
-    const latest = tag || current
+    const res = await fetch('https://github.com/xami666999-lgtm/mfy/releases/latest/download/latest.yml', {
+      headers: { 'User-Agent': 'MFY', Accept: 'text/plain' },
+      redirect: 'follow',
+    } as any)
+    const text = await res.text()
+    const latest = (text.match(/version:\s*([0-9.]+)/) || [])[1] || current
     const newer = latest.localeCompare(current, undefined, { numeric: true, sensitivity: 'base' }) > 0
     if (autoUpdater && !isDev) {
       try { await autoUpdater.checkForUpdates() } catch {}
+    }
+    if (newer) {
+      new Notification({ title: 'MFY Update', body: `Version ${latest} is available.` }).show()
     }
     return {
       ok: true,
       current,
       latest,
       newer,
-      url: asset?.browser_download_url || data.html_url,
-      name: asset?.name || data.name,
+      url: exeUrl(latest),
+      name: `MFY-Setup-${latest}.exe`,
     }
   } catch (err: any) {
-    return { ok: false, current, reason: err?.message || 'unknown' }
+    return { ok: false, current, reason: err?.message || 'unknown', url: 'https://github.com/xami666999-lgtm/mfy/releases/latest' }
   }
 })
 
