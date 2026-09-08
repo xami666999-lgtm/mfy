@@ -198,12 +198,7 @@ export default function Sports() {
         embedUrl: s.url,
         source: 'Sports Streams',
       }))
-      const first = sources[0]
-      const apps = first ? [
-        { id: 'sportzx', streamNo: 1, language: 'SportzX', hd: true, embedUrl: `https://embed.st/embed/${first.source}/${first.id}/1`, source: 'SportzX' },
-        { id: 'ak47', streamNo: 1, language: 'AK47', hd: true, embedUrl: `https://sportsembed.su/embed/${first.source}/${first.id}`, source: 'AK47' },
-      ] : []
-      setStreams([...apps, ...hfStreams, ...extra, ...all])
+      setStreams([...hfStreams, ...extra, ...all])
       if (!all.length) setStreamError('No players listed for this match right now.')
     } catch {
       setStreamError('Could not load players.')
