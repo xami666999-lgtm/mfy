@@ -547,25 +547,41 @@ export default function PlayerPage() {
 
 
   useEffect(() => {
+    const api = (window as any).electronAPI
+    const off = api?.onEmbedTime?.((t: { p: number; d: number }) => {
+      const cur = Number(t?.p) || 0
+      const d = Number(t?.d) || 0
+      if (cur > 2) {
+        lastVideoAt.current = Date.now()
+        if (cur >= bestProgress.current - 25) {
+          bestProgress.current = Math.max(bestProgress.current, cur)
+          setProgress(cur)
+        }
+      }
+      if (d > 30) {
+        bestDuration.current = Math.max(bestDuration.current, d)
+        setDur(d)
+      }
+    })
+    return () => { try { off?.() } catch {} }
+  }, [])
+
+  useEffect(() => {
     const at = bestProgress.current
     if (!(at > 12) || !streamUrl) return
     let n = 0
     const id = setInterval(() => {
       n += 1
-      if (n > 25) { clearInterval(id); return }
+      if (n > 30) { clearInterval(id); return }
+      try { (window as any).electronAPI?.embedSeek?.(at) } catch {}
       try {
         const w = document.querySelector('webview') as any
-        w?.executeJavaScript?.(`(() => {
-          const t = ${at};
-          document.querySelectorAll('video').forEach(v => {
-            if (v && v.readyState >= 1 && Math.abs((v.currentTime||0) - t) > 8) v.currentTime = t;
-          });
-        })()`)
+        w?.executeJavaScript?.(`(() => { const t = ${at}; document.querySelectorAll('video').forEach(v => { if (v && v.readyState >= 1 && Math.abs((v.currentTime||0) - t) > 8) v.currentTime = t; }); })()`)
       } catch {}
       if (videoRef.current && videoRef.current.readyState >= 1 && Math.abs((videoRef.current.currentTime||0) - at) > 8) {
         try { videoRef.current.currentTime = at } catch {}
       }
-    }, 1200)
+    }, 900)
     return () => clearInterval(id)
   }, [streamUrl, selectedMedia?.id, selectedMedia?.episode])
 
@@ -1001,6 +1017,15 @@ export default function PlayerPage() {
     let p = Math.max(progress, bestProgress.current)
     if (lastVideoAt.current && Date.now() - lastVideoAt.current < 8000) p = Math.max(p, wall)
     let d = Math.max(Number.isFinite(dur) ? dur : 0, bestDuration.current, expectedSec || 0)
+    try {
+      const got = await (window as any).electronAPI?.embedTime?.()
+      if (got) {
+        const cur = Number(got.p) || 0
+        const vd = Number(got.d)
+        if (cur >= bestProgress.current - 20) p = Math.max(p, cur)
+        if (Number.isFinite(vd) && vd > 30) d = Math.max(d, vd)
+      }
+    } catch {}
     try {
       const w = document.querySelector('webview') as any
       const got = await w?.executeJavaScript?.(`(() => { const v = document.querySelector('video'); if (!v) return null; return { p: v.currentTime || 0, d: v.duration || 0 } })()`)

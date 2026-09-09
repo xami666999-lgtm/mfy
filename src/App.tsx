@@ -149,7 +149,7 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
     api.get('jellyfinUrl').then((u: string) => { if (u) setJellyfinUrl(u) })
     api.get('jellyfinApiKey').then((k: string) => { if (k) setJellyfinApiKey(k) })
     api.get('watchlist').then((list: any) => { if (Array.isArray(list)) setWatchlist(list) })
-    api.get('watchHistory').then((list: any) => { if (Array.isArray(list)) setWatchHistory(list) })
+    api.get('watchHistory').then((list: any) => { if (Array.isArray(list) && list.length) setWatchHistory(list) })
     api.loadProgress?.().then((disk: any[]) => { if (Array.isArray(disk) && disk.length) setWatchHistory(disk) }).catch(() => {})
     api.onFlushProgress?.(() => {
       try {

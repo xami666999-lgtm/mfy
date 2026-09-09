@@ -76,6 +76,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('mfy-flush', listener)
     return () => ipcRenderer.removeListener('mfy-flush', listener)
   },
+  onEmbedTime: (cb: (t: { p: number; d: number }) => void) => {
+    const listener = (_e: unknown, t: { p: number; d: number }) => cb(t)
+    ipcRenderer.on('mfy-embed-time', listener)
+    return () => ipcRenderer.removeListener('mfy-embed-time', listener)
+  },
+  embedSeek: (sec: number) => ipcRenderer.invoke('embed-seek', sec),
+  embedTime: () => ipcRenderer.invoke('embed-time'),
 })
 
 contextBridge.exposeInMainWorld('torrentAPI', {

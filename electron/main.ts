@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, Notification, Tray, Menu, nativeImage, powerMonitor } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, shell, Notification, Tray, Menu, nativeImage, powerMonitor, webContents } from 'electron'
 import path from 'path'
 import Store from 'electron-store'
 import fs from 'fs'
@@ -337,6 +337,51 @@ app.whenReady().then(() => {
   createWindow()
   createTray()
   setupAutoUpdater()
+  const TIME_JS = `(() => { try { const vs = Array.from(document.querySelectorAll('video')); const v = vs.sort((a,b)=>(b.currentTime||0)-(a.currentTime||0))[0]; if (!v) return null; return { p: Number(v.currentTime)||0, d: Number.isFinite(v.duration)?Number(v.duration):0, paused: !!v.paused }; } catch { return null } })()`
+  function embedContents() {
+    return webContents.getAllWebContents().filter((c) => {
+      try {
+        return c.getType() === 'webview' && String(c.session?.getStoragePath?.() || c.getURL() || '').length >= 0 && (c.session === session.fromPartition('persist:mfy-embed') || c.session === session.fromPartition('persist:mfy'))
+      } catch { return false }
+    })
+  }
+  async function readEmbedTime() {
+    let best = { p: 0, d: 0 }
+    for (const c of embedContents()) {
+      let frames: any[] = []
+      try { frames = [c.mainFrame, ...(c.mainFrame?.framesInSubtree || [])] } catch { frames = [] }
+      if (!frames.length) frames = [c.mainFrame].filter(Boolean)
+      for (const f of frames) {
+        try {
+          const got = await f.executeJavaScript(TIME_JS, true)
+          if (got && Number(got.p) > best.p) best = { p: Number(got.p) || 0, d: Number(got.d) || 0 }
+        } catch {}
+      }
+    }
+    return best
+  }
+  setInterval(async () => {
+    const t = await readEmbedTime()
+    if (t.p > 2) {
+      try { mainWindow?.webContents.send('mfy-embed-time', t) } catch {}
+    }
+  }, 1000)
+  ipcMain.handle('embed-time', () => readEmbedTime())
+  ipcMain.handle('embed-seek', async (_e, sec: number) => {
+    const n = Number(sec)
+    if (!(n > 8)) return false
+    const SEEK_JS = `(() => { try { document.querySelectorAll('video').forEach(v => { if (v.readyState >= 1) v.currentTime = ${n}; }); return true } catch { return false } })()`
+    for (const c of embedContents()) {
+      let frames: any[] = []
+      try { frames = [c.mainFrame, ...(c.mainFrame?.framesInSubtree || [])] } catch { frames = [] }
+      if (!frames.length) frames = [c.mainFrame].filter(Boolean)
+      for (const f of frames) {
+        try { await f.executeJavaScript(SEEK_JS, true) } catch {}
+      }
+    }
+    return true
+  })
+
   setupTorrentEngine()
   setupAdBlocker()
   if (app.isPackaged) addDesktopShortcut()
