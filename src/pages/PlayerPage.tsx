@@ -291,9 +291,6 @@ export default function PlayerPage() {
   }, [subSize, subBg, streamUrl, fit])
 
   const resumeOnce = useRef('')
-  useEffect(() => {
-    resumeOnce.current = ''
-  }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode, streamUrl])
 
   useEffect(() => {
     const id = setInterval(() => { saveProgress(false).catch(() => {}) }, 20000)
@@ -325,9 +322,8 @@ export default function PlayerPage() {
     v.load()
     v.play().catch(() => {})
     const onMeta = () => {
-      const row = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id) && Number(h.season || 0) === Number(selectedMedia?.season || 0) && Number(h.episode || 0) === Number(selectedMedia?.episode || 0))
-      const at = Number((selectedMedia as any)?.resumeAt || row?.progress || 0)
-      if (at > 8 && v.currentTime < 5) v.currentTime = at
+      const at = Number((selectedMedia as any)?.resumeAt || 0)
+      if (at > 20 && v.currentTime < 5) v.currentTime = at
     }
     const onTime = () => {
       const cur = v.currentTime || 0
@@ -509,11 +505,13 @@ export default function PlayerPage() {
       const row = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id) && Number(h.season || 0) === Number(selectedMedia?.season || 0) && Number(h.episode || 0) === Number(selectedMedia?.episode || 0))
       let backup = { p: 0, d: 0 }
       try { backup = JSON.parse(localStorage.getItem(`mfy-ep-${selectedMedia?.id}-${selectedMedia?.season || 0}-${selectedMedia?.episode || 0}`) || '{}') } catch {}
-      bestProgress.current = Math.max(Number((selectedMedia as any)?.resumeAt || 0), Number(row?.progress || 0), Number(backup.p || 0), 0)
+      const explicit = Number((selectedMedia as any)?.resumeAt || 0)
+      bestProgress.current = explicit > 20 ? explicit : 0
       bestDuration.current = Math.max(Number(row?.duration || 0), Number(backup.d || 0), 0)
       setProgress(bestProgress.current)
       if (bestDuration.current > 0) setDur(bestDuration.current)
-      startedAt.current = Date.now() - bestProgress.current * 1000
+      startedAt.current = Date.now()
+      resumeOnce.current = ''
     }
     setShowUI(true)
     const id = setTimeout(() => setShowUI(false), 2500)
@@ -542,18 +540,7 @@ export default function PlayerPage() {
     return () => { try { off?.() } catch {} }
   }, [])
 
-  useEffect(() => {
-    const key = `${selectedMedia?.id}-${selectedMedia?.season || 0}-${selectedMedia?.episode || 0}`
-    const at = bestProgress.current
-    if (!(at > 20) || !streamUrl) return
-    if (resumeOnce.current === key) return
-    const t = setTimeout(() => {
-      if (resumeOnce.current === key) return
-      resumeOnce.current = key
-      try { (window as any).electronAPI?.embedSeek?.(at) } catch {}
-    }, 2500)
-    return () => clearTimeout(t)
-  }, [streamUrl, selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
+
 
   useEffect(() => {
     setShowNext(false)
