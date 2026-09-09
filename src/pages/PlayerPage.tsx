@@ -973,9 +973,11 @@ export default function PlayerPage() {
 
   async function saveProgress(forceDone = false) {
     if (!selectedMedia || selectedMedia.type === 'iptv') return
-    const wall = Math.max(0, (Date.now() - startedAt.current) / 1000)
     let p = Math.max(progress, bestProgress.current)
-    if (lastVideoAt.current && Date.now() - lastVideoAt.current < 8000) p = Math.max(p, wall)
+    try {
+      const v = videoRef.current
+      if (v && v.readyState >= 2 && (v.currentTime || 0) > 2) p = v.currentTime
+    } catch {}
     let d = Math.max(Number.isFinite(dur) ? dur : 0, bestDuration.current, expectedSec || 0)
     try {
       const got = await (window as any).electronAPI?.embedTime?.()
