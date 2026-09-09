@@ -410,6 +410,12 @@ export default function Settings() {
             link="https://trakt.tv/oauth/applications"
           />
           <Input label="Trakt Access Token" value={traktTok} onChange={setTraktTok} placeholder="Paste token — then play/pause/finish scrobbles to Trakt" type="password" link="https://trakt.tv/oauth/authorize" />
+          <Input label="Simkl Client ID" value={typeof window !== 'undefined' ? (localStorage.getItem('mfy-simkl-client') || '') : ''} onChange={(v: string) => { try { localStorage.setItem('mfy-simkl-client', v.trim()) } catch {} }} placeholder="simkl.com/settings/developer" link="https://simkl.com/settings/developer/" />
+          <Input label="Simkl Access Token" value={typeof window !== 'undefined' ? (localStorage.getItem('mfy-simkl-token') || '') : ''} onChange={(v: string) => { try { localStorage.setItem('mfy-simkl-token', v.trim()) } catch {} }} placeholder="Free scrobble" type="password" />
+          <Input label="MediaTracker URL" value={typeof window !== 'undefined' ? (localStorage.getItem('mfy-mediatracker') || '') : ''} onChange={(v: string) => { try { localStorage.setItem('mfy-mediatracker', v.trim()) } catch {} }} placeholder="http://127.0.0.1:7481" link="https://github.com/bonukai/MediaTracker" />
+          <Input label="MediaTracker Token" value={typeof window !== 'undefined' ? (localStorage.getItem('mfy-mediatracker-token') || '') : ''} onChange={(v: string) => { try { localStorage.setItem('mfy-mediatracker-token', v.trim()) } catch {} }} placeholder="App token" type="password" />
+          <Input label="Floppy URL" value={typeof window !== 'undefined' ? (localStorage.getItem('mfy-floppy') || '') : ''} onChange={(v: string) => { try { localStorage.setItem('mfy-floppy', v.trim()) } catch {} }} placeholder="http://127.0.0.1:8000" link="https://github.com/dannyvfilms/Floppy" />
+          <Input label="Floppy Token" value={typeof window !== 'undefined' ? (localStorage.getItem('mfy-floppy-token') || '') : ''} onChange={(v: string) => { try { localStorage.setItem('mfy-floppy-token', v.trim()) } catch {} }} placeholder="API token" type="password" />
           <Input label="Jellyfin Server" value={jellyfinUrl} onChange={setJellyfinUrl} placeholder="http://127.0.0.1:8096" />
           <Input label="Jellyfin API Key" value={jellyfinKey} onChange={setJellyfinKey} placeholder="Optional local media library key" type="password" />
         </Section>

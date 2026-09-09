@@ -1053,6 +1053,10 @@ export default function PlayerPage() {
       const { trakt } = await import('../api/trakt')
       await trakt.scrobble(selectedMedia, p, d, reallyDone)
     } catch {}
+    try {
+      const { scrobbleAll } = await import('../api/scrobbleHub')
+      await scrobbleAll(selectedMedia, p, d, reallyDone)
+    } catch {}
   }
 
   const ratedRef = useRef(false)
