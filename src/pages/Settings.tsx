@@ -392,6 +392,13 @@ export default function Settings() {
             <p className="text-[11px] text-white/30 mt-2">Run PocketBase, create collection mfy_progress, then connect. See pocketbase/README.md in the repo.</p>
           </div>
 
+          <Input
+            label="Posterium URL"
+            value={typeof window !== 'undefined' ? (localStorage.getItem('mfy-posterium') || '') : ''}
+            onChange={(v: string) => { try { localStorage.setItem('mfy-posterium', v.trim().replace(/\/+$/, '')) } catch {} }}
+            placeholder="https://your-posterium host"
+            link="https://github.com/Eful97/Posterium"
+          />
           <Input label="AIOStreams URL" value={aiosUrl} onChange={setAiosUrl} placeholder="http://localhost:3000 (when ready)" />
           <Input label="Real-Debrid API" value={rdKey} onChange={setRdKey} placeholder="Real-Debrid token" link="https://realdebrid.com/apitoken" type="password" />
           <Input label="Trakt Token (optional)" value={traktTok} onChange={setTraktTok} placeholder="Not required — local lists used by default" type="password" />
