@@ -13,6 +13,7 @@ import { useStore } from '../store'
 import { trailerUrl, isOnePiece, pearioWatchUrl, pearioUserUrl } from '../api/stremioAddons'
 import { markLike, markDislike, isLiked, isDisliked } from '../lib/taste'
 import { sourceDot, reportBroken } from '../lib/playerStatus'
+import SourceSheet from '../components/SourceSheet'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 
 export default function MetaDetails() {
@@ -230,6 +231,7 @@ export default function MetaDetails() {
     try { return localStorage.getItem('mfy-player-engine') || 'playtorrio' } catch { return 'playtorrio' }
   })
   const [pickOpen, setPickOpen] = useState(false)
+  const [sourceOpen, setSourceOpen] = useState(false)
 
   async function handlePlay() {
     if (!selectedMedia || selectedMedia.type === 'iptv') return
@@ -454,10 +456,7 @@ export default function MetaDetails() {
             <div className="flex flex-wrap items-center gap-2.5">
               <button
                 type="button"
-                onClick={() => {
-                  try { localStorage.setItem('mfy-player-engine', playerPick) } catch {}
-                  handlePlay()
-                }}
+                onClick={() => setSourceOpen(true)}
                 disabled={resolving}
                 className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all disabled:opacity-60 shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
               >
@@ -916,6 +915,33 @@ onKeyDown={(e) => {
           </div>
         )}
       </div>
+      {sourceOpen && detail && (
+        <SourceSheet
+          detail={detail}
+          media={{ ...selectedMedia, season: activeSeason, episode: selectedMedia?.episode || 1, title: detail.title || detail.name }}
+          onClose={() => setSourceOpen(false)}
+          onPlay={(url, engine) => {
+            try { localStorage.setItem('mfy-player-engine', engine || playerPick) } catch {}
+            setPlayerPick(engine || playerPick)
+            setSourceOpen(false)
+            if (url) {
+              const saved = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id) && Number(h.season || 0) === Number(activeSeason || 0) && Number(h.episode || 0) === Number(selectedMedia?.episode || 0))
+              setSelectedMedia({
+                ...selectedMedia,
+                season: activeSeason,
+                episode: selectedMedia?.episode,
+                title: detail?.title || detail?.name,
+                poster_path: detail?.poster_path,
+                resumeAt: Number((saved as any)?.progress || 0),
+              } as any)
+              setCurrentStreamUrl(url)
+              setCurrentPage('player')
+              return
+            }
+            handlePlay()
+          }}
+        />
+      )}
     </div>
   )
 }
