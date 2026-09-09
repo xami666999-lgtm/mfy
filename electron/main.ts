@@ -384,6 +384,36 @@ app.whenReady().then(() => {
     }
     return true
   })
+  ipcMain.handle('embed-audio-list', async () => {
+    const AUDIO_LIST_JS = `(() => { try { const out=[]; document.querySelectorAll('video').forEach(v => { const tracks=v.audioTracks; if(!tracks) return; for(let i=0;i<tracks.length;i++){ const t=tracks[i]; out.push({i, lang:t.language||'', label:t.label||t.language||('Track '+(i+1)), enabled:!!t.enabled}); } }); return out } catch { return [] } })()`
+    const all = embedContents()
+    const c = all[all.length - 1]
+    if (!c) return []
+    let frames: any[] = []
+    try { frames = [c.mainFrame, ...(c.mainFrame.framesInSubtree || [])] } catch { frames = [] }
+    if (!frames.length) frames = [c.mainFrame].filter(Boolean)
+    let best: any[] = []
+    for (const f of frames) {
+      try {
+        const got = await f.executeJavaScript(AUDIO_LIST_JS, true)
+        if (Array.isArray(got) && got.length > best.length) best = got
+      } catch {}
+    }
+    return best
+  })
+  ipcMain.handle('embed-audio-set', async (_e, index: number, lang: string) => {
+    const SET_JS = `(() => { try { const want=${Number(index)}; const lang=${JSON.stringify(String(lang || '').toLowerCase())}; document.querySelectorAll('video').forEach(v => { const tracks=v.audioTracks; if(!tracks) return; for(let i=0;i<tracks.length;i++){ const t=tracks[i]; t.enabled = (want>=0 && i===want) || (!!lang && String(t.language||t.label||'').toLowerCase().includes(lang)); } }); return true } catch { return false } })()`
+    const all = embedContents()
+    const c = all[all.length - 1]
+    if (!c) return false
+    let frames: any[] = []
+    try { frames = [c.mainFrame, ...(c.mainFrame.framesInSubtree || [])] } catch { frames = [] }
+    if (!frames.length) frames = [c.mainFrame].filter(Boolean)
+    for (const f of frames) {
+      try { await f.executeJavaScript(SET_JS, true) } catch {}
+    }
+    return true
+  })
 
   setupTorrentEngine()
   setupAdBlocker()

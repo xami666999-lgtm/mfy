@@ -55,6 +55,9 @@ export default function PlayerPage() {
   const [subBg, setSubBg] = useState(false)
   const [subList, setSubList] = useState<{ url: string; name: string; lang: string; format: string }[]>([])
   const [subOpen, setSubOpen] = useState(false)
+  const [audioOpen, setAudioOpen] = useState(false)
+  const [audioTracks, setAudioTracks] = useState<{ i: number; lang: string; label: string; enabled?: boolean }[]>([])
+  const [audioLabel, setAudioLabel] = useState('')
   const cuesRef = useRef<{ start: number; end: number; text: string }[]>([])
   const [cueText, setCueText] = useState('')
   const [torrents, setTorrents] = useState<{ url: string; name: string; quality: string; size?: string; seeds?: string }[]>([])
@@ -1245,6 +1248,56 @@ export default function PlayerPage() {
               try { (window as any).electronAPI?.openVlc?.(url) } catch {}
             }} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>VLC</button>
             <button type="button" onClick={() => setPlayerSource('webtorrent')} style={{ background: playerSource === 'webtorrent' ? '#FF1493' : '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>P2P</button>
+            <div className="relative">
+              <button type="button" onClick={async () => {
+                setAudioOpen((v) => !v)
+                try {
+                  const list = await (window as any).electronAPI?.embedAudioList?.()
+                  if (Array.isArray(list) && list.length) setAudioTracks(list)
+                  else {
+                    const v = videoRef.current as any
+                    const out: any[] = []
+                    if (v?.audioTracks) for (let i = 0; i < v.audioTracks.length; i++) out.push({ i, lang: v.audioTracks[i].language || '', label: v.audioTracks[i].label || v.audioTracks[i].language || `Track ${i + 1}` })
+                    setAudioTracks(out)
+                  }
+                } catch {}
+              }} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>
+                Audio {audioLabel ? `· ${audioLabel.slice(0, 10)}` : ''}
+              </button>
+              {audioOpen && (
+                <div style={{ position: 'absolute', right: 0, top: 36, width: 220, maxHeight: 280, overflow: 'auto', background: '#12080d', border: '1px solid rgba(255,20,147,0.4)', borderRadius: 12, padding: 8, zIndex: 90 }}>
+                  <p style={{ fontSize: 10, color: '#FF1493', marginBottom: 6 }}>Audio language</p>
+                  {(audioTracks.length ? audioTracks : [
+                    { i: -1, lang: 'en', label: 'English' },
+                    { i: -1, lang: 'ja', label: 'Japanese' },
+                    { i: -1, lang: 'es', label: 'Spanish' },
+                    { i: -1, lang: 'fr', label: 'French' },
+                    { i: -1, lang: 'de', label: 'German' },
+                    { i: -1, lang: 'ko', label: 'Korean' },
+                    { i: -1, lang: 'zh', label: 'Chinese' },
+                    { i: -1, lang: 'it', label: 'Italian' },
+                    { i: -1, lang: 'pt', label: 'Portuguese' },
+                  ]).map((t) => (
+                    <button key={`${t.i}-${t.lang}-${t.label}`} type="button" onClick={async () => {
+                      setAudioLabel(t.label || t.lang)
+                      setAudioOpen(false)
+                      try { await (window as any).electronAPI?.embedAudioSet?.(t.i, t.lang) } catch {}
+                      try {
+                        const v = videoRef.current as any
+                        if (v?.audioTracks) {
+                          for (let i = 0; i < v.audioTracks.length; i++) {
+                            const hit = (t.i >= 0 && i === t.i) || String(v.audioTracks[i].language || v.audioTracks[i].label || '').toLowerCase().includes(String(t.lang || '').toLowerCase())
+                            v.audioTracks[i].enabled = !!hit
+                          }
+                        }
+                      } catch {}
+                    }} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 'none', color: '#fff', padding: '7px 8px', fontSize: 12, cursor: 'pointer' }}>
+                      {t.label || t.lang}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="relative">
               <button type="button" onClick={() => setSubOpen((v) => !v)} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>
                 Subs {subtitleLabel ? `· ${subtitleLabel.slice(0, 10)}` : ''}

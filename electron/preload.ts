@@ -83,6 +83,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   embedSeek: (sec: number) => ipcRenderer.invoke('embed-seek', sec),
   embedTime: () => ipcRenderer.invoke('embed-time'),
+  embedAudioList: () => ipcRenderer.invoke('embed-audio-list'),
+  embedAudioSet: (index: number, lang: string) => ipcRenderer.invoke('embed-audio-set', index, lang),
 })
 
 contextBridge.exposeInMainWorld('torrentAPI', {

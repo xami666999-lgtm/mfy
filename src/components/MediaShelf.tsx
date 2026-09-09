@@ -1,4 +1,5 @@
 import { POSTER_URL } from '../api/tmdb'
+import { posteriumUrl } from '../api/posterium'
 import { PosterMarks, posterYear, scoreOf } from './PosterMarks'
 import { useStore } from '../store'
 import { watchPercent } from '../lib/watchProgress'
@@ -10,6 +11,8 @@ function proxy(url: string) {
 }
 
 export function imgSrc(item: any) {
+  const pium = posteriumUrl(item.media_type || item.type || (item.name && !item.title ? 'tv' : 'movie'), item.id)
+  if (pium) return pium
   const path = item.poster_path
   if (path && String(path).startsWith('http')) return proxy(String(path))
   if (path) return `${POSTER_URL}${path}`
@@ -75,6 +78,11 @@ export function MediaShelf({
                 loading="lazy"
                 onError={(e) => {
                   const el = e.currentTarget
+                  const path = item.poster_path
+                  if (el.src.includes('/api/poster/') && path) {
+                    el.src = String(path).startsWith('http') ? proxy(String(path)) : `${POSTER_URL}${path}`
+                    return
+                  }
                   el.onerror = null
                   el.style.display = 'none'
                   el.parentElement?.classList.add('has-fallback')
