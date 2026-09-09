@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Trophy, Radio, ExternalLink, Loader2, Activity, Flag, Volleyball, Target, Gauge, Swords, Medal, Siren, Dumbbell, Skull, Bike, Sparkles, PlayCircle, X, Search, Filter, SkipBack, SkipForward } from 'lucide-react'
-import { sportsApi, badgeUrl, badgeFallbacks, posterUrl, sportIcon, timStreamsApi, watchfootyApi, type SportCategory, type SportMatch, type SportStream } from '../api/sports'
+import { sportsApi, badgeUrl, badgeFallbacks, posterUrl, sportIcon, timStreamsApi, watchfootyApi, ss99Api, type SportCategory, type SportMatch, type SportStream } from '../api/sports'
 import { iptvEnhancedApi } from '../api/iptv-enhanced'
 import { useStore } from '../store'
 import { addonCatalog, addonStreams, ADDONS } from '../api/stremioAddons'
@@ -45,7 +45,8 @@ export default function Sports() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
-  const [engine, setEngine] = useState<'streamed' | 'metegol' | 'nuvio'>('streamed')
+  const [engine, setEngine] = useState<'streamed' | 'metegol' | 'nuvio' | 'ss99'>('streamed')
+  const [ss99, setSs99] = useState<SportMatch[]>([])
   const [nuvio, setNuvio] = useState<any[]>([])
   const [watchUrl, setWatchUrl] = useState('')
   const [watchQuality, setWatchQuality] = useState('')
@@ -95,6 +96,7 @@ export default function Sports() {
     timStreamsApi.replays().then((d) => setTimReplays(d.replays || [])).catch(() => setTimReplays([]))
     timStreamsApi.channels().then((d) => setTimChannels((d.channels || []).slice(0, 24))).catch(() => setTimChannels([]))
     watchfootyApi.live('football').then((rows) => setFooty((rows || []).filter((m: any) => (m.streams || []).length))).catch(() => setFooty([]))
+    ss99Api.events().then(setSs99).catch(() => setSs99([]))
     sportsApi.getSports().then(setSports).catch(() => setSports([
       { id: 'football', name: 'Football' },
       { id: 'basketball', name: 'Basketball' },
@@ -154,14 +156,16 @@ export default function Sports() {
     const sources = match.sources || []
     const first = sources[0]
     if (first) {
-      const url = `https://embed.st/embed/${encodeURIComponent(first.source)}/${encodeURIComponent(first.id)}/1`
+      const url = first.source === 'ss99'
+        ? first.id
+        : `https://embed.st/embed/${encodeURIComponent(first.source)}/${encodeURIComponent(first.id)}/1`
       const more = sources.slice(0, 8).map((s, i) => ({
         id: `${s.source}-${s.id}-${i}`,
         streamNo: i + 1,
         language: s.source,
         hd: true,
         source: s.source,
-        embedUrl: `https://embed.st/embed/${encodeURIComponent(s.source)}/${encodeURIComponent(s.id)}/1`,
+        embedUrl: s.source === 'ss99' ? s.id : `https://embed.st/embed/${encodeURIComponent(s.source)}/${encodeURIComponent(s.id)}/1`,
       }))
       setWatchList(more)
       setWatchQuality(url)
@@ -353,8 +357,8 @@ export default function Sports() {
           {(['live', 'upcoming', 'finished'] as const).map((w) => (
             <button key={w} type="button" onClick={() => setWhen(w)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold capitalize', when === w ? 'bg-white text-black' : 'bg-white/10 text-white/45')}>{w}</button>
           ))}
-          {(['streamed', 'nuvio', 'metegol'] as const).map((e) => (
-            <button key={e} type="button" onClick={() => setEngine(e)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold capitalize', engine === e ? 'bg-[#FF1493] text-white' : 'bg-white/10 text-white/45')}>{e === 'nuvio' ? 'Nuvio Live' : e}</button>
+          {(['streamed', 'ss99', 'metegol', 'nuvio'] as const).map((e) => (
+            <button key={e} type="button" onClick={() => setEngine(e)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold capitalize', engine === e ? 'bg-[#22c55e] text-black' : 'bg-white/10 text-white/45')}>{e === 'ss99' ? 'SS99' : e === 'nuvio' ? 'Nuvio' : e}</button>
           ))}
         </div>
       </div>
@@ -470,6 +474,21 @@ export default function Sports() {
             ))}
           </div>
           {metegol.length === 0 && <p className="text-sm text-white/30">No Metegol events loaded.</p>}
+        </section>
+      )}
+      {engine === 'ss99' && (
+        <section className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Radio className="w-3.5 h-3.5 text-[#22c55e]" />
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#22c55e]">StreamSports99</span>
+            <span className="text-[11px] text-white/35">{ss99.filter((m) => !sportId || m.category === sportId || sportId === 'football' && m.category === 'football').length} games</span>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {(ss99.filter((m) => m.category === sportId).length ? ss99.filter((m) => m.category === sportId) : ss99.filter((m) => m.live)).slice(0, 80).map((m) => (
+              <MatchCard key={m.id} match={m} onOpen={() => openMatch(m)} formatDate={formatDate} />
+            ))}
+          </div>
+          {!ss99.length && <p className="text-sm text-white/30">No SS99 events loaded.</p>}
         </section>
       )}
 
@@ -757,7 +776,7 @@ export default function Sports() {
         </div>
       )}
 
-      {loading ? (
+      {engine === 'streamed' && (loading ? (
     <div className="flex items-center gap-2 text-white/30 text-xs py-12 justify-center">
       <Loader2 className="w-4 h-4 animate-spin" /> Loading matches…
     </div>
@@ -789,7 +808,7 @@ export default function Sports() {
         )}
       </div>
     </>
-    )}
+    ))}
       </div>
     </div>
     </>

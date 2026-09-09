@@ -162,6 +162,67 @@ export function wfSport(id: string) {
   return id
 }
 
+const SS99_FREE = 'https://api.cdnlivetv.is/api/v1/events/sports/?user=cdnlivetv&plan=free'
+const SS99_VIP = 'https://api.cdnlivetv.is/api/v1/events/sports/?user=streamsports99&plan=vip'
+
+const SS99_SPORT: Record<string, string> = {
+  Soccer: 'football', football: 'football', NBA: 'basketball', Basketball: 'basketball',
+  NFL: 'american-football', NCAA: 'american-football', NHL: 'hockey', Hockey: 'hockey',
+  MLB: 'baseball', Tennis: 'tennis', Golf: 'golf', Motorsport: 'motor-sports',
+  UFC: 'fight', WWE: 'fight', MMA: 'fight', Cricket: 'cricket',
+}
+
+function isSs99Live(status: string) {
+  return /live|1h|2h|ht|ot|q\d|in|p\d/i.test(String(status || ''))
+}
+
+async function fetchAny(url: string) {
+  const api = (globalThis as any).electronAPI || (typeof window !== 'undefined' ? (window as any).electronAPI : null)
+  if (api?.fetchText) {
+    const r = await api.fetchText(url, 20000)
+    if (r?.ok && r.text) return JSON.parse(r.text)
+    throw new Error(r?.error || 'SS99 fetch failed')
+  }
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`SS99 ${res.status}`)
+  return res.json()
+}
+
+export const ss99Api = {
+  async events(): Promise<SportMatch[]> {
+    let data: any = null
+    try { data = await fetchAny(SS99_FREE) } catch { try { data = await fetchAny(SS99_VIP) } catch { return [] } }
+    const inner = data?.['cdn-live-tv'] || {}
+    const out: SportMatch[] = []
+    for (const [key, rows] of Object.entries(inner)) {
+      if (/^total_|^cached$|^timestamp$/.test(key) || !Array.isArray(rows)) continue
+      const cat = SS99_SPORT[key] || 'other'
+      for (const item of rows as any[]) {
+        const channels = Array.isArray(item.channels) ? item.channels : []
+        const start = item.start ? Date.parse(String(item.start).replace(' ', 'T') + 'Z') : Date.now()
+        const live = isSs99Live(item.status)
+        out.push({
+          id: `ss99-${item.gameID || item.event}`,
+          title: item.event || `${item.homeTeam || ''} vs ${item.awayTeam || ''}`.trim(),
+          category: cat,
+          date: Number.isFinite(start) ? start : Date.now(),
+          live,
+          popular: live,
+          teams: {
+            home: { name: item.homeTeam, badge: item.homeTeamIMG },
+            away: { name: item.awayTeam, badge: item.awayTeamIMG },
+          },
+          sources: channels.filter((c: any) => c.url).slice(0, 8).map((c: any) => ({
+            source: 'ss99',
+            id: c.url,
+          })),
+        })
+      }
+    }
+    return out
+  },
+}
+
 export const watchfootyApi = {
   sports: () => wfJson<any[]>('/api/v1/sports'),
   matches: (sport: string) => wfJson<any[]>(`/api/v1/matches/${encodeURIComponent(wfSport(sport))}`),
