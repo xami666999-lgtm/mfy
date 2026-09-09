@@ -3,6 +3,7 @@ import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Settings2, Maximi
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 import { tmdb, POSTER_URL, BACKDROP_URL } from '../api/tmdb'
 import { vidyUrl, getPlayerUrl, isPlayerEmbed, getFallbackSources, PlayerSource } from '../api/vidy'
+import { pbUpsert } from '../api/pocketbase'
 import { mediafusionStreams } from '../api/mediafusion'
 import { aggregateStreams, bestPlayable } from '../api/stremioAgg'
 import { addonStreams, isOnePiece, STREAM_HOST, onePaceStreams } from '../api/stremioAddons'
@@ -1021,6 +1022,21 @@ export default function PlayerPage() {
         watchedAt: new Date().toISOString(),
         completed: reallyDone,
       })
+    } catch {}
+    try {
+      pbUpsert({
+        mediaId: String(selectedMedia.id),
+        mediaType: selectedMedia.type === 'movie' ? 'movie' : 'tv',
+        season: selectedMedia.season || 0,
+        episode: selectedMedia.episode || 0,
+        progress: p,
+        duration: d,
+        title: String((selectedMedia as any).title || (selectedMedia as any).name || selectedMedia.id),
+        posterPath: (selectedMedia as any).poster_path || prev?.posterPath || null,
+        watchedAt: new Date().toISOString(),
+        completed: reallyDone,
+        profileId: useStore.getState().currentProfile?.id || 'default',
+      }).catch(() => {})
     } catch {}
   }
 

@@ -9,6 +9,7 @@ import type { ThemeId } from '../store'
 import { cn } from '../lib/utils'
 import { listTorrents, removeTorrent, onTorrentProgress, formatBytes, formatSpeed } from '../api/torrent'
 import { serializdApi } from '../api/serializd'
+import { pbGet, pbSet, pbLogin } from '../api/pocketbase'
 
 export default function Settings() {
   const store = useStore()
@@ -349,6 +350,46 @@ export default function Settings() {
               link="https://letterboxd.com"
             />
             <p className="text-[11px] text-white/30 -mt-1 mb-3">Movies only. After you rate, MFY opens Letterboxd search. TV → Serializd. Anime / manga / novels → AniList.</p>
+          </div>
+
+
+          <div className="pt-4 border-t border-white/[0.06]">
+            <h4 className="text-sm font-medium text-white/60 mb-3">PocketBase (save progress on a server)</h4>
+            <Input
+              label="PocketBase URL"
+              value={typeof window !== 'undefined' ? (pbGet().url || '') : ''}
+              onChange={(v: string) => pbSet({ url: v.trim() })}
+              placeholder="http://127.0.0.1:8090"
+            />
+            <Input
+              label="Email"
+              value={typeof window !== 'undefined' ? (pbGet().email || '') : ''}
+              onChange={(v: string) => pbSet({ email: v.trim() })}
+              placeholder="you@gmail.com"
+            />
+            <Input
+              label="Password"
+              value=""
+              onChange={(v: string) => pbSet({ password: v })}
+              placeholder="PocketBase user password"
+              type="password"
+            />
+            <button
+              type="button"
+              className="w-full h-10 rounded-lg bg-[#FF1493]/10 border border-[#FF1493]/30 text-white text-sm"
+              onClick={async () => {
+                const c = pbGet()
+                try {
+                  await pbLogin(c.url, c.email, String(c.password || ''))
+                  alert('PocketBase connected. Progress will sync.')
+                } catch (e: any) {
+                  alert(e?.message || 'Login failed. Create user + mfy_progress collection first.')
+                }
+              }}
+            >
+              Connect PocketBase
+            </button>
+            <p className="text-[11px] text-white/30 mt-2">Run PocketBase, create collection mfy_progress, then connect. See pocketbase/README.md in the repo.</p>
           </div>
 
           <Input label="AIOStreams URL" value={aiosUrl} onChange={setAiosUrl} placeholder="http://localhost:3000 (when ready)" />

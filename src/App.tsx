@@ -34,6 +34,7 @@ import PrintHome from './pages/PrintHome'
 import MangaReader from './pages/MangaReader'
 import People from './pages/People'
 import IdleWall from './components/IdleWall'
+import { pbPull, pbRefresh } from './api/pocketbase'
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true)
@@ -72,6 +73,26 @@ setExternalPlayer,
   useEffect(() => {
     const { init } = useStore.getState()
     init()
+    pbRefresh().then(() => pbPull()).then((rows) => {
+      if (!rows?.length) return
+      const { upsertHistory } = useStore.getState()
+      for (const r of rows) {
+        upsertHistory({
+          id: `${r.mediaId}-${r.mediaType || 'tv'}-${r.season || 0}-${r.episode || 0}`,
+          mediaId: r.mediaId,
+          mediaType: (r.mediaType === 'movie' ? 'movie' : 'tv') as any,
+          title: r.title || r.mediaId,
+          posterPath: r.posterPath || null,
+          progress: r.progress,
+          duration: r.duration,
+          season: r.season,
+          episode: r.episode,
+          watchedAt: r.watchedAt || new Date().toISOString(),
+          profileId: r.profileId || 'default',
+          completed: !!r.completed,
+        })
+      }
+    }).catch(() => {})
   }, [])
 
   // Replay the intro splash whenever the window is shown (first launch + re-open from tray)
