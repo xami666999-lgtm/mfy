@@ -7,6 +7,7 @@ const ADDONS = [
   { id: 'pipe', base: 'https://pipe.boringways.workers.dev' },
   { id: 'torrentio', base: 'https://torrentio.strem.fun' },
   { id: 'comet', base: 'https://comet.elfhosted.com' },
+  { id: 'tpb', base: 'https://thepiratebay-plus.elfhosted.com' },
 ]
 
 async function getJson(url: string) {

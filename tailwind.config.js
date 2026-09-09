@@ -25,8 +25,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Figtree', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-        display: ['Figtree', '-apple-system', 'sans-serif'],
+        sans: ['"Source Sans 3"', '"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
+        display: ['"Source Sans 3"', '"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
       },
       boxShadow: {
         'neon-pink': '0 0 10px rgba(255, 20, 147, 0.5), 0 0 30px rgba(255, 20, 147, 0.2)',
