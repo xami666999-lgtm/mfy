@@ -290,35 +290,10 @@ export default function PlayerPage() {
     return () => { try { w.removeEventListener('dom-ready', apply) } catch {} }
   }, [subSize, subBg, streamUrl, fit])
 
+  const resumeOnce = useRef('')
   useEffect(() => {
-    const row = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id) && Number(h.season || 0) === Number(selectedMedia?.season || 0) && Number(h.episode || 0) === Number(selectedMedia?.episode || 0))
-    const at = Math.max(Number((selectedMedia as any)?.resumeAt || 0), Number(row?.progress || 0), bestProgress.current)
-    if (!(at > 15)) return
-    const dur = Math.max(Number(row?.duration || 0), bestDuration.current)
-    if (dur >= 600 && at / dur >= 0.95) return
-    bestProgress.current = Math.max(bestProgress.current, at)
-    const ping = () => {
-      const w = document.querySelector('webview') as any
-      try { w?.send?.('mfy-seek', at) } catch {}
-      try {
-        w?.executeJavaScript?.(`(() => { const v = document.querySelector('video'); if (!v || v.readyState < 1) return; if (Math.abs((v.currentTime||0) - ${at}) > 4) v.currentTime = ${at}; })()`)
-      } catch {}
-      if (videoRef.current && videoRef.current.readyState >= 1) {
-        try { if (Math.abs(videoRef.current.currentTime - at) > 4) videoRef.current.currentTime = at } catch {}
-      }
-    }
-    ping()
-    const id = setInterval(ping, 700)
-    const t = setTimeout(() => clearInterval(id), 22000)
-    const w = document.querySelector('webview') as any
-    w?.addEventListener?.('dom-ready', ping)
-    w?.addEventListener?.('did-finish-load', ping)
-    return () => {
-      clearInterval(id)
-      clearTimeout(t)
-      try { w?.removeEventListener?.('dom-ready', ping); w?.removeEventListener?.('did-finish-load', ping) } catch {}
-    }
-  }, [streamUrl, selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
+    resumeOnce.current = ''
+  }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode, streamUrl])
 
   useEffect(() => {
     const id = setInterval(() => { saveProgress(false).catch(() => {}) }, 20000)
@@ -568,23 +543,16 @@ export default function PlayerPage() {
   }, [])
 
   useEffect(() => {
-    const mediaKey = `${selectedMedia?.id}-${selectedMedia?.season || 0}-${selectedMedia?.episode || 0}`
+    const key = `${selectedMedia?.id}-${selectedMedia?.season || 0}-${selectedMedia?.episode || 0}`
     const at = bestProgress.current
     if (!(at > 20) || !streamUrl) return
-    let n = 0
-    let done = false
-    const id = setInterval(async () => {
-      n += 1
-      if (done || n > 12) { clearInterval(id); return }
-      const live = Number(progress) || 0
-      if (live > at + 6) { done = true; clearInterval(id); return }
-      if (live > 25 && Math.abs(live - at) > 40) { done = true; clearInterval(id); return }
-      try { await (window as any).electronAPI?.embedSeek?.(at) } catch {}
-      if (videoRef.current && (videoRef.current.currentTime || 0) < 20 && videoRef.current.readyState >= 1) {
-        try { videoRef.current.currentTime = at } catch {}
-      }
-    }, 1500)
-    return () => clearInterval(id)
+    if (resumeOnce.current === key) return
+    const t = setTimeout(() => {
+      if (resumeOnce.current === key) return
+      resumeOnce.current = key
+      try { (window as any).electronAPI?.embedSeek?.(at) } catch {}
+    }, 2500)
+    return () => clearTimeout(t)
   }, [streamUrl, selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
 
   useEffect(() => {
