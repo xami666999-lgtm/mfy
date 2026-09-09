@@ -1,4 +1,5 @@
 import { tmdb } from './tmdb'
+import { ezRank } from './ezremux'
 
 export type AggStream = { title: string; url: string; quality: string; addon: string }
 
@@ -82,8 +83,9 @@ export async function aggregateStreams(opts: {
       if (out.filter((x) => x.addon === addon.id).length) break
     }
   }))
-  const http = out.filter((x) => /^https?:/i.test(x.url) && !x.url.includes('magnet:'))
-  const rest = out.filter((x) => !http.includes(x))
+  const ranked = ezRank(out)
+  const http = ranked.filter((x) => /^https?:/i.test(x.url) && !x.url.includes('magnet:'))
+  const rest = ranked.filter((x) => !http.includes(x))
   return [...http, ...rest].slice(0, 40)
 }
 
