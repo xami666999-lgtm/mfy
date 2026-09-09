@@ -553,6 +553,7 @@ export default function PlayerPage() {
       const d = Number(t?.d) || 0
       if (cur > 2) {
         lastVideoAt.current = Date.now()
+        if (bestProgress.current < 20 && cur > 90) return
         if (cur >= bestProgress.current - 25) {
           bestProgress.current = Math.max(bestProgress.current, cur)
           setProgress(cur)
@@ -567,23 +568,24 @@ export default function PlayerPage() {
   }, [])
 
   useEffect(() => {
+    const mediaKey = `${selectedMedia?.id}-${selectedMedia?.season || 0}-${selectedMedia?.episode || 0}`
     const at = bestProgress.current
-    if (!(at > 12) || !streamUrl) return
+    if (!(at > 20) || !streamUrl) return
     let n = 0
-    const id = setInterval(() => {
+    let done = false
+    const id = setInterval(async () => {
       n += 1
-      if (n > 30) { clearInterval(id); return }
-      try { (window as any).electronAPI?.embedSeek?.(at) } catch {}
-      try {
-        const w = document.querySelector('webview') as any
-        w?.executeJavaScript?.(`(() => { const t = ${at}; document.querySelectorAll('video').forEach(v => { if (v && v.readyState >= 1 && Math.abs((v.currentTime||0) - t) > 8) v.currentTime = t; }); })()`)
-      } catch {}
-      if (videoRef.current && videoRef.current.readyState >= 1 && Math.abs((videoRef.current.currentTime||0) - at) > 8) {
+      if (done || n > 12) { clearInterval(id); return }
+      const live = Number(progress) || 0
+      if (live > at + 6) { done = true; clearInterval(id); return }
+      if (live > 25 && Math.abs(live - at) > 40) { done = true; clearInterval(id); return }
+      try { await (window as any).electronAPI?.embedSeek?.(at) } catch {}
+      if (videoRef.current && (videoRef.current.currentTime || 0) < 20 && videoRef.current.readyState >= 1) {
         try { videoRef.current.currentTime = at } catch {}
       }
-    }, 900)
+    }, 1500)
     return () => clearInterval(id)
-  }, [streamUrl, selectedMedia?.id, selectedMedia?.episode])
+  }, [streamUrl, selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
 
   useEffect(() => {
     setShowNext(false)

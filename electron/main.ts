@@ -347,14 +347,17 @@ app.whenReady().then(() => {
   }
   async function readEmbedTime() {
     let best = { p: 0, d: 0 }
-    for (const c of embedContents()) {
+    const all = embedContents()
+    const c = all[all.length - 1]
+    if (!c) return best
+    {
       let frames: any[] = []
       try { frames = [c.mainFrame, ...(c.mainFrame?.framesInSubtree || [])] } catch { frames = [] }
       if (!frames.length) frames = [c.mainFrame].filter(Boolean)
       for (const f of frames) {
         try {
           const got = await f.executeJavaScript(TIME_JS, true)
-          if (got && Number(got.p) > best.p) best = { p: Number(got.p) || 0, d: Number(got.d) || 0 }
+          if (got && Number(got.p) >= 0) best = { p: Number(got.p) || 0, d: Number(got.d) || 0 }
         } catch {}
       }
     }
@@ -370,7 +373,7 @@ app.whenReady().then(() => {
   ipcMain.handle('embed-seek', async (_e, sec: number) => {
     const n = Number(sec)
     if (!(n > 8)) return false
-    const SEEK_JS = `(() => { try { document.querySelectorAll('video').forEach(v => { if (v.readyState >= 1) v.currentTime = ${n}; }); return true } catch { return false } })()`
+    const SEEK_JS = `(() => { try { let did=false; document.querySelectorAll('video').forEach(v => { const c=v.currentTime||0; if (v.readyState>=1 && c<20) { v.currentTime=${n}; did=true; } }); return did } catch { return false } })()`
     for (const c of embedContents()) {
       let frames: any[] = []
       try { frames = [c.mainFrame, ...(c.mainFrame?.framesInSubtree || [])] } catch { frames = [] }
