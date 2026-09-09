@@ -320,6 +320,7 @@ app.whenReady().then(() => {
     session.fromPartition('persist:mfy').setPreloads([path.join(__dirname, 'guest-preload.js')])
     session.fromPartition('persist:mfy-sport').setUserAgent(chromeUA)
     session.fromPartition('persist:mfy-embed').setUserAgent(chromeUA)
+    session.fromPartition('persist:mfy-embed').setPreloads([path.join(__dirname, 'guest-preload.js')])
   } catch {}
   const stripFrame = (details: any, callback: any) => {
     const headers = { ...(details.responseHeaders || {}) }

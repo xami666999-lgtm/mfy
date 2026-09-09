@@ -545,6 +545,30 @@ export default function PlayerPage() {
     return () => clearTimeout(id)
   }, [streamUrl, selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
 
+
+  useEffect(() => {
+    const at = bestProgress.current
+    if (!(at > 12) || !streamUrl) return
+    let n = 0
+    const id = setInterval(() => {
+      n += 1
+      if (n > 25) { clearInterval(id); return }
+      try {
+        const w = document.querySelector('webview') as any
+        w?.executeJavaScript?.(`(() => {
+          const t = ${at};
+          document.querySelectorAll('video').forEach(v => {
+            if (v && v.readyState >= 1 && Math.abs((v.currentTime||0) - t) > 8) v.currentTime = t;
+          });
+        })()`)
+      } catch {}
+      if (videoRef.current && videoRef.current.readyState >= 1 && Math.abs((videoRef.current.currentTime||0) - at) > 8) {
+        try { videoRef.current.currentTime = at } catch {}
+      }
+    }, 1200)
+    return () => clearInterval(id)
+  }, [streamUrl, selectedMedia?.id, selectedMedia?.episode])
+
   useEffect(() => {
     setShowNext(false)
     setNextUp(null)
@@ -975,7 +999,7 @@ export default function PlayerPage() {
     if (!selectedMedia || selectedMedia.type === 'iptv') return
     const wall = Math.max(0, (Date.now() - startedAt.current) / 1000)
     let p = Math.max(progress, bestProgress.current)
-    if (Date.now() - lastVideoAt.current > 3000) p = Math.max(p, wall)
+    if (lastVideoAt.current && Date.now() - lastVideoAt.current < 8000) p = Math.max(p, wall)
     let d = Math.max(Number.isFinite(dur) ? dur : 0, bestDuration.current, expectedSec || 0)
     try {
       const w = document.querySelector('webview') as any
