@@ -50,6 +50,7 @@ export default function Settings() {
     store.setTmdbApiKey(tmdbKey)
     setRuntimeTmdbKey(tmdbKey)
     store.setTraktToken(traktTok)
+    try { localStorage.setItem('mfy-trakt-token', traktTok); (window as any).__mfyTrakt = traktTok } catch {}
     store.setRealDebridKey(rdKey)
     store.setAiostreamsUrl(aiosUrl)
     store.setJellyfinUrl(jellyfinUrl)
@@ -401,7 +402,14 @@ export default function Settings() {
           />
           <Input label="AIOStreams URL" value={aiosUrl} onChange={setAiosUrl} placeholder="http://localhost:3000 (when ready)" />
           <Input label="Real-Debrid API" value={rdKey} onChange={setRdKey} placeholder="Real-Debrid token" link="https://realdebrid.com/apitoken" type="password" />
-          <Input label="Trakt Token (optional)" value={traktTok} onChange={setTraktTok} placeholder="Not required — local lists used by default" type="password" />
+          <Input
+            label="Trakt Client ID"
+            value={typeof window !== 'undefined' ? (localStorage.getItem('mfy-trakt-client') || '') : ''}
+            onChange={(v: string) => { try { localStorage.setItem('mfy-trakt-client', v.trim()) } catch {} }}
+            placeholder="From trakt.tv/oauth/applications"
+            link="https://trakt.tv/oauth/applications"
+          />
+          <Input label="Trakt Access Token" value={traktTok} onChange={setTraktTok} placeholder="Paste token — then play/pause/finish scrobbles to Trakt" type="password" link="https://trakt.tv/oauth/authorize" />
           <Input label="Jellyfin Server" value={jellyfinUrl} onChange={setJellyfinUrl} placeholder="http://127.0.0.1:8096" />
           <Input label="Jellyfin API Key" value={jellyfinKey} onChange={setJellyfinKey} placeholder="Optional local media library key" type="password" />
         </Section>

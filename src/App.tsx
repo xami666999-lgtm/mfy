@@ -143,7 +143,12 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
         setRuntimeMdblistKey(k)
       }
     })
-    api.get('traktToken').then((t: string) => { if (t) setTraktToken(t) })
+    api.get('traktToken').then((t: string) => {
+      if (t) {
+        setTraktToken(t)
+        try { localStorage.setItem('mfy-trakt-token', t); (window as any).__mfyTrakt = t } catch {}
+      }
+    })
     api.get('realDebridKey').then((k: string) => { if (k) setRealDebridKey(k) })
     api.get('aiostreamsUrl').then((u: string) => { if (u) setAiostreamsUrl(u) })
     api.get('jellyfinUrl').then((u: string) => { if (u) setJellyfinUrl(u) })

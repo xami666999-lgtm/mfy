@@ -1047,6 +1047,10 @@ export default function PlayerPage() {
         profileId: useStore.getState().currentProfile?.id || 'default',
       }).catch(() => {})
     } catch {}
+    try {
+      const { trakt } = await import('../api/trakt')
+      await trakt.scrobble(selectedMedia, p, d, reallyDone)
+    } catch {}
   }
 
   const ratedRef = useRef(false)
