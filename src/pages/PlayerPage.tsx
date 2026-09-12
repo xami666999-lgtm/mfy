@@ -10,6 +10,8 @@ import { addonStreams, isOnePiece, STREAM_HOST, onePaceStreams } from '../api/st
 import { ANIME_SOURCES, MOVIE_TV_SOURCES, ALL_PLAY_SOURCES } from '../api/vidy'
 import { useStore } from '../store'
 import RateModal from '../components/RateModal'
+import SeekPreview from '../components/SeekPreview'
+import { loadSeekr, type SeekCue } from '../api/seekr'
 import TogetherPanel from '../components/TogetherPanel'
 import { syncRating, isAnimeItem } from '../lib/trackers'
 import { markSource } from '../lib/playerStatus'
@@ -63,6 +65,8 @@ export default function PlayerPage() {
   const [torrents, setTorrents] = useState<{ url: string; name: string; quality: string; size?: string; seeds?: string }[]>([])
   const [magnetBox, setMagnetBox] = useState('')
   const [torrentBusy, setTorrentBusy] = useState('')
+  const [seekCues, setSeekCues] = useState<SeekCue[]>([])
+  const [seekHover, setSeekHover] = useState<{ sec: number; x: number } | null>(null)
   const [fit, setFit] = useState<'contain' | 'cover' | 'fill' | 'full'>('contain')
   const [picks, setPicks] = useState<{ title: string; url: string; quality: string }[]>([])
   const [srcOpen, setSrcOpen] = useState(false)
@@ -230,6 +234,19 @@ export default function PlayerPage() {
     setLoading(false)
     setError('')
   }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode, selectedMedia?.type, playerSource])
+
+  useEffect(() => {
+    if (!selectedMedia?.id) return
+    const d = Math.max(dur, expectedSec, 90)
+    loadSeekr({
+      tmdb: Number(selectedMedia.id),
+      imdb: String((selectedMedia as any).imdb_id || ''),
+      season: selectedMedia.season,
+      episode: selectedMedia.episode,
+      movie: selectedMedia.type === 'movie',
+      durationSec: d,
+    }).then(setSeekCues).catch(() => setSeekCues([]))
+  }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode, selectedMedia?.type, dur, expectedSec])
 
 
   function tryNextSource() {
@@ -1435,6 +1452,19 @@ export default function PlayerPage() {
         {loaded && !error && !isPlayerEmbedUrl(streamUrl) && (
           <video ref={videoRef} playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: fit, background: '#000' }} />
         )}
+        {loaded && isPlayerEmbedUrl(streamUrl) && (
+          <div
+            style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 40, zIndex: 50, pointerEvents: 'auto' }}
+            onMouseMove={(e) => {
+              const total = Math.max(expectedSec || 0, Number.isFinite(dur) ? dur : 0, bestDuration.current || 0, 1)
+              const r = e.currentTarget.getBoundingClientRect()
+              setSeekHover({ sec: ((e.clientX - r.left) / Math.max(r.width, 1)) * total, x: e.clientX })
+            }}
+            onMouseLeave={() => setSeekHover(null)}
+          >
+            {seekHover && <SeekPreview cues={seekCues} hoverSec={seekHover.sec} x={seekHover.x} />}
+          </div>
+        )}
 
         {showUI && loaded && !error && !isPlayerEmbedUrl(streamUrl) && (
           <div className="mfy-bar" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 300, padding: '18px 22px 20px', background: 'linear-gradient(0deg, rgba(0,0,0,0.92) 0%, transparent 100%)', pointerEvents: 'auto' }}
@@ -1445,9 +1475,17 @@ export default function PlayerPage() {
               const pct = total > 0 ? Math.min(100, (progress / total) * 100) : 0
               return (
                 <>
-                  <div onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); if (total > 0) seek((e.clientX - r.left) / r.width * total) }}
-                    style={{ cursor: 'pointer', height: 5, background: 'rgba(255,255,255,0.18)', borderRadius: 99, marginBottom: 12 }}>
+                  <div
+                    onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); if (total > 0) seek((e.clientX - r.left) / r.width * total) }}
+                    onMouseMove={(e) => {
+                      const r = e.currentTarget.getBoundingClientRect()
+                      const sec = total > 0 ? ((e.clientX - r.left) / r.width) * total : 0
+                      setSeekHover({ sec, x: e.clientX })
+                    }}
+                    onMouseLeave={() => setSeekHover(null)}
+                    style={{ cursor: 'pointer', height: 8, background: 'rgba(255,255,255,0.18)', borderRadius: 99, marginBottom: 12, position: 'relative' }}>
                     <div style={{ height: '100%', width: `${pct}%`, background: '#FF1493', borderRadius: 99 }} />
+                    {seekHover && <SeekPreview cues={seekCues} hoverSec={seekHover.sec} x={seekHover.x} />}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

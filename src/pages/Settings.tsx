@@ -219,6 +219,7 @@ export default function Settings() {
           />
           <Input label="MDBList API Key" value={mdblistKey} onChange={setMdblistKey} placeholder="Optional — aggregated ratings (IMDb, Trakt, Metacritic, RT, Letterboxd)" link="https://mdblist.com/apikey" />
           <Input label="OpenSubtitles API Key" value={subtitleKey} onChange={setSubtitleKey} placeholder="Optional — auto-downloads English subtitles in the player" link="https://opensubtitles.com" />
+          <Input label="Seekr API Key" value={typeof window !== 'undefined' ? (localStorage.getItem('mfy-seekr-key') || '') : ''} onChange={(v: string) => { try { localStorage.setItem('mfy-seekr-key', v.trim()) } catch {} }} placeholder="sk_live_… hover thumbnails" type="password" link="https://seekr.tv/docs" />
 
           {/* Serializd Section */}
           <div className="pt-4 border-t border-white/[0.06]">
