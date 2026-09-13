@@ -74,6 +74,9 @@ export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId:
   if (source === 'vidy') {
     return movie ? `https://vidsrc.xyz/embed/movie/${tmdbId}` : `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}`
   }
+  if (source === 'onepace') {
+    return `https://onepace.net/en`
+  }
   if (movie) return `https://vidsrc.me/embed/movie/${tmdbId}`
   return `https://vidsrc.me/embed/tv/${tmdbId}/${s}/${e}`
 }

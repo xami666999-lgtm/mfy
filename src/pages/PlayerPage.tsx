@@ -11,7 +11,6 @@ import { ANIME_SOURCES, MOVIE_TV_SOURCES, ALL_PLAY_SOURCES } from '../api/vidy'
 import { useStore } from '../store'
 import RateModal from '../components/RateModal'
 import SeekPreview from '../components/SeekPreview'
-import { loadSeekr, type SeekCue } from '../api/seekr'
 import TogetherPanel from '../components/TogetherPanel'
 import { syncRating, isAnimeItem } from '../lib/trackers'
 import { markSource } from '../lib/playerStatus'
@@ -65,8 +64,24 @@ export default function PlayerPage() {
   const [torrents, setTorrents] = useState<{ url: string; name: string; quality: string; size?: string; seeds?: string }[]>([])
   const [magnetBox, setMagnetBox] = useState('')
   const [torrentBusy, setTorrentBusy] = useState('')
-  const [seekCues, setSeekCues] = useState<SeekCue[]>([])
+  const [seekFrames, setSeekFrames] = useState<{ sec: number; src: string }[]>([])
   const [seekHover, setSeekHover] = useState<{ sec: number; x: number } | null>(null)
+  const previewRef = useRef<HTMLVideoElement | null>(null)
+  const framesRef = useRef<{ sec: number; src: string }[]>([])
+
+  function grabFrame(v: HTMLVideoElement, at?: number) {
+    try {
+      const t = Math.floor((at ?? v.currentTime || 0) / 8) * 8
+      if (framesRef.current.some((f) => f.sec === t)) return
+      const c = document.createElement('canvas')
+      c.width = 320
+      c.height = 180
+      c.getContext('2d')?.drawImage(v, 0, 0, 320, 180)
+      const src = c.toDataURL('image/jpeg', 0.62)
+      framesRef.current = [...framesRef.current, { sec: t, src }].slice(-90)
+      setSeekFrames(framesRef.current)
+    } catch {}
+  }
   const [fit, setFit] = useState<'contain' | 'cover' | 'fill' | 'full'>('contain')
   const [picks, setPicks] = useState<{ title: string; url: string; quality: string }[]>([])
   const [srcOpen, setSrcOpen] = useState(false)
@@ -230,23 +245,13 @@ export default function PlayerPage() {
       anime
     )
     setStreamUrl(url)
+    framesRef.current = []
+    setSeekFrames([])
     setLoaded(true)
     setLoading(false)
     setError('')
   }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode, selectedMedia?.type, playerSource])
 
-  useEffect(() => {
-    if (!selectedMedia?.id) return
-    const d = Math.max(dur, expectedSec, 90)
-    loadSeekr({
-      tmdb: Number(selectedMedia.id),
-      imdb: String((selectedMedia as any).imdb_id || ''),
-      season: selectedMedia.season,
-      episode: selectedMedia.episode,
-      movie: selectedMedia.type === 'movie',
-      durationSec: d,
-    }).then(setSeekCues).catch(() => setSeekCues([]))
-  }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode, selectedMedia?.type, dur, expectedSec])
 
 
   function tryNextSource() {
@@ -352,6 +357,7 @@ export default function PlayerPage() {
         lastVideoAt.current = Date.now()
         bestProgress.current = Math.max(bestProgress.current, cur)
         setProgress(cur)
+        grabFrame(v, cur)
       }
       if (d > 30) {
         bestDuration.current = Math.max(bestDuration.current, d)
@@ -782,6 +788,8 @@ export default function PlayerPage() {
     const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, season, episode, isAnimeItem(selectedMedia))
     setCurrentStreamUrl(url)
     setStreamUrl(url)
+    framesRef.current = []
+    setSeekFrames([])
     setLoaded(true)
   }
 
@@ -1232,7 +1240,7 @@ export default function PlayerPage() {
             </button>
             {srcOpen && (
               <div style={{ position: 'absolute', right: 0, top: 40, width: 220, background: '#12080d', border: '1px solid rgba(255,20,147,0.45)', borderRadius: 16, padding: 8, zIndex: 80, boxShadow: '0 16px 40px rgba(0,0,0,0.55)' }}>
-                {(isOnePiece(String((selectedMedia as any)?.title || '')) ? (['onepace', ...ALL_PLAY_SOURCES] as PlayerSource[]) : ALL_PLAY_SOURCES).map((s) => (
+                {(isOnePiece(String((selectedMedia as any)?.title || '')) ? (['onepace'] as PlayerSource[]) : ALL_PLAY_SOURCES).map((s) => (
                   <button
                     key={s}
                     type="button"
@@ -1451,6 +1459,7 @@ export default function PlayerPage() {
         )}
         {loaded && !error && !isPlayerEmbedUrl(streamUrl) && (
           <video ref={videoRef} playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: fit, background: '#000' }} />
+          <video ref={previewRef} muted playsInline preload="auto" src={!isPlayerEmbedUrl(streamUrl) ? streamUrl : undefined} onSeeked={(e) => grabFrame(e.currentTarget)} style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }} />
         )}
         {loaded && isPlayerEmbedUrl(streamUrl) && (
           <div
@@ -1458,11 +1467,13 @@ export default function PlayerPage() {
             onMouseMove={(e) => {
               const total = Math.max(expectedSec || 0, Number.isFinite(dur) ? dur : 0, bestDuration.current || 0, 1)
               const r = e.currentTarget.getBoundingClientRect()
-              setSeekHover({ sec: ((e.clientX - r.left) / Math.max(r.width, 1)) * total, x: e.clientX })
+              const sec = ((e.clientX - r.left) / Math.max(r.width, 1)) * total
+              setSeekHover({ sec, x: e.clientX })
+              try { const pv = previewRef.current; if (pv && pv.readyState >= 1) pv.currentTime = Math.max(0, sec) } catch {}
             }}
             onMouseLeave={() => setSeekHover(null)}
           >
-            {seekHover && <SeekPreview cues={seekCues} hoverSec={seekHover.sec} x={seekHover.x} />}
+            {seekHover && <SeekPreview frames={seekFrames} hoverSec={seekHover.sec} x={seekHover.x} />}
           </div>
         )}
 
@@ -1481,11 +1492,12 @@ export default function PlayerPage() {
                       const r = e.currentTarget.getBoundingClientRect()
                       const sec = total > 0 ? ((e.clientX - r.left) / r.width) * total : 0
                       setSeekHover({ sec, x: e.clientX })
+                      try { const pv = previewRef.current; if (pv && pv.readyState >= 1) pv.currentTime = Math.max(0, sec) } catch {}
                     }}
                     onMouseLeave={() => setSeekHover(null)}
                     style={{ cursor: 'pointer', height: 8, background: 'rgba(255,255,255,0.18)', borderRadius: 99, marginBottom: 12, position: 'relative' }}>
                     <div style={{ height: '100%', width: `${pct}%`, background: '#FF1493', borderRadius: 99 }} />
-                    {seekHover && <SeekPreview cues={seekCues} hoverSec={seekHover.sec} x={seekHover.x} />}
+                    {seekHover && <SeekPreview frames={seekFrames} hoverSec={seekHover.sec} x={seekHover.x} />}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
