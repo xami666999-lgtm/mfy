@@ -71,7 +71,7 @@ export default function PlayerPage() {
 
   function grabFrame(v: HTMLVideoElement, at?: number) {
     try {
-      const t = Math.floor((at ?? v.currentTime || 0) / 8) * 8
+      const t = Math.floor((at ?? (v.currentTime || 0)) / 8) * 8
       if (framesRef.current.some((f) => f.sec === t)) return
       const c = document.createElement('canvas')
       c.width = 320
@@ -1458,8 +1458,10 @@ export default function PlayerPage() {
           />
         )}
         {loaded && !error && !isPlayerEmbedUrl(streamUrl) && (
-          <video ref={videoRef} playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: fit, background: '#000' }} />
-          <video ref={previewRef} muted playsInline preload="auto" src={!isPlayerEmbedUrl(streamUrl) ? streamUrl : undefined} onSeeked={(e) => grabFrame(e.currentTarget)} style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }} />
+          <>
+            <video ref={videoRef} playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: fit, background: '#000' }} />
+            <video ref={previewRef} muted playsInline preload="auto" src={streamUrl} onSeeked={(e) => grabFrame(e.currentTarget)} style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }} />
+          </>
         )}
         {loaded && isPlayerEmbedUrl(streamUrl) && (
           <div
