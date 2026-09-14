@@ -165,8 +165,9 @@ function createTray() {
       {
         label: 'Check for Updates',
         click: () => {
-          if (autoUpdater) autoUpdater.checkForUpdatesAndNotify()
-          else new Notification({ title: 'MFY', body: 'Auto-update is only available in packaged builds.' }).show()
+          mfySelfUpdate(true).catch(() => {
+            new Notification({ title: 'MFY', body: 'Could not check for updates.' }).show()
+          })
         },
       },
       { type: 'separator' },
@@ -214,42 +215,82 @@ function downloadHttps(url: string, dest?: string): Promise<string> {
 async function mfySelfUpdate(installIfNewer = true) {
   const current = app.getVersion()
   let latest = current
-  let url = `https://github.com/xami666999-lgtm/mfy/releases/latest/download/MFY-Setup-${current}.exe`
+  let url = ''
+  let kind: 'exe' | 'zip' = 'zip'
   try {
     const raw = await downloadHttps('https://api.github.com/repos/xami666999-lgtm/mfy/releases?per_page=20')
     const list = JSON.parse(String(raw)) as any[]
     let best = current
-    let bestUrl = url
+    let bestUrl = ''
+    let bestKind: 'exe' | 'zip' = 'zip'
     for (const rel of list || []) {
       const ver = String(rel.tag_name || '').replace(/^v/, '')
       if (!/^\d+\.\d+/.test(ver)) continue
-      const asset = (rel.assets || []).find((a: any) => /MFY-Setup-.*\.exe$/i.test(a.name || ''))
+      const assets = rel.assets || []
+      const exe = assets.find((a: any) => /MFY-Setup-.*\.exe$/i.test(a.name || ''))
+      const zip = assets.find((a: any) => /MFY-Setup-.*\.zip$/i.test(a.name || ''))
+      const asset = exe || zip
       if (!asset?.browser_download_url) continue
       if (ver.localeCompare(best, undefined, { numeric: true, sensitivity: 'base' }) > 0) {
         best = ver
         bestUrl = asset.browser_download_url
+        bestKind = exe ? 'exe' : 'zip'
       }
     }
     latest = best
     url = bestUrl
+    kind = bestKind
   } catch {
     try {
       const text = await downloadHttps('https://github.com/xami666999-lgtm/mfy/releases/latest/download/latest.yml')
       latest = (String(text).match(/version:\s*([0-9.]+)/) || [])[1] || current
-      url = `https://github.com/xami666999-lgtm/mfy/releases/latest/download/MFY-Setup-${latest}.exe`
+      url = `https://github.com/xami666999-lgtm/mfy/releases/latest/download/MFY-Setup-${latest}.zip`
+      kind = 'zip'
     } catch {}
   }
   const newer = latest.localeCompare(current, undefined, { numeric: true, sensitivity: 'base' }) > 0
-  if (!newer) return { ok: true, current, latest, newer: false, url }
+  if (!newer || !url) return { ok: true, current, latest, newer: false, url }
   new Notification({ title: 'MFY Update', body: `Downloading ${latest}…` }).show()
   mainWindow?.webContents.send('mfy:update-available', { version: latest })
   if (!installIfNewer) return { ok: true, current, latest, newer: true, url }
-  const dest = path.join(app.getPath('temp'), `MFY-Setup-${latest}.exe`)
+  const dest = path.join(app.getPath('temp'), `MFY-Setup-${latest}.${kind}`)
   await downloadHttps(url, dest)
   new Notification({ title: 'MFY Update Ready', body: `Installing ${latest}` }).show()
   mainWindow?.webContents.send('mfy:update-downloaded', { version: latest })
-  spawn(dest, [], { detached: true, stdio: 'ignore' }).unref()
-  setTimeout(() => { ;(app as any).isQuitting = true; app.quit() }, 600)
+  if (kind === 'exe') {
+    spawn(dest, [], { detached: true, stdio: 'ignore' }).unref()
+  } else {
+    const extractDir = path.join(app.getPath('temp'), `mfy-update-${latest}`)
+    try { fs.rmSync(extractDir, { recursive: true, force: true }) } catch {}
+    fs.mkdirSync(extractDir, { recursive: true })
+    await new Promise<void>((resolve, reject) => {
+      const ps = spawn('powershell.exe', ['-NoProfile', '-Command', `Expand-Archive -Force -LiteralPath '${dest.replace(/'/g, "''")}' -DestinationPath '${extractDir.replace(/'/g, "''")}'`], { windowsHide: true })
+      ps.on('exit', (code) => code === 0 ? resolve() : reject(new Error('unzip ' + code)))
+      ps.on('error', reject)
+    })
+    const findExe = (dir: string): string => {
+      const names = fs.readdirSync(dir)
+      if (names.includes('MFY.exe')) return path.join(dir, 'MFY.exe')
+      for (const n of names) {
+        const p = path.join(dir, n)
+        try { if (fs.statSync(p).isDirectory()) { const hit = findExe(p); if (hit) return hit } } catch {}
+      }
+      return ''
+    }
+    const newExe = findExe(extractDir)
+    const appDir = path.dirname(process.execPath)
+    const bat = path.join(app.getPath('temp'), `mfy-apply-${latest}.bat`)
+    const srcDir = newExe ? path.dirname(newExe) : extractDir
+    fs.writeFileSync(bat, [
+      '@echo off',
+      'timeout /t 2 /nobreak >nul',
+      `robocopy "${srcDir}" "${appDir}" /E /IS /IT /NFL /NDL /NJH /NJS /nc /ns /np`,
+      `start "" "${path.join(appDir, 'MFY.exe')}"`,
+      `del "%~f0"`,
+    ].join('\r\n'))
+    spawn('cmd.exe', ['/c', bat], { detached: true, stdio: 'ignore', windowsHide: true }).unref()
+  }
+  setTimeout(() => { ;(app as any).isQuitting = true; app.quit() }, 800)
   return { ok: true, current, latest, newer: true, url, installing: true }
 }
 

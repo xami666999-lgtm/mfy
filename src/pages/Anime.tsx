@@ -4,24 +4,31 @@ import { anilist } from '../api/anilist'
 import { jikan } from '../api/jikan'
 import { useStore } from '../store'
 import { MediaShelf } from '../components/MediaShelf'
-import PageHero from '../components/PageHero'
+import CineHero from '../components/CineHero'
 import { OFFLINE_ANIME } from '../data/offlineCatalog'
 import { openAnime } from '../api/animeOpen'
 import { addonCatalog } from '../api/stremioAddons'
+import { isFinished } from '../lib/watchProgress'
+
+const GENRES: Record<string, string> = {
+  Action: '16,10759', Comedy: '16,35', Drama: '16,18', Romance: '16,10749',
+  Crime: '16,80', Mystery: '16,9648', Family: '16,10751', SciFi: '16,10765',
+  Fantasy: '16,14', Thriller: '16,53',
+}
 
 export default function Anime() {
-  const { setSelectedMedia, setCurrentPage } = useStore()
+  const { setSelectedMedia, setCurrentPage, watchHistory } = useStore()
   const [popular, setPopular] = useState<any[]>(OFFLINE_ANIME || [])
   const [upcoming, setUpcoming] = useState<any[]>([])
   const [rows, setRows] = useState<Record<string, any[]>>({})
   const [audio, setAudio] = useState<'all' | 'sub' | 'dub'>('all')
-  const [calendar, setCalendar] = useState<any[]>([])
+  const [airing, setAiring] = useState<any[]>([])
 
   function open(item: any) {
     const title = typeof item.title === 'string' ? item.title : (item.title?.english || item.title?.romaji || item.name)
     const tmdbPoster = String(item.poster_path || '').startsWith('/')
-    if (tmdbPoster) {
-      setSelectedMedia({ id: item.id, type: item.media_type === 'movie' ? 'movie' : 'tv', isAnime: true, title } as any)
+    if (tmdbPoster || item.media_type === 'tv' || item.media_type === 'movie') {
+      setSelectedMedia({ id: item.id, type: item.media_type === 'movie' ? 'movie' : 'tv', isAnime: true, title, season: item.season, episode: item.episode } as any)
       setCurrentPage('detail')
       return
     }
@@ -34,6 +41,12 @@ export default function Anime() {
   useEffect(() => {
     const jp = { with_origin_country: 'JP', with_genres: '16', sort_by: 'popularity.desc', page: '1' }
     tmdb.discoverTV(jp).then((d) => { if (d?.results?.length) setPopular(d.results) }).catch(() => {})
+    tmdb.discoverTV({ ...jp, sort_by: 'popularity.desc', page: '2' }).then((d) => {
+      if (d?.results?.length) setPopular((prev) => {
+        const seen = new Set(prev.map((x) => x.id))
+        return [...prev, ...d.results.filter((x: any) => !seen.has(x.id))]
+      })
+    }).catch(() => {})
     tmdb.discoverMovies({ with_origin_country: 'JP', with_genres: '16', sort_by: 'popularity.desc', page: '1' }).then((d) => {
       if (d?.results?.length) setRows((prev) => ({ ...prev, 'Anime movies': d.results.map((x: any) => ({ ...x, media_type: 'movie' })) }))
     }).catch(() => {})
@@ -42,14 +55,10 @@ export default function Anime() {
       sort_by: 'first_air_date.asc',
       'first_air_date.gte': new Date().toISOString().slice(0, 10),
     }).then((d) => setUpcoming((d?.results || []).filter((x: any) => x.poster_path))).catch(() => {})
-    const cats: Record<string, string> = {
-      Action: '16,10759', Comedy: '16,35', Drama: '16,18', Romance: '16,10749',
-      Crime: '16,80', Mystery: '16,9648', Family: '16,10751', SciFi: '16,10765',
-    }
-    Promise.all(Object.entries(cats).map(async ([name, g]) => {
+    Promise.all(Object.entries(GENRES).map(async ([name, g]) => {
       const d = await tmdb.discoverTV({ with_origin_country: 'JP', with_genres: g, sort_by: 'popularity.desc', page: '1' }).catch(() => ({ results: [] }))
       return [name, d?.results || []] as const
-    })).then((pairs) => setRows(Object.fromEntries(pairs)))
+    })).then((pairs) => setRows((prev) => ({ ...prev, ...Object.fromEntries(pairs) })))
     anilist.getPopular('ANIME', 1, 40).then((p) => {
       const mapped = (p?.media || []).map((m: any) => ({
         id: m.id,
@@ -71,16 +80,29 @@ export default function Anime() {
         return [...prev, ...list.filter((x) => x.image && !seen.has(String(x.id)))]
       })
     }).catch(() => {})
-    tmdb.getOnTheAir().then((d) => setCalendar((d?.results || []).filter((x: any) => (x.origin_country || []).includes('JP') || (x.genre_ids || []).includes(16)))).catch(() => {})
+    tmdb.getOnTheAir().then((d) => setAiring((d?.results || []).filter((x: any) => (x.origin_country || []).includes('JP') || (x.genre_ids || []).includes(16)))).catch(() => {})
     addonCatalog('animestream').then((list) => { if (list.length) setRows((r) => ({ ...r, Animestream: list })) }).catch(() => {})
     addonCatalog('animeworld').then((list) => { if (list.length) setRows((r) => ({ ...r, AnimeWorld: list })) }).catch(() => {})
     addonCatalog('animecatalogs').then((list) => { if (list.length) setRows((r) => ({ ...r, 'Anime catalogs': list })) }).catch(() => {})
     addonCatalog('onepace').then((list) => { if (list.length) setRows((r) => ({ ...r, 'One Pace': list })) }).catch(() => {})
   }, [])
 
+  const continueAnime = watchHistory.filter((h) => (h as any).isAnime || h.mediaType === 'tv').filter((h) => !isFinished(h)).slice(0, 12).map((h) => ({
+    id: h.mediaId, name: h.title, poster_path: h.posterPath, media_type: 'tv', season: h.season, episode: h.episode, isAnime: true,
+  }))
+
+  const shownPopular = (() => {
+    const list = audio === 'dub'
+      ? popular.filter((x) => (x.original_language || '') === 'en')
+      : audio === 'sub'
+        ? popular.filter((x) => (x.original_language || 'ja') !== 'en')
+        : popular
+    return list.length ? list : popular
+  })()
+
   return (
     <div className="board page-fade-enter">
-      <PageHero item={popular[0]} kicker="ANIME" onPlay={() => popular[0] && open(popular[0])} />
+      <CineHero items={shownPopular} kicker="ANIME" mediaType="anime" />
       <div className="board-content px-6 pt-6">
         <div className="flex gap-2 mb-4">
           {(['all', 'sub', 'dub'] as const).map((a) => (
@@ -90,34 +112,21 @@ export default function Anime() {
         <section className="media-row">
           <div className="media-row-header"><h2 className="media-row-title">Anime franchises</h2></div>
           <div className="scroll-row">
-            {[
-              { q: 'One Piece', name: 'One Piece' },
-              { q: 'Naruto', name: 'Naruto' },
-              { q: 'Demon Slayer', name: 'Demon Slayer' },
-              { q: 'Jujutsu Kaisen', name: 'Jujutsu Kaisen' },
-              { q: 'Studio Ghibli', name: 'Ghibli' },
-              { q: 'Pokemon', name: 'Pokémon' },
-              { q: 'Attack on Titan', name: 'Attack on Titan' },
-            ].map((f) => (
-              <button key={f.q} type="button" className="mfy-live-chip shrink-0 h-14 px-4 rounded-2xl bg-white/5 border border-white/10 text-sm hover:scale-105 transition-transform" onClick={() => {
-                tmdb.searchMulti(f.q).then((d) => {
+            {['One Piece', 'Naruto', 'Demon Slayer', 'Jujutsu Kaisen', 'Studio Ghibli', 'Pokemon', 'Attack on Titan'].map((name) => (
+              <button key={name} type="button" className="mfy-live-chip shrink-0 h-14 px-4 rounded-2xl bg-white/5 border border-white/10 text-sm" onClick={() => {
+                tmdb.searchMulti(name).then((d) => {
                   const hit = (d?.results || []).find((x: any) => x.media_type === 'tv' || x.media_type === 'movie')
                   if (hit) open(hit)
                 }).catch(() => {})
-              }}>{f.name}</button>
+              }}>{name}</button>
             ))}
           </div>
         </section>
-        <MediaShelf title="Airing calendar" items={calendar} onOpen={open} />
-        <MediaShelf title="Popular Anime" items={(() => {
-          const list = audio === 'dub'
-            ? popular.filter((x) => (x.original_language || '') === 'en')
-            : audio === 'sub'
-              ? popular.filter((x) => (x.original_language || 'ja') !== 'en')
-              : popular
-          return list.length ? list : popular
-        })()} onOpen={open} />
-        {/* Upcoming lives on the Upcoming page */}
+        {continueAnime.length > 0 && <MediaShelf title="Continue Watching" items={continueAnime} onOpen={open} />}
+        <MediaShelf title="Top 10 Anime" items={shownPopular.slice(0, 10)} onOpen={open} />
+        <MediaShelf title="Airing Now" items={airing} onOpen={open} />
+        <MediaShelf title="Popular Anime" items={shownPopular} onOpen={open} />
+        <MediaShelf title="Upcoming Anime" items={upcoming} onOpen={open} />
         {Object.entries(rows).map(([name, list]) => (
           <MediaShelf key={name} title={name} items={list} onOpen={open} />
         ))}

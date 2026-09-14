@@ -173,8 +173,7 @@ export default function Settings() {
     try {
       const res = await api.checkForUpdates()
       if (res?.ok) {
-        setUpdateStatus(res.newer ? `Update found: ${res.latest}` : `You are on ${res.current}.`)
-        if (res.newer && res.url) (window as any).electronAPI?.openExternal?.(res.url)
+        setUpdateStatus(res.installing ? `Installing ${res.latest}…` : res.newer ? `Update found: ${res.latest}` : `You are on ${res.current}.`)
       } else {
         setUpdateStatus(res?.reason === 'dev-or-unavailable' ? 'Auto-update only works in packaged builds.' : (res?.reason || 'Check failed'))
       }
