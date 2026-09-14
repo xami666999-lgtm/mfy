@@ -38,6 +38,10 @@ export default function Library() {
     setCurrentPage(mediaType === 'iptv' ? 'sports' : 'detail')
   }
 
+  const continueItems = watchHistory.filter((h: any) => !h.completed && !(h as any).seriesCompleted && watchPercent(h) > 0 && watchPercent(h) < 90)
+  const notStarted = watchlist.filter((w) => !watchHistory.some((h) => String(h.mediaId) === String(w.mediaId)))
+  const watchedItems = watchHistory.filter((h: any) => h.completed || (h as any).seriesCompleted || watchPercent(h) >= 90)
+
   const tabs = [
     { id: 'watchlist' as const, label: 'Saved', icon: Bookmark, count: watchlist.length },
     { id: 'favorites' as const, label: 'Favorites', icon: Heart, count: favorites.length },
@@ -119,7 +123,30 @@ export default function Library() {
       </div>
       <div className="px-8 pb-12">
         {tab === 'watchlist' && (
-          <Grid items={watchlist} onRemove={(i) => removeFromWatchlist(i.mediaId, i.mediaType)} />
+          <div className="space-y-8">
+            {continueItems.length > 0 && (
+              <section>
+                <h3 className="text-sm font-semibold mb-3">Continue</h3>
+                <Grid items={continueItems} />
+              </section>
+            )}
+            {notStarted.length > 0 && (
+              <section>
+                <h3 className="text-sm font-semibold mb-3">Not started</h3>
+                <Grid items={notStarted} onRemove={(i) => removeFromWatchlist(i.mediaId, i.mediaType)} />
+              </section>
+            )}
+            {watchedItems.length > 0 && (
+              <section>
+                <h3 className="text-sm font-semibold mb-3">Watched</h3>
+                <Grid items={watchedItems} />
+              </section>
+            )}
+            <section>
+              <h3 className="text-sm font-semibold mb-3">All saved</h3>
+              <Grid items={watchlist} onRemove={(i) => removeFromWatchlist(i.mediaId, i.mediaType)} />
+            </section>
+          </div>
         )}
         {tab === 'favorites' && (
           <Grid items={favorites} onRemove={(i) => removeFavorite(i.mediaId, i.mediaType)} />

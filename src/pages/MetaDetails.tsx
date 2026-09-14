@@ -375,6 +375,12 @@ export default function MetaDetails() {
             </h1>
             )}
 
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              {selectedMedia?.type === 'tv' && (selectedMedia.episode || selectedMedia.season) && (
+                <span className="h-6 px-2 rounded-md bg-black/55 text-[10px] font-bold tracking-widest uppercase">Next S{selectedMedia.season || 1} E{selectedMedia.episode || 1}</span>
+              )}
+              {detail.next_episode_to_air && <span className="h-6 px-2 rounded-md bg-[#FF1493] text-[10px] font-bold">New episodes</span>}
+            </div>
             <div className="flex flex-wrap items-center gap-2 text-[12px] text-white/55 mb-3">
               {detail.genres?.[0]?.name && <span>{detail.genres[0].name}</span>}
               {detail.genres?.[0] && year && <span className="text-white/25">·</span>}
@@ -445,9 +451,12 @@ export default function MetaDetails() {
             />
 
             {detail.overview && (
-              <p className="text-[13px] text-white/70 leading-relaxed line-clamp-4 max-w-lg mb-6 drop-shadow-sm">
+              <p className="text-[13px] text-white/70 leading-relaxed line-clamp-4 max-w-lg mb-3 drop-shadow-sm">
                 {detail.overview}
               </p>
+            )}
+            {detail.credits?.cast?.length > 0 && (
+              <p className="text-[12px] text-white/45 mb-6">With {detail.credits.cast.slice(0, 3).map((c: any) => c.name).join(', ')}</p>
             )}
 
             <div className="flex flex-wrap items-center gap-1.5 mb-3">
@@ -480,7 +489,7 @@ export default function MetaDetails() {
                 className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all disabled:opacity-60 shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
               >
                 <Play className="w-4 h-4" fill="black" />
-                Play
+                {selectedMedia?.type === 'tv' ? `Play S${activeSeason || selectedMedia.season || 1} E${selectedMedia.episode || 1}` : 'Play'}
               </button>
               <button type="button" className={`h-11 w-11 rounded-full text-lg ${isLiked(selectedMedia?.id || '') ? 'bg-[#FF1493]' : 'bg-white/10'}`} title="Like" onClick={() => {
                 markLike({ id: String(selectedMedia?.id), type: selectedMedia?.type || 'movie', title: title || '', poster: detail?.poster_path })
@@ -707,7 +716,10 @@ onKeyDown={(e) => {
                 <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Cast</h3>
                 <div className="flex gap-3 overflow-x-auto pb-2 scroll-row">
                   {detail.credits.cast.slice(0, 12).map((p: any) => (
-                    <div key={p.id} className="flex-shrink-0 w-[80px] text-center">
+                    <div key={p.id} className="flex-shrink-0 w-[80px] text-center cursor-pointer" onClick={() => {
+                      try { sessionStorage.setItem('mfy-person', JSON.stringify({ source: 'tmdb', id: p.id, name: p.name })) } catch {}
+                      setCurrentPage('people')
+                    }}>
                       <div className="w-14 h-14 rounded-full mx-auto mb-1.5 overflow-hidden bg-white/[0.04] border border-white/[0.06]">
                         {p.profile_path ? <img src={`${PROFILE_URL}${p.profile_path}`} alt={p.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-white/15 text-xs">{p.name[0]}</div>}
                       </div>
@@ -720,6 +732,22 @@ onKeyDown={(e) => {
             )}
 
             {/* Seasons (TV) */}
+            {selectedMedia?.type === 'tv' && detail.number_of_episodes > 0 && (
+              <div>
+                <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-2">Where you left off</h3>
+                <p className="text-xs text-white/50 mb-2">{watchHistory.filter((h) => String(h.mediaId) === String(selectedMedia.id) && isEpisodeWatched(h as any)).length} watched</p>
+                {(detail.seasons || []).filter((s: any) => s.season_number > 0).slice(0, 6).map((s: any) => {
+                  const seen = watchHistory.filter((h) => String(h.mediaId) === String(selectedMedia.id) && Number(h.season) === s.season_number && isEpisodeWatched(h as any)).length
+                  const total = s.episode_count || 1
+                  return (
+                    <div key={s.id} className="mb-2">
+                      <div className="flex justify-between text-[10px] text-white/40 mb-1"><span>S{s.season_number}</span><span>{seen}/{total}</span></div>
+                      <div className="h-1.5 rounded-full bg-white/10 overflow-hidden"><div className="h-full bg-[#FF1493]" style={{ width: `${Math.min(100, (seen / total) * 100)}%` }} /></div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
             {selectedMedia?.type === 'tv' && detail.seasons && (
               <div>
                 <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Seasons</h3>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Play, Plus, Info, Check } from 'lucide-react'
-import { tmdb, POSTER_URL, BACKDROP_URL } from '../api/tmdb'
+import { Play, Plus, Info, Check, EyeOff } from 'lucide-react'
+import { tmdb, POSTER_URL, BACKDROP_URL, STILL_URL, PROFILE_URL } from '../api/tmdb'
+import { titleLogoFromDetail } from '../api/blackhole'
 import { anilist } from '../api/anilist'
 import { useStore } from '../store'
 import { SkeletonPoster, SkeletonHero } from '../components/Skeleton'
@@ -131,13 +132,18 @@ export default function Board() {
   const [genreMovie, setGenreMovie] = useState<Record<number, any[]>>({})
   const [genreTv, setGenreTv] = useState<Record<number, any[]>>({})
   const [genreAnime, setGenreAnime] = useState<Record<string, any[]>>({})
-  const [cwExtra, setCwExtra] = useState<Record<string, { poster?: string; title?: string }>>({})
+  const [cwExtra, setCwExtra] = useState<Record<string, { poster?: string; title?: string; still?: string; runtime?: number }>>({})
   const [rowNew, setRowNew] = useState<any[]>([])
   const [rowStreaming, setRowStreaming] = useState<any[]>([])
   const [rowNewEp, setRowNewEp] = useState<any[]>([])
   const [rowNewSeason, setRowNewSeason] = useState<any[]>([])
   const [rowComing, setRowComing] = useState<any[]>([])
   const [rowTrend, setRowTrend] = useState<any[]>([])
+  const [heroDetail, setHeroDetail] = useState<any>(null)
+  const [directors, setDirectors] = useState<any[]>([])
+  const [hiddenIds, setHiddenIds] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('mfy-hidden-home') || '[]') } catch { return [] }
+  })
 
   useEffect(() => { load() }, [tmdbApiKey])
 
@@ -147,10 +153,16 @@ export default function Board() {
     Promise.all(need.slice(0, 16).map(async (h: any) => {
       try {
         const d = h.mediaType === 'movie' ? await tmdb.getMovieDetail(h.mediaId) : await tmdb.getTVDetail(h.mediaId)
-        return [String(h.mediaId), { poster: d?.poster_path, title: d?.title || d?.name }] as const
+        let still = ''
+        if (h.mediaType !== 'movie') {
+          const s = await tmdb.getSeasonDetail(h.mediaId, Number(h.season) || 1).catch(() => null)
+          const ep = (s?.episodes || []).find((e: any) => e.episode_number === Number(h.episode || 1))
+          still = ep?.still_path || ''
+        }
+        return [String(h.mediaId), { poster: d?.poster_path, title: d?.title || d?.name, still, runtime: d?.runtime || d?.episode_run_time?.[0] || 0 }] as const
       } catch { return null }
     })).then((rows) => {
-      const next: Record<string, { poster?: string; title?: string }> = {}
+      const next: Record<string, { poster?: string; title?: string; still?: string; runtime?: number }> = {}
       rows.forEach((row) => { if (row) next[row[0]] = row[1] })
       setCwExtra((prev) => ({ ...prev, ...next }))
     })
@@ -158,9 +170,24 @@ export default function Board() {
 
   useEffect(() => {
     if (trending.length < 2) return
-    const id = setInterval(() => setHeroIdx((i) => (i + 1) % Math.min(trending.length, 8)), 7000)
+    const id = setInterval(() => setHeroIdx((i) => (i + 1) % Math.min(trending.length, 8)), 9000)
     return () => clearInterval(id)
   }, [trending.length])
+
+  useEffect(() => {
+    const h = trending[heroIdx]
+    if (!h?.id) { setHeroDetail(null); return }
+    const kind = h.media_type === 'tv' || h.first_air_date ? 'tv' : 'movie'
+    const run = kind === 'tv' ? tmdb.getTVDetail(h.id) : tmdb.getMovieDetail(h.id)
+    run.then(setHeroDetail).catch(() => setHeroDetail(null))
+  }, [heroIdx, trending])
+
+  useEffect(() => {
+    tmdb.getPopularPeople(1).then((d) => {
+      const list = (d?.results || []).filter((p: any) => p.profile_path).slice(0, 16)
+      setDirectors(list)
+    }).catch(() => {})
+  }, [])
 
   useEffect(() => {
     const seeds = [...favorites, ...watchHistory].slice(0, 3)
@@ -318,34 +345,56 @@ export default function Board() {
       <div className="flex-1 min-w-0">
       {error && <div className="error-banner mx-5 mt-4">{error}</div>}
 
-      {hero && (
-        <section className="hero" style={{ minHeight: '78vh', paddingBottom: 140 }}>
+      {hero && !hiddenIds.includes(String(hero.id)) && (
+        <section className="hero cine-hero" style={{ minHeight: '82vh', paddingBottom: 88 }}>
           <div className="hero-backdrop fade-in" style={{ backgroundImage: hero.backdrop_path ? `url(${BACKDROP_URL}${hero.backdrop_path})` : undefined }} />
           <div className="hero-overlay" />
-          <div className="hero-content">
+          <div className="hero-content" style={{ maxWidth: '52%' }}>
             <div className="hero-copy fade-in" style={{ paddingBottom: 8 }}>
-              <div className="hero-kicker">{hero.media_type === 'tv' ? 'SERIES' : 'MOVIE'}</div>
-              <h1>{titleOf(hero)}</h1>
-              <p>{hero.overview || 'Watch something tonight.'}</p>
+              <div className="inline-flex items-center gap-2 mb-3">
+                <span className="h-6 px-2 rounded-md bg-black/55 text-[10px] font-bold tracking-widest uppercase">{hero.media_type === 'tv' ? 'Series' : 'Movie'}</span>
+                {heroIdx === 0 && <span className="h-6 px-2 rounded-md bg-[#FF1493] text-[10px] font-bold">#1 Trending</span>}
+                {rowNewEp.some((x) => String(x.id) === String(hero.id)) && <span className="h-6 px-2 rounded-md bg-black/55 text-[10px] font-bold">New episodes</span>}
+              </div>
+              {titleLogoFromDetail(heroDetail) ? (
+                <img src={titleLogoFromDetail(heroDetail)} alt={titleOf(hero)} className="mb-4 max-h-28 w-auto object-contain drop-shadow-[0_10px_30px_rgba(0,0,0,.7)]" />
+              ) : (
+                <h1 className="cine-title">{titleOf(hero)}</h1>
+              )}
+              <div className="flex flex-wrap items-center gap-2 text-[12px] text-white/70 mb-3">
+                <span>{hero.media_type === 'tv' ? 'Series' : 'Movie'}</span>
+                {(heroDetail?.genres?.[0]?.name || '') && <><span className="text-white/25">·</span><span>{heroDetail.genres[0].name}</span></>}
+                {heroDetail?.vote_average > 0 && <><span className="text-white/25">·</span><span>★ {Number(heroDetail.vote_average).toFixed(1)}</span></>}
+                {(hero.release_date || hero.first_air_date) && <><span className="text-white/25">·</span><span>{String(hero.release_date || hero.first_air_date).slice(0, 4)}</span></>}
+              </div>
+              <p>{hero.overview || heroDetail?.overview || 'Watch something tonight.'}</p>
+              {heroDetail?.credits?.cast?.length > 0 && (
+                <p className="text-[12px] text-white/45 mb-4">With {heroDetail.credits.cast.slice(0, 3).map((c: any) => c.name).join(', ')}</p>
+              )}
               <div className="hero-actions">
                 <button className="hero-play" type="button" onClick={() => {
                   const t = hero.media_type === 'tv' || hero.first_air_date ? 'tv' : 'movie'
-                  setSelectedMedia({ id: hero.id, type: t })
-                  setCurrentStreamUrl(getPlayerUrl((localStorage.getItem('mfy-player-engine') as any) || 'vidy', t, hero.id, 1, 1))
+                  const hist = watchHistory.find((h) => String(h.mediaId) === String(hero.id))
+                  setSelectedMedia({ id: hero.id, type: t, season: hist?.season || 1, episode: hist?.episode || 1 } as any)
+                  setCurrentStreamUrl(getPlayerUrl((localStorage.getItem('mfy-player-engine') as any) || 'playtorrio', t, hero.id, hist?.season || 1, hist?.episode || 1))
                   setCurrentPage('player')
-                }}><Play fill="currentColor" size={16} /> Play</button>
+                }}><Play fill="currentColor" size={16} /> {watchHistory.some((h) => String(h.mediaId) === String(hero.id)) ? 'Resume' : 'Play'}</button>
                 <button className="hero-secondary" type="button" onClick={() => toggleList(hero)}>
                   {isInWatchlist(hero.id, hero.media_type === 'tv' ? 'tv' : 'movie') ? <><Check size={16} /> In Library</> : <><Plus size={16} /> Add to Library</>}
                 </button>
                 <button className="hero-info" type="button" onClick={() => goDetail(hero)} aria-label="Info"><Info size={16} /></button>
+                <button className="hero-info" type="button" aria-label="Hide" onClick={() => {
+                  const next = [...hiddenIds, String(hero.id)]
+                  setHiddenIds(next)
+                  try { localStorage.setItem('mfy-hidden-home', JSON.stringify(next)) } catch {}
+                  setHeroIdx((i) => (i + 1) % Math.max(1, Math.min(trending.length, 8)))
+                }}><EyeOff size={16} /></button>
               </div>
             </div>
           </div>
-          <div className="absolute left-6 right-6 flex gap-3 overflow-x-auto z-10" style={{ bottom: 20 }}>
-            {trending.slice(0, 10).map((item: any, i: number) => (
-              <button key={item.id} type="button" onClick={() => setHeroIdx(i)} className={`shrink-0 w-44 h-24 rounded-xl overflow-hidden border ${i === heroIdx ? 'border-white' : 'border-white/20'}`}>
-                {item.backdrop_path ? <img src={`${BACKDROP_URL}${item.backdrop_path}`} alt="" className="w-full h-full object-cover" /> : <span className="text-xs">{titleOf(item)}</span>}
-              </button>
+          <div className="absolute left-8 z-10 flex gap-1.5" style={{ bottom: 28 }}>
+            {trending.slice(0, 8).map((item: any, i: number) => (
+              <button key={item.id} type="button" onClick={() => setHeroIdx(i)} className={`h-1.5 rounded-full ${i === heroIdx ? 'w-6 bg-white' : 'w-1.5 bg-white/35'}`} aria-label={titleOf(item)} />
             ))}
           </div>
         </section>
@@ -391,29 +440,60 @@ export default function Board() {
           </div>
         </section>
         {watchHistory.length > 0 && (
-          <Shelf
-            title="Continue Watching"
-            items={(() => {
-              const seen = new Map<string, any>()
-              for (const h of watchHistory) {
-                if (isFinished(h) || (h as any).seriesCompleted) continue
-                const key = `${h.mediaType}-${h.mediaId}`
-                const prev = seen.get(key)
-                if (!prev || new Date(h.watchedAt || 0).getTime() > new Date(prev.watchedAt || 0).getTime()) seen.set(key, h)
-              }
-              return [...seen.values()].slice(0, 16)
-            })().map((h: any) => {
-              const pct = watchPercent(h)
-              const extra = cwExtra[String(h.mediaId)] || {}
-              return { id: h.mediaId, title: extra.title || h.title, poster_path: h.posterPath || extra.poster, media_type: h.mediaType, season: Number(h.season) || (h.mediaType === 'movie' ? 0 : 1), episode: Number(h.episode) || (h.mediaType === 'movie' ? 0 : 1), progressLabel: pct > 0 ? `${pct}%` : 'Resume', progress: h.progress, duration: h.duration, progressPct: pct, vote_average: 0 }
-            })}
-            onOpen={(h) => {
-              setSelectedMedia({ id: h.id, type: h.media_type, season: h.season, episode: h.episode, title: h.title, poster_path: h.poster_path, resumeAt: h.progress } as any)
-              setCurrentPage('player')
-            }}
-            onRemove={(h) => removeHistory(h.id, h.media_type)}
-            viewAll={() => clearHistory()}
-          />
+          <section className="media-row">
+            <div className="media-row-header">
+              <h2 className="media-row-title">Continue Watching</h2>
+              <button type="button" className="media-row-action" onClick={() => clearHistory()}>Clear all</button>
+            </div>
+            <div className="scroll-row">
+              {(() => {
+                const seen = new Map<string, any>()
+                for (const h of watchHistory) {
+                  if (isFinished(h) || (h as any).seriesCompleted) continue
+                  const key = `${h.mediaType}-${h.mediaId}`
+                  const prev = seen.get(key)
+                  if (!prev || new Date(h.watchedAt || 0).getTime() > new Date(prev.watchedAt || 0).getTime()) seen.set(key, h)
+                }
+                return [...seen.values()].slice(0, 16)
+              })().map((h: any) => {
+                const extra = cwExtra[String(h.mediaId)] || {}
+                const pct = watchPercent(h)
+                const left = Math.max(0, Math.round(((h.duration || extra.runtime * 60 || 0) - (h.progress || 0)) / 60))
+                const still = extra.still ? `${STILL_URL}${extra.still}` : (h.posterPath || extra.poster ? imgSrc({ poster_path: h.posterPath || extra.poster }) : '')
+                const isTv = h.mediaType !== 'movie'
+                return (
+                  <button key={`${h.mediaType}-${h.mediaId}-${h.season}-${h.episode}`} type="button" className="cine-cw" onClick={() => {
+                    setSelectedMedia({ id: h.mediaId, type: h.mediaType, season: h.season, episode: h.episode, title: extra.title || h.title, poster_path: h.posterPath || extra.poster, resumeAt: h.progress } as any)
+                    setCurrentPage('player')
+                  }}>
+                    {still ? <img src={still} alt="" /> : <div className="poster-fallback">{extra.title || h.title}</div>}
+                    <span className="cine-cw-chip">{isTv ? `S${h.season || 1} E${h.episode || 1}` : 'Resume'}</span>
+                    <div className="cine-cw-meta">
+                      <div className="truncate">{extra.title || h.title}</div>
+                      <div className="text-white/55 text-[11px]">{left > 0 ? `${left} min left` : pct > 0 ? `Stopped at ${pct}%` : 'Next'}</div>
+                    </div>
+                    <div className="cine-cw-bar"><i style={{ width: `${Math.min(100, pct)}%` }} /></div>
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+        )}
+        {directors.length > 0 && (
+          <section className="media-row">
+            <div className="media-row-header"><h2 className="media-row-title">Directors & stars</h2></div>
+            <div className="scroll-row">
+              {directors.map((p: any) => (
+                <button key={p.id} type="button" className="cine-person" onClick={() => {
+                  try { sessionStorage.setItem('mfy-person', JSON.stringify({ source: 'tmdb', id: p.id, name: p.name })) } catch {}
+                  setCurrentPage('people')
+                }}>
+                  <img src={`${PROFILE_URL}${p.profile_path}`} alt="" />
+                  <span>{p.name}</span>
+                </button>
+              ))}
+            </div>
+          </section>
         )}
         <Shelf title="Top 10 Popular Movies" items={(nowPlaying.length ? nowPlaying : movies).slice(0, 10)} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
         <Shelf title="Top 10 Popular TV Shows" items={(shows.length ? shows : onTheAir).slice(0, 10)} onOpen={(i) => goDetail(i, 'tv')} viewAll={() => setCurrentPage('tv')} />
