@@ -19,6 +19,18 @@ export default function SourceSheet({
   const [rows, setRows] = useState<AggStream[]>([])
   const [loading, setLoading] = useState(true)
   const [addons, setAddons] = useState(false)
+  const [engine, setEngine] = useState('all')
+  const [openEng, setOpenEng] = useState(false)
+  const engines = [
+    { id: 'all', label: 'All sources' },
+    { id: 'bhb', label: 'Black Hole Bay' },
+    { id: 'pipe', label: 'Pipe / VLC' },
+    { id: 'mediafusion', label: 'MediaFusion' },
+    { id: 'torrentio', label: 'Torrentio' },
+    { id: 'comet', label: 'Comet' },
+    { id: 'framex', label: 'FrameX' },
+    ...ALL_PLAY_SOURCES.map((id) => ({ id, label: id })),
+  ]
   const title = String(detail?.title || detail?.name || media?.title || '')
   const year = String(detail?.release_date || detail?.first_air_date || '').slice(0, 4)
   const runtime = detail?.runtime || detail?.episode_run_time?.[0] || 0
@@ -58,7 +70,7 @@ export default function SourceSheet({
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 280, background: '#0b0b0b', color: '#fff', fontFamily: '"Source Sans 3", Helvetica, Arial, sans-serif' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 280, background: '#0b0b0b', color: '#fff', fontFamily: '"Segoe UI", Helvetica, Arial, sans-serif' }}>
       <img src={bg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'saturate(1.05)' }} />
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(10,8,6,0.92) 0%, rgba(10,8,6,0.55) 48%, rgba(12,12,12,0.92) 72%, #111 100%)' }} />
       <button type="button" onClick={onClose} style={{ position: 'absolute', top: 18, left: 18, zIndex: 3, width: 36, height: 36, borderRadius: 20, background: 'rgba(0,0,0,0.45)', color: '#fff', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
@@ -105,24 +117,24 @@ export default function SourceSheet({
           </div>
         </div>
         <div style={{ background: 'rgba(16,16,16,0.72)', backdropFilter: 'blur(10px)', padding: '56px 22px 22px', display: 'flex', flexDirection: 'column' }}>
-          <select
-            defaultValue="pipe"
-            onChange={(e) => {
-              const id = e.target.value
-              if (id === 'bhb') return
-              onPlay('', id)
-            }}
-            style={{ height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', padding: '0 14px', marginBottom: 18, fontSize: 14 }}
-          >
-            <option value="pipe">Pipe / VLC</option>
-            <option value="bhb">Black Hole Bay</option>
-            <option value="mediafusion">MediaFusion</option>
-            {ALL_PLAY_SOURCES.map((id) => <option key={id} value={id}>{id}</option>)}
-          </select>
+          <div style={{ position: 'relative', marginBottom: 18 }}>
+            <button type="button" onClick={() => setOpenEng((v) => !v)} style={{ width: '100%', height: 40, borderRadius: 10, background: '#1a1a1f', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', padding: '0 14px', fontSize: 14, textAlign: 'left' }}>
+              {engines.find((e) => e.id === engine)?.label || 'All sources'}
+            </button>
+            {openEng && (
+              <div style={{ position: 'absolute', zIndex: 4, top: 44, left: 0, right: 0, maxHeight: 280, overflow: 'auto', background: '#16161b', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10 }}>
+                {engines.map((e) => (
+                  <button key={e.id} type="button" onClick={() => { setEngine(e.id); setOpenEng(false); if (e.id !== 'all' && e.id !== 'bhb') onPlay('', e.id) }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: engine === e.id ? '#2a2a33' : 'transparent', color: '#fff', border: 'none', fontSize: 13 }}>
+                    {e.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <div style={{ flex: 1, overflow: 'auto' }}>
             {loading && <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>Finding sources…</p>}
             {!loading && rows.length === 0 && <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>No torrent/HTTP sources yet. Use Show all addons.</p>}
-            {rows.map((r) => (
+            {(engine === 'bhb' ? rows.filter((r) => /bhb/i.test(r.addon)) : rows).map((r) => (
               <button key={r.url} type="button" onClick={() => onPlay(r.url, /magnet|infohash/i.test(r.url) ? 'vlc' : 'pipe')} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 8px', background: 'transparent', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)', color: '#fff', cursor: 'pointer', textAlign: 'left' }}>
                 <span style={{ fontSize: 14, letterSpacing: 0.08 }}>| {resOf(r)} |</span>
                 <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>{sizeGuess(r.title) || r.addon}</span>

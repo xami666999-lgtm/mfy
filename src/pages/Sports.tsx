@@ -292,7 +292,7 @@ export default function Sports() {
         <p className="text-[10px] tracking-[0.25em] text-[#FF1493] font-bold mb-3">MFY SPORTS</p>
         {sports.map((s) => (
           <button key={s.id} type="button" onClick={() => setSportId(s.id)} className={cn('w-full text-left px-3 py-2 rounded-md text-sm mb-0.5 flex items-center gap-2', sportId === s.id ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white')}>
-            <img src={sportIcon(s.id)} alt="" className="w-5 h-5 object-contain flex-shrink-0" />
+            {(() => { const I = (SPORT_META[s.id] || SPORT_META.other).icon; return <I size={16} color={(SPORT_META[s.id] || SPORT_META.other).color} /> })()}
             <span className="truncate">{s.name || s.id}</span>
           </button>
         ))}

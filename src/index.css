@@ -33,7 +33,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body, #root { width: 100%; height: 100%; }
 body {
-  font-family: "Source Sans 3", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
   letter-spacing: 0;
   background: var(--mfy-bg);
   color: var(--mfy-text);
@@ -42,6 +42,7 @@ body {
   text-rendering: optimizeLegibility;
 }
 button, input, select, textarea { font: inherit; }
+select, option { background: #16161b; color: #fff; color-scheme: dark; }
 button { border: 0; cursor: pointer; background: transparent; color: inherit; }
 
 :focus { outline: none; }
@@ -880,7 +881,7 @@ a:focus-visible,
   color: rgba(255,255,255,0.12);
   -webkit-text-stroke: 2px rgba(255,20,147,0.5);
   pointer-events: none;
-  font-family: "Source Sans 3", Helvetica, Arial, sans-serif;
+  font-family: "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
 
@@ -910,7 +911,7 @@ a:focus-visible,
   border-radius: 2px;
   padding: 1px 4px;
   line-height: 1.2;
-  font-family: "Source Sans 3", Helvetica, Arial, sans-serif;
+  font-family: "Segoe UI", Helvetica, Arial, sans-serif;
 }
 .imdb-badge-score {
   font-size: 11px;
@@ -1065,7 +1066,7 @@ a:focus-visible,
 /* —— Star ratings —— */
 .stars {
   display: inline-block;
-  font-family: "Source Sans 3", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
   letter-spacing: 1px;
   pointer-events: none;
 }

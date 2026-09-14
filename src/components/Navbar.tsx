@@ -9,7 +9,7 @@ const tabs = [
   { id: 'movies', label: 'Movies', icon: Film },
   { id: 'tv', label: 'TV', icon: Tv },
   { id: 'anime', label: 'Anime', icon: Sparkles },
-  { id: 'upcoming', label: 'Upcoming', icon: Calendar },
+  { id: 'upcoming', label: 'Calendar', icon: Calendar },
   { id: 'manga', label: 'Manga', icon: BookOpen },
   { id: 'comics', label: 'Comics', icon: BookOpen },
   { id: 'youtube', label: 'YouTube', icon: Youtube },

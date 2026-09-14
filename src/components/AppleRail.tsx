@@ -9,7 +9,7 @@ const LINKS: [string, string, any][] = [
   ['movies', 'Movies', Film],
   ['tv', 'TV', Tv],
   ['anime', 'Anime', Sparkles],
-  ['upcoming', 'Upcoming', Calendar],
+  ['upcoming', 'Calendar', Calendar],
   ['manga', 'Manga', BookOpen],
   ['comics', 'Comics', BookOpen],
   ['youtube', 'YouTube', Youtube],
