@@ -125,13 +125,13 @@ export const tmdb = {
     tmdbFetch('/movie/upcoming', {}, { cacheKey: 'upcoming' }),
 
   getMovieDetail: (id: number) =>
-    tmdbFetch(`/movie/${id}`, { append_to_response: 'credits,videos,similar,recommendations,images', include_image_language: 'en,null' }, {
+    tmdbFetch(`/movie/${id}`, { append_to_response: 'credits,videos,similar,recommendations,images,keywords,release_dates', include_image_language: 'en,null' }, {
       cacheKey: `movie:${id}`,
       ttlMs: 30 * 60 * 1000,
     }),
 
   getTVDetail: (id: number) =>
-    tmdbFetch(`/tv/${id}`, { append_to_response: 'credits,videos,similar,recommendations,images', include_image_language: 'en,null' }, {
+    tmdbFetch(`/tv/${id}`, { append_to_response: 'credits,videos,similar,recommendations,images,keywords,content_ratings', include_image_language: 'en,null' }, {
       cacheKey: `tv:${id}`,
       ttlMs: 30 * 60 * 1000,
     }),

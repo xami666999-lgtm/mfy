@@ -72,7 +72,7 @@ export default function Library() {
                 <div className="poster-play"><Play size={16} fill="#fff" /></div>
                 <div className="poster-overlay">
                   <div className="poster-meta-title">{title}</div>
-                  <div className="poster-meta-sub capitalize">{type}{item.season ? ` · S${item.season}E${item.episode || 1}` : ''}{pct > 0 ? ` · ${pct}%` : ''}</div>
+                  <div className="poster-meta-sub capitalize">{item.season ? `S${item.season} E${item.episode || 1}` : type}{pct > 0 && pct < 90 ? ` · ${Math.max(1, Math.round((100 - pct) / 100 * 45))} min left` : item.addedAt ? ` · Saved` : pct >= 90 ? ' · Watched' : ''}</div>
                 </div>
                 {pct > 0 && (
                   <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/15">

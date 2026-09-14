@@ -126,10 +126,14 @@ export default function People() {
           </div>
           <h3 className="text-sm text-white/70 mt-5 mb-3">Works</h3>
           <div className="flex gap-3 overflow-x-auto pb-2">
-            {source === 'tmdb' && worksTmdb.filter((x: any, i: number, a: any[]) => a.findIndex((y) => y.id === x.id) === i).slice(0, 20).map((w: any) => (
-              <button key={w.id} type="button" className="w-[110px] flex-shrink-0 text-left" onClick={() => { setSelectedMedia({ id: w.id, type: w.media_type === 'tv' || w.first_air_date ? 'tv' : 'movie' }); setCurrentPage('detail') }}>
+            {source === 'tmdb' && worksTmdb.filter((x: any, i: number, a: any[]) => a.findIndex((y) => y.id === x.id) === i).sort((a: any, b: any) => String(b.release_date || b.first_air_date || '').localeCompare(String(a.release_date || a.first_air_date || ''))).slice(0, 36).map((w: any) => (
+              <button key={w.id} type="button" className="w-[110px] flex-shrink-0 text-left relative" onClick={() => { setSelectedMedia({ id: w.id, type: w.media_type === 'tv' || w.first_air_date ? 'tv' : 'movie' }); setCurrentPage('detail') }}>
                 <div className="w-[110px] h-[165px] rounded-lg overflow-hidden bg-[#14141c]">{w.poster_path && <img src={`${POSTER_URL}${w.poster_path}`} alt="" className="w-full h-full object-cover" />}</div>
+                {useStore.getState().watchHistory.some((h) => String(h.mediaId) === String(w.id)) && (
+                  <span className="absolute top-1 right-1 w-5 h-5 rounded-full bg-emerald-500 text-white text-[11px] grid place-items-center">✓</span>
+                )}
                 <p className="text-[11px] text-white mt-1 truncate">{w.title || w.name}</p>
+                <p className="text-[10px] text-white/40">{String(w.release_date || w.first_air_date || '').slice(0, 4)}</p>
               </button>
             ))}
             {source === 'anilist' && worksAni.map((e: any) => (

@@ -132,7 +132,8 @@ export default function Board() {
   const [genreMovie, setGenreMovie] = useState<Record<number, any[]>>({})
   const [genreTv, setGenreTv] = useState<Record<number, any[]>>({})
   const [genreAnime, setGenreAnime] = useState<Record<string, any[]>>({})
-  const [cwExtra, setCwExtra] = useState<Record<string, { poster?: string; title?: string; still?: string; runtime?: number }>>({})
+  const [cwExtra, setCwExtra] = useState<Record<string, { poster?: string; title?: string; still?: string; runtime?: number; epName?: string; epLeft?: number }>>({})
+  const [tasteRows, setTasteRows] = useState<{ name: string; items: any[] }[]>([])
   const [rowNew, setRowNew] = useState<any[]>([])
   const [rowStreaming, setRowStreaming] = useState<any[]>([])
   const [rowNewEp, setRowNewEp] = useState<any[]>([])
@@ -154,12 +155,17 @@ export default function Board() {
       try {
         const d = h.mediaType === 'movie' ? await tmdb.getMovieDetail(h.mediaId) : await tmdb.getTVDetail(h.mediaId)
         let still = ''
+        let epName = ''
+        let epLeft = 0
         if (h.mediaType !== 'movie') {
           const s = await tmdb.getSeasonDetail(h.mediaId, Number(h.season) || 1).catch(() => null)
-          const ep = (s?.episodes || []).find((e: any) => e.episode_number === Number(h.episode || 1))
+          const eps = s?.episodes || []
+          const ep = eps.find((e: any) => e.episode_number === Number(h.episode || 1))
           still = ep?.still_path || ''
+          epName = ep?.name || ''
+          epLeft = Math.max(0, eps.length - Number(h.episode || 1))
         }
-        return [String(h.mediaId), { poster: d?.poster_path, title: d?.title || d?.name, still, runtime: d?.runtime || d?.episode_run_time?.[0] || 0 }] as const
+        return [String(h.mediaId), { poster: d?.poster_path, title: d?.title || d?.name, still, runtime: d?.runtime || d?.episode_run_time?.[0] || 0, epName, epLeft }] as const
       } catch { return null }
     })).then((rows) => {
       const next: Record<string, { poster?: string; title?: string; still?: string; runtime?: number }> = {}
@@ -181,6 +187,24 @@ export default function Board() {
     const run = kind === 'tv' ? tmdb.getTVDetail(h.id) : tmdb.getMovieDetail(h.id)
     run.then(setHeroDetail).catch(() => setHeroDetail(null))
   }, [heroIdx, trending])
+
+  useEffect(() => {
+    const seeds = watchHistory.slice(0, 3)
+    if (!seeds.length) return
+    Promise.all(seeds.map((h: any) => (h.mediaType === 'movie' ? tmdb.getMovieDetail(h.mediaId) : tmdb.getTVDetail(h.mediaId))))
+      .then(async (details) => {
+        const kws = details.flatMap((d: any) => d?.keywords?.keywords || d?.keywords?.results || []).filter((k: any) => k?.id)
+        const uniq: any[] = []
+        for (const k of kws) if (!uniq.some((x) => x.id === k.id)) uniq.push(k)
+        const rows: { name: string; items: any[] }[] = []
+        for (const k of uniq.slice(0, 4)) {
+          const r = await tmdb.discoverMovies({ with_keywords: String(k.id), sort_by: 'popularity.desc' }).catch(() => null)
+          if (r?.results?.length) rows.push({ name: k.name, items: r.results })
+        }
+        setTasteRows(rows)
+      })
+      .catch(() => {})
+  }, [watchHistory])
 
   useEffect(() => {
     tmdb.getPopularPeople(1).then((d) => {
@@ -362,11 +386,19 @@ export default function Board() {
                 <h1 className="cine-title">{titleOf(hero)}</h1>
               )}
               <div className="flex flex-wrap items-center gap-2 text-[12px] text-white/70 mb-3">
-                <span>{hero.media_type === 'tv' ? 'Series' : 'Movie'}</span>
+                {hero.media_type === 'tv' && <span>S{watchHistory.find((h) => String(h.mediaId) === String(hero.id))?.season || 1} E{watchHistory.find((h) => String(h.mediaId) === String(hero.id))?.episode || heroDetail?.next_episode_to_air?.episode_number || 1}</span>}
+                {hero.media_type === 'tv' && heroDetail?.next_episode_to_air?.air_date && <><span className="text-white/25">·</span><span>{heroDetail.next_episode_to_air.air_date}</span></>}
                 {(heroDetail?.genres?.[0]?.name || '') && <><span className="text-white/25">·</span><span>{heroDetail.genres[0].name}</span></>}
+                {(heroDetail?.release_dates || heroDetail?.content_ratings) && (
+                  <span className="h-5 px-1.5 rounded bg-white/15 text-[10px] font-bold">{
+                    (heroDetail.content_ratings?.results?.find((r: any) => r.iso_3166_1 === 'US')?.rating)
+                    || (heroDetail.release_dates?.results?.find((r: any) => r.iso_3166_1 === 'US')?.release_dates?.find((x: any) => x.certification)?.certification)
+                    || ''
+                  }</span>
+                )}
                 {heroDetail?.vote_average > 0 && <><span className="text-white/25">·</span><span>★ {Number(heroDetail.vote_average).toFixed(1)}</span></>}
-                {(hero.release_date || hero.first_air_date) && <><span className="text-white/25">·</span><span>{String(hero.release_date || hero.first_air_date).slice(0, 4)}</span></>}
               </div>
+              <p className="text-[10px] text-white/30 mb-2">Fonte: TMDB</p>
               <p>{hero.overview || heroDetail?.overview || 'Watch something tonight.'}</p>
               {heroDetail?.credits?.cast?.length > 0 && (
                 <p className="text-[12px] text-white/45 mb-4">With {heroDetail.credits.cast.slice(0, 3).map((c: any) => c.name).join(', ')}</p>
@@ -467,10 +499,13 @@ export default function Board() {
                     setCurrentPage('player')
                   }}>
                     {still ? <img src={still} alt="" /> : <div className="poster-fallback">{extra.title || h.title}</div>}
-                    <span className="cine-cw-chip">{isTv ? `S${h.season || 1} E${h.episode || 1}` : 'Resume'}</span>
+                    <span className="cine-cw-chip">{pct >= 85 ? 'Next' : isTv ? `S${h.season || 1} E${h.episode || 1}` : 'Resume'}</span>
                     <div className="cine-cw-meta">
-                      <div className="truncate">{extra.title || h.title}</div>
-                      <div className="text-white/55 text-[11px]">{left > 0 ? `${left} min left` : pct > 0 ? `Stopped at ${pct}%` : 'Next'}</div>
+                      <div className="truncate">{isTv ? `S${h.season || 1} E${h.episode || 1} · ${extra.epName || extra.title || h.title}` : (extra.title || h.title)}</div>
+                      <div className="text-white/55 text-[11px]">
+                        {isTv && extra.epLeft ? `${extra.epLeft} left this season · ` : ''}
+                        {left > 0 ? `Stopped at ${left} min left` : pct > 0 ? `Stopped at ${pct}%` : 'Next'}
+                      </div>
                     </div>
                     <div className="cine-cw-bar"><i style={{ width: `${Math.min(100, pct)}%` }} /></div>
                   </button>
@@ -507,6 +542,9 @@ export default function Board() {
         <Shelf title="Now Playing" items={nowPlaying} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
         <Shelf title="Airing Now" items={onTheAir} onOpen={(i) => goDetail(i, 'tv')} viewAll={() => setCurrentPage('tv')} />
         {recommended.length > 0 && <Shelf title="Recommended For You" items={recommended} onOpen={goDetail} />}
+        {tasteRows.map((row) => (
+          <Shelf key={row.name} title={row.name} items={row.items} onOpen={(i) => goDetail(i, 'movie')} />
+        ))}
         <Shelf title="Because you liked" items={tasteRecs} onOpen={(i) => goDetail(i, i.media_type === 'tv' ? 'tv' : 'movie')} />
         <Shelf title="Popular Movies" items={movies} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
         <Shelf title="Popular TV" items={shows} onOpen={(i) => goDetail(i, 'tv')} viewAll={() => setCurrentPage('tv')} />

@@ -16,6 +16,7 @@ import { sourceDot, reportBroken } from '../lib/playerStatus'
 import SourceSheet from '../components/SourceSheet'
 import { titleLogoFromDetail } from '../api/blackhole'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
+import { ageRating, keywordNames, studioNames } from '../lib/cineMeta'
 
 export default function MetaDetails() {
   const { selectedMedia, setCurrentPage, setSelectedMedia, tmdbApiKey, setCurrentStreamUrl, addToWatchlist, removeFromWatchlist, isInWatchlist, addFavorite, removeFavorite, isFavorite, aiostreamsUrl, externalPlayer, mdblistApiKey, customLists, addToCustomList, removeFromCustomList, isInCustomList, createCustomList, watchHistory } = useStore()
@@ -672,6 +673,24 @@ onKeyDown={(e) => {
         </div>
       </div>
 
+      {selectedMedia?.type === 'tv' && seasonData?.episodes?.length > 0 && (
+        <div className="px-8 mb-6">
+          <div className="scroll-row flex gap-2 overflow-x-auto">
+            {seasonData.episodes.slice(0, 16).map((ep: any) => (
+              <button key={ep.id} type="button" className="shrink-0 w-40 text-left" onClick={() => {
+                setSelectedMedia({ ...selectedMedia, season: activeSeason, episode: ep.episode_number, name: ep.name } as any)
+                handlePlay()
+              }}>
+                <div className="w-40 h-24 rounded-lg overflow-hidden bg-white/5 mb-1">
+                  {ep.still_path ? <img src={`${STILL_URL}${ep.still_path}`} alt="" className="w-full h-full object-cover" /> : null}
+                </div>
+                <div className="text-[10px] text-white/70 truncate">S{activeSeason || 1} E{ep.episode_number} · {ep.name}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Trailer Modal */}
       {showTrailer && trailerKey && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowTrailer(false)}>
@@ -710,6 +729,60 @@ onKeyDown={(e) => {
 
         {activeTab === 'details' && (
           <div className="space-y-8 pb-12">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <div className="text-[11px] text-white/35 mb-3">Ratings · Fonte: TMDB / IMDb / RT</div>
+              <div className="flex flex-wrap gap-2">
+                {(omdb?.imdbRating || detail.vote_average) && (
+                  <span className="h-9 px-3 rounded-lg bg-black/40 border border-white/10 text-sm font-bold inline-flex items-center gap-2">
+                    <span className="bg-[#f5c518] text-black text-[10px] font-black px-1 rounded">IMDb</span>
+                    {omdb?.imdbRating || Number(detail.vote_average).toFixed(1)}
+                  </span>
+                )}
+                <span className="h-9 px-3 rounded-lg bg-black/40 border border-white/10 text-sm font-bold inline-flex items-center gap-2">
+                  <span className="bg-[#01b4e4] text-white text-[10px] font-black px-1 rounded">TMDB</span>
+                  {Number(detail.vote_average || 0).toFixed(1)}
+                </span>
+                {(omdb?.rottenTomatoes || rtExtra?.critics) && (
+                  <span className="h-9 px-3 rounded-lg bg-black/40 border border-white/10 text-sm font-bold inline-flex items-center gap-2">
+                    <span className="bg-[#fa320a] text-white text-[10px] font-black px-1 rounded">RT</span>
+                    {omdb?.rottenTomatoes || rtExtra?.critics}
+                  </span>
+                )}
+                {aggRatings.filter((r) => r.key === 'mc').map((r) => (
+                  <span key={r.key} className="h-9 px-3 rounded-lg bg-black/40 border border-white/10 text-sm font-bold inline-flex items-center gap-2">
+                    <span className="bg-[#ffcc33] text-black text-[10px] font-black px-1 rounded">MC</span>
+                    {r.value}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-2">
+              <div className="text-[11px] text-white/35">About</div>
+              <div className="flex flex-wrap gap-2">
+                {studioNames(detail).map((s) => (
+                  <span key={s.name} className="h-8 px-2 rounded-lg bg-white/5 border border-white/10 inline-flex items-center gap-2 text-[11px]">
+                    {s.logo ? <img src={s.logo} alt="" className="h-5 object-contain" /> : null}
+                    {s.name}
+                  </span>
+                ))}
+              </div>
+              <div className="text-xs text-white/55">Status: {detail.status || (detail.in_production ? 'Ongoing' : '—')}</div>
+              <div className="flex flex-wrap gap-1.5">
+                {keywordNames(detail).map((k) => <span key={k} className="h-6 px-2 rounded-full bg-white/5 text-[10px] text-white/50">{k}</span>)}
+                {ageRating(detail) && <span className="h-6 px-2 rounded-full bg-white/15 text-[10px] font-bold">{ageRating(detail)}</span>}
+              </div>
+              {watchLogos.length > 0 && (
+                <div className="flex flex-wrap gap-2 items-center text-[11px] text-white/45">
+                  Available on
+                  {watchLogos.map((p) => (
+                    <span key={p.name} className="inline-flex items-center gap-1">
+                      {p.logo ? <img src={p.logo} alt="" className="h-4" /> : null}
+                      {p.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
             {/* Cast */}
             {detail.credits?.cast?.length > 0 && (
               <div>
