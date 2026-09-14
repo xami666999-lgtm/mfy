@@ -23,11 +23,11 @@ export function vidyAnimeUrl(anilistId: number | string, episode = 1): string {
   return `${VIDY_BASE}/anime/${anilistId}/${episode}`
 }
 
-export type PlayerSource = 'vidy' | 'playtorrio' | 'simplstream' | 'zangetsu' | 'miruro' | 'mangayomi' | 'mediafusion' | 'flix' | 'nyaa' | 'animeflv' | 'onepace' | 'streamsppv' | 'sportsstreams' | 'moviebox' | 'vixsrc' | 'vidnest' | 'animepahe' | 'pengu' | 'webtorrent' | 'pipe' | 'torrentio' | 'comet' | 'kitsu' | 'vlc'
+export type PlayerSource = 'vidy' | 'playtorrio' | 'simplstream' | 'zangetsu' | 'miruro' | 'mangayomi' | 'mediafusion' | 'flix' | 'nyaa' | 'animeflv' | 'onepace' | 'streamsppv' | 'sportsstreams' | 'moviebox' | 'vixsrc' | 'vidnest' | 'animepahe' | 'pengu' | 'webtorrent' | 'pipe' | 'torrentio' | 'comet' | 'kitsu' | 'vlc' | 'framex'
 
 export const ANIME_SOURCES: PlayerSource[] = ['zangetsu', 'miruro', 'animepahe', 'pipe', 'torrentio', 'comet', 'playtorrio', 'simplstream', 'vidy', 'vixsrc', 'vidnest', 'moviebox', 'pengu']
-export const MOVIE_TV_SOURCES: PlayerSource[] = ['pipe', 'torrentio', 'comet', 'playtorrio', 'simplstream', 'vidy', 'moviebox', 'vixsrc', 'vidnest', 'pengu']
-export const ALL_PLAY_SOURCES: PlayerSource[] = ['vlc', 'pipe', 'torrentio', 'comet', 'playtorrio', 'simplstream', 'vidy', 'moviebox', 'vixsrc', 'vidnest', 'pengu', 'zangetsu', 'miruro', 'animepahe', 'webtorrent']
+export const MOVIE_TV_SOURCES: PlayerSource[] = ['framex', 'pipe', 'torrentio', 'comet', 'playtorrio', 'simplstream', 'vidy', 'moviebox', 'vixsrc', 'vidnest', 'pengu']
+export const ALL_PLAY_SOURCES: PlayerSource[] = ['framex', 'vlc', 'pipe', 'torrentio', 'comet', 'playtorrio', 'simplstream', 'vidy', 'moviebox', 'vixsrc', 'vidnest', 'pengu', 'zangetsu', 'miruro', 'animepahe', 'webtorrent']
 
 export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId: number | string, season?: number, episode?: number, anime = false): string {
   const s = season ?? 1
@@ -77,6 +77,11 @@ export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId:
   if (source === 'onepace') {
     return `https://onepace.net/en`
   }
+  if (source === 'framex') {
+    return movie
+      ? `https://framextv.tech/embed/${tmdbId}?autoplay=1&muted=0`
+      : `https://framextv.tech/embed/${tmdbId}?autoplay=1&muted=0&s=${s}&e=${e}`
+  }
   if (movie) return `https://vidsrc.me/embed/movie/${tmdbId}`
   return `https://vidsrc.me/embed/tv/${tmdbId}/${s}/${e}`
 }
@@ -86,7 +91,7 @@ export function isPlayerEmbed(url: string): boolean {
   if (/127\.0\.0\.1|localhost|magnet:/i.test(url)) return false
   if (/\.(mp4|m3u8|mkv|webm|avi)(\?|$)/i.test(url)) return false
   if (/pengu\.uk\/signin|signin\.mp4/i.test(url)) return false
-  return /vidsrc|vidlink|vidfast|moviebox\.ph|youtube|youtu\.be|invidious|nadeko|vixsrc|vidnest|videasy|epiembeds|embed\/|\/player\./i.test(url)
+  return /framextv|vidsrc|vidlink|vidfast|moviebox\.ph|youtube|youtu\.be|invidious|nadeko|vixsrc|vidnest|videasy|epiembeds|embed\/|\/player\./i.test(url)
 }
 
 export function getFallbackSources(type: 'movie' | 'tv', tmdbId: number | string | undefined, season?: number, episode?: number): { source: PlayerSource; url: string }[] {

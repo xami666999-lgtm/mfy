@@ -90,7 +90,7 @@ export default function PlayerPage() {
     playtorrio: 'PlayTorrio', simplstream: 'SimplStream', vidy: 'Vidy',
     zangetsu: 'Zangetsu', miruro: 'Miruro', mangayomi: 'Mangayomi',
     mediafusion: 'MediaFusion', flix: 'Flix', nyaa: 'Nyaa', animeflv: 'AnimeFLV',
-    onepace: 'One Pace', streamsppv: 'StreamsPPV', sportsstreams: 'Sports Streams', moviebox: 'MovieBox', vixsrc: 'Vixsrc', vidnest: 'Vidnest', animepahe: 'AnimePahe', pengu: 'Pengu', webtorrent: 'WebTorrent', pipe: 'Pipe', torrentio: 'Torrentio', comet: 'Comet', kitsu: 'Kitsu', vlc: 'VLC',
+    onepace: 'One Pace', streamsppv: 'StreamsPPV', sportsstreams: 'Sports Streams', moviebox: 'MovieBox', vixsrc: 'Vixsrc', vidnest: 'Vidnest', animepahe: 'AnimePahe', pengu: 'Pengu', webtorrent: 'WebTorrent', pipe: 'Pipe', torrentio: 'Torrentio', comet: 'Comet', kitsu: 'Kitsu', vlc: 'VLC', framex: 'FrameX',
   }
   const trackRef = useRef<HTMLTrackElement>(null)
 

@@ -154,31 +154,11 @@ export default function Sports() {
 
   async function openMatch(match: SportMatch) {
     const sources = match.sources || []
-    const first = sources[0]
-    if (first) {
-      const url = first.source === 'ss99'
-        ? first.id
-        : `https://embed.st/embed/${encodeURIComponent(first.source)}/${encodeURIComponent(first.id)}/1`
-      const more = sources.slice(0, 8).map((s, i) => ({
-        id: `${s.source}-${s.id}-${i}`,
-        streamNo: i + 1,
-        language: s.source,
-        hd: true,
-        source: s.source,
-        embedUrl: s.source === 'ss99' ? s.id : `https://embed.st/embed/${encodeURIComponent(s.source)}/${encodeURIComponent(s.id)}/1`,
-      }))
-      setWatchList(more)
-      setWatchQuality(url)
-      setActiveMatch(null)
-      setStreams(null)
-      setWatchUrl(url)
-      return
-    }
     setActiveMatch(match)
     setStreams(null)
-    setStreamError('No sources listed for this match.')
+    setStreamError('')
     if (!sources.length) {
-      return
+      setStreamError('No sources listed for this match.')
     }
     setResolving(true)
     try {
@@ -217,7 +197,7 @@ export default function Sports() {
         embedUrl: s.url,
         source: 'Sports Streams',
       }))
-      const playable = (u?: string) => !!u && /^https?:\/\//i.test(u) && /embed\.st\/embed\//i.test(u)
+      const playable = (u?: string) => !!u && /^https?:\/\//i.test(u) && !/play\.google|apple\.com\/app|\.apk\b/i.test(u)
       setStreams(all.filter((s) => playable(s.embedUrl)))
       if (!all.length) setStreamError('No players listed for this match right now.')
     } catch {
@@ -264,7 +244,7 @@ export default function Sports() {
     if (!url) return
     if (/play\.google|apple\.com\/app|microsoft\.com|\.apk\b|bluestacks|stremio:|magnet:|vlc:/i.test(url)) return
     if (!/^https?:\/\//i.test(url)) return
-    if (!/embed\.st\/embed\//i.test(url)) {
+    if (/embed\/([^/]+)\/([^/]+)/.test(url) && !/embed\.st\/embed\//i.test(url) && /streamed|embedsports|embedsports/i.test(url)) {
       const m = url.match(/embed\/([^/]+)\/([^/]+)(?:\/(\d+))?/)
       if (m) url = `https://embed.st/embed/${m[1]}/${m[2]}/${m[3] || 1}`
     }
@@ -272,15 +252,15 @@ export default function Sports() {
     setWatchQuality(url)
     setActiveMatch(null)
     setStreams(null)
-    if (multiView && addSlot != null) {
+    if (multiView) {
       const cap = mvGrid === '1x2' || mvGrid === '2x1' ? 2 : mvGrid === '1+2' ? 3 : mvGrid === '3x3' ? 9 : 4
-      const item = { id: `${Date.now()}`, title: title || activeMatch?.title || 'Stream', url }
+      const item = { id: `${Date.now()}`, title: title || 'Live', url }
       setMvSlots((cur) => {
         const next = cur.slice()
         while (next.length < cap) next.push({ id: `empty-${next.length}`, title: '', url: '' })
         const idx = addSlot != null ? addSlot : next.findIndex((s) => !s.url)
         if (idx >= 0 && idx < cap) next[idx] = item
-        else if (next.length < cap) next.push(item)
+        else next[0] = item
         return next.slice(0, cap)
       })
       setAddSlot(null)
@@ -318,7 +298,7 @@ export default function Sports() {
         ))}
       </aside>
       <div className="flex-1 p-5 min-w-0">
-      {watchUrl && (
+      {watchUrl && !multiView && (
         <div className="fixed inset-0 z-[90] bg-black flex flex-col">
           <div className="h-11 flex-shrink-0 flex items-center gap-2 px-3 bg-[#0b0f14] border-b border-white/10">
             <button type="button" className="h-8 px-3 rounded-full bg-white text-black text-sm font-semibold" onClick={() => { setWatchUrl(''); setWatchList([]); setSportFull(false) }}>Back</button>
@@ -591,63 +571,68 @@ export default function Sports() {
       )}
 
       {multiView && (
-        <section className="mb-6 rounded-2xl border border-white/10 bg-black/50 p-3">
-          <div className="flex items-center gap-2 mb-3 flex-wrap">
-            <span className="text-[11px] uppercase tracking-widest text-[#FF1493]">Multi-view</span>
-            {(['1x2', '2x1', '2x2', '1+2', '3x3'] as const).map((g) => (
-              <button key={g} type="button" onClick={() => setMvGrid(g)}
-                className={`h-7 px-2.5 rounded-full text-[11px] ${mvGrid === g ? 'bg-[#FF1493] text-white' : 'bg-white/10 text-white/70'}`}>
-                {g === '1x2' ? 'Side by side' : g === '2x1' ? 'Stacked' : g === '2x2' ? '2×2' : g === '1+2' ? 'Main + 2' : '3×3'}
+        <div className="fixed inset-0 z-[85] bg-[#07080c] flex flex-col">
+          <div className="h-16 flex-shrink-0 flex items-center justify-center gap-6 border-b border-white/10 relative">
+            <span className="absolute left-4 text-[11px] tracking-[0.3em] font-bold text-white/70">MFY SPORTS</span>
+            {([
+              { id: '1x2' as const, label: '2-Up', boxes: '■■' },
+              { id: '2x1' as const, label: 'Picture-in-picture', boxes: '▣' },
+              { id: '1+2' as const, label: '3-Up', boxes: '■ ▭' },
+              { id: '2x2' as const, label: 'Quad/Grid', boxes: '▦' },
+            ]).map((g) => (
+              <button key={g.id} type="button" onClick={() => setMvGrid(g.id)}
+                className={`w-28 h-12 rounded-md border text-[10px] ${mvGrid === g.id ? 'border-white bg-white/10 text-white' : 'border-white/15 text-white/40'}`}>
+                <div className="text-lg leading-none mb-0.5">{g.boxes}</div>
+                {g.label}
               </button>
             ))}
-            <button type="button" className="ml-auto text-[11px] text-white/50" onClick={() => setMvSlots([])}>Clear</button>
-            <button type="button" className="text-[11px] text-white" onClick={() => {
+            <button type="button" className="absolute right-4 text-[11px] tracking-widest text-white/80" onClick={() => {
               const el = document.getElementById('mfy-multiview')
               if (!el) return
               if (document.fullscreenElement) document.exitFullscreen()
               else el.requestFullscreen().catch(() => {})
               setMvFull((v) => !v)
-            }}>{mvFull ? 'Exit full' : 'Full screen'}</button>
-            <button type="button" className="text-[11px] text-red-400" onClick={() => { setMultiView(false); setMvSlots([]) }}>Close</button>
+            }}>GO FULLSCREEN</button>
           </div>
           <div
             id="mfy-multiview"
             className={
-              mvGrid === '1x2' ? 'grid grid-cols-2 gap-2 h-[52vh] bg-black' :
-              mvGrid === '2x1' ? 'grid grid-cols-1 grid-rows-2 gap-2 h-[70vh]' :
-              mvGrid === '1+2' ? 'grid grid-cols-3 grid-rows-2 gap-2 h-[62vh]' :
-              mvGrid === '3x3' ? 'grid grid-cols-3 grid-rows-3 gap-2 h-[72vh]' :
-              'grid grid-cols-2 grid-rows-2 gap-2 h-[62vh]'
+              mvGrid === '1x2' ? 'flex-1 min-h-0 grid grid-cols-2 gap-px bg-black' :
+              mvGrid === '2x1' ? 'flex-1 min-h-0 grid grid-cols-3 grid-rows-2 gap-px bg-black' :
+              mvGrid === '1+2' ? 'flex-1 min-h-0 grid grid-cols-3 grid-rows-2 gap-px bg-black' :
+              'flex-1 min-h-0 grid grid-cols-2 grid-rows-2 gap-px bg-black'
             }
           >
-            {Array.from({ length: mvGrid === '1x2' || mvGrid === '2x1' ? 2 : mvGrid === '1+2' ? 3 : mvGrid === '3x3' ? 9 : 4 }).map((_, i) => {
+            {Array.from({ length: mvGrid === '1x2' || mvGrid === '2x1' ? 2 : mvGrid === '1+2' ? 3 : 4 }).map((_, i) => {
               const slot = mvSlots[i]
-              const extra = mvGrid === '1+2' && i === 0 ? 'col-span-2 row-span-2' : ''
+              const extra = (mvGrid === '2x1' && i === 0) ? 'col-span-2 row-span-2' : (mvGrid === '1+2' && i === 0) ? 'col-span-2 row-span-2' : ''
               return (
-                <div key={i} className={`relative rounded-xl overflow-hidden bg-[#0c0c12] border border-white/10 ${extra}`}>
+                <div key={i} className={`relative bg-black ${extra}`}>
                   {slot?.url ? (
                     <>
-                      {/* @ts-expect-error Electron webview */}
-                      <webview title={slot.title} src={slot.url} partition="persist:mfy-sport" className="w-full h-full" style={{ width: '100%', height: '100%' }} allowpopups="false" />
-                      <div className="absolute top-1 left-1 right-1 flex justify-between text-[10px] text-white">
-                        <span className="bg-black/60 px-2 py-0.5 rounded">{slot.title}</span>
-                        <button type="button" className="bg-black/60 px-2 py-0.5 rounded" onClick={() => setMvSlots((s) => s.filter((x) => x.id !== slot.id))}>✕</button>
-                      </div>
+                      <iframe title={slot.title} src={slot.url} className="w-full h-full" style={{ width: '100%', height: '100%', border: 0, background: '#000' }} allow="autoplay; fullscreen; encrypted-media" allowFullScreen referrerPolicy="no-referrer" />
+                      <button type="button" className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded" onClick={() => setMvSlots((s) => s.map((x, n) => n === i ? { ...x, url: '', title: '' } : x))}>✕</button>
                     </>
                   ) : (
-                    <button type="button" className="w-full h-full text-white/45 text-xs grid place-items-center" onClick={() => { setAddSlot(i); setAddQ('') }}>
-                      <span className="text-center">
-                        <span className="block text-3xl text-white/30 mb-2">+</span>
-                        Click to add stream
-                      </span>
-                    </button>
+                    <button type="button" className="w-full h-full text-white/35 text-xs grid place-items-center" onClick={() => { setAddSlot(i); setAddQ('') }}>+ add stream</button>
                   )}
                 </div>
               )
             })}
           </div>
-          <p className="text-[11px] text-white/40 mt-2">Open matches while Multi-view is on — they drop into empty panes instead of taking the whole screen.</p>
-        </section>
+          <div className="h-36 flex-shrink-0 bg-black border-t border-white/10 flex items-center gap-2 px-3 overflow-x-auto">
+            <button type="button" className="text-white/40 px-2" onClick={() => setMultiView(false)}>✕</button>
+            {(live.length ? live : matches).slice(0, 16).map((m) => (
+              <button key={m.id} type="button" onClick={() => openMatch(m)} className="relative w-40 h-24 flex-shrink-0 rounded-md overflow-hidden bg-[#151515] text-left">
+                <img src={posterUrl(m.poster) || badgeUrl((m.teams as any)?.home?.badge) || sportIcon(m.category)} alt="" className="absolute inset-0 w-full h-full object-cover opacity-80" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                <span className="absolute top-1 right-1 text-[9px] font-bold bg-red-600 px-1.5 rounded">LIVE</span>
+                {mvSlots.some((s) => s.title === m.title) && <span className="absolute top-1 left-1 text-white">✓</span>}
+                <span className="absolute bottom-1 left-1 right-1 text-[11px] text-white truncate">{m.title}</span>
+              </button>
+            ))}
+            <button type="button" className="ml-auto w-10 h-10 rounded-full bg-[#FF1493] text-white grid place-items-center" onClick={() => setMultiView(false)}>⌂</button>
+          </div>
+        </div>
       )}
 
       {addSlot != null && !activeMatch && !streams && !resolving && (
