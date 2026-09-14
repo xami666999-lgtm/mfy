@@ -84,6 +84,16 @@ export async function aggregateStreams(opts: {
       if (out.filter((x) => x.addon === addon.id).length) break
     }
   }))
+  try {
+    const { blackholeSearch } = await import('./blackhole')
+    const q = [opts.title, opts.type === 'tv' ? `S${String(s).padStart(2, '0')}E${String(e).padStart(2, '0')}` : ''].filter(Boolean).join(' ')
+    const extra = await blackholeSearch(q || String(opts.title || opts.tmdbId))
+    for (const h of extra) {
+      if (!h.magnet || seen.has(h.magnet)) continue
+      seen.add(h.magnet)
+      out.push({ title: `${h.name} · ${h.sizeLabel} · ${h.seeders}s`, url: h.magnet, quality: h.quality, addon: `bhb-${h.source}` })
+    }
+  } catch {}
   const ranked = ezRank(out)
   const http = ranked.filter((x) => /^https?:/i.test(x.url) && !x.url.includes('magnet:'))
   const rest = ranked.filter((x) => !http.includes(x))

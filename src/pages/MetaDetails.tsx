@@ -14,6 +14,7 @@ import { trailerUrl, isOnePiece, pearioWatchUrl, pearioUserUrl } from '../api/st
 import { markLike, markDislike, isLiked, isDisliked } from '../lib/taste'
 import { sourceDot, reportBroken } from '../lib/playerStatus'
 import SourceSheet from '../components/SourceSheet'
+import { titleLogoFromDetail } from '../api/blackhole'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 
 export default function MetaDetails() {
@@ -219,6 +220,8 @@ export default function MetaDetails() {
     { id: 'playtorrio', label: 'PlayTorrio', q: 'Works' },
     { id: 'simplstream', label: 'SimplStream', q: 'Works' },
     { id: 'vidy', label: 'Vidy', q: 'Works' },
+    { id: 'framex', label: 'FrameX', q: 'Works' },
+    { id: 'mediafusion', label: 'MediaFusion', q: 'Torrent' },
     { id: 'moviebox', label: 'MovieBox', q: 'Works' },
     { id: 'vixsrc', label: 'Vixsrc', q: 'Works' },
     { id: 'vidnest', label: 'Vidnest', q: 'Works' },
@@ -342,10 +345,25 @@ export default function MetaDetails() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back
           </button>
         </div>
+        <div className="absolute top-4 right-4 z-20">
+          <select
+            value={playerPick}
+            onChange={(e) => {
+              setPlayerPick(e.target.value)
+              try { localStorage.setItem('mfy-player-engine', e.target.value) } catch {}
+              setSourceOpen(true)
+            }}
+            className="h-10 min-w-[180px] rounded-xl bg-black/60 text-white text-sm border border-white/15 px-3"
+          >
+            {PLAYERS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+          </select>
+        </div>
 
         <div className="relative z-10 h-full flex items-end px-8 md:px-12 pb-10 md:pb-14">
           <div className="max-w-xl">
-            {/* Title as logo-style wordmark */}
+            {titleLogoFromDetail(detail) ? (
+              <img src={titleLogoFromDetail(detail)} alt={title} className="mb-4 max-h-24 md:max-h-28 w-auto object-contain drop-shadow-[0_8px_28px_rgba(0,0,0,0.7)]" />
+            ) : (
             <h1
               className="text-4xl md:text-5xl font-black text-white tracking-tight leading-[1.05] mb-3 drop-shadow-[0_4px_24px_rgba(0,0,0,0.65)]"
               style={{ fontFamily: 'system-ui, Segoe UI, sans-serif' }}
@@ -355,6 +373,7 @@ export default function MetaDetails() {
                 <span className="ml-3 inline-flex w-8 h-8 rounded-full bg-emerald-500 text-white text-lg items-center justify-center align-middle">✓</span>
               )}
             </h1>
+            )}
 
             <div className="flex flex-wrap items-center gap-2 text-[12px] text-white/55 mb-3">
               {detail.genres?.[0]?.name && <span>{detail.genres[0].name}</span>}
@@ -436,8 +455,8 @@ export default function MetaDetails() {
                 const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
                 const op = isOnePiece(detail?.title || detail?.name || (selectedMedia as any)?.title)
                 if (op) return p.id === 'onepace'
-                if (anime) return ['vlc','pipe','torrentio','comet','zangetsu','miruro','animepahe','playtorrio','simplstream','vidy','vixsrc','vidnest','moviebox','pengu'].includes(p.id)
-                return ['vlc','pipe','torrentio','comet','playtorrio','simplstream','vidy','moviebox','vixsrc','vidnest'].includes(p.id)
+                if (anime) return ['vlc','pipe','torrentio','comet','zangetsu','miruro','animepahe','playtorrio','simplstream','vidy','vixsrc','vidnest','moviebox','pengu','framex','mediafusion'].includes(p.id)
+                return ['vlc','pipe','torrentio','comet','playtorrio','simplstream','vidy','moviebox','vixsrc','vidnest','pengu','framex','mediafusion'].includes(p.id)
               })).map((p) => (
                 <button
                   key={p.id}
@@ -477,8 +496,8 @@ export default function MetaDetails() {
                 const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
                 const op = isOnePiece(detail?.title || detail?.name || (selectedMedia as any)?.title)
                 if (op) return p.id === 'onepace'
-                if (anime) return ['vlc','pipe','torrentio','comet','zangetsu','miruro','animepahe','playtorrio','simplstream','vidy','vixsrc','vidnest','moviebox','pengu'].includes(p.id)
-                return ['vlc','pipe','torrentio','comet','playtorrio','simplstream','vidy','moviebox','vixsrc','vidnest'].includes(p.id)
+                if (anime) return ['vlc','pipe','torrentio','comet','zangetsu','miruro','animepahe','playtorrio','simplstream','vidy','vixsrc','vidnest','moviebox','pengu','framex','mediafusion'].includes(p.id)
+                return ['vlc','pipe','torrentio','comet','playtorrio','simplstream','vidy','moviebox','vixsrc','vidnest','pengu','framex','mediafusion'].includes(p.id)
               })).map((p) => (
                     <button key={p.id} type="button" className="w-full flex items-center justify-between h-10 px-3 rounded-xl bg-[#1a1016] border border-white/10 hover:border-[#FF1493]/50 text-left text-white" onClick={() => {
                       setPlayerPick(p.id)

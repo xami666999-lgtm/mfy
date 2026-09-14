@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Play, X } from 'lucide-react'
 import { BACKDROP_URL, POSTER_URL } from '../api/tmdb'
 import { aggregateStreams, type AggStream } from '../api/stremioAgg'
+import { ALL_PLAY_SOURCES } from '../api/vidy'
+import { titleLogoFromDetail } from '../api/blackhole'
 
 export default function SourceSheet({
   detail,
@@ -62,7 +64,11 @@ export default function SourceSheet({
       <button type="button" onClick={onClose} style={{ position: 'absolute', top: 18, left: 18, zIndex: 3, width: 36, height: 36, borderRadius: 20, background: 'rgba(0,0,0,0.45)', color: '#fff', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
       <div style={{ position: 'relative', zIndex: 2, display: 'grid', gridTemplateColumns: '1.15fr 0.85fr', height: '100%' }}>
         <div style={{ padding: '72px 48px 40px', maxWidth: 640 }}>
-          <h1 style={{ fontSize: 42, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#e8a56a', marginBottom: 22 }}>{title}</h1>
+          {titleLogoFromDetail(detail) ? (
+            <img src={titleLogoFromDetail(detail)} alt={title} style={{ maxWidth: 420, maxHeight: 110, objectFit: 'contain', marginBottom: 22, filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.55))' }} />
+          ) : (
+            <h1 style={{ fontSize: 42, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#e8a56a', marginBottom: 22 }}>{title}</h1>
+          )}
           <div style={{ display: 'flex', gap: 18, alignItems: 'center', fontSize: 14, color: 'rgba(255,255,255,0.8)', marginBottom: 28 }}>
             {runtime > 0 && <span>{runtime} min</span>}
             {year && <span>{year}</span>}
@@ -99,7 +105,20 @@ export default function SourceSheet({
           </div>
         </div>
         <div style={{ background: 'rgba(16,16,16,0.72)', backdropFilter: 'blur(10px)', padding: '56px 22px 22px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', padding: '0 14px', marginBottom: 18, fontSize: 14 }}>EZRemux</div>
+          <select
+            defaultValue="pipe"
+            onChange={(e) => {
+              const id = e.target.value
+              if (id === 'bhb') return
+              onPlay('', id)
+            }}
+            style={{ height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', padding: '0 14px', marginBottom: 18, fontSize: 14 }}
+          >
+            <option value="pipe">Pipe / VLC</option>
+            <option value="bhb">Black Hole Bay</option>
+            <option value="mediafusion">MediaFusion</option>
+            {ALL_PLAY_SOURCES.map((id) => <option key={id} value={id}>{id}</option>)}
+          </select>
           <div style={{ flex: 1, overflow: 'auto' }}>
             {loading && <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>Finding sources…</p>}
             {!loading && rows.length === 0 && <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>No torrent/HTTP sources yet. Use Show all addons.</p>}
@@ -115,7 +134,7 @@ export default function SourceSheet({
           </button>
           {addons && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
-              {['vlc', 'pipe', 'torrentio', 'comet', 'playtorrio', 'simplstream', 'vidy'].map((id) => (
+              {['vlc', 'pipe', 'torrentio', 'comet', 'mediafusion', 'framex', 'playtorrio', 'simplstream', 'vidy', 'moviebox', 'vixsrc', 'pengu', 'zangetsu', 'miruro'].map((id) => (
                 <button key={id} type="button" onClick={() => onPlay('', id)} style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.08)', border: 'none', color: '#fff', fontSize: 12, cursor: 'pointer', textTransform: 'capitalize' }}>{id}</button>
               ))}
             </div>
