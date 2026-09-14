@@ -117,7 +117,7 @@ export default function Anime() {
               : popular
           return list.length ? list : popular
         })()} onOpen={open} />
-        <MediaShelf title="Upcoming Anime" items={upcoming} onOpen={open} />
+        {/* Upcoming lives on the Upcoming page */}
         {Object.entries(rows).map(([name, list]) => (
           <MediaShelf key={name} title={name} items={list} onOpen={open} />
         ))}

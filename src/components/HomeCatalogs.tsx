@@ -161,10 +161,8 @@ export default function HomeCatalogs() {
       <Row title="Manga" items={manga} />
       <Row title="Novels" items={novels} />
       <Row title="Comics" items={comics} />
-      <Row title="Books" items={books} />
       <Row title="Anime" items={animeA} />
       <Row title="Anime catalog" items={animeB} />
-      <Row title="Upcoming Anime" items={upcoming} />
       <Row title="Series & movies" items={shows} />
       <Row title="Live sports" items={sports} />
       <Row title="TV channels" items={iptv} />

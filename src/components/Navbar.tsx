@@ -1,4 +1,4 @@
-import { Home, Film, Tv, Trophy, Search, Bookmark, Settings, BookOpen, Sparkles, Radio, Youtube, Music } from 'lucide-react'
+import { Home, Film, Tv, Trophy, Search, Bookmark, Settings, BookOpen, Sparkles, Radio, Youtube, Music, Calendar } from 'lucide-react'
 import { useState } from 'react'
 import { useStore } from '../store'
 import BugReport from './BugReport'
@@ -9,9 +9,9 @@ const tabs = [
   { id: 'movies', label: 'Movies', icon: Film },
   { id: 'tv', label: 'TV', icon: Tv },
   { id: 'anime', label: 'Anime', icon: Sparkles },
+  { id: 'upcoming', label: 'Upcoming', icon: Calendar },
   { id: 'manga', label: 'Manga', icon: BookOpen },
   { id: 'comics', label: 'Comics', icon: BookOpen },
-  { id: 'books', label: 'Books', icon: BookOpen },
   { id: 'youtube', label: 'YouTube', icon: Youtube },
   { id: 'music', label: 'Music', icon: Music },
   { id: 'sports', label: 'Sports', icon: Trophy },

@@ -33,6 +33,7 @@ import MusicPage from './pages/MusicPage'
 import PrintHome from './pages/PrintHome'
 import MangaReader from './pages/MangaReader'
 import People from './pages/People'
+import Upcoming from './pages/Upcoming'
 import IdleWall from './components/IdleWall'
 import { pbPull, pbRefresh } from './api/pocketbase'
 
@@ -300,7 +301,7 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
         {currentPage === 'manga' && <PrintHome kind="manga" />}
         {currentPage === 'comics' && <PrintHome kind="comics" />}
         {currentPage === 'manga-detail' && <MangaReader />}
-        {currentPage === 'books' && <CatalogSection kind="books" title="Books" />}
+        {currentPage === 'upcoming' && <Upcoming />}
         {currentPage === 'youtube' && <YouTubePage />}
         {currentPage === 'music' && <MusicPage />}
         {currentPage === 'people' && <People />}

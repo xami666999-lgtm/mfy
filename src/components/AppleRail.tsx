@@ -2,16 +2,16 @@ import { useEffect, useState } from 'react'
 import { useStore } from '../store'
 import { streamingServices } from '../api/streaming'
 import BugReport from './BugReport'
-import { Search, Home, Film, Tv, Sparkles, BookOpen, Youtube, Music, Trophy, Radio, Bookmark, Settings, PanelLeftClose, PanelLeft } from 'lucide-react'
+import { Search, Home, Film, Tv, Sparkles, BookOpen, Youtube, Music, Trophy, Radio, Bookmark, Settings, PanelLeftClose, PanelLeft, Calendar } from 'lucide-react'
 
 const LINKS: [string, string, any][] = [
   ['home', 'Home', Home],
   ['movies', 'Movies', Film],
   ['tv', 'TV', Tv],
   ['anime', 'Anime', Sparkles],
+  ['upcoming', 'Upcoming', Calendar],
   ['manga', 'Manga', BookOpen],
   ['comics', 'Comics', BookOpen],
-  ['books', 'Books', BookOpen],
   ['youtube', 'YouTube', Youtube],
   ['music', 'Music', Music],
   ['sports', 'Sport', Trophy],
