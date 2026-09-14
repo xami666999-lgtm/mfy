@@ -132,6 +132,12 @@ export default function Board() {
   const [genreTv, setGenreTv] = useState<Record<number, any[]>>({})
   const [genreAnime, setGenreAnime] = useState<Record<string, any[]>>({})
   const [cwExtra, setCwExtra] = useState<Record<string, { poster?: string; title?: string }>>({})
+  const [rowNew, setRowNew] = useState<any[]>([])
+  const [rowStreaming, setRowStreaming] = useState<any[]>([])
+  const [rowNewEp, setRowNewEp] = useState<any[]>([])
+  const [rowNewSeason, setRowNewSeason] = useState<any[]>([])
+  const [rowComing, setRowComing] = useState<any[]>([])
+  const [rowTrend, setRowTrend] = useState<any[]>([])
 
   useEffect(() => { load() }, [tmdbApiKey])
 
@@ -199,6 +205,33 @@ export default function Board() {
       tmdb.discoverMovies({ with_companies: '41077', sort_by: 'popularity.desc', page: '1' }).then((d) => setA24(d?.results || [])).catch(() => {})
       tmdb.discoverMovies({ with_companies: '3', sort_by: 'popularity.desc', page: '1' }).then((d) => setPixar(d?.results || [])).catch(() => {})
       tmdb.discoverMovies({ with_genres: '10751', sort_by: 'popularity.desc', page: '1' }).then((d) => setKids(d?.results || [])).catch(() => {})
+      const today = new Date()
+      const iso = (d: Date) => d.toISOString().slice(0, 10)
+      const d21 = new Date(today); d21.setDate(d21.getDate() - 21)
+      const d7 = new Date(today); d7.setDate(d7.getDate() - 7)
+      const f21 = new Date(today); f21.setDate(f21.getDate() + 21)
+      tmdb.discoverMovies({ sort_by: 'primary_release_date.desc', 'primary_release_date.gte': iso(d21), 'primary_release_date.lte': iso(today) }).then((d) => {
+        setRowNew((d?.results || []).map((x: any) => ({ ...x, media_type: 'movie', _badge: '+ New' })))
+      }).catch(() => {})
+      tmdb.discoverTV({ sort_by: 'first_air_date.desc', 'first_air_date.gte': iso(d21), 'first_air_date.lte': iso(today) }).then((d) => {
+        setRowNew((prev) => [...prev, ...(d?.results || []).map((x: any) => ({ ...x, media_type: 'tv', _badge: '+ New' }))].slice(0, 24))
+      }).catch(() => {})
+      tmdb.discoverMovies({ with_release_type: '4|5', sort_by: 'primary_release_date.desc', 'primary_release_date.lte': iso(d21) }).then((d) => {
+        setRowStreaming((d?.results || []).slice(0, 20).map((x: any) => ({ ...x, media_type: 'movie', _badge: 'Now Streaming' })))
+      }).catch(() => {})
+      tmdb.discoverTV({ sort_by: 'popularity.desc', 'air_date.gte': iso(d7), 'air_date.lte': iso(today) }).then((d) => {
+        setRowNewEp((d?.results || []).map((x: any) => ({ ...x, media_type: 'tv', _badge: 'New Episode' })))
+      }).catch(() => {})
+      tmdb.discoverTV({ sort_by: 'first_air_date.desc', 'first_air_date.gte': iso(d21), 'first_air_date.lte': iso(today) }).then((d) => {
+        setRowNewSeason((d?.results || []).map((x: any) => ({ ...x, media_type: 'tv', _badge: 'New Season' })))
+      }).catch(() => {})
+      tmdb.discoverTV({ sort_by: 'first_air_date.asc', 'first_air_date.gte': iso(today), 'first_air_date.lte': iso(f21) }).then((d) => {
+        setRowComing((d?.results || []).map((x: any) => ({ ...x, media_type: 'tv', _badge: 'Season Coming' })))
+      }).catch(() => {})
+      tmdb.getTrending('all', 'day').then((d) => {
+        const list = (d?.results || []).slice(10, 28).map((x: any) => ({ ...x, _badge: 'Trending' }))
+        setRowTrend(list)
+      }).catch(() => {})
     } catch {
       setError('Could not load catalog. Add a TMDB key in Settings.')
       setLoading(false)
@@ -384,6 +417,12 @@ export default function Board() {
         )}
         <Shelf title="Top 10 Popular Movies" items={(nowPlaying.length ? nowPlaying : movies).slice(0, 10)} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
         <Shelf title="Top 10 Popular TV Shows" items={(shows.length ? shows : onTheAir).slice(0, 10)} onOpen={(i) => goDetail(i, 'tv')} viewAll={() => setCurrentPage('tv')} />
+        <Shelf title="New" items={rowNew} onOpen={goDetail} />
+        <Shelf title="Now Streaming" items={rowStreaming} onOpen={(i) => goDetail(i, 'movie')} />
+        <Shelf title="New Episode" items={rowNewEp} onOpen={(i) => goDetail(i, 'tv')} />
+        <Shelf title="New Season" items={rowNewSeason} onOpen={(i) => goDetail(i, 'tv')} />
+        <Shelf title="Season Coming" items={rowComing} onOpen={(i) => goDetail(i, 'tv')} />
+        <Shelf title="Trending" items={rowTrend} onOpen={goDetail} />
         <Shelf title="Trending Today" items={trending} onOpen={goDetail} />
         <Shelf title="Now Playing" items={nowPlaying} onOpen={(i) => goDetail(i, 'movie')} viewAll={() => setCurrentPage('movies')} />
         <Shelf title="Airing Now" items={onTheAir} onOpen={(i) => goDetail(i, 'tv')} viewAll={() => setCurrentPage('tv')} />

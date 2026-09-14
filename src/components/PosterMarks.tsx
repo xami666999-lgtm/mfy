@@ -46,6 +46,11 @@ export function PosterMarks({ item, rank }: { item: any; rank?: number }) {
           <div className="h-full bg-[#FF1493]" style={{ width: `${Math.min(100, pct)}%` }} />
         </div>
       )}
+      {item._badge && (
+        <span className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 text-[9px] font-semibold px-2 py-0.5 rounded-full bg-black/75 text-white whitespace-nowrap">
+          {item._badge}
+        </span>
+      )}
     </>
   )
 }

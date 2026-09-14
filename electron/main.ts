@@ -188,7 +188,7 @@ function downloadHttps(url: string, dest?: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const go = (u: string, hops = 0) => {
       if (hops > 8) return reject(new Error('too many redirects'))
-      https.get(u, { headers: { 'User-Agent': 'MFY-Updater' } }, (res) => {
+      https.get(u, { headers: { 'User-Agent': 'MFY-Updater', Accept: 'application/vnd.github+json, text/plain, */*' } }, (res) => {
         const loc = res.headers.location
         if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && loc) {
           res.resume()
@@ -213,10 +213,33 @@ function downloadHttps(url: string, dest?: string): Promise<string> {
 
 async function mfySelfUpdate(installIfNewer = true) {
   const current = app.getVersion()
-  const text = await downloadHttps('https://github.com/xami666999-lgtm/mfy/releases/latest/download/latest.yml')
-  const latest = (String(text).match(/version:\s*([0-9.]+)/) || [])[1] || current
+  let latest = current
+  let url = `https://github.com/xami666999-lgtm/mfy/releases/latest/download/MFY-Setup-${current}.exe`
+  try {
+    const raw = await downloadHttps('https://api.github.com/repos/xami666999-lgtm/mfy/releases?per_page=20')
+    const list = JSON.parse(String(raw)) as any[]
+    let best = current
+    let bestUrl = url
+    for (const rel of list || []) {
+      const ver = String(rel.tag_name || '').replace(/^v/, '')
+      if (!/^\d+\.\d+/.test(ver)) continue
+      const asset = (rel.assets || []).find((a: any) => /MFY-Setup-.*\.exe$/i.test(a.name || ''))
+      if (!asset?.browser_download_url) continue
+      if (ver.localeCompare(best, undefined, { numeric: true, sensitivity: 'base' }) > 0) {
+        best = ver
+        bestUrl = asset.browser_download_url
+      }
+    }
+    latest = best
+    url = bestUrl
+  } catch {
+    try {
+      const text = await downloadHttps('https://github.com/xami666999-lgtm/mfy/releases/latest/download/latest.yml')
+      latest = (String(text).match(/version:\s*([0-9.]+)/) || [])[1] || current
+      url = `https://github.com/xami666999-lgtm/mfy/releases/latest/download/MFY-Setup-${latest}.exe`
+    } catch {}
+  }
   const newer = latest.localeCompare(current, undefined, { numeric: true, sensitivity: 'base' }) > 0
-  const url = `https://github.com/xami666999-lgtm/mfy/releases/latest/download/MFY-Setup-${latest}.exe`
   if (!newer) return { ok: true, current, latest, newer: false, url }
   new Notification({ title: 'MFY Update', body: `Downloading ${latest}…` }).show()
   mainWindow?.webContents.send('mfy:update-available', { version: latest })
