@@ -182,7 +182,7 @@ export default function MetaDetails() {
           <div className="max-w-xl">
             {/* Title as logo-style wordmark */}
             <h1
-              className="text-4xl md:text-5xl font-black text-white tracking-tight leading-[1.05] mb-3 drop-shadow-[0_4px_24px_rgba(0,0,0,0.65)]"
+              className="title-logo text-4xl md:text-5xl font-black text-white tracking-tight leading-[1.05] mb-3 drop-shadow-[0_4px_24px_rgba(0,0,0,0.65)]"
               style={{ fontFamily: 'system-ui, Segoe UI, sans-serif' }}
             >
               {title}

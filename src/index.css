@@ -33,9 +33,9 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body, #root { width: 100%; height: 100%; }
 body {
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: Manrope, ui-sans-serif, system-ui, sans-serif;
   background: var(--mfy-bg);
-  color: var(--mfy-text);
+  color: #f6f6f6;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -103,7 +103,7 @@ a:focus-visible,
 }
 .nav-tab svg { width: 18px; height: 18px; stroke-width: 1.7; }
 .nav-tab:hover { color: #fff; }
-.nav-tab.active { color: var(--mfy-pink); }
+.nav-tab.active { color: #ffffff; }
 .nav-tab.active::after {
   content: ""; position: absolute; left: 12px; right: 12px; bottom: 0;
   height: 2px; border-radius: 99px; background: var(--mfy-pink);
@@ -155,7 +155,7 @@ a:focus-visible,
 .hero-badge {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--mfy-pink); margin-bottom: 10px;
+  color: #ffffff; margin-bottom: 10px;
 }
 .hero-copy h1 {
   font-size: clamp(28px, 3.6vw, 46px); font-weight: 800;
@@ -237,7 +237,7 @@ a:focus-visible,
 .media-row { margin-bottom: 28px; }
 .media-row-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-right: 4px; }
 .media-row-title { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; color: #fff; }
-.media-row-action { font-size: 12px; font-weight: 600; color: var(--mfy-pink); opacity: 0.85; transition: opacity var(--transition-fast); }
+.media-row-action { font-size: 12px; font-weight: 600; color: #ffffff; opacity: 0.85; transition: opacity var(--transition-fast); }
 .media-row-action:hover { opacity: 1; }
 .scroll-row {
   display: flex; gap: 14px; overflow-x: auto; overflow-y: visible;
@@ -447,7 +447,7 @@ a:focus-visible,
 .hero-kicker {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--mfy-pink); margin-bottom: 10px;
+  color: #ffffff; margin-bottom: 10px;
 }
 .hero-play {
   display: inline-flex; align-items: center; gap: 8px;
@@ -503,7 +503,7 @@ a:focus-visible,
 .row { margin-bottom: 28px; }
 .row-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .row-title { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
-.row-more { font-size: 12px; font-weight: 600; color: var(--mfy-pink); opacity: 0.85; }
+.row-more { font-size: 12px; font-weight: 600; color: #ffffff; opacity: 0.85; }
 
 .poster-list-btn {
   position: absolute;
@@ -563,7 +563,7 @@ a:focus-visible,
 .media-row-section { margin-bottom: 28px; }
 .section-heading-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .section-title { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
-.view-all { font-size: 12px; font-weight: 600; color: var(--mfy-pink); opacity: 0.85; display: inline-flex; align-items: center; gap: 4px; }
+.view-all { font-size: 12px; font-weight: 600; color: #ffffff; opacity: 0.85; display: inline-flex; align-items: center; gap: 4px; }
 .view-all:hover { opacity: 1; }
 .view-all svg { width: 14px; height: 14px; }
 
@@ -586,4 +586,20 @@ a:focus-visible,
   width: 70%;
   height: 70%;
   object-fit: contain;
+}
+
+/* TryBox typography — app chrome only */
+html, body, #root, button, input, select, textarea, .nav-tab, .row-title, .section-title, .view-all {
+  font-family: Manrope, ui-sans-serif, system-ui, sans-serif;
+  color: #f6f6f6;
+}
+h1, h2, h3, h4, .font-display, .row-title, .section-title, .hero-badge, .hero-kicker {
+  font-family: Sora, Manrope, ui-sans-serif, system-ui, sans-serif;
+}
+/* Keep movie / show / anime title logos as wordmarks */
+.title-logo,
+.hero-copy h1,
+.media-wordmark {
+  font-family: system-ui, "Segoe UI", sans-serif !important;
+  color: #ffffff !important;
 }
