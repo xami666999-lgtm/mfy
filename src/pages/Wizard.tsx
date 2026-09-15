@@ -106,7 +106,7 @@ export default function Wizard() {
                 onClick={() => i < step && setStep(i)}
                 className={cn(
                   'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs font-medium transition-all',
-                  active && 'bg-[#FF1493]/12 text-[#FF1493] border border-[#FF1493]/25',
+                  active && 'bg-[#FF1493]/12 text-white border border-[#FF1493]/25',
                   done && !active && 'text-[#00E5FF]/80 hover:bg-white/[0.03]',
                   !active && !done && 'text-white/25'
                 )}
@@ -115,7 +115,7 @@ export default function Wizard() {
                   className={cn(
                     'w-6 h-6 rounded-full flex items-center justify-center border text-[10px]',
                     done && 'bg-[#00E5FF]/15 border-[#00E5FF]/35 text-[#00E5FF]',
-                    active && 'bg-[#FF1493]/15 border-[#FF1493]/40 text-[#FF1493]',
+                    active && 'bg-[#FF1493]/15 border-[#FF1493]/40 text-white',
                     !active && !done && 'border-white/10 text-white/20'
                   )}
                 >

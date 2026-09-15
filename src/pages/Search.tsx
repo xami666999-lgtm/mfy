@@ -88,7 +88,7 @@ export default function Search() {
             className={cn(
               'h-7 px-3 rounded-full text-[11px] border transition-all',
               typeFilter === t
-                ? 'bg-[#FF1493]/15 border-[#FF1493]/35 text-[#FF1493]'
+                ? 'bg-[#FF1493]/15 border-[#FF1493]/35 text-white'
                 : 'border-white/[0.06] text-white/35 hover:text-white/55'
             )}
           >

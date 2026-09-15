@@ -116,7 +116,7 @@ export default function Settings() {
                 onClick={() => store.setTheme(id)}
                 className={`h-8 px-3 rounded-lg text-xs border transition-all ${
                   theme === id
-                    ? 'bg-[#FF1493]/15 border-[#FF1493]/40 text-[#FF1493]'
+                    ? 'bg-[#FF1493]/15 border-[#FF1493]/40 text-white'
                     : 'bg-white/[0.04] border-white/[0.06] text-white/40 hover:text-white/60'
                 }`}
               >
@@ -153,7 +153,7 @@ export default function Settings() {
                 onClick={() => store.switchProfile(pr.id)}
                 className={`h-8 px-3 rounded-lg text-xs border ${
                   store.currentProfile?.id === pr.id
-                    ? 'border-[#FF1493]/40 text-[#FF1493] bg-[#FF1493]/10'
+                    ? 'border-[#FF1493]/40 text-white bg-[#FF1493]/10'
                     : 'border-white/[0.06] text-white/40'
                 }`}
               >

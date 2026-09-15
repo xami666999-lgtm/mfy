@@ -46,7 +46,7 @@ export default function Library() {
               className={cn(
                 'flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs transition-all border',
                 tab === t.id
-                  ? 'bg-[#FF1493]/15 border-[#FF1493]/35 text-[#FF1493]'
+                  ? 'bg-[#FF1493]/15 border-[#FF1493]/35 text-white'
                   : 'bg-white/[0.04] border-white/[0.06] text-white/40 hover:text-white/60 hover:border-white/[0.1]'
               )}
             >

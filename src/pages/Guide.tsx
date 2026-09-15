@@ -35,7 +35,7 @@ export default function Guide() {
   return (
     <div className="p-8 max-w-3xl mx-auto page-fade-enter">
       <div className="flex items-center gap-3 mb-2">
-        <BookOpen className="w-5 h-5 text-[#FF1493]" />
+        <BookOpen className="w-5 h-5 text-white" />
         <h2 className="text-lg font-semibold text-white tracking-tight">Guide</h2>
       </div>
       <p className="text-sm text-white/35 mb-8 leading-relaxed">
@@ -51,7 +51,7 @@ export default function Guide() {
               className="flex gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06]"
             >
               <div className="w-9 h-9 rounded-xl bg-[#FF1493]/12 border border-[#FF1493]/25 flex items-center justify-center flex-shrink-0">
-                <Icon className="w-4 h-4 text-[#FF1493]" />
+                <Icon className="w-4 h-4 text-white" />
               </div>
               <div>
                 <div className="text-xs font-semibold text-white/25 mb-0.5">Step {i + 1}</div>

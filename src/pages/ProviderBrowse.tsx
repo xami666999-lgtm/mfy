@@ -73,7 +73,7 @@ export default function ProviderBrowse() {
             className={cn(
               'h-8 px-3 rounded-lg text-xs border transition-all',
               tab === t
-                ? 'bg-[#FF1493]/15 border-[#FF1493]/35 text-[#FF1493]'
+                ? 'bg-[#FF1493]/15 border-[#FF1493]/35 text-white'
                 : 'border-white/[0.06] text-white/35 hover:text-white/55'
             )}
           >

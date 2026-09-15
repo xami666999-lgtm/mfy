@@ -410,7 +410,7 @@ export default function MetaDetails() {
                   <div className="text-xs font-medium text-white/80 truncate">{s.name || s.provider || 'Stream'}</div>
                   <div className="text-[10px] text-white/30 truncate mt-0.5">{s.title || s.quality || s.url}</div>
                 </div>
-                <span className="text-[10px] text-[#FF1493] flex-shrink-0">{s.quality || s.type || 'Play'}</span>
+                <span className="text-[10px] text-white flex-shrink-0">{s.quality || s.type || 'Play'}</span>
               </button>
             ))}
           </div>
