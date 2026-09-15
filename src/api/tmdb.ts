@@ -101,14 +101,24 @@ export const tmdb = {
   getUpcoming: () =>
     tmdbFetch('/movie/upcoming', {}, { cacheKey: 'upcoming' }),
 
+  getPerson: (id: number) =>
+    tmdbFetch(`/person/${id}`, { append_to_response: 'combined_credits,images,external_ids' }, { cacheKey: `person:${id}`, ttlMs: 24*60*60*1000 }),
+  searchPerson: (query: string) =>
+    tmdbFetch('/search/person', { query }, { cacheKey: `search:person:${query.toLowerCase()}`, ttlMs: 10*60*1000 }),
+  discoverByKeyword: (mediaType: 'movie' | 'tv', keywordId: number) =>
+    tmdbFetch(`/discover/${mediaType}`, { with_keywords: String(keywordId), sort_by: 'popularity.desc' }, { cacheKey: `kwdisc:${mediaType}:${keywordId}` }),
+  getReviews: (mediaType: 'movie' | 'tv', id: number) =>
+    tmdbFetch(`/${mediaType}/${id}/reviews`, {}, { cacheKey: `reviews:${mediaType}:${id}` }),
+  getKeywords: (mediaType: 'movie' | 'tv', id: number) =>
+    tmdbFetch(`/${mediaType}/${id}/keywords`, {}, { cacheKey: `kw:${mediaType}:${id}` }),
   getMovieDetail: (id: number) =>
-    tmdbFetch(`/movie/${id}`, { append_to_response: 'credits,videos,similar,recommendations' }, {
+    tmdbFetch(`/movie/${id}`, { append_to_response: 'credits,videos,similar,recommendations,keywords,reviews' }, {
       cacheKey: `movie:${id}`,
       ttlMs: 30 * 60 * 1000,
     }),
 
   getTVDetail: (id: number) =>
-    tmdbFetch(`/tv/${id}`, { append_to_response: 'credits,videos,similar,recommendations' }, {
+    tmdbFetch(`/tv/${id}`, { append_to_response: 'credits,videos,similar,recommendations,keywords,reviews' }, {
       cacheKey: `tv:${id}`,
       ttlMs: 30 * 60 * 1000,
     }),

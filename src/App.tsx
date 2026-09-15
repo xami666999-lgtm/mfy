@@ -16,6 +16,10 @@ import PlayerPage from './pages/PlayerPage'
 import Wizard from './pages/Wizard'
 import Guide from './pages/Guide'
 import ProviderBrowse from './pages/ProviderBrowse'
+import Explore from './pages/Explore'
+import PersonPage from './pages/PersonPage'
+import SocialPage from './pages/SocialPage'
+import Constellation from './pages/Constellation'
 
 export default function App() {
   const {
@@ -110,6 +114,10 @@ export default function App() {
         {currentPage === 'player' && <PlayerPage />}
         {currentPage === 'guide' && <Guide />}
         {currentPage === 'provider' && <ProviderBrowse />}
+        {currentPage === 'explore' && <Explore />}
+        {currentPage === 'person' && <PersonPage />}
+        {currentPage === 'social' && <SocialPage />}
+        {currentPage === 'constellation' && <Constellation />}
       </main>
     </div>
   )

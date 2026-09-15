@@ -25,6 +25,14 @@ interface AppState {
 
   selectedMedia: { id: number; type: 'movie' | 'tv'; season?: number; episode?: number } | null
   setSelectedMedia: (media: { id: number; type: 'movie' | 'tv'; season?: number; episode?: number } | null) => void
+  selectedPersonId: number | null
+  setSelectedPersonId: (id: number | null) => void
+  userRatings: { mediaId: number; mediaType: 'movie' | 'tv'; score: number; profileId: string }[]
+  rateTitle: (mediaId: number, mediaType: 'movie' | 'tv', score: number) => void
+  hiddenTitles: { mediaId: number; mediaType: 'movie' | 'tv' }[]
+  hideTitle: (mediaId: number, mediaType: 'movie' | 'tv') => void
+  socialVisible: boolean
+  setSocialVisible: (v: boolean) => void
 
   currentProfile: UserProfile | null
   setCurrentProfile: (profile: UserProfile | null) => void
@@ -128,6 +136,24 @@ export const useStore = create<AppState>((set, get) => ({
 
   selectedMedia: null,
   setSelectedMedia: (media) => set({ selectedMedia: media }),
+  selectedPersonId: null,
+  setSelectedPersonId: (id) => set({ selectedPersonId: id }),
+  userRatings: [],
+  rateTitle: (mediaId, mediaType, score) => {
+    const profileId = get().currentProfile?.id || 'local'
+    const rest = get().userRatings.filter((r) => !(r.mediaId === mediaId && r.mediaType === mediaType && r.profileId === profileId))
+    const next = [{ mediaId, mediaType, score, profileId }, ...rest]
+    set({ userRatings: next })
+    persist('userRatings', next)
+  },
+  hiddenTitles: [],
+  hideTitle: (mediaId, mediaType) => {
+    const next = [...get().hiddenTitles.filter((h) => !(h.mediaId === mediaId && h.mediaType === mediaType)), { mediaId, mediaType }]
+    set({ hiddenTitles: next })
+    persist('hiddenTitles', next)
+  },
+  socialVisible: true,
+  setSocialVisible: (v) => { set({ socialVisible: v }); persist('socialVisible', v) },
 
   currentProfile: null,
   setCurrentProfile: (profile) => set({ currentProfile: profile }),

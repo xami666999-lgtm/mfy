@@ -6,6 +6,7 @@ import { streamingServices } from '../api/streaming'
 import { useStore } from '../store'
 import { cn } from '../lib/utils'
 import { SkeletonPoster, SkeletonHero } from '../components/Skeleton'
+import RecoRails from '../components/RecoRails'
 
 export default function Board() {
   const { tmdbApiKey, setCurrentPage, setSelectedMedia, addToWatchlist, isInWatchlist, removeFromWatchlist, watchHistory } = useStore()
@@ -201,6 +202,7 @@ export default function Board() {
             </div>
           </section>
         )}
+        <RecoRails />
         <Row title="Coming Soon" items={upcoming} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} />
         <Row title="Critically Acclaimed" items={collection} onItem={goDetail} onToggleList={toggleList} isInList={isInWatchlist} />
         {anime.length > 0 && <AnimeRow items={anime} onItem={goDetail} />}

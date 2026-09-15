@@ -1,11 +1,13 @@
-import { Home, Compass, Search, Bookmark, Settings, UserCircle, BookOpen } from 'lucide-react'
+import { Home, Compass, Search, Bookmark, Settings, UserCircle, BookOpen, Sparkles, Users } from 'lucide-react'
 import { useStore } from '../store'
 import { cn } from '../lib/utils'
 
 const tabs = [
   { id: 'home', label: 'Board', icon: Home },
   { id: 'discover', label: 'Discover', icon: Compass },
+  { id: 'explore', label: 'Explore', icon: Sparkles },
   { id: 'search', label: 'Search', icon: Search },
+  { id: 'social', label: 'Friends', icon: Users },
   { id: 'library', label: 'My List', icon: Bookmark },
   { id: 'guide', label: 'Guide', icon: BookOpen },
   { id: 'settings', label: 'Settings', icon: Settings },

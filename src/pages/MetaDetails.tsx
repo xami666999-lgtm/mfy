@@ -6,7 +6,7 @@ import { useStore } from '../store'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 
 export default function MetaDetails() {
-  const { selectedMedia, setCurrentPage, setSelectedMedia, tmdbApiKey, setCurrentStreamUrl, addToWatchlist, removeFromWatchlist, isInWatchlist, addFavorite, removeFavorite, isFavorite, aiostreamsUrl, externalPlayer } = useStore()
+  const { selectedMedia, setCurrentPage, setSelectedMedia, setSelectedPersonId, tmdbApiKey, setCurrentStreamUrl, addToWatchlist, removeFromWatchlist, isInWatchlist, addFavorite, removeFavorite, isFavorite, aiostreamsUrl, externalPlayer, rateTitle, hideTitle, watchHistory } = useStore()
   const [detail, setDetail] = useState<any>(null)
   const [seasonData, setSeasonData] = useState<any>(null)
   const [activeSeason, setActiveSeason] = useState(0)
@@ -339,7 +339,7 @@ export default function MetaDetails() {
                 <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Cast</h3>
                 <div className="flex gap-3 overflow-x-auto pb-2 scroll-row">
                   {detail.credits.cast.slice(0, 12).map((p: any) => (
-                    <div key={p.id} className="flex-shrink-0 w-[80px] text-center">
+                    <div key={p.id} className="flex-shrink-0 w-[80px] text-center cursor-pointer" onClick={() => { setSelectedPersonId(p.id); setCurrentPage('person') }}>
                       <div className="w-14 h-14 rounded-full mx-auto mb-1.5 overflow-hidden bg-white/[0.04] border border-white/[0.06]">
                         {p.profile_path ? <img src={`${PROFILE_URL}${p.profile_path}`} alt={p.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-white/15 text-xs">{p.name[0]}</div>}
                       </div>
@@ -384,6 +384,74 @@ export default function MetaDetails() {
                 )}
               </div>
             )}
+
+            {detail.keywords && (
+              <div>
+                <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Themes</h3>
+                <div className="flex flex-wrap gap-2">
+                  {(detail.keywords.keywords || detail.keywords.results || []).slice(0, 16).map((k: any) => (
+                    <span key={k.id} className="px-2 py-1 rounded-full bg-white/5 text-[11px] text-white/70">{k.name}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {detail['watch/providers']?.results && (
+              <div>
+                <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Where to watch (TMDB, region US)</h3>
+                <div className="flex flex-wrap gap-2 text-xs text-white/70">
+                  {['flatrate', 'rent', 'buy', 'ads'].flatMap((kind) =>
+                    (detail['watch/providers'].results.US?.[kind] || []).map((p: any) => (
+                      <span key={kind + p.provider_id} className="px-2 py-1 rounded bg-white/5">{p.provider_name} · {kind}</span>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {detail.reviews?.results?.length > 0 && (
+              <div>
+                <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Reviews (TMDB)</h3>
+                <div className="space-y-3">
+                  {detail.reviews.results.slice(0, 5).map((r: any) => (
+                    <div key={r.id} className="text-sm text-white/70 bg-white/[0.03] p-3 rounded-xl">
+                      <div className="text-xs text-white/40 mb-1">{r.author} {r.author_details?.rating ? `· ${r.author_details.rating}/10` : ''}</div>
+                      <p className="line-clamp-4">{r.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {(detail.similar?.results || detail.recommendations?.results) && (
+              <div>
+                <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">More like this</h3>
+                <p className="text-[11px] text-white/35 mb-2">TMDB similar / recommendations for this title.</p>
+                <div className="flex gap-3 overflow-x-auto">
+                  {(detail.recommendations?.results || detail.similar?.results || []).slice(0, 12).map((s: any) => (
+                    <button key={s.id} className="w-24 flex-shrink-0 text-left" onClick={() => setSelectedMedia({ id: s.id, type: selectedMedia?.type || 'movie' })}>
+                      {s.poster_path && <img src={`${POSTER_URL}${s.poster_path}`} className="w-24 h-36 object-cover rounded-lg" alt="" />}
+                      <div className="text-[11px] truncate mt-1">{s.title || s.name}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {detail.credits?.cast && watchHistory.length > 0 && (
+              <div>
+                <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">People you’ve seen before</h3>
+                <p className="text-[11px] text-white/35">Based on titles in your local history (cast overlap is approximate until person pages are opened).</p>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              {[6,7,8,9,10].map((n) => (
+                <button key={n} className="px-3 py-1 rounded-full bg-white/10 text-xs" onClick={() => selectedMedia && rateTitle(selectedMedia.id, selectedMedia.type, n)}>Rate {n}</button>
+              ))}
+              <button className="px-3 py-1 rounded-full bg-white/10 text-xs" onClick={() => selectedMedia && hideTitle(selectedMedia.id, selectedMedia.type)}>Not interested</button>
+              <button className="px-3 py-1 rounded-full bg-white/10 text-xs" onClick={() => setCurrentPage('constellation')}>Constellation</button>
+            </div>
           </div>
         )}
 
