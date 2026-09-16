@@ -5,7 +5,8 @@ import {
 } from 'lucide-react'
 import { useStore } from '../store'
 import { cn } from '../lib/utils'
-import { pushJellyfinProgress } from '../lib/jellyfinSync'
+import { getSimklClientId, getSimklToken } from '../lib/simklAuth'
+import { simklCheckin, simklReady } from '../api/simkl'
 
 const TEST_MP4 = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
 const TEST_HLS = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8'
@@ -32,7 +33,7 @@ function srtToVtt(input: string) {
 }
 
 export default function PlayerPage() {
-  const { selectedMedia, currentStreamUrl, setCurrentStreamUrl, setCurrentPage, upsertHistory, autoplayNext, jellyfinUrl, jellyfinApiKey } = useStore()
+  const { selectedMedia, currentStreamUrl, setCurrentStreamUrl, setCurrentPage, upsertHistory } = useStore()
   const videoRef = useRef<HTMLVideoElement>(null)
   const hlsRef = useRef<any>(null)
   const shakaRef = useRef<any>(null)
@@ -52,7 +53,6 @@ export default function PlayerPage() {
   const trackRef = useRef<HTMLTrackElement>(null)
   const [fullscreen, setFullscreen] = useState(false)
   const [loaded, setLoaded] = useState(Boolean(currentStreamUrl))
-  const [pipActive, setPipActive] = useState(false)
 
   useEffect(() => {
     setStreamUrl(currentStreamUrl || '')
@@ -76,10 +76,14 @@ export default function PlayerPage() {
         watchedAt: new Date().toISOString(),
         profileId: 'default',
       })
-      void pushJellyfinProgress(jellyfinUrl, jellyfinApiKey, selectedMedia.id, selectedMedia.type, v.currentTime, v.duration, v.paused)
-    }, 5000)
+      const cid = getSimklClientId()
+      const tok = getSimklToken()
+      if (simklReady(cid, tok)) {
+        void simklCheckin(cid, tok, selectedMedia.id, selectedMedia.type, (v.currentTime / v.duration) * 100)
+      }
+    }, 15000)
     return () => clearInterval(id)
-  }, [selectedMedia, loaded, jellyfinUrl, jellyfinApiKey])
+  }, [selectedMedia, loaded])
 
   useEffect(() => {
     const v = videoRef.current
@@ -118,7 +122,6 @@ export default function PlayerPage() {
 
   useEffect(() => {
     if (currentStreamUrl) loadStream(currentStreamUrl)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStreamUrl])
 
   async function loadStream(url: string) {
