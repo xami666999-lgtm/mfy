@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useStore, applyTheme } from './store'
 import { setRuntimeTmdbKey } from './api/tmdb'
 import { setRuntimeOmdbKey } from './api/omdb'
-import { pullJellyfinHistory } from './lib/jellyfinSync'
+import { hydrateSimklFromElectron } from './lib/simklAuth'
 import { useKeyboardNav } from './hooks/useKeyboardNav'
 import TitleBar from './components/TitleBar'
 import Navbar from './components/Navbar'
@@ -12,6 +12,7 @@ import Search from './pages/Search'
 import SearchResults from './pages/SearchResults'
 import Library from './pages/Library'
 import Settings from './pages/Settings'
+import SimklPanel from './pages/SimklPanel'
 import MetaDetails from './pages/MetaDetails'
 import PlayerPage from './pages/PlayerPage'
 import Wizard from './pages/Wizard'
@@ -42,8 +43,6 @@ export default function App() {
     setLocalFolders,
     setOmdbApiKey,
     theme,
-    jellyfinUrl,
-    jellyfinApiKey,
   } = useStore()
 
   useKeyboardNav()
@@ -57,6 +56,7 @@ export default function App() {
     if (!api) return
 
     api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
+    void hydrateSimklFromElectron()
 
     api.get('tmdbApiKey').then((k: string) => {
       if (k) {
@@ -89,18 +89,9 @@ export default function App() {
     api.get('externalPlayer').then((p: string) => { if (p) setExternalPlayer(p) })
     api.get('localFolders').then((f: any) => { if (Array.isArray(f)) setLocalFolders(f) })
     api.get('favorites').then((list: any) => {
-      if (Array.isArray(list)) {
-        useStore.setState({ favorites: list })
-      }
+      if (Array.isArray(list)) useStore.setState({ favorites: list })
     })
   }, [])
-
-  useEffect(() => {
-    if (!jellyfinUrl || !jellyfinApiKey) return
-    pullJellyfinHistory(jellyfinUrl, jellyfinApiKey).then((rows) => {
-      if (rows.length) setWatchHistory(rows)
-    })
-  }, [jellyfinUrl, jellyfinApiKey, setWatchHistory])
 
   if (!isSetupComplete) return <Wizard />
 
@@ -118,7 +109,12 @@ export default function App() {
         {currentPage === 'search' && <Search />}
         {currentPage === 'search-results' && <SearchResults />}
         {currentPage === 'library' && <Library />}
-        {currentPage === 'settings' && <Settings />}
+        {currentPage === 'settings' && (
+          <>
+            <SimklPanel />
+            <Settings />
+          </>
+        )}
         {currentPage === 'detail' && <MetaDetails />}
         {currentPage === 'player' && <PlayerPage />}
         {currentPage === 'guide' && <Guide />}
