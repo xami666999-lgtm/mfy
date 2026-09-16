@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore, applyTheme } from './store'
 import { setRuntimeTmdbKey } from './api/tmdb'
 import { setRuntimeOmdbKey } from './api/omdb'
@@ -6,6 +6,7 @@ import { hydrateSimklFromElectron } from './lib/simklAuth'
 import { useKeyboardNav } from './hooks/useKeyboardNav'
 import TitleBar from './components/TitleBar'
 import Navbar from './components/Navbar'
+import Splash from './components/Splash'
 import Board from './pages/Board'
 import Discover from './pages/Discover'
 import Search from './pages/Search'
@@ -24,6 +25,7 @@ import SocialPage from './pages/SocialPage'
 import Constellation from './pages/Constellation'
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true)
   const {
     currentPage,
     isSetupComplete,
@@ -93,6 +95,7 @@ export default function App() {
     })
   }, [])
 
+  if (showSplash) return <Splash onDone={() => setShowSplash(false)} />
   if (!isSetupComplete) return <Wizard />
 
   return (
