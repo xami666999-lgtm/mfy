@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useStore, applyTheme } from './store'
 import { setRuntimeTmdbKey } from './api/tmdb'
 import { setRuntimeOmdbKey } from './api/omdb'
+import { pullJellyfinHistory } from './lib/jellyfinSync'
 import { useKeyboardNav } from './hooks/useKeyboardNav'
 import TitleBar from './components/TitleBar'
 import Navbar from './components/Navbar'
@@ -41,6 +42,8 @@ export default function App() {
     setLocalFolders,
     setOmdbApiKey,
     theme,
+    jellyfinUrl,
+    jellyfinApiKey,
   } = useStore()
 
   useKeyboardNav()
@@ -87,11 +90,17 @@ export default function App() {
     api.get('localFolders').then((f: any) => { if (Array.isArray(f)) setLocalFolders(f) })
     api.get('favorites').then((list: any) => {
       if (Array.isArray(list)) {
-        // hydrate favorites without going through add one-by-one
         useStore.setState({ favorites: list })
       }
     })
   }, [])
+
+  useEffect(() => {
+    if (!jellyfinUrl || !jellyfinApiKey) return
+    pullJellyfinHistory(jellyfinUrl, jellyfinApiKey).then((rows) => {
+      if (rows.length) setWatchHistory(rows)
+    })
+  }, [jellyfinUrl, jellyfinApiKey, setWatchHistory])
 
   if (!isSetupComplete) return <Wizard />
 
