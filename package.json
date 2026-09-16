@@ -1,6 +1,6 @@
 {
   "name": "mfy",
-  "version": "1.7.0",
+  "version": "1.7.3",
   "description": "MFY - Movies For You",
   "main": "dist-electron/main.js",
   "author": "xami666999-lgtm",
@@ -56,25 +56,19 @@
       "target": [
         {
           "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "dir",
-          "arch": [
-            "x64"
-          ]
+          "arch": ["x64"]
         }
       ],
-      "icon": "public/icons/mfy.ico"
+      "icon": "public/icons/mfy.ico",
+      "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "MFY"
+      "shortcutName": "MFY",
+      "artifactName": "MFY-Setup-${version}.${ext}"
     },
     "publish": [
       {
