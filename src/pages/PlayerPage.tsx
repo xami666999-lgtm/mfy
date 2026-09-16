@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import { useStore } from '../store'
 import { cn } from '../lib/utils'
+import { pushJellyfinProgress } from '../lib/jellyfinSync'
 
 const TEST_MP4 = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
 const TEST_HLS = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8'
@@ -31,7 +32,7 @@ function srtToVtt(input: string) {
 }
 
 export default function PlayerPage() {
-  const { selectedMedia, currentStreamUrl, setCurrentStreamUrl, setCurrentPage, upsertHistory, autoplayNext } = useStore()
+  const { selectedMedia, currentStreamUrl, setCurrentStreamUrl, setCurrentPage, upsertHistory, autoplayNext, jellyfinUrl, jellyfinApiKey } = useStore()
   const videoRef = useRef<HTMLVideoElement>(null)
   const hlsRef = useRef<any>(null)
   const shakaRef = useRef<any>(null)
@@ -57,7 +58,6 @@ export default function PlayerPage() {
     setStreamUrl(currentStreamUrl || '')
   }, [currentStreamUrl])
 
-  // Persist continue-watching progress every ~5s while playing
   useEffect(() => {
     const v = videoRef.current
     if (!v || !selectedMedia) return
@@ -76,10 +76,10 @@ export default function PlayerPage() {
         watchedAt: new Date().toISOString(),
         profileId: 'default',
       })
+      void pushJellyfinProgress(jellyfinUrl, jellyfinApiKey, selectedMedia.id, selectedMedia.type, v.currentTime, v.duration, v.paused)
     }, 5000)
     return () => clearInterval(id)
-  }, [selectedMedia, loaded])
-
+  }, [selectedMedia, loaded, jellyfinUrl, jellyfinApiKey])
 
   useEffect(() => {
     const v = videoRef.current
