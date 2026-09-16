@@ -1,0 +1,39 @@
+.mfy-splash {
+  position: fixed; inset: 0; z-index: 9999; width: 100%; height: 100%;
+  border: 0; cursor: pointer; overflow: hidden;
+  background: #02010a; display: grid; place-items: center;
+}
+.mfy-splash-tunnel {
+  position: absolute; inset: -20%;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 8%, rgba(255,20,147,0.08) 18%, transparent 42%),
+    repeating-linear-gradient(90deg, transparent 0 46px, rgba(0,229,255,0.07) 46px 48px),
+    repeating-linear-gradient(0deg, transparent 0 46px, rgba(255,20,147,0.06) 46px 48px);
+  transform: perspective(500px) rotateX(62deg) scale(1.4);
+  animation: mfy-tunnel 2.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  pointer-events: none;
+}
+.mfy-splash-mark {
+  position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 14px;
+  animation: mfy-mark 2.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.mfy-splash-mark img {
+  width: 112px; height: 112px; border-radius: 28px; object-fit: cover;
+  box-shadow: 0 0 40px rgba(255,20,147,0.45), 0 0 80px rgba(0,229,255,0.2);
+}
+.mfy-splash-mark span {
+  font-family: Sora, Manrope, sans-serif;
+  font-size: 42px; font-weight: 800; letter-spacing: 0.28em;
+  background: linear-gradient(90deg, #ff4db8, #00E5FF);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+@keyframes mfy-tunnel {
+  0% { transform: perspective(500px) rotateX(62deg) scale(2.2); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: perspective(500px) rotateX(62deg) scale(0.7); opacity: 0.35; }
+}
+@keyframes mfy-mark {
+  0% { transform: scale(0.55); opacity: 0; filter: blur(8px); }
+  35% { transform: scale(1.06); opacity: 1; filter: blur(0); }
+  100% { transform: scale(1); opacity: 1; }
+}
