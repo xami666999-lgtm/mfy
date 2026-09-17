@@ -10,10 +10,43 @@ const FONTS = [
 ]
 
 const FONT_MS = 110
-const HOLD_MS = 200
+const HOLD_MS = 900
 const EXIT_MS = 450
 
 type Props = { onDone: () => void }
+
+function playSting() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+    const now = ctx.currentTime
+    const master = ctx.createGain()
+    master.gain.setValueAtTime(0.0001, now)
+    master.gain.exponentialRampToValueAtTime(0.16, now + 0.08)
+    master.gain.setValueAtTime(0.14, now + 1.1)
+    master.gain.exponentialRampToValueAtTime(0.0001, now + 2.6)
+    master.connect(ctx.destination)
+
+    const notes = [
+      { f: 164.81, t: 0, d: 0.55 },
+      { f: 196.0, t: 0.28, d: 0.55 },
+      { f: 246.94, t: 0.62, d: 0.9 },
+      { f: 329.63, t: 1.15, d: 1.2 },
+    ]
+    for (const n of notes) {
+      const o = ctx.createOscillator()
+      const g = ctx.createGain()
+      o.type = 'sine'
+      o.frequency.setValueAtTime(n.f, now + n.t)
+      g.gain.setValueAtTime(0.0001, now + n.t)
+      g.gain.exponentialRampToValueAtTime(0.22, now + n.t + 0.04)
+      g.gain.exponentialRampToValueAtTime(0.0001, now + n.t + n.d)
+      o.connect(g)
+      g.connect(master)
+      o.start(now + n.t)
+      o.stop(now + n.t + n.d + 0.05)
+    }
+  } catch { /* autoplay blocked */ }
+}
 
 export default function Intro({ onDone }: Props) {
   const [fontIndex, setFontIndex] = useState(0)
@@ -21,6 +54,7 @@ export default function Intro({ onDone }: Props) {
   const [phase, setPhase] = useState<'show' | 'exit'>('show')
 
   useEffect(() => {
+    playSting()
     const timers: number[] = []
     FONTS.forEach((_, i) => {
       timers.push(window.setTimeout(() => setFontIndex(i), i * FONT_MS))
@@ -34,15 +68,18 @@ export default function Intro({ onDone }: Props) {
     timers.push(
       window.setTimeout(() => onDone(), FONTS.length * FONT_MS + HOLD_MS + EXIT_MS)
     )
-    const safety = window.setTimeout(() => onDone(), 1500)
-    timers.push(safety)
-    return () => timers.forEach(clearTimeout)
+    const skip = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') onDone()
+    }
+    window.addEventListener('keydown', skip)
+    return () => {
+      timers.forEach(clearTimeout)
+      window.removeEventListener('keydown', skip)
+    }
   }, [onDone])
 
   const font = FONTS[fontIndex] || FONTS[0]
-
   const isExiting = phase === 'exit'
-  const slideX = isExiting ? '-100%' : '0'
 
   return (
     <div
@@ -52,8 +89,7 @@ export default function Intro({ onDone }: Props) {
     >
       <div className="mfy-intro-panel mfy-intro-left" />
       <div className="mfy-intro-panel mfy-intro-right" />
-
-      <div className={`mfy-intro-center ${popping ? 'mfy-intro-popping' : ''}`} style={{ transform: slideX }}>
+      <div className={`mfy-intro-center ${popping ? 'mfy-intro-popping' : ''}`}>
         <svg className="mfy-intro-mark" viewBox="0 0 100 100" aria-hidden="true">
           <defs>
             <linearGradient id="mfyIntroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
