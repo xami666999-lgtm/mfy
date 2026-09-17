@@ -57,7 +57,7 @@ export default function App() {
     setTheme,
     setOmdbApiKey,
     setMdblistApiKey,
-setExternalPlayer,
+    setExternalPlayer,
     setLocalFolders,
     theme,
   } = useStore()
@@ -68,13 +68,11 @@ setExternalPlayer,
     applyTheme(theme)
   }, [theme])
 
-  // Initialize store from persisted storage
   useEffect(() => {
     const { init } = useStore.getState()
     init()
   }, [])
 
-  // Replay the intro splash whenever the window is shown (first launch + re-open from tray)
   useEffect(() => {
     const api = (window as any).electronAPI
     if (!api?.onWindowShown) return
@@ -83,7 +81,6 @@ setExternalPlayer,
     })
   }, [])
 
-  // Surface a downloaded update inside the app (after login)
   useEffect(() => {
     const api = (window as any).electronAPI
     if (!api?.onUpdateDownloaded) return
@@ -97,13 +94,8 @@ setExternalPlayer,
     const api = (window as any).electronAPI
     if (!api) return
 
-api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
+    api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
 
-    // A TMDB key is always available (baked default + optional user override), so
-    // the onboarding wizard only ever shows on a truly fresh install. Once loaded,
-    // mark setup as complete so the recurring "Welcome to MFY" wizard no longer
-    // reappears on every app re-open. A stale user-stored key is validated and
-    // replaced with the baked default so the catalog can never render empty.
     api.get('tmdbApiKey').then(async (k: string) => {
       const stored = (k && typeof k === 'string' && k.trim()) || ''
       let key = stored || DEFAULT_TMDB_API_KEY
@@ -149,35 +141,14 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
     api.get('externalPlayer').then((p: string) => { if (p) setExternalPlayer(p) })
     api.get('localFolders').then((f: any) => { if (Array.isArray(f)) setLocalFolders(f) })
     api.get('favorites').then((list: any) => {
-      if (Array.isArray(list)) {
-        // hydrate favorites without going through add one-by-one
-        useStore.setState({ favorites: list })
-      }
+      if (Array.isArray(list)) useStore.setState({ favorites: list })
     })
 
-    // New release notifications: check watchlist/favorites once per launch for
-    // new seasons/episodes and surface OS notifications (throttled to once/day).
     setTimeout(() => {
       checkReleases().catch(() => {})
     }, 12000)
   }, [])
 
-  // Track whether intro has been shown — only show once per install.
-  const [introSeen, setIntroSeen] = useState(() => {
-    const v = localStorage.getItem('mfy-intro-seen')
-    return v ? JSON.parse(v) : false
-  })
-
-  // On first launch, show legacy "Welcome to MFY" branding briefly, then never show intro again.
-  useEffect(() => {
-    if (!introSeen) {
-      setTimeout(() => setIntroSeen(true), 2000)
-    }
-  }, [introSeen])
-
-  // For each TV title in the watchlist/favorites, check if a new season was
-  // released since the last notification (stored per-title). Uses the in-app
-  // banner path so results show whether or not a key is set.
   async function checkReleases() {
     try { if (localStorage.getItem('mfy-episode-alerts') === '0') return } catch {}
     const today = new Date().toISOString().slice(0, 10)
@@ -221,15 +192,14 @@ api.isSetupComplete().then((complete: boolean) => setSetupComplete(complete))
     }
   }
 
+  if (showIntro) return <Intro onDone={() => setShowIntro(false)} />
   if (!isSetupComplete) return <Wizard />
-
   if (!authenticated) return <LoginGate />
 
   return (
     <div className="h-screen flex flex-col bg-[#08080e]">
       <RemoteHelp />
       <IdleWall />
-      {false && !introSeen && <Intro onDone={() => { setShowIntro(false); setIntroSeen(true) }} />}
       {updateInfo && !updateDismissed && currentPage !== 'player' && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#14101a] border border-[#FF1493]/30 shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
           <div className="w-2 h-2 rounded-full bg-[#FF1493] animate-pulse" />
