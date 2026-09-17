@@ -1,0 +1,49 @@
+name: Release APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build web UI
+        run: npx vite build
+      - name: Copy UI into Android assets
+        run: |
+          mkdir -p android/app/src/main/assets
+          cp -r dist/. android/app/src/main/assets/
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+      - name: Assemble APK
+        working-directory: android
+        run: gradle assembleRelease
+      - name: Rename APK
+        run: |
+          mkdir -p out
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk out/MFY.apk || \
+          cp android/app/build/outputs/apk/release/app-release.apk out/MFY.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MFY-apk
+          path: out/MFY.apk
+      - name: Attach to GitHub release v1.7.6
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload v1.7.6 out/MFY.apk --clobber
+        continue-on-error: true
