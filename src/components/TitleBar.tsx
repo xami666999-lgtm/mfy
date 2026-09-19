@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Minimize, Maximize2, X, Menu, Music, Sun, Moon, Monitor } from 'lucide-react'
+import { Minimize, Maximize2, X, Menu, Gamepad, Sun, Moon, Monitor, Tv } from 'lucide-react'
 import { useStore } from '@/store'
 import { cn, Button } from '@/components/ui/Button'
 
@@ -50,9 +50,9 @@ export const TitleBar: React.FC = () => {
         </Button>
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-cyan-500 flex items-center justify-center shadow-glow-pink">
-            <Music className="w-5 h-5 text-white" />
+            <Gamepad className="w-5 h-5 text-white" />
           </div>
-          <span className="font-display font-bold text-lg gradient-text">MFY Music</span>
+          <span className="font-display font-bold text-lg gradient-text">MFY Emulator</span>
         </div>
       </div>
 
@@ -74,7 +74,7 @@ export const TitleBar: React.FC = () => {
           className={cn('text-white/60 hover:text-white', miniPlayerOpen && 'text-pink-400')}
           aria-label={miniPlayerOpen ? 'Hide mini player' : 'Show mini player'}
         >
-          <Music className="w-5 h-5" />
+          <Tv className="w-5 h-5" />
         </Button>
 
         <div className="w-px h-6 bg-white/10 mx-1" />

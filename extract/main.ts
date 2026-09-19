@@ -1,33 +1,12 @@
 import { app, BrowserWindow, ipcMain, dialog, shell, Notification, Tray, Menu, nativeImage, globalShortcut, screen, powerMonitor } from 'electron'
-
-function stripFunctions(obj: any): any {
-  if (obj === null || obj === undefined) return obj
-  if (typeof obj === 'function') return undefined
-  if (Array.isArray(obj)) return obj.map(stripFunctions).filter(v => v !== undefined)
-  if (typeof obj === 'object') {
-    const result: any = {}
-    for (const [key, value] of Object.entries(obj)) {
-      const stripped = stripFunctions(value)
-      if (stripped !== undefined) result[key] = stripped
-    }
-    return result
-  }
-  return obj
-}
-
-function wrapHandler(handler: (...args: any[]) => Promise<any>) {
-  return async (...args: any[]) => {
-    const result = await handler(...args)
-    return stripFunctions(result)
-  }
-}
 import path from 'path'
 import fs from 'fs'
 import Store from 'electron-store'
+import { database } from './database'
 import { spawn, execFile } from 'child_process'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
-import { emulatorProvider, builtInProviders, getProvider, getProviderForSystem, EmulatorProfile } from './emulator-provider'
+import { emulatorProvider, builtInProviders, getProvider, getProviderForSystem } from './emulator-provider'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -35,7 +14,6 @@ const __dirname = dirname(__filename)
 const store = new Store()
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
-let database: any = null
 
 const isDev = !app.isPackaged
 const userDataPath = app.getPath('userData')
@@ -43,19 +21,6 @@ const cacheDir = path.join(userDataPath, 'emulator-cache')
 const downloadsDir = path.join(userDataPath, 'downloads')
 const biosDir = path.join(userDataPath, 'bios')
 const savesDir = path.join(userDataPath, 'saves')
-
-async function initializeDatabase() {
-  try {
-    const { database: db } = await import('./database')
-    database = db
-    // Trigger lazy initialization
-    database.getSystems()
-    console.log('Database initialized successfully')
-  } catch (error) {
-    console.error('Database initialization failed:', error)
-    database = null
-  }
-}
 
 function createWindow() {
   const primaryDisplay = screen.getPrimaryDisplay()
@@ -85,7 +50,7 @@ function createWindow() {
       webSecurity: false,
     },
     show: false,
-    title: 'MFY Emulator',
+    title: 'MFY',
     icon: windowIcon,
   })
 
@@ -98,8 +63,6 @@ function createWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show()
-    // Initialize database after window is shown
-    initializeDatabase()
   })
 
   mainWindow.on('close', (e) => {
@@ -145,14 +108,14 @@ function createTray() {
   tray = new Tray(trayIcon.resize({ width: 16, height: 16 }))
   
   const contextMenu = Menu.buildFromTemplate([
-    { label: 'MFY Emulator', enabled: false },
+    { label: 'MFY', enabled: false },
     { type: 'separator' },
-    { label: 'Show MFY Emulator', click: () => mainWindow?.show() },
+    { label: 'Show MFY', click: () => mainWindow?.show() },
     { type: 'separator' },
     { label: 'Quit', click: () => { app.isQuitting = true; app.quit() } },
   ])
   tray.setContextMenu(contextMenu)
-  tray.setToolTip('MFY Emulator - All-in-one emulator frontend')
+  tray.setToolTip('MFY - Emulator Frontend')
   
   tray.on('double-click', () => mainWindow?.show())
 }
@@ -194,9 +157,7 @@ app.on('window-all-closed', () => {
 
 app.on('will-quit', () => {
   unregisterGlobalShortcuts()
-  if (database) {
-    database.close()
-  }
+  database.close()
 })
 
 // Window controls
@@ -209,183 +170,172 @@ ipcMain.on('window-maximize', () => {
   }
 })
 ipcMain.on('window-close', () => mainWindow?.close())
-ipcMain.handle('window-is-maximized', wrapHandler(() => mainWindow?.isMaximized() ?? false))
+ipcMain.handle('window-is-maximized', () => mainWindow?.isMaximized() ?? false)
 
-// Database operations - with safety checks
-function ensureDb() {
-  if (!database) {
-    throw new Error('Database not initialized yet')
-  }
-  return database
-}
-
-ipcMain.handle('db-run', wrapHandler(async (_event, query: string, params: any[] = []) => {
+// Database operations
+ipcMain.handle('db-run', (_event, query: string, params: any[] = []) => {
   try {
-    const db = ensureDb()
-    const stmt = db.prepare(query)
+    const stmt = database.prepare(query)
     const result = stmt.run(...params)
     return { success: true, changes: result.changes, lastInsertRowid: result.lastInsertRowid }
   } catch (error: any) {
     return { success: false, error: error.message }
   }
-}))
+})
 
-ipcMain.handle('db-get', wrapHandler(async (_event, query: string, params: any[] = []) => {
+ipcMain.handle('db-get', (_event, query: string, params: any[] = []) => {
   try {
-    const db = ensureDb()
-    const stmt = db.prepare(query)
+    const stmt = database.prepare(query)
     const result = stmt.get(...params)
     return { success: true, data: result }
   } catch (error: any) {
     return { success: false, error: error.message }
   }
-}))
+})
 
-ipcMain.handle('db-all', wrapHandler(async (_event, query: string, params: any[] = []) => {
+ipcMain.handle('db-all', (_event, query: string, params: any[] = []) => {
   try {
-    const db = ensureDb()
-    const stmt = db.prepare(query)
+    const stmt = database.prepare(query)
     const result = stmt.all(...params)
     return { success: true, data: result }
   } catch (error: any) {
     return { success: false, error: error.message }
   }
-}))
+})
 
-ipcMain.handle('db-transaction', wrapHandler(async (_event, queries: { query: string; params: any[] }[]) => {
+ipcMain.handle('db-transaction', (_event, queries: { query: string; params: any[] }[]) => {
   try {
-    const db = ensureDb()
-    const transaction = db.transaction(queries)
+    const transaction = database.transaction(queries)
     transaction(queries)
     return { success: true }
   } catch (error: any) {
     return { success: false, error: error.message }
   }
-}))
+})
 
 // Store operations
-ipcMain.handle('store-get', wrapHandler((_event, key: string) => store.get(key)))
-ipcMain.handle('store-set', wrapHandler((_event, key: string, value: unknown) => store.set(key, value)))
-ipcMain.handle('store-delete', wrapHandler((_event, key: string) => store.delete(key)))
+ipcMain.handle('store-get', (_event, key: string) => store.get(key))
+ipcMain.handle('store-set', (_event, key: string, value: unknown) => store.set(key, value))
+ipcMain.handle('store-delete', (_event, key: string) => store.delete(key))
 
 // File operations
-ipcMain.handle('select-folder', wrapHandler(async () => {
+ipcMain.handle('select-folder', async () => {
   const result = await dialog.showOpenDialog(mainWindow!, {
     properties: ['openDirectory'],
   })
   return result.filePaths[0] || null
-}))
+})
 
-ipcMain.handle('select-file', wrapHandler(async (_event, filters?: Electron.FileFilter[]) => {
+ipcMain.handle('select-file', async (_event, filters?: Electron.FileFilter[]) => {
   const result = await dialog.showOpenDialog(mainWindow!, {
     properties: ['openFile'],
     filters,
   })
   return result.filePaths[0] || null
-}))
+})
 
-ipcMain.handle('select-files', wrapHandler(async (_event, filters?: Electron.FileFilter[]) => {
+ipcMain.handle('select-files', async (_event, filters?: Electron.FileFilter[]) => {
   const result = await dialog.showOpenDialog(mainWindow!, {
     properties: ['openFile', 'multiSelections'],
     filters,
   })
   return result.filePaths
-}))
+})
 
-ipcMain.handle('save-file', wrapHandler(async (_event, defaultPath: string, filters?: Electron.FileFilter[]) => {
+ipcMain.handle('save-file', async (_event, defaultPath: string, filters?: Electron.FileFilter[]) => {
   const result = await dialog.showSaveDialog(mainWindow!, {
     defaultPath,
     filters,
   })
   return result.filePath || null
-}))
+})
 
-ipcMain.handle('read-file', wrapHandler(async (_event, filePath: string) => {
+ipcMain.handle('read-file', async (_event, filePath: string) => {
   try {
     const data = fs.readFileSync(filePath)
     return { success: true, data: data.toString('base64') }
   } catch (error: any) {
     return { success: false, error: error.message }
   }
-}))
+})
 
-ipcMain.handle('write-file', wrapHandler(async (_event, filePath: string, data: string) => {
+ipcMain.handle('write-file', async (_event, filePath: string, data: string) => {
   try {
     fs.writeFileSync(filePath, Buffer.from(data, 'base64'))
     return { success: true }
   } catch (error: any) {
     return { success: false, error: error.message }
   }
-}))
+})
 
-ipcMain.handle('delete-file', wrapHandler(async (_event, filePath: string) => {
+ipcMain.handle('delete-file', async (_event, filePath: string) => {
   try {
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
     return { success: true }
   } catch (error: any) {
     return { success: false, error: error.message }
   }
-}))
+})
 
-ipcMain.handle('file-exists', wrapHandler((_event, filePath: string) => {
+ipcMain.handle('file-exists', (_event, filePath: string) => {
   return fs.existsSync(filePath)
-}))
+})
 
-ipcMain.handle('get-app-path', wrapHandler(() => app.getAppPath()))
-ipcMain.handle('get-user-data-path', wrapHandler(() => userDataPath))
-ipcMain.handle('get-cache-dir', wrapHandler(() => cacheDir))
-ipcMain.handle('get-downloads-dir', wrapHandler(() => downloadsDir))
-ipcMain.handle('get-bios-dir', wrapHandler(() => biosDir))
-ipcMain.handle('get-saves-dir', wrapHandler(() => savesDir))
+ipcMain.handle('get-app-path', () => app.getAppPath())
+ipcMain.handle('get-user-data-path', () => userDataPath)
+ipcMain.handle('get-cache-dir', () => cacheDir)
+ipcMain.handle('get-downloads-dir', () => downloadsDir)
+ipcMain.handle('get-bios-dir', () => biosDir)
+ipcMain.handle('get-saves-dir', () => savesDir)
 
 // Directory operations
-ipcMain.handle('read-dir', wrapHandler(async (_event, dirPath: string) => {
+ipcMain.handle('read-dir', async (_event, dirPath: string) => {
   try {
     const entries = fs.readdirSync(dirPath, { withFileTypes: true })
     return { success: true, data: entries.map(e => ({ name: e.name, isDirectory: e.isDirectory(), isFile: e.isFile() })) }
   } catch (error: any) {
     return { success: false, error: error.message }
   }
-}))
+})
 
-ipcMain.handle('mkdir', wrapHandler(async (_event, dirPath: string) => {
+ipcMain.handle('mkdir', async (_event, dirPath: string) => {
   try {
     fs.mkdirSync(dirPath, { recursive: true })
     return { success: true }
   } catch (error: any) {
     return { success: false, error: error.message }
   }
-}))
+})
 
-ipcMain.handle('copy-file', wrapHandler(async (_event, src: string, dest: string) => {
+ipcMain.handle('copy-file', async (_event, src: string, dest: string) => {
   try {
     fs.copyFileSync(src, dest)
     return { success: true }
   } catch (error: any) {
     return { success: false, error: error.message }
   }
-}))
+})
 
-ipcMain.handle('move-file', wrapHandler(async (_event, src: string, dest: string) => {
+ipcMain.handle('move-file', async (_event, src: string, dest: string) => {
   try {
     fs.renameSync(src, dest)
     return { success: true }
   } catch (error: any) {
     return { success: false, error: error.message }
   }
-}))
+})
 
-ipcMain.handle('stat-file', wrapHandler(async (_event, filePath: string) => {
+ipcMain.handle('stat-file', async (_event, filePath: string) => {
   try {
     const stats = fs.statSync(filePath)
     return { success: true, data: { size: stats.size, mtime: stats.mtimeMs, isDirectory: stats.isDirectory(), isFile: stats.isFile() } }
   } catch (error: any) {
     return { success: false, error: error.message }
   }
-}))
+})
 
 // Process execution
-ipcMain.handle('execute-command', wrapHandler(async (_event, command: string, args: string[], options?: { cwd?: string; env?: Record<string, string> }) => {
+ipcMain.handle('execute-command', async (_event, command: string, args: string[], options?: { cwd?: string; env?: Record<string, string> }) => {
   return new Promise((resolve) => {
     const child = spawn(command, args, {
       cwd: options?.cwd,
@@ -403,9 +353,9 @@ ipcMain.handle('execute-command', wrapHandler(async (_event, command: string, ar
       resolve({ success: false, code: -1, stdout, stderr: error.message })
     })
   })
-}))
+})
 
-ipcMain.handle('launch-emulator', wrapHandler(async (_event, executable: string, args: string[], options?: { cwd?: string; env?: Record<string, string> }) => {
+ipcMain.handle('launch-emulator', async (_event, executable: string, args: string[], options?: { cwd?: string; env?: Record<string, string> }) => {
   return new Promise((resolve) => {
     try {
       const child = spawn(executable, args, {
@@ -421,12 +371,12 @@ ipcMain.handle('launch-emulator', wrapHandler(async (_event, executable: string,
       resolve({ success: false, error: error.message })
     }
   })
-}))
+})
 
 // Download manager
 const downloadQueue = new Map<string, { controller: AbortController; startTime: number }>()
 
-ipcMain.handle('download-start', wrapHandler(async (_event, download: any) => {
+ipcMain.handle('download-start', async (_event, download: any) => {
   const controller = new AbortController()
   const startTime = Date.now()
   downloadQueue.set(download.id, { controller, startTime })
@@ -470,18 +420,18 @@ ipcMain.handle('download-start', wrapHandler(async (_event, download: any) => {
     if (fs.existsSync(download.destination)) fs.unlinkSync(download.destination)
     return { success: false, error: error.message }
   }
-}))
+})
 
-ipcMain.handle('download-pause', wrapHandler((_event, id: string) => {
+ipcMain.handle('download-pause', (_event, id: string) => {
   const entry = downloadQueue.get(id)
   if (entry) {
     entry.controller.abort()
     return { success: true }
   }
   return { success: false, error: 'Download not found' }
-}))
+})
 
-ipcMain.handle('download-cancel', wrapHandler((_event, id: string) => {
+ipcMain.handle('download-cancel', (_event, id: string) => {
   const entry = downloadQueue.get(id)
   if (entry) {
     entry.controller.abort()
@@ -489,7 +439,7 @@ ipcMain.handle('download-cancel', wrapHandler((_event, id: string) => {
     return { success: true }
   }
   return { success: false, error: 'Download not found' }
-}))
+})
 
 // Game launching
 ipcMain.handle('launch-game', async (_event, game: any, emulator: any, options: any) => {
@@ -527,8 +477,7 @@ ipcMain.handle('launch-game', async (_event, game: any, emulator: any, options: 
 // Emulator management
 ipcMain.handle('emulator-detect', async (_event, emulatorId: string, executablePath?: string) => {
   try {
-    const db = ensureDb()
-    const emulator = db.getEmulator(emulatorId)
+    const emulator = database.getEmulator(emulatorId)
     if (!emulator) return { success: false, error: 'Emulator not found' }
     
     const checkPath = executablePath || emulator.executablePath || emulator.installPath
@@ -565,20 +514,20 @@ ipcMain.handle('emulator-detect', async (_event, emulatorId: string, executableP
 })
 
 ipcMain.handle('emulator-install', async (_event, emulatorId: string, options: any) => {
+  // This will be implemented with actual installer logic
   return { success: false, error: 'Not implemented yet - use download manager' }
 })
 
 ipcMain.handle('emulator-uninstall', async (_event, emulatorId: string) => {
   try {
-    const db = ensureDb()
-    const emulator = db.getEmulator(emulatorId)
+    const emulator = database.getEmulator(emulatorId)
     if (!emulator || !emulator.installPath) return { success: false, error: 'Emulator not installed' }
     
     if (fs.existsSync(emulator.installPath)) {
       fs.rmSync(emulator.installPath, { recursive: true, force: true })
     }
     
-    db.updateEmulatorInstall(emulatorId, 0, '', '', '', '', '', '', '', '')
+    database.updateEmulatorInstall(emulatorId, 0, '', '', '', '', '', '', '', '')
     return { success: true }
   } catch (error: any) {
     return { success: false, error: error.message }
@@ -586,27 +535,21 @@ ipcMain.handle('emulator-uninstall', async (_event, emulatorId: string) => {
 })
 
 ipcMain.handle('emulator-open-folder', async (_event, emulatorId: string) => {
-  try {
-    const db = ensureDb()
-    const emulator = db.getEmulator(emulatorId)
-    if (!emulator || !emulator.installPath || !fs.existsSync(emulator.installPath)) {
-      return { success: false, error: 'Install folder not found' }
-    }
-    shell.openPath(emulator.installPath)
-    return { success: true }
-  } catch (error: any) {
-    return { success: false, error: error.message }
+  const emulator = database.getEmulator(emulatorId)
+  if (!emulator || !emulator.installPath || !fs.existsSync(emulator.installPath)) {
+    return { success: false, error: 'Install folder not found' }
   }
+  shell.openPath(emulator.installPath)
+  return { success: true }
 })
 
 ipcMain.handle('emulator-configure', async (_event, emulatorId: string) => {
+  const emulator = database.getEmulator(emulatorId)
+  if (!emulator || !emulator.executablePath || !fs.existsSync(emulator.executablePath)) {
+    return { success: false, error: 'Emulator not installed' }
+  }
+  
   try {
-    const db = ensureDb()
-    const emulator = db.getEmulator(emulatorId)
-    if (!emulator || !emulator.executablePath || !fs.existsSync(emulator.executablePath)) {
-      return { success: false, error: 'Emulator not installed' }
-    }
-    
     spawn(emulator.executablePath, ['--config'], { detached: true, stdio: 'ignore', windowsHide: true }).unref()
     return { success: true }
   } catch (error: any) {
@@ -617,8 +560,7 @@ ipcMain.handle('emulator-configure', async (_event, emulatorId: string) => {
 // BIOS management
 ipcMain.handle('bios-import', async (_event, systemId: string, files: string[]) => {
   try {
-    const db = ensureDb()
-    const system = db.getSystem(systemId)
+    const system = database.getSystem(systemId)
     if (!system) return { success: false, error: 'System not found' }
     
     const systemBiosDir = path.join(biosDir, systemId)
@@ -640,8 +582,7 @@ ipcMain.handle('bios-import', async (_event, systemId: string, files: string[]) 
 
 ipcMain.handle('bios-scan', async (_event, systemId: string) => {
   try {
-    const db = ensureDb()
-    const system = db.getSystem(systemId)
+    const system = database.getSystem(systemId)
     if (!system) return { success: false, error: 'System not found' }
     
     const biosFiles = system.biosFiles ? JSON.parse(system.biosFiles) : []
@@ -679,11 +620,10 @@ ipcMain.handle('bios-scan', async (_event, systemId: string) => {
 // Save management
 ipcMain.handle('saves-scan', async (_event, gameId: string, emulatorId: string) => {
   try {
-    const db = ensureDb()
-    const emulator = db.getEmulator(emulatorId)
+    const emulator = database.getEmulator(emulatorId)
     if (!emulator || !emulator.savePath) return { success: false, error: 'Emulator save path not configured' }
     
-    const game = db.getGame(gameId)
+    const game = database.getGame(gameId)
     if (!game) return { success: false, error: 'Game not found' }
     
     const savePath = emulator.savePath
@@ -726,9 +666,12 @@ ipcMain.handle('saves-scan', async (_event, gameId: string, emulatorId: string) 
 
 ipcMain.handle('save-backup', async (_event, gameId: string, name: string, description: string, isAuto: boolean) => {
   try {
-    const db = ensureDb()
-    const game = db.getGame(gameId)
+    const game = database.getGame(gameId)
     if (!game) return { success: false, error: 'Game not found' }
+    
+    const saves = await ipcMain.emit('saves-scan', gameId, game.emulatorId || '')
+    // This would need the emulator ID to scan properly
+    // Simplified for now
     
     const backupId = crypto.randomUUID()
     const backupPath = path.join(savesDir, 'backups', gameId, `${backupId}.zip`)
@@ -738,7 +681,7 @@ ipcMain.handle('save-backup', async (_event, gameId: string, name: string, descr
     // Would zip the save files here
     const size = 0 // Calculate actual size
     
-    db.insertSaveBackup({
+    database.insertSaveBackup({
       id: backupId,
       gameId,
       name,
@@ -757,8 +700,7 @@ ipcMain.handle('save-backup', async (_event, gameId: string, name: string, descr
 
 ipcMain.handle('save-restore', async (_event, backupId: string) => {
   try {
-    const db = ensureDb()
-    const backup = db.getSaveBackup(backupId)
+    const backup = database.getSaveBackup(backupId)
     if (!backup) return { success: false, error: 'Backup not found' }
     
     // Would extract zip and restore files
@@ -784,13 +726,12 @@ ipcMain.handle('scan-game-folders', async (_event, systemId: string) => {
 // Enhanced game launching with profiles
 ipcMain.handle('launch-game-with-profile', async (_event, gameId: string, profileId?: string, options?: { fullscreen?: boolean; resolution?: string }) => {
   try {
-    const db = ensureDb()
-    const game = db.getGame(gameId)
+    const game = database.getGame(gameId)
     if (!game) return { success: false, error: 'Game not found' }
 
     let profile: EmulatorProfile | undefined
     if (profileId) {
-      profile = db.getControllerProfile(profileId)
+      profile = database.getControllerProfile(profileId)
       if (!profile) profile = { id: profileId, name: profileId }
     }
 
@@ -805,6 +746,7 @@ ipcMain.handle('launch-game-with-profile', async (_event, gameId: string, profil
 })
 
 // Controller detection
+ipcMain.handle('controllers-detect', async () => {
 ipcMain.handle('controllers-detect', async () => {
   try {
     // Use Windows APIs or a library to detect controllers
@@ -835,10 +777,12 @@ ipcMain.handle('theme-install', async (_event, themePath: string) => {
 
 // Metadata fetching (placeholder for now)
 ipcMain.handle('metadata-fetch', async (_event, game: any) => {
+  // Will implement with actual metadata providers (IGDB, GameDB, etc.)
   return { success: false, error: 'Not implemented yet' }
 })
 
 ipcMain.handle('artwork-fetch', async (_event, game: any, types: string[]) => {
+  // Will implement with actual artwork providers
   return { success: false, error: 'Not implemented yet' }
 })
 

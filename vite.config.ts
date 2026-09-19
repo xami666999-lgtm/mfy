@@ -12,6 +12,9 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    rollupOptions: {
+      external: ['better-sqlite3', 'electron-store', 'electron-updater', 'electron'],
+    },
   },
   server: {
     port: 5173,
