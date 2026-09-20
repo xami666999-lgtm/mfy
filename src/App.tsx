@@ -37,6 +37,7 @@ import IdleWall from './components/IdleWall'
 import IntroSkip from './components/IntroSkip'
 import CalendarPage from './pages/CalendarPage'
 import DetailExtras from './components/DetailExtras'
+import EpisodePanel from './components/EpisodePanel'
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true)
@@ -158,6 +159,7 @@ export default function App() {
       <RemoteHelp />
       <IdleWall />
       <IntroSkip />
+      <EpisodePanel />
       {updateInfo && !updateDismissed && currentPage !== 'player' && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#14101a] border border-white/15 shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
           <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
