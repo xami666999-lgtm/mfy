@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../store'
-import { streamingServices } from '../api/streaming'
 import BugReport from './BugReport'
-import { Search, Home, Film, Tv, Sparkles, BookOpen, Youtube, Music, Trophy, Radio, Bookmark, Settings, PanelLeftClose, PanelLeft } from 'lucide-react'
+import { Search, Home, Film, Tv, Sparkles, BookOpen, Youtube, Music, Trophy, Radio, Bookmark, Settings, PanelLeftClose, PanelLeft, CalendarDays } from 'lucide-react'
 
 const LINKS: [string, string, any][] = [
   ['home', 'Home', Home],
   ['movies', 'Movies', Film],
   ['tv', 'TV', Tv],
   ['anime', 'Anime', Sparkles],
+  ['calendar', 'Calendar', CalendarDays],
   ['manga', 'Manga', BookOpen],
   ['comics', 'Comics', BookOpen],
   ['books', 'Books', BookOpen],
@@ -21,7 +21,7 @@ const LINKS: [string, string, any][] = [
 ]
 
 export default function AppleRail() {
-  const { currentPage, setCurrentPage, setSelectedProviderId, currentProfile } = useStore()
+  const { currentPage, setCurrentPage, currentProfile } = useStore()
   const [q, setQ] = useState('')
   const [bug, setBug] = useState(false)
   const [hidden, setHidden] = useState(() => {
@@ -64,10 +64,10 @@ export default function AppleRail() {
     <aside className="pointer-events-none absolute z-40 left-4 top-4 bottom-4 w-[280px]">
       <div className="pointer-events-auto h-full rounded-[28px] bg-black/55 backdrop-blur-2xl border border-white/10 shadow-2xl p-3 flex flex-col overflow-y-auto">
         <div className="flex items-center gap-2 px-2 py-2 mb-1">
-          <div className="w-8 h-8 rounded-full bg-[#FF1493] grid place-items-center text-xs font-black">{(currentProfile?.name || 'M')[0]}</div>
+          <div className="w-8 h-8 rounded-full bg-white text-black grid place-items-center text-xs font-black">{(currentProfile?.name || 'M')[0]}</div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold truncate">{currentProfile?.name || 'MFY'}</p>
-            <p className="text-[10px] text-white/35">1.6.11</p>
+            <p className="text-sm font-semibold truncate font-display">{currentProfile?.name || 'MFY'}</p>
+            <p className="text-[10px] text-white/35">1.7.7</p>
           </div>
           <button type="button" className="h-8 w-8 rounded-full hover:bg-white/10 grid place-items-center" title="Hide sidebar ([)" onClick={() => toggle(true)}>
             <PanelLeftClose size={16} />
@@ -90,7 +90,7 @@ export default function AppleRail() {
             {label}
           </button>
         ))}
-        <button type="button" className="mt-auto text-[11px] text-[#FF1493] px-3 py-2" onClick={() => setBug(true)}>Bug</button>
+        <button type="button" className="mt-auto text-[11px] text-white/50 px-3 py-2" onClick={() => setBug(true)}>Bug</button>
         {bug && <BugReport onClose={() => setBug(false)} />}
       </div>
     </aside>
