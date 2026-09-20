@@ -34,6 +34,9 @@ import PrintHome from './pages/PrintHome'
 import MangaReader from './pages/MangaReader'
 import People from './pages/People'
 import IdleWall from './components/IdleWall'
+import IntroSkip from './components/IntroSkip'
+import CalendarPage from './pages/CalendarPage'
+import DetailExtras from './components/DetailExtras'
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true)
@@ -41,6 +44,7 @@ export default function App() {
   const [updateDismissed, setUpdateDismissed] = useState(false)
   const {
     currentPage,
+    selectedMedia,
     isSetupComplete,
     authenticated,
     setSetupComplete,
@@ -119,7 +123,7 @@ export default function App() {
     api.get('aiostreamsUrl').then((u: string) => { if (u) setAiostreamsUrl(u) })
     api.get('jellyfinUrl').then((u: string) => { if (u) setJellyfinUrl(u) })
     api.get('jellyfinApiKey').then((k: string) => { if (k) setJellyfinApiKey(k) })
-    api.get('watchlist').then((list: any) => { if (Array.isArray(list)) setWatchlist(list) })
+    api.get('watchlist').then((list: any) => { if (Array.isArray(list) ) setWatchlist(list) })
     api.get('watchHistory').then((list: any) => { if (Array.isArray(list)) setWatchHistory(list) })
     api.loadProgress?.().then((disk: any[]) => { if (Array.isArray(disk) && disk.length) setWatchHistory(disk) }).catch(() => {})
     api.onFlushProgress?.(() => {
@@ -143,72 +147,26 @@ export default function App() {
     api.get('favorites').then((list: any) => {
       if (Array.isArray(list)) useStore.setState({ favorites: list })
     })
-
-    setTimeout(() => {
-      checkReleases().catch(() => {})
-    }, 12000)
   }, [])
-
-  async function checkReleases() {
-    try { if (localStorage.getItem('mfy-episode-alerts') === '0') return } catch {}
-    const today = new Date().toISOString().slice(0, 10)
-    try { if (localStorage.getItem('mfy-notify-day') === today) return } catch {}
-    const api = (window as any).electronAPI
-    const { watchlist, favorites } = useStore.getState()
-    const titles = [...watchlist, ...favorites].filter((t: any) => t.mediaType === 'tv' || t.mediaType === 'anime')
-    const unique = Array.from(new Map(titles.map((t: any) => [`${t.mediaType}-${t.mediaId}`, t])).values()).slice(0, 12)
-    if (!unique.length) return
-    let lastNotified: Record<string, string> = {}
-    try { lastNotified = JSON.parse(localStorage.getItem('mfy-release-notified') || '{}') } catch {}
-    const notifications: { title: string; body: string }[] = []
-    for (const t of unique) {
-      try {
-        const key = `tv-${t.mediaId}`
-        const d = await tmdb.getTVDetail(t.mediaId)
-        const ep = d?.last_episode_to_air
-        if (!ep?.air_date) continue
-        const stamp = `${ep.season_number}-${ep.episode_number}-${ep.air_date}`
-        const prev = lastNotified[key]
-        if (!prev) {
-          lastNotified[key] = stamp
-          continue
-        }
-        if (prev === stamp) continue
-        const age = (Date.now() - new Date(ep.air_date + 'T12:00:00').getTime()) / 86400000
-        lastNotified[key] = stamp
-        if (age < 0 || age > 4) continue
-        notifications.push({
-          title: d.name || t.title,
-          body: `S${ep.season_number}E${ep.episode_number} aired ${ep.air_date}`,
-        })
-      } catch {}
-    }
-    try {
-      localStorage.setItem('mfy-release-notified', JSON.stringify(lastNotified))
-      localStorage.setItem('mfy-notify-day', today)
-    } catch {}
-    if (notifications.length && api?.showNotification) {
-      for (const n of notifications.slice(0, 3)) api.showNotification(n.title, n.body)
-    }
-  }
 
   if (showIntro) return <Intro onDone={() => setShowIntro(false)} />
   if (!isSetupComplete) return <Wizard />
   if (!authenticated) return <LoginGate />
 
   return (
-    <div className="h-screen flex flex-col bg-[#08080e]">
+    <div className="h-screen flex flex-col bg-[#08080e] font-sans">
       <RemoteHelp />
       <IdleWall />
+      <IntroSkip />
       {updateInfo && !updateDismissed && currentPage !== 'player' && (
-        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#14101a] border border-[#FF1493]/30 shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
-          <div className="w-2 h-2 rounded-full bg-[#FF1493] animate-pulse" />
+        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#14101a] border border-white/15 shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
+          <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
           <div className="text-xs text-white/80">
             Update {updateInfo.version ? `v${updateInfo.version} ` : ''}downloaded
           </div>
           <button
             onClick={() => (window as any).electronAPI?.installUpdate?.()}
-            className="h-7 px-3 rounded-lg bg-[#FF1493] text-white text-[11px] font-semibold hover:brightness-110 transition-all"
+            className="h-7 px-3 rounded-lg bg-white text-black text-[11px] font-semibold hover:brightness-110 transition-all"
           >
             Restart & install
           </button>
@@ -231,7 +189,17 @@ export default function App() {
         {currentPage === 'search-results' && <SearchResults />}
         {currentPage === 'library' && <Library />}
         {currentPage === 'settings' && <Settings />}
-        {currentPage === 'detail' && <MetaDetails />}
+        {currentPage === 'detail' && (
+          <>
+            <MetaDetails />
+            <DetailExtras
+              title={String((selectedMedia as any)?.title || (selectedMedia as any)?.name || '')}
+              type={selectedMedia?.type}
+              item={selectedMedia}
+              releaseDate={(selectedMedia as any)?.release_date || (selectedMedia as any)?.first_air_date}
+            />
+          </>
+        )}
         {currentPage === 'player' && <PlayerPage />}
         {currentPage === 'guide' && <Guide />}
         {currentPage === 'provider' && <ProviderBrowse />}
@@ -241,6 +209,7 @@ export default function App() {
         {currentPage === 'anime' && <Anime />}
         {currentPage === 'sports' && <Sports />}
         {currentPage === 'iptv' && <Iptv />}
+        {currentPage === 'calendar' && <CalendarPage />}
         {currentPage === 'manga' && <PrintHome kind="manga" />}
         {currentPage === 'comics' && <PrintHome kind="comics" />}
         {currentPage === 'manga-detail' && <MangaReader />}
