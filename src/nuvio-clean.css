@@ -1,0 +1,119 @@
+/* Nuvio-inspired clean layer for MFY. Own CSS — not a copy of Nuvio source. */
+:root {
+  --mfy-pink: #ffffff;
+  --mfy-pink-soft: rgba(255, 255, 255, 0.08);
+  --mfy-pink-glow: transparent;
+  --mfy-cyan: #d4d4d8;
+  --focus-ring: 0 0 0 2px #06050a, 0 0 0 4px rgba(255,255,255,0.55);
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: Manrope, system-ui, sans-serif !important;
+  letter-spacing: -0.01em;
+}
+
+h1, h2, h3,
+.hero-copy h1,
+.brand span,
+.media-row-title,
+.mfy-intro-word,
+.font-display {
+  font-family: Sora, Manrope, system-ui, sans-serif !important;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+
+.board {
+  background: #07070a !important;
+}
+
+.brand img,
+.profile-button,
+.btn-primary,
+.home-tab.active,
+.poster-play,
+.nav-tab.active::after {
+  box-shadow: none !important;
+}
+
+.brand img {
+  box-shadow: none !important;
+}
+
+.nav-tab.active {
+  color: #fff !important;
+}
+.nav-tab.active::after {
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.profile-button {
+  background: #1a1a1f !important;
+  padding: 1px !important;
+}
+.profile-button:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.btn-primary {
+  background: #fff !important;
+  color: #111 !important;
+  box-shadow: none !important;
+}
+.btn-primary:hover {
+  transform: none !important;
+  filter: none !important;
+  background: #e8e8e8 !important;
+}
+
+.home-tab.active {
+  background: #fff !important;
+  color: #111 !important;
+}
+
+.media-row-action {
+  color: rgba(255,255,255,0.45) !important;
+}
+
+.poster-card {
+  border-color: rgba(255,255,255,0.08) !important;
+}
+.poster-card:hover,
+.poster-card:focus-visible {
+  transform: scale(1.03) translateY(-2px) !important;
+  border-color: rgba(255,255,255,0.28) !important;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.45) !important;
+}
+.poster-play {
+  background: rgba(255,255,255,0.92) !important;
+}
+.poster-play svg {
+  fill: #111 !important;
+}
+
+.provider-logo-wrap,
+.mfy-brand-tile,
+.mfy-brand-tile img,
+.mfy-live-chip {
+  animation: none !important;
+  filter: none !important;
+}
+.provider-item:hover .provider-logo-wrap {
+  transform: scale(1.04) !important;
+  border-color: rgba(255,255,255,0.22) !important;
+  background: rgba(255,255,255,0.06) !important;
+  box-shadow: none !important;
+}
+.provider-item:hover .provider-logo-wrap img {
+  filter: none !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.28) !important;
+}
