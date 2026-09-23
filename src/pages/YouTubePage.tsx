@@ -6,6 +6,7 @@ import {
   youtubioStream,
   youtubeEmbedUrl,
   youtubeWatchUrl,
+  vid,
   YOUTUBIO_CONFIG,
   type YtItem,
 } from '../api/youtubio'
@@ -29,14 +30,26 @@ export default function YouTubePage() {
   const [rows, setRows] = useState<Record<string, YtItem[]>>({})
   const [found, setFound] = useState<YtItem[]>([])
   const [busy, setBusy] = useState(false)
+  const [signedIn, setSignedIn] = useState(false)
 
   useEffect(() => {
+    ;(window as any).electronAPI?.youtubeLoginStatus?.().then((s: any) => setSignedIn(!!s?.signedIn)).catch(() => {})
     youtubioDiscover().then((items) => setRows((prev) => ({ ...prev, disc: items })))
     ROWS.forEach(async (r) => {
       const items = await youtubioSearch(r.q)
       setRows((prev) => ({ ...prev, [r.id]: items }))
     })
   }, [])
+
+  async function signIn() {
+    const api = (window as any).electronAPI
+    if (!api?.openYouTubeLogin) {
+      api?.openExternal?.('https://accounts.google.com/ServiceLogin?service=youtube&continue=https://www.youtube.com/')
+      return
+    }
+    const r = await api.openYouTubeLogin()
+    setSignedIn(!!r?.signedIn)
+  }
 
   async function onSearch(e?: React.FormEvent) {
     e?.preventDefault()
@@ -75,12 +88,14 @@ export default function YouTubePage() {
     ;(window as any).electronAPI?.openExternal?.(youtubeWatchUrl(item.id))
   }
 
+  const embed = watch ? `https://www.youtube.com/embed/${vid(watch)}?autoplay=1&rel=0` : ''
+
   return (
     <div className="min-h-full bg-[#07070a] text-white pl-[300px]">
       <div className="h-14 px-5 flex items-center gap-3 border-b border-white/10">
         <div>
           <div className="font-semibold tracking-tight leading-none" style={{ fontFamily: 'Sora, sans-serif' }}>YouTube</div>
-          <div className="text-[10px] text-white/40">YouTubio catalogs · official player</div>
+          <div className="text-[10px] text-white/40">{signedIn ? 'Signed in' : 'Not signed in'} · official Google login</div>
         </div>
         <form className="flex-1 flex justify-center" onSubmit={onSearch}>
           <div className="flex items-center gap-2 h-10 px-4 rounded-full bg-white/5 border border-white/10 w-full max-w-xl">
@@ -88,15 +103,19 @@ export default function YouTubePage() {
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search YouTube" className="flex-1 bg-transparent text-sm outline-none" />
           </div>
         </form>
+        <button type="button" className="h-9 px-3 rounded-full bg-white text-black text-xs font-semibold" onClick={signIn}>
+          {signedIn ? 'Switch account' : 'Sign in to YouTube'}
+        </button>
         <button type="button" className="h-9 px-3 rounded-full bg-white/10 text-xs" onClick={() => (window as any).electronAPI?.openExternal?.(YOUTUBIO_CONFIG)}>
-          Connect account
+          YouTubio lists
         </button>
       </div>
 
       {watch && (
         <div className="px-5 pt-4">
           <div className="aspect-video max-h-[56vh] rounded-xl overflow-hidden bg-black">
-            <iframe title="yt" src={youtubeEmbedUrl(watch)} className="w-full h-full" allow="autoplay; fullscreen; encrypted-media" allowFullScreen />
+            {/* @ts-expect-error webview is provided by Electron */}
+            <webview partition="persist:youtube" src={embed} style={{ width: '100%', height: '100%' }} allowpopups="false" />
           </div>
           <div className="flex items-center justify-between py-3 gap-3">
             <p className="font-semibold truncate">{title}</p>
