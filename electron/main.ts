@@ -8,6 +8,7 @@ import { setupTorrentEngine } from './torrent'
 import { setupAdBlocker } from './adblock'
 import { loadAllProgress, saveProgressRow, saveProgressList } from './progress'
 import { launchAndroidApp } from './android-apps'
+import { allowYouTubeNavigation, setupYouTubeLogin } from './youtube-login'
 
 // Auto-updater (only active in packaged builds)
 let autoUpdater: any = null
@@ -110,6 +111,7 @@ mainWindow.once('ready-to-show', () => {
     contents.setWindowOpenHandler((details) => {
       try {
         const url = String(details.url || '')
+        if (allowYouTubeNavigation(contents, url)) return { action: 'allow' }
         const ok = /embed\.st|embedme\.top|streamed\.pk|sportsembed|watchfooty|weakstream|daddylive|streambtw|player\./i.test(url)
         const bad = /google\.|gstatic\.com|recaptcha|doubleclick|facebook|twitter|instagram|bet365/i.test(url)
         if (contents.getType() === 'webview' && ok && !bad) contents.loadURL(url)
@@ -118,6 +120,7 @@ mainWindow.once('ready-to-show', () => {
     })
     contents.on('will-navigate', (event, url) => {
       if (contents.getType() !== 'webview') return
+      if (allowYouTubeNavigation(contents, url)) return
       if (/google\.|gstatic\.com|recaptcha|doubleclick/i.test(url || '')) event.preventDefault()
     })
     contents.on('before-input-event', (_e, input) => {
@@ -319,6 +322,7 @@ app.whenReady().then(() => {
     session.fromPartition('persist:mfy').setUserAgent(chromeUA)
     session.fromPartition('persist:mfy').setPreloads([path.join(__dirname, 'guest-preload.js')])
     session.fromPartition('persist:mfy-sport').setUserAgent(chromeUA)
+    session.fromPartition('persist:youtube').setUserAgent(chromeUA)
   } catch {}
   const stripFrame = (details: any, callback: any) => {
     const headers = { ...(details.responseHeaders || {}) }
@@ -331,11 +335,13 @@ app.whenReady().then(() => {
   session.defaultSession.webRequest.onHeadersReceived(stripFrame)
   try { session.fromPartition('persist:mfy').webRequest.onHeadersReceived(stripFrame) } catch {}
   try { session.fromPartition('persist:mfy-sport').webRequest.onHeadersReceived(stripFrame) } catch {}
+  try { session.fromPartition('persist:youtube').webRequest.onHeadersReceived(stripFrame) } catch {}
   createWindow()
   createTray()
   setupAutoUpdater()
   setupTorrentEngine()
   setupAdBlocker()
+  setupYouTubeLogin(store, () => mainWindow)
   if (app.isPackaged) addDesktopShortcut()
 
   app.on('activate', () => {
