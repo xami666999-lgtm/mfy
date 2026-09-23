@@ -76,6 +76,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('mfy-flush', listener)
     return () => ipcRenderer.removeListener('mfy-flush', listener)
   },
+
+  openYouTubeLogin: () => ipcRenderer.invoke('youtube-login'),
+  youtubeLoginStatus: () => ipcRenderer.invoke('youtube-login-status'),
 })
 
 contextBridge.exposeInMainWorld('torrentAPI', {
