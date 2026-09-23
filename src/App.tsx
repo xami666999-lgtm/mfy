@@ -38,6 +38,7 @@ import IntroSkip from './components/IntroSkip'
 import CalendarPage from './pages/CalendarPage'
 import DetailExtras from './components/DetailExtras'
 import EpisodePanel from './components/EpisodePanel'
+import { youtubeEmbedUrl } from './api/youtubio'
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true)
@@ -154,6 +155,8 @@ export default function App() {
   if (!isSetupComplete) return <Wizard />
   if (!authenticated) return <LoginGate />
 
+  const ytId = (selectedMedia as any)?.youtubeId || ((selectedMedia as any)?.type === 'youtube' ? selectedMedia?.id : '')
+
   return (
     <div className="h-screen flex flex-col bg-[#08080e] font-sans">
       <RemoteHelp />
@@ -202,7 +205,13 @@ export default function App() {
             />
           </>
         )}
-        {currentPage === 'player' && <PlayerPage />}
+        {currentPage === 'player' && (ytId ? (
+          <div className="h-full bg-black flex flex-col">
+            <iframe title="yt" src={youtubeEmbedUrl(String(ytId))} className="flex-1 w-full" allow="autoplay; fullscreen; encrypted-media" allowFullScreen />
+          </div>
+        ) : (
+          <PlayerPage />
+        ))}
         {currentPage === 'guide' && <Guide />}
         {currentPage === 'provider' && <ProviderBrowse />}
         {currentPage === 'franchise' && <Franchise />}
