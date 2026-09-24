@@ -1,0 +1,48 @@
+.nv-page{background:#0a0a0a;color:#fff;min-height:100%;font-family:Manrope,Sora,system-ui,sans-serif}
+.nv-hero{position:relative;min-height:72vh;overflow:hidden}
+.nv-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center 20%;transform:scale(1.04);animation:nvKen 22s ease-in-out infinite alternate}
+@keyframes nvKen{from{transform:scale(1.02)}to{transform:scale(1.08)}}
+.nv-hero-fade{position:absolute;inset:0;background:linear-gradient(90deg,#0a0a0a 0%,rgba(10,10,10,.35) 42%,transparent 70%),linear-gradient(0deg,#0a0a0a 0%,transparent 42%)}
+.nv-hero-copy{position:relative;z-index:2;padding:88px 48px 28px;max-width:640px}
+.nv-cast{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 8px}
+.nv-chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#d4d4d4}
+.nv-av{width:22px;height:22px;border-radius:999px;background:#2a2a2a;display:grid;place-items:center;font-size:8px;font-weight:700;letter-spacing:.04em}
+.nv-genre{font-size:13px;color:#cfcfcf;margin:0 0 8px}
+.nv-syn{font-size:13.5px;line-height:1.55;color:#c8c8c8;max-width:520px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.nv-dots{display:flex;gap:6px;margin-top:18px}
+.nv-dot{width:7px;height:7px;border-radius:99px;background:#ffffff33;border:0;padding:0}
+.nv-dot.on{background:#fff;width:18px}
+.nv-row{padding:6px 48px 10px}
+.nv-h{font-family:Sora,sans-serif;font-size:15px;font-weight:650;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.nv-h::after{content:"";width:28px;height:2px;background:#fff;border-radius:2px}
+.nv-sc{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+.nv-sc::-webkit-scrollbar{display:none}
+.nv-cw{flex:none;width:210px;text-align:left;color:#fff}
+.nv-cw img,.nv-cw .ph{width:210px;height:118px;object-fit:cover;border-radius:10px;background:#161616}
+.nv-left{position:absolute;top:8px;right:8px;font-size:10px;background:#0009;padding:2px 6px;border-radius:6px}
+.nv-bar{height:3px;background:#ffffff22;margin-top:-3px;border-radius:0 0 10px 10px;overflow:hidden}
+.nv-bar>i{display:block;height:100%;background:#fff}
+.nv-cw p{margin:6px 0 0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nv-cw small{display:block;color:#888;font-size:10px}
+.nv-tile{flex:none;width:168px;height:94px;border-radius:12px;overflow:hidden;position:relative;background:#111;border:0;color:#fff}
+.nv-tile img{width:100%;height:100%;object-fit:contain;padding:16px 12px;animation:nvPulse 3.6s ease-in-out infinite}
+@keyframes nvPulse{0%,100%{transform:scale(1);opacity:.92}50%{transform:scale(1.06);opacity:1}}
+.nv-tile span{position:absolute;left:10px;bottom:8px;font-size:10px;opacity:.55}
+.nv-pack{flex:none;width:148px;height:92px;border-radius:12px;overflow:hidden;position:relative;border:0;padding:0;background:#111}
+.nv-pack .mos{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;opacity:.85}
+.nv-pack .mos img{width:100%;height:46px;object-fit:cover}
+.nv-pack b{position:absolute;left:8px;bottom:8px;color:#fff;font-size:12px;text-shadow:0 2px 8px #000}
+.nv-art{flex:none;width:118px;text-align:left;color:#fff;background:none;border:0;padding:0}
+.nv-art img{width:118px;height:168px;object-fit:cover;border-radius:10px}
+.nv-art p{margin:6px 0 0;font-size:11px;color:#bbb}
+.nv-wide{flex:none;width:200px;height:92px;border-radius:12px;overflow:hidden;position:relative;border:0;padding:0}
+.nv-wide img{width:100%;height:100%;object-fit:cover;filter:brightness(.7)}
+.nv-wide b{position:absolute;left:10px;bottom:8px;color:#fff;font-size:13px;letter-spacing:.04em}
+.nv-flag{flex:none;width:132px;height:78px;border-radius:10px;overflow:hidden;border:0;padding:0;position:relative}
+.nv-flag img{width:100%;height:100%;object-fit:cover}
+.nv-flag b{position:absolute;left:8px;bottom:6px;color:#fff;font-size:11px;text-shadow:0 1px 6px #000}
+.nv-poster{flex:none;width:128px;text-align:left;color:#fff;background:none;border:0;padding:0}
+.nv-poster img{width:128px;height:192px;object-fit:cover;border-radius:8px;background:#141414}
+.nv-poster p{margin:6px 0 0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nv-poster small{color:#777;font-size:10px}
+.title-logo{max-height:150px}
