@@ -91,8 +91,8 @@ export default function YouTubePage() {
   const embed = watch ? `https://www.youtube.com/embed/${vid(watch)}?autoplay=1&rel=0` : ''
 
   return (
-    <div className="min-h-full bg-[#07070a] text-white pl-[300px]">
-      <div className="h-14 px-5 flex items-center gap-3 border-b border-white/10">
+    <div className="min-h-full bg-[#07070a] text-white">
+      <div className="h-14 px-12 flex items-center gap-3 border-b border-white/10">
         <div>
           <div className="font-semibold tracking-tight leading-none" style={{ fontFamily: 'Sora, sans-serif' }}>YouTube</div>
           <div className="text-[10px] text-white/40">{signedIn ? 'Signed in' : 'Not signed in'} · official Google login</div>
@@ -112,10 +112,9 @@ export default function YouTubePage() {
       </div>
 
       {watch && (
-        <div className="px-5 pt-4">
+        <div className="px-12 pt-4">
           <div className="aspect-video max-h-[56vh] rounded-xl overflow-hidden bg-black">
-            {/* @ts-expect-error webview is provided by Electron */}
-            <webview partition="persist:youtube" src={embed} style={{ width: '100%', height: '100%' }} allowpopups="false" />
+            <iframe title="yt" src={embed || youtubeEmbedUrl(watch)} className="w-full h-full" allow="autoplay; fullscreen; encrypted-media" allowFullScreen />
           </div>
           <div className="flex items-center justify-between py-3 gap-3">
             <p className="font-semibold truncate">{title}</p>
@@ -128,21 +127,21 @@ export default function YouTubePage() {
       )}
 
       {found.length > 0 && (
-        <section className="px-5 py-3">
+        <section className="px-12 py-3">
           <h3 className="text-sm font-bold mb-3">{busy ? 'Searching…' : 'Search results'}</h3>
           <Grid items={found} onPlay={play} onMfy={playInMfy} onExt={openExternal} />
         </section>
       )}
 
       {rows.disc?.length ? (
-        <section className="px-5 py-3">
+        <section className="px-12 py-3">
           <h3 className="text-sm font-bold mb-3">Discover</h3>
           <Row items={rows.disc} onPlay={play} />
         </section>
       ) : null}
 
       {ROWS.map((r) => (
-        <section key={r.id} className="px-5 py-3">
+        <section key={r.id} className="px-12 py-3">
           <h3 className="text-sm font-bold mb-3">{r.title}</h3>
           <Row items={rows[r.id] || []} onPlay={play} />
         </section>
