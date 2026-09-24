@@ -34,12 +34,12 @@ export default function TitleLogo({
       <img
         src={src}
         alt={title}
-        className={`title-logo max-h-28 md:max-h-36 w-auto max-w-[min(520px,80vw)] object-contain object-left drop-shadow-[0_8px_24px_rgba(0,0,0,0.7)] mb-3 ${className}`}
+        className={`title-logo max-h-[150px] md:max-h-[168px] w-auto max-w-[min(560px,82vw)] object-contain object-left drop-shadow-[0_10px_28px_rgba(0,0,0,0.75)] mb-3 ${className}`}
       />
     )
   }
   return (
-    <h1 className={`font-display text-4xl md:text-5xl font-bold text-white tracking-tight leading-[1.05] mb-3 drop-shadow-[0_4px_24px_rgba(0,0,0,0.65)] ${className}`}>
+    <h1 className={`font-display text-5xl md:text-6xl font-bold text-white tracking-tight leading-[0.95] mb-3 drop-shadow-[0_4px_24px_rgba(0,0,0,0.65)] ${className}`} style={{ fontFamily: 'Sora, sans-serif' }}>
       {title}
     </h1>
   )
