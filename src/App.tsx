@@ -8,6 +8,7 @@ import TitleBar from './components/TitleBar'
 import Navbar from './components/Navbar'
 import AppleRail from './components/AppleRail'
 import Board from './pages/Board'
+import NuvioHome from './pages/NuvioHome'
 import Discover from './pages/Discover'
 import Search from './pages/Search'
 import SearchResults from './pages/SearchResults'
@@ -39,6 +40,10 @@ import CalendarPage from './pages/CalendarPage'
 import DetailExtras from './components/DetailExtras'
 import EpisodePanel from './components/EpisodePanel'
 import { youtubeEmbedUrl } from './api/youtubio'
+
+void Board
+void Navbar
+void tmdb
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true)
@@ -158,7 +163,7 @@ export default function App() {
   const ytId = (selectedMedia as any)?.youtubeId || ((selectedMedia as any)?.type === 'youtube' ? selectedMedia?.id : '')
 
   return (
-    <div className="h-screen flex flex-col bg-[#08080e] font-sans">
+    <div className="h-screen flex flex-col bg-[#0a0a0a] font-sans">
       <RemoteHelp />
       <IdleWall />
       <IntroSkip />
@@ -188,7 +193,7 @@ export default function App() {
       <div className="flex-1 min-h-0 relative" style={{ paddingTop: 36 }}>
       {currentPage !== 'player' && currentPage !== 'detail' && <AppleRail />}
       <main className="absolute inset-0 overflow-y-auto overflow-x-hidden">
-        {currentPage === 'home' && <Board />}
+        {currentPage === 'home' && <NuvioHome />}
         {currentPage === 'discover' && <Discover />}
         {currentPage === 'search' && <Search />}
         {currentPage === 'search-results' && <SearchResults />}
