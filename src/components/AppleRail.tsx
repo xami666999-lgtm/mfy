@@ -25,7 +25,11 @@ export default function AppleRail() {
   const [q, setQ] = useState('')
   const [bug, setBug] = useState(false)
   const [hidden, setHidden] = useState(() => {
-    try { return localStorage.getItem('mfy-rail-hidden') === '1' } catch { return false }
+    try {
+      const v = localStorage.getItem('mfy-rail-hidden')
+      if (v === '0') return false
+      return true
+    } catch { return true }
   })
 
   function toggle(next?: boolean) {
@@ -67,7 +71,7 @@ export default function AppleRail() {
           <div className="w-8 h-8 rounded-full bg-white text-black grid place-items-center text-xs font-black">{(currentProfile?.name || 'M')[0]}</div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold truncate font-display">{currentProfile?.name || 'MFY'}</p>
-            <p className="text-[10px] text-white/35">1.7.7</p>
+            <p className="text-[10px] text-white/35">1.7.8</p>
           </div>
           <button type="button" className="h-8 w-8 rounded-full hover:bg-white/10 grid place-items-center" title="Hide sidebar ([)" onClick={() => toggle(true)}>
             <PanelLeftClose size={16} />
