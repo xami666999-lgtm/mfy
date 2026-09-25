@@ -1,0 +1,49 @@
+appId: com.PartyUp.app
+productName: PartyUp
+copyright: "Copyright © 2026 PartyUp Team"
+directories:
+  output: dist
+  buildResources: build
+files:
+  - dist/**/*
+  - src/resources/**/*
+  - plugins/**/*
+  - package.json
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+  publisherName: PartyUp Team
+  signAndEditExecutable: false
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: PartyUp
+  uninstallDisplayName: PartyUp
+  license: LICENSE.txt
+portable:
+  artifactName: PartyUp-${version}-portable.${ext}
+publish:
+  - provider: github
+    owner: PartyUp
+    repo: partyup
+extraResources:
+  - from: src/resources
+    to: resources
+    filter:
+      - '**/*'
+  - from: plugins
+    to: plugins
+    filter:
+      - '**/*'
+extraFiles:
+  - from: build/velo
+    to: velo
+    filter:
+      - '**/*'

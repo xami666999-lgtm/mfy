@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "missingcrunch",
+  "version": "1.0",
+  "description": "Shows missing seasons on Crunchyroll with embedded metadata — no API keys needed",
+  "icons": {
+    "48": "icon.png"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.crunchyroll.com/*"],
+      "js": ["js/content.js"],
+      "css": ["css/content.css"]
+    }
+  ],
+  "background": {
+    "service_worker": "js/background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}

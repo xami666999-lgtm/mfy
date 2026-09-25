@@ -1,860 +1,440 @@
-export interface Game {
-  id: string;
-  name: string;
-  platform: string;
-  filePath: string;
-  emulatorId?: string;
-  artworkUrl?: string;
-  backgroundUrl?: string;
-  description?: string;
-  developer?: string;
-  publisher?: string;
-  releaseDate?: string;
-  genre?: string[];
-  region?: string;
-  isFavorite: boolean;
-  lastPlayed?: number;
-  playtime: number;
-  launchCount: number;
-  savePaths?: string[];
-  gameSettings?: GameSettings;
-  emulatorSettings?: Record<string, any>;
-  controllerProfileId?: string;
-  addedAt: number;
-  updatedAt: number;
+export interface Movie {
+  id: number;
+  title: string;
+  overview: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  release_date: string;
+  vote_average: number;
+  vote_count: number;
+  genre_ids: number[];
+  media_type?: 'movie';
 }
 
-export interface GameSettings {
-  resolution?: string;
-  fullscreen?: boolean;
-  vsync?: boolean;
-  internalResolution?: string;
-  renderer?: string;
-  audioBackend?: string;
-  fpsLimit?: number;
-  launchArgs?: string;
-  customConfig?: Record<string, any>;
+export interface TVShow {
+  id: number;
+  name: string;
+  overview: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  first_air_date: string;
+  vote_average: number;
+  vote_count: number;
+  genre_ids: number[];
+  media_type?: 'tv';
 }
 
-export interface System {
-  id: string;
-  name: string;
-  shortName: string;
-  manufacturer: string;
-  generation: number;
-  releaseYear: number;
+export interface Anime {
+  id: number;
+  title: { romaji: string; english: string; native: string };
+  coverImage: { large: string; color: string };
+  bannerImage: string | null;
   description: string;
-  logoUrl?: string;
-  bannerUrl?: string;
-  backgroundUrl?: string;
-  color?: string;
-  extensions: string[];
-  biosFiles?: BiosFile[];
-  defaultEmulatorId?: string;
-  gameCount: number;
-  recentlyPlayed?: Game[];
-  isEnabled: boolean;
-  order: number;
+  averageScore: number;
+  genres: string[];
+  episodes: number;
+  status: string;
 }
 
-export interface BiosFile {
-  name: string;
-  filename: string;
-  description: string;
-  required: boolean;
-  md5?: string;
-  sha1?: string;
-  size?: number;
-  downloadUrl?: string;
-}
-
-export interface Emulator {
-  id: string;
-  name: string;
-  version: string;
-  displayName: string;
-  description: string;
-  author: string;
-  website: string;
-  downloadUrl: string;
-  supportedSystems: string[];
-  executablePath?: string;
-  installPath?: string;
-  configPath?: string;
-  biosPath?: string;
-  savePath?: string;
-  statePath?: string;
-  screenshotPath?: string;
-  isInstalled: boolean;
-  isDefault: Record<string, boolean>;
-  launchArgs?: Record<string, string>;
-  configSchema?: EmulatorConfigSchema;
-  installedVersion?: string;
-  latestVersion?: string;
-  updateAvailable: boolean;
-  lastChecked?: number;
-  capabilities: EmulatorCapabilities;
-}
-
-export interface EmulatorConfigSchema {
-  sections: ConfigSection[];
-}
-
-export interface ConfigSection {
-  id: string;
-  name: string;
-  description?: string;
-  options: ConfigOption[];
-}
-
-export interface ConfigOption {
-  id: string;
-  name: string;
-  description?: string;
-  type: 'boolean' | 'string' | 'number' | 'select' | 'path' | 'multiselect';
-  defaultValue: any;
-  values?: { label: string; value: any }[];
-  min?: number;
-  max?: number;
-  step?: number;
-  requiresRestart?: boolean;
-  emulatorSpecific?: boolean;
-}
-
-export interface EmulatorCapabilities {
-  saveStates: boolean;
-  screenshots: boolean;
-  recording: boolean;
-  netplay: boolean;
-  achievements: boolean;
-  cheats: boolean;
-  rewind: boolean;
-  turbo: boolean;
-  customResolution: boolean;
-  shaderSupport: boolean;
-  controllerProfiles: boolean;
-  perGameConfig: boolean;
-}
-
-export interface ControllerProfile {
-  id: string;
-  name: string;
-  type: 'playstation' | 'xbox' | 'nintendo' | 'generic' | 'custom';
-  deviceId?: string;
-  deviceName?: string;
-  vendorId?: number;
-  productId?: number;
-  mappings: ControllerMapping[];
-  stickSettings?: StickSettings;
-  triggerSettings?: TriggerSettings;
-  vibration?: VibrationSettings;
-  deadZones?: DeadZoneSettings;
-  isSystemDefault: Record<string, boolean>;
-  isGameDefault: Record<string, boolean>;
-  createdAt: number;
-  updatedAt: number;
-}
-
-export interface ControllerMapping {
-  action: string;
-  inputType: 'button' | 'axis' | 'hat';
-  inputIndex: number;
-  modifier?: string;
-  outputType: 'button' | 'axis' | 'keyboard' | 'mouse';
-  outputValue?: string | number;
-}
-
-export interface StickSettings {
-  leftDeadzone?: number;
-  rightDeadzone?: number;
-  leftSensitivity?: number;
-  rightSensitivity?: number;
-  leftInvertX?: boolean;
-  leftInvertY?: boolean;
-  rightInvertX?: boolean;
-  rightInvertY?: boolean;
-}
-
-export interface TriggerSettings {
-  leftDeadzone?: number;
-  rightDeadzone?: number;
-  leftThreshold?: number;
-  rightThreshold?: number;
-}
-
-export interface VibrationSettings {
-  enabled: boolean;
-  strength: number;
-}
-
-export interface DeadZoneSettings {
-  leftStick: number;
-  rightStick: number;
-  leftTrigger: number;
-  rightTrigger: number;
-}
-
-export interface SaveFile {
-  id: string;
-  gameId: string;
-  emulatorId: string;
-  type: 'save' | 'state' | 'sram' | 'memory_card' | 'config' | 'other';
-  name: string;
-  path: string;
-  size: number;
-  modifiedAt: number;
-  description?: string;
-  screenshotUrl?: string;
-  metadata?: Record<string, any>;
-}
-
-export interface SaveBackup {
-  id: string;
-  gameId: string;
-  name: string;
-  description?: string;
-  files: SaveFile[];
-  createdAt: number;
-  size: number;
-  path: string;
-  isAuto: boolean;
-}
-
-export interface Theme {
-  id: string;
-  name: string;
-  displayName: string;
-  description: string;
-  author: string;
-  version: string;
-  previewImages: string[];
-  isBuiltIn: boolean;
-  isActive: boolean;
-  config: ThemeConfig;
-  assets: ThemeAssets;
-  layouts: ThemeLayouts;
-  animations: ThemeAnimations;
-  sounds: ThemeSounds;
-}
-
-export interface ThemeConfig {
-  colors: ThemeColors;
-  fonts: ThemeFonts;
-  spacing: ThemeSpacing;
-  borderRadius: ThemeBorderRadius;
-  shadows: ThemeShadows;
-  transitions: ThemeTransitions;
-  backgroundEffects: BackgroundEffects;
-  informationDensity: 'compact' | 'normal' | 'comfortable';
-}
-
-export interface ThemeColors {
-  primary: string;
-  primaryHover: string;
-  primaryActive: string;
-  secondary: string;
-  secondaryHover: string;
-  accent: string;
-  accentHover: string;
-  background: string;
-  backgroundSecondary: string;
-  backgroundTertiary: string;
-  surface: string;
-  surfaceHover: string;
-  surfaceActive: string;
-  border: string;
-  borderHover: string;
-  text: string;
-  textSecondary: string;
-  textMuted: string;
-  textInverse: string;
-  success: string;
-  warning: string;
-  error: string;
-  info: string;
-  overlay: string;
-  glow: string;
-}
-
-export interface ThemeFonts {
-  display: string;
-  heading: string;
-  body: string;
-  mono: string;
-  ui: string;
-  sizes: {
-    xs: string;
-    sm: string;
-    base: string;
-    lg: string;
-    xl: string;
-    '2xl': string;
-    '3xl': string;
-    '4xl': string;
+export interface MediaDetail {
+  id: number;
+  title?: string;
+  name?: string;
+  overview: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  release_date?: string;
+  first_air_date?: string;
+  vote_average: number;
+  vote_count: number;
+  runtime?: number;
+  genres: { id: number; name: string }[];
+  credits?: {
+    cast: { id: number; name: string; profile_path: string | null; character: string }[];
+    crew: { id: number; name: string; job: string; profile_path: string | null }[];
   };
-  weights: {
-    normal: number;
-    medium: number;
-    semibold: number;
-    bold: number;
+  videos?: {
+    results: { id: string; key: string; site: string; type: string; name: string }[];
   };
+  seasons?: {
+    id: number;
+    name: string;
+    season_number: number;
+    episode_count: number;
+    poster_path: string | null;
+    air_date: string;
+  }[];
+  episode_run_time?: number[];
+  number_of_seasons?: number;
+  number_of_episodes?: number;
 }
 
-export interface ThemeSpacing {
-  xs: string;
-  sm: string;
-  md: string;
-  lg: string;
-  xl: string;
-  '2xl': string;
-  '3xl': string;
-}
-
-export interface ThemeBorderRadius {
-  none: string;
-  sm: string;
-  md: string;
-  lg: string;
-  xl: string;
-  full: string;
-}
-
-export interface ThemeShadows {
-  sm: string;
-  md: string;
-  lg: string;
-  xl: string;
-  glow: string;
-  glowStrong: string;
-}
-
-export interface ThemeTransitions {
-  fast: string;
-  normal: string;
-  slow: string;
-  easing: string;
-}
-
-export interface BackgroundEffects {
-  enabled: boolean;
-  type: 'none' | 'gradient' | 'particles' | 'grid' | 'crt' | 'blur' | 'video';
-  config: Record<string, any>;
-  intensity: number;
-}
-
-export interface ThemeAssets {
-  icons: Record<string, string>;
-  logos: Record<string, string>;
-  backgrounds: Record<string, string>;
-  ui: Record<string, string>;
-}
-
-export interface ThemeLayouts {
-  home: LayoutConfig;
-  games: LayoutConfig;
-  systems: LayoutConfig;
-  gameDetail: LayoutConfig;
-  systemDetail: LayoutConfig;
-  emulatorDetail: LayoutConfig;
-  navigation: NavigationLayout;
-  gameCard: GameCardLayout;
-  listView: ListViewLayout;
-  gridView: GridViewLayout;
-}
-
-export interface LayoutConfig {
-  type: 'grid' | 'list' | 'carousel' | 'xmb' | 'dashboard' | 'marquee' | 'custom';
-  columns?: ResponsiveColumns;
-  itemAspectRatio?: string;
-  gap?: string;
-  padding?: string;
-  showArtwork?: boolean;
-  showBackground?: boolean;
-  showDescription?: boolean;
-  animation?: string;
-}
-
-export interface ResponsiveColumns {
-  xs: number;
-  sm: number;
-  md: number;
-  lg: number;
-  xl: number;
-  '2xl': number;
-}
-
-export interface NavigationLayout {
-  type: 'sidebar' | 'xmb' | 'dashboard' | 'tabs' | 'drawer';
-  position: 'left' | 'top' | 'bottom' | 'right';
-  collapsible: boolean;
-  width?: string;
-  height?: string;
-  showIconsOnly?: boolean;
-}
-
-export interface GameCardLayout {
-  aspectRatio: string;
-  showTitle: boolean;
-  showPlatform: boolean;
-  showPlaytime: boolean;
-  showFavorite: boolean;
-  showPlayButton: boolean;
-  hoverEffect: 'scale' | 'glow' | 'reveal' | 'flip' | 'none';
-  artworkFill: 'cover' | 'contain' | 'fill';
-  borderRadius: string;
-  shadow: string;
-}
-
-export interface ListViewLayout {
-  rowHeight: string;
-  showArtwork: boolean;
-  artworkSize: string;
-  columns: ListColumn[];
-  hoverHighlight: boolean;
-  zebraStriping: boolean;
-}
-
-export interface ListColumn {
-  id: string;
-  header: string;
-  field: string;
-  width: string;
-  sortable: boolean;
-  align: 'left' | 'center' | 'right';
-}
-
-export interface GridViewLayout {
-  columns: ResponsiveColumns;
-  gap: string;
-  aspectRatio: string;
-  showLabels: boolean;
-  labelPosition: 'overlay' | 'below' | 'tooltip';
-}
-
-export interface ThemeAnimations {
-  pageTransition: string;
-  cardHover: string;
-  cardEnter: string;
-  cardExit: string;
-  buttonHover: string;
-  buttonPress: string;
-  modalEnter: string;
-  modalExit: string;
-  navigationHover: string;
-  scrollReveal: string;
-  loadingSpinner: string;
-  reducedMotion: boolean;
-}
-
-export interface ThemeSounds {
-  enabled: boolean;
-  volume: number;
-  navigation: string;
-  select: string;
-  back: string;
-  error: string;
-  success: string;
-  launch: string;
-  hover: string;
-}
-
-export interface Download {
-  id: string;
-  type: 'emulator' | 'update' | 'metadata' | 'artwork' | 'theme' | 'bios' | 'app';
+export interface SeasonDetail {
+  id: number;
   name: string;
+  overview: string;
+  season_number: number;
+  episodes: Episode[];
+}
+
+export interface Episode {
+  id: number;
+  name: string;
+  overview: string;
+  episode_number: number;
+  season_number: number;
+  air_date: string;
+  still_path: string | null;
+  vote_average: number;
+  runtime: number | null;
+}
+
+export interface StreamSource {
   url: string;
-  destination: string;
+  type: 'hls' | 'dash' | 'mp4' | 'torrent';
+  quality: string;
+  provider: string;
+  debrid?: boolean;
+}
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  avatar: string;
+  createdAt: string;
+  pin?: string;
+  email?: string;
+}
+
+export interface WatchHistoryItem {
+  id: string;
+  mediaId: number | string;
+  mediaType: 'movie' | 'tv' | 'anime' | 'iptv';
+  title: string;
+  posterPath: string | null;
   progress: number;
-  totalSize: number;
-  downloadedSize: number;
-  speed: number;
-  status: 'pending' | 'downloading' | 'paused' | 'completed' | 'failed' | 'cancelled';
-  error?: string;
-  retryCount: number;
-  startedAt?: number;
-  completedAt?: number;
-  metadata?: Record<string, any>;
-}
-
-export interface ScanFolder {
-  id: string;
-  path: string;
-  name: string;
-  isManaged: boolean;
-  recursive: boolean;
-  includePatterns: string[];
-  excludePatterns: string[];
-  lastScanned?: number;
-  gameCount: number;
-  enabled: boolean;
-}
-
-export interface Collection {
-  id: string;
-  name: string;
-  description?: string;
-  artworkUrl?: string;
-  gameIds: string[];
-  isSystem: boolean;
-  systemId?: string;
-  createdAt: number;
-  updatedAt: number;
-}
-
-export interface PlaySession {
-  id: string;
-  gameId: string;
-  emulatorId: string;
-  startedAt: number;
-  endedAt?: number;
   duration: number;
-  isCompleted: boolean;
+  season?: number;
+  episode?: number;
+  watchedAt: string;
+  profileId: string;
+  completed?: boolean;
+  seriesCompleted?: boolean;
 }
 
-export interface Statistics {
-  totalGames: number;
-  gamesPlayed: number;
-  totalPlaytime: number;
-  totalLaunches: number;
-  favoriteCount: number;
-  systemCounts: Record<string, number>;
-  genreCounts: Record<string, number>;
-  yearCounts: Record<string, number>;
-  topGames: Array<{ game: Game; playtime: number; launches: number }>;
-  recentlyPlayed: Game[];
-  playtimeByMonth: Record<string, number>;
-  playtimeBySystem: Record<string, number>;
+export interface CustomList {
+  id: string;
+  name: string;
+  profileId: string;
+  items: { mediaId: number | string; mediaType: 'movie' | 'tv' | 'anime' | 'iptv'; addedAt: string; title?: string; posterPath?: string | null }[];
 }
 
-export interface AppSettings {
+export interface StreamingService {
+  id: string;
+  name: string;
+  logo: string;
+  color: string;
+}
+
+export interface Addon {
+  id: string;
+  name: string;
+  version: string;
+  description: string;
+  icon: string;
+  resources: ('catalog' | 'meta' | 'stream' | 'subtitles')[];
+  types: ('movie' | 'tv' | 'anime')[];
+  catalogs: Catalog[];
+  idPrefixes?: string[];
+  timeout?: number;
+  config?: AddonConfig[];
+  transportUrl?: string;
+  enabled?: boolean;
+}
+
+export interface Catalog {
+  id: string;
+  name: string;
+  type: 'movie' | 'tv' | 'anime';
+  genres?: string[];
+  extra?: ExtraProp[];
+}
+
+export interface ExtraProp {
+  name: string;
+  isRequired: boolean;
+  options?: string[];
+  optionsLimit?: number;
+}
+
+export interface AddonConfig {
+  key: string;
+  title: string;
+  description: string;
+  type: 'text' | 'password' | 'boolean' | 'select' | 'number';
+  default?: any;
+  options?: { label: string; value: any }[];
+}
+
+export interface SearchResult {
+  movies: Movie[];
+  tv: TVShow[];
+  anime: Anime[];
+}
+
+export interface ContinueWatching {
+  id: string;
+  mediaId: number | string;
+  mediaType: 'movie' | 'tv' | 'anime';
+  title: string;
+  posterPath: string | null;
+  backdropPath: string | null;
+  progress: number;
+  duration: number;
+  currentTime: number;
+  season?: number;
+  episode?: number;
+  episodeTitle?: string;
+  watchedAt: string;
+  profileId: string;
+}
+
+export interface LibraryItem {
+  id: string;
+  mediaId: number | string;
+  mediaType: 'movie' | 'tv' | 'anime';
+  title: string;
+  posterPath: string | null;
+  backdropPath: string | null;
+  status: 'watching' | 'completed' | 'plan_to_watch' | 'dropped' | 'on_hold';
+  progress: number;
+  currentSeason?: number;
+  currentEpisode?: number;
+  rating?: number;
+  notes?: string;
+  addedAt: string;
+  updatedAt: string;
+  profileId: string;
+}
+
+export interface Settings {
   general: GeneralSettings;
+  playback: PlaybackSettings;
+  appearance: AppearanceSettings;
+  addons: AddonSettings;
   library: LibrarySettings;
-  scanning: ScanningSettings;
-  emulators: EmulatorSettings;
-  graphics: GraphicsSettings;
-  audio: AudioSettings;
-  controllers: ControllerSettings;
-  themes: ThemeSettings;
-  downloads: DownloadSettings;
-  saves: SaveSettings;
-  hotkeys: HotkeySettings;
-  notifications: NotificationSettings;
-  updates: UpdateSettings;
-  advanced: AdvancedSettings;
+  profiles: ProfileSettings;
+  network: NetworkSettings;
+  privacy: PrivacySettings;
 }
 
 export interface GeneralSettings {
   language: string;
-  theme: string;
-  animationIntensity: 'none' | 'reduced' | 'normal' | 'full';
-  backgroundEffects: boolean;
-  startMinimized: boolean;
-  closeToTray: boolean;
-  minimizeToTray: boolean;
-  checkUpdatesOnStart: boolean;
-  autoUpdate: boolean;
-  betaUpdates: boolean;
-  telemetry: boolean;
-  crashReporting: boolean;
+  region: string;
+  contentLanguage: string[];
+  adultContent: boolean;
+  autoPlayNext: boolean;
+  autoPlayTrailers: boolean;
+  skipIntro: boolean;
+  skipCredits: boolean;
+}
+
+export interface PlaybackSettings {
+  quality: 'auto' | '4k' | '1080p' | '720p' | '480p' | '360p';
+  bufferSize: number;
+  hardwareAcceleration: boolean;
+  preferredAudioLanguage: string;
+  preferredSubtitleLanguage: string;
+  subtitleFontSize: number;
+  subtitleColor: string;
+  subtitleBackground: string;
+  subtitleOutline: boolean;
+  externalPlayer?: string;
+  externalPlayerArgs?: string;
+}
+
+export interface AppearanceSettings {
+  theme: 'system' | 'light' | 'dark' | 'oled';
+  accentColor: string;
+  compactMode: boolean;
+  showBackdrops: boolean;
+  reduceMotion: boolean;
+  fontScale: number;
+}
+
+export interface AddonSettings {
+  installedAddons: string[];
+  communityAddons: string[];
+  officialAddons: string[];
+  autoUpdateAddons: boolean;
+  addonTimeout: number;
 }
 
 export interface LibrarySettings {
-  scanFolders: ScanFolder[];
-  organizeLibrary: boolean;
-  libraryPath?: string;
-  autoScanOnStart: boolean;
-  scanInterval: number;
-  metadataProviders: string[];
-  artworkProviders: string[];
-  preferLocalArtwork: boolean;
-  downloadMissingArtwork: boolean;
-  artworkQuality: 'low' | 'medium' | 'high' | 'original';
+  syncWithTrakt: boolean;
+  traktToken?: string;
+  autoAddToLibrary: boolean;
+  showInLibrary: ('watching' | 'completed' | 'plan_to_watch' | 'dropped' | 'on_hold')[];
 }
 
-export interface ScanningSettings {
-  recursive: boolean;
-  followSymlinks: boolean;
-  maxDepth: number;
-  ignoreHidden: boolean;
-  ignoreSystem: boolean;
-  customIgnorePatterns: string[];
-  hashFiles: boolean;
-  identifyGames: boolean;
-  fetchMetadata: boolean;
-  downloadArtwork: boolean;
+export interface ProfileSettings {
+  profiles: UserProfile[];
+  activeProfileId: string;
 }
 
-export interface EmulatorSettings {
-  defaultEmulators: Record<string, string>;
-  emulatorPaths: Record<string, string>;
-  biosPaths: Record<string, string>;
-  savePaths: Record<string, string>;
-  statePaths: Record<string, string>;
-  screenshotPaths: Record<string, string>;
-  globalLaunchArgs: string;
-  exitBehavior: 'hide' | 'minimize' | 'stay' | 'close';
-  pauseOnFocusLoss: boolean;
-  fullscreenDefault: boolean;
+export interface NetworkSettings {
+  proxyUrl?: string;
+  proxyUsername?: string;
+  proxyPassword?: string;
+  dnsOverHttps: boolean;
+  customDns?: string;
 }
 
-export interface GraphicsSettings {
-  defaultResolution: string;
-  defaultFullscreen: boolean;
-  defaultVSync: boolean;
-  defaultInternalResolution: string;
-  defaultRenderer: string;
-  shaderDirectory?: string;
-  textureFiltering: 'nearest' | 'linear' | 'anisotropic';
-  anisotropicLevel: number;
-  vsyncMode: 'off' | 'on' | 'adaptive' | 'mailbox';
-  fpsLimit: number;
-  integerScaling: boolean;
-  aspectRatio: 'auto' | '4:3' | '16:9' | '16:10' | 'custom';
-  customAspectRatio?: string;
-}
-
-export interface AudioSettings {
-  backend: string;
-  sampleRate: number;
-  bufferSize: number;
-  latency: number;
-  volume: number;
-  muteOnFocusLoss: boolean;
-  enableReverb: boolean;
-  enableSurround: boolean;
-}
-
-export interface ControllerSettings {
-  autoDetect: boolean;
-  defaultProfile: string;
-  profiles: Record<string, string>;
-  rumbleEnabled: boolean;
-  rumbleStrength: number;
-  deadzonePreset: 'none' | 'small' | 'medium' | 'large' | 'custom';
-  customDeadzones: DeadZoneSettings;
-  keyboardMappingEnabled: boolean;
-  mouseMappingEnabled: boolean;
-  touchMappingEnabled: boolean;
-}
-
-export interface ThemeSettings {
-  activeTheme: string;
-  customThemesPath?: string;
-  allowCommunityThemes: boolean;
-  autoApplySystemTheme: boolean;
-  themeTransitionDuration: number;
-}
-
-export interface DownloadSettings {
-  downloadPath: string;
-  maxConcurrentDownloads: number;
-  speedLimit: number;
-  retryAttempts: number;
-  retryDelay: number;
-  verifyChecksums: boolean;
-  keepFailedDownloads: boolean;
-  autoExtract: boolean;
-  deleteAfterInstall: boolean;
-}
-
-export interface SaveSettings {
-  backupEnabled: boolean;
-  backupInterval: number;
-  backupPath?: string;
-  maxBackupsPerGame: number;
-  compressBackups: boolean;
-  cloudSyncEnabled: boolean;
-  cloudProvider?: string;
-  autoBackupBeforeLaunch: boolean;
-  autoRestoreOnLaunch: boolean;
-}
-
-export interface HotkeySettings {
-  global: Record<string, string>;
-  inGame: Record<string, string>;
-  mediaKeys: boolean;
-  gamepadShortcuts: boolean;
-}
-
-export interface NotificationSettings {
-  enabled: boolean;
-  showOnGameLaunch: boolean;
-  showOnGameClose: boolean;
-  showOnDownloadComplete: boolean;
-  showOnUpdateAvailable: boolean;
-  showArtwork: boolean;
-  duration: number;
-  position: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'top-center' | 'bottom-center';
-}
-
-export interface UpdateSettings {
-  checkOnStart: boolean;
-  autoDownload: boolean;
-  autoInstall: boolean;
-  betaChannel: boolean;
-  notifyOnly: boolean;
-  updateEmulators: boolean;
-  updateMetadata: boolean;
-  updateThemes: boolean;
-}
-
-export interface AdvancedSettings {
-  logLevel: 'error' | 'warn' | 'info' | 'debug' | 'trace';
-  logToFile: boolean;
-  maxLogSize: number;
-  maxLogFiles: number;
-  hardwareAcceleration: boolean;
-  gpuPreference: 'integrated' | 'discrete' | 'auto';
-  enableDevTools: boolean;
-  experimentalFeatures: boolean;
-  portableMode: boolean;
-  customArgs: string;
-}
-
-export interface SearchResult {
-  games: Game[];
-  systems: System[];
-  emulators: Emulator[];
-  themes: Theme[];
-  settings: SettingsSearchResult[];
-}
-
-export interface SettingsSearchResult {
-  id: string;
-  category: string;
-  title: string;
-  description: string;
-  keywords: string[];
+export interface PrivacySettings {
+  analytics: boolean;
+  crashReporting: boolean;
+  shareUsageData: boolean;
+  clearHistoryOnExit: boolean;
 }
 
 export type Page = 
   | 'home' 
-  | 'games' 
-  | 'systems' 
-  | 'emulators' 
-  | 'themes' 
-  | 'downloads' 
-  | 'saves' 
-  | 'controllers' 
+  | 'discover' 
+  | 'search' 
+  | 'search-results' 
+  | 'library' 
   | 'settings' 
-  | 'game-detail' 
-  | 'system-detail' 
-  | 'emulator-detail' 
-  | 'search';
+  | 'detail' 
+  | 'player' 
+  | 'wizard'
+  | 'guide'
+  | 'provider'
+  | 'franchise'
+  | 'movies'
+  | 'tv'
+  | 'anime'
+  | 'sports'
+  | 'iptv'
+  | 'providers'
+  | 'franchises'
+  | 'manga'
+  | 'manga-detail'
+  | 'airing'
+  | 'people'
+  | 'upcoming';
 
-export type SortField = 'name' | 'releaseDate' | 'playtime' | 'lastPlayed' | 'addedAt' | 'launchCount' | 'rating';
+export type ViewMode = 'grid' | 'list' | 'detailed';
+
+export type SortField = 'title' | 'year' | 'rating' | 'addedAt' | 'releaseDate' | 'popularity';
 export type SortDirection = 'asc' | 'desc';
 
 export interface FilterState {
-  systems: string[];
+  type: 'movie' | 'tv' | 'anime' | 'all';
   genres: string[];
-  developers: string[];
-  publishers: string[];
   years: number[];
-  emulators: string[];
-  favoritesOnly: boolean;
-  installedOnly: boolean;
-  uninstalledOnly: boolean;
-  hasSaves: boolean;
+  rating: [number, number];
+  status?: string[];
+  networks?: string[];
   searchQuery: string;
 }
 
-export interface GameViewState {
-  viewMode: 'grid' | 'list' | 'compact' | 'carousel' | 'xmb';
-  sortField: SortField;
-  sortDirection: SortDirection;
-  filters: FilterState;
-  groupBy: 'none' | 'system' | 'genre' | 'year' | 'developer' | 'publisher' | 'emulator';
+export interface AppStore {
+  currentPage: Page;
+  setCurrentPage: (page: Page) => void;
+  
+  sidebarCollapsed: boolean;
+  setSidebarCollapsed: (collapsed: boolean) => void;
+  
+  theme: 'system' | 'light' | 'dark' | 'oled';
+  setTheme: (theme: 'system' | 'light' | 'dark' | 'oled') => void;
+  
+  mediaItems: (Movie | TVShow | Anime)[];
+  setMediaItems: (items: (Movie | TVShow | Anime)[]) => void;
+  
+  continueWatching: ContinueWatching[];
+  setContinueWatching: (items: ContinueWatching[]) => void;
+  addToContinueWatching: (item: ContinueWatching) => void;
+  updateContinueWatching: (id: string, progress: number, currentTime: number) => void;
+  removeFromContinueWatching: (id: string) => void;
+  
+  library: LibraryItem[];
+  setLibrary: (items: LibraryItem[]) => void;
+  upsertLibraryItem: (item: LibraryItem) => void;
+  removeFromLibrary: (mediaId: string) => void;
+  getLibraryItem: (mediaId: string) => LibraryItem | undefined;
+  
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  searchResults: SearchResult;
+  setSearchResults: (results: SearchResult) => void;
+  searchDebounceTimer: NodeJS.Timeout | null;
+  setSearchDebounceTimer: (timer: NodeJS.Timeout | null) => void;
+  
+  addons: Addon[];
+  setAddons: (addons: Addon[]) => void;
+  installAddon: (addon: Addon) => void;
+  uninstallAddon: (addonId: string) => void;
+  getAddon: (id: string) => Addon | undefined;
+  enabledAddons: string[];
+  setEnabledAddons: (ids: string[]) => void;
+  
+  settings: Settings;
+  setSettings: (settings: Partial<Settings>) => void;
+  
+  playerState: PlayerState | null;
+  setPlayerState: (state: PlayerState | null) => void;
+  
+  profiles: UserProfile[];
+  setProfiles: (profiles: UserProfile[]) => void;
+  activeProfile: UserProfile | null;
+  setActiveProfile: (profile: UserProfile | null) => void;
+  addProfile: (profile: UserProfile) => void;
+  updateProfile: (id: string, updates: Partial<UserProfile>) => void;
+  removeProfile: (id: string) => void;
+  
+  notifications: Notification[];
+  addNotification: (notification: Omit<Notification, 'id'>) => void;
+  removeNotification: (id: string) => void;
 }
 
-export interface EmulatorProvider {
+export interface PlayerState {
+  mediaId: number | string;
+  mediaType: 'movie' | 'tv' | 'anime';
+  title: string;
+  posterPath: string | null;
+  backdropPath: string | null;
+  stream: StreamSource;
+  subtitles: Subtitle[];
+  currentTime: number;
+  duration: number;
+  playing: boolean;
+  volume: number;
+  muted: boolean;
+  fullscreen: boolean;
+  quality: string;
+  audioTrack: number;
+  subtitleTrack: number;
+  seasonNumber?: number;
+  episodeNumber?: number;
+  nextEpisode?: Episode;
+}
+
+export interface Subtitle {
   id: string;
-  name: string;
-  supportedSystems: string[];
-  detectInstallation: () => Promise<{ found: boolean; path?: string; version?: string }>;
-  install: (options?: InstallOptions) => Promise<{ success: boolean; path?: string; error?: string }>;
-  update: () => Promise<{ success: boolean; version?: string; error?: string }>;
-  uninstall: () => Promise<{ success: boolean; error?: string }>;
-  launch: (game: Game, options: LaunchOptions) => Promise<{ success: boolean; pid?: number; error?: string }>;
-  configure: () => Promise<{ success: boolean; error?: string }>;
-  repair: () => Promise<{ success: boolean; error?: string }>;
-  getVersion: () => Promise<string>;
-  getConfigSchema: () => EmulatorConfigSchema;
-  validateInstallation: (path: string) => Promise<boolean>;
-  getDefaultPaths: () => DefaultPaths;
-}
-
-export interface InstallOptions {
-  version?: string;
-  installPath?: string;
-  portable?: boolean;
-  createShortcuts?: boolean;
-}
-
-export interface LaunchOptions {
-  fullscreen?: boolean;
-  resolution?: string;
-  launchArgs?: string;
-  configOverrides?: Record<string, any>;
-  controllerProfile?: ControllerProfile;
-}
-
-export interface DefaultPaths {
-  install: string;
-  config: string;
-  bios: string;
-  saves: string;
-  states: string;
-  screenshots: string;
-  shaders: string;
-  logs: string;
-}
-
-export interface MetadataResult {
-  game: Partial<Game>;
-  artwork: ArtworkResult[];
-  confidence: number;
-  source: string;
-}
-
-export interface ArtworkResult {
-  type: 'cover' | 'background' | 'screenshot' | 'logo' | 'icon' | 'banner' | 'marquee' | 'video';
   url: string;
-  width?: number;
-  height?: number;
-  language?: string;
-  region?: string;
-  source: string;
-  isPrimary?: boolean;
+  language: string;
+  label: string;
+  hearingImpaired?: boolean;
 }
 
-export interface EmulatorStatus {
-  emulatorId: string;
-  systemId: string;
-  status: 'installed' | 'missing' | 'outdated' | 'error' | 'repairing';
-  version?: string;
-  latestVersion?: string;
+export interface Notification {
+  id: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  title: string;
   message?: string;
-  biosStatus: BiosStatus[];
+  duration?: number;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }
-
-export interface BiosStatus {
-  filename: string;
-  required: boolean;
-  found: boolean;
-  path?: string;
-  valid?: boolean;
-  expectedHash?: string;
-  actualHash?: string;
-}
-
-export type ThemeId = 
-  | 'mfy-modern' 
-  | 'retroarch' 
-  | 'playstation-xmb' 
-  | 'ps2' 
-  | 'psp' 
-  | 'xbox360' 
-  | 'nintendo-retro' 
-  | 'arcade' 
-  | 'crt-retro';

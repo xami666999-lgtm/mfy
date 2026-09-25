@@ -1,0 +1,74 @@
+{
+  "shows": [
+    {
+      "id": "demon-slayer",
+      "title": "Demon Slayer: Kimetsu no Yaiba",
+      "totalSeasons": 4,
+      "missingSeasons": [3],
+      "note": "Season 4 (Swordsmith Village Arc) released 2023"
+    },
+    {
+      "id": "jujutsu-kaisen",
+      "title": "Jujutsu Kaisen",
+      "totalSeasons": 2,
+      "missingSeasons": [3],
+      "note": "Season 3 confirmed but not on CR yet"
+    },
+    {
+      "id": "attack-on-titan",
+      "title": "Attack on Titan",
+      "totalSeasons": 4,
+      "missingSeasons": [],
+      "note": "Complete on CR"
+    },
+    {
+      "id": "chainsaw-man",
+      "title": "Chainsaw Man",
+      "totalSeasons": 1,
+      "missingSeasons": [2],
+      "note": "Season 2 announced"
+    },
+    {
+      "id": "blue-lock",
+      "title": "Blue Lock",
+      "totalSeasons": 2,
+      "missingSeasons": [3],
+      "note": "Season 3 in production"
+    },
+    {
+      "id": "spy-x-family",
+      "title": "Spy x Family",
+      "totalSeasons": 2,
+      "missingSeasons": [3],
+      "note": "Season 3 greenlit"
+    },
+    {
+      "id": "fullmetal-alchemist",
+      "title": "Fullmetal Alchemist: Brotherhood",
+      "totalSeasons": 1,
+      "missingSeasons": [],
+      "note": "Complete on CR"
+    },
+    {
+      "id": "black-clover",
+      "title": "Black Clover",
+      "totalSeasons": 4,
+      "missingSeasons": [5],
+      "note": "Continuing beyond manga"
+    },
+    {
+      "id": "my-hero-academia",
+      "title": "My Hero Academia",
+      "totalSeasons": 7,
+      "missingSeasons": [7],
+      "note": "Season 7 final season part 3"
+    },
+    {
+      "id": "one-piece",
+      "title": "One Piece",
+      "totalSeasons": 22,
+      "missingSeasons": [],
+      "note": "Long-running, many seasons on CR"
+    }
+  ]
+}

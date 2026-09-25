@@ -1,0 +1,35 @@
+/* Missing season overlay styles */
+.missing-season-overlay {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: rgba(0,0,0,0.85);
+  color: #ff9a00;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-family: var(--font-family-primary, 'Roboto', sans-serif);
+  font-size: 13px;
+  z-index: 2147483647;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.missing-season-overlay .title { font-weight: 500; margin-right: 8px; }
+.missing-season-overlay .season { color: #ff6b6b; font-weight: 600; }
+.overlay-toggle-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #e2e6e9;
+  color: #21262a;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 2147483647;
+  cursor: pointer;
+  font-family: var(--font-family-primary, 'Roboto', sans-serif);
+}
+.overlay-toggle-btn.active {
+  background: #ff9a00;
+  color: white;
+}

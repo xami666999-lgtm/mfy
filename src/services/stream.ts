@@ -1,132 +1,181 @@
-import type { Track, SearchResult, LyricsData } from '../types'
-
-export interface ResolvedStream {
-  streamUrl: string
-  mimeType: string
-  quality: string
-  bitrate: number
-  sourceType: 'piped' | 'youtube-music'
-  cachedPath?: string
-  contentLength?: number
-}
-
-interface StreamResult {
-  success: boolean
-  data?: ResolvedStream
-  error?: string
-}
-
-interface SearchResultAPI {
-  success: boolean
-  data?: {
-    tracks: any[]
-    artists: any[]
-    albums: any[]
-  }
-  error?: string
-}
+import type { Stream, Subtitle, MetaItem, Addon, Catalog, SearchResult, Movie, Series } from '../types';
 
 class StreamService {
-  private static instance: StreamService
-  private searchCache = new Map<string, SearchResult>()
-  private trendingCache: { tracks: Track[]; timestamp: number } | null = null
+  private addons: Addon[] = [];
+  private cache = new Map<string, any>();
+  private cacheExpiry = 5 * 60 * 1000;
 
-  static getInstance(): StreamService {
-    if (!StreamService.instance) {
-      StreamService.instance = new StreamService()
-    }
-    return StreamService.instance
+  setAddons(addons: Addon[]) {
+    this.addons = addons;
   }
 
-  async resolveStream(trackId: string, sourceUrl: string, sourceType: 'piped' | 'youtube-music'): Promise<StreamResult> {
-    const result = await window.electronAPI.stream.resolve(trackId, sourceUrl, sourceType)
-    return result
-  }
+  async getMeta(type: 'movie' | 'series', id: string): Promise<MetaItem | null> {
+    const cacheKey = `meta:${type}:${id}`;
+    const cached = this.getCached(cacheKey);
+    if (cached) return cached;
 
-  async search(query: string, type: 'tracks' | 'artists' | 'albums' = 'tracks', limit = 20): Promise<SearchResult> {
-    const cacheKey = `${query}:${type}:${limit}`
-    if (this.searchCache.has(cacheKey)) {
-      return this.searchCache.get(cacheKey)!
-    }
+    for (const addon of this.addons) {
+      if (!addon.resources.includes('meta')) continue;
+      if (!addon.types.includes(type)) continue;
 
-    const result = await window.electronAPI.stream.search(query, type, limit)
-    if (result.success && result.data) {
-      this.searchCache.set(cacheKey, result.data)
-      if (this.searchCache.size > 100) {
-        const firstKey = this.searchCache.keys().next().value
-        if (firstKey) this.searchCache.delete(firstKey)
-      }
-      return result.data
-    }
-    console.error('Search failed:', result.error)
-    return { tracks: [], artists: [], albums: [] }
-  }
-
-  async getTrending(limit = 50): Promise<Track[]> {
-    const now = Date.now()
-    if (this.trendingCache && now - this.trendingCache.timestamp < 300000) {
-      return this.trendingCache.tracks
-    }
-
-    const result = await window.electronAPI.stream.trending(limit)
-    if (result.success && result.data?.tracks) {
-      this.trendingCache = { tracks: result.data.tracks, timestamp: now }
-      return result.data.tracks
-    }
-    console.error('Trending fetch failed:', result.error)
-    return []
-  }
-
-  async getTrackInfo(videoId: string, sourceType: 'piped' | 'youtube-music') {
-    const result = await window.electronAPI.stream.trackInfo(videoId, sourceType)
-    return result.success ? result.data : null
-  }
-
-  async getLyrics(videoId: string, sourceType: 'piped' | 'youtube-music'): Promise<LyricsData | null> {
-    const result = await window.electronAPI.stream.lyrics(videoId, sourceType)
-    if (result.success && result.data) {
-      return this.parseLyrics(result.data)
-    }
-    return null
-  }
-
-  private parseLyrics(data: any): LyricsData {
-    if (data.synced && data.lines) {
-      return {
-        synced: true,
-        lines: data.lines.map((line: any) => ({
-          time: typeof line.time === 'string' ? this.parseTime(line.time) : line.time,
-          text: line.text,
-        })),
-        provider: data.provider || 'unknown',
+      try {
+        const response = await this.fetchAddon(addon, `/meta/${type}/${id}.json`);
+        if (response?.meta) {
+          this.setCache(cacheKey, response.meta);
+          return response.meta;
+        }
+      } catch (e) {
+        console.warn(`Addon ${addon.name} meta failed:`, e);
       }
     }
-    return { synced: false, lines: [], provider: 'unknown' }
+    return null;
   }
 
-  private parseTime(timeStr: string): number {
-    const parts = timeStr.split(':')
-    if (parts.length === 2) {
-      return parseInt(parts[0]) * 60 + parseFloat(parts[1])
+  async getStreams(type: 'movie' | 'series', id: string): Promise<Stream[]> {
+    const cacheKey = `streams:${type}:${id}`;
+    const cached = this.getCached(cacheKey);
+    if (cached) return cached;
+
+    const streams: Stream[] = [];
+
+    for (const addon of this.addons) {
+      if (!addon.resources.includes('stream')) continue;
+      if (!addon.types.includes(type)) continue;
+
+      try {
+        const response = await this.fetchAddon(addon, `/stream/${type}/${id}.json`);
+        if (response?.streams) {
+          streams.push(...response.streams);
+        }
+      } catch (e) {
+        console.warn(`Addon ${addon.name} streams failed:`, e);
+      }
     }
-    if (parts.length === 3) {
-      return parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseFloat(parts[2])
+
+    this.setCache(cacheKey, streams);
+    return streams;
+  }
+
+  async getSubtitles(type: 'movie' | 'series', id: string): Promise<Subtitle[]> {
+    const cacheKey = `subtitles:${type}:${id}`;
+    const cached = this.getCached(cacheKey);
+    if (cached) return cached;
+
+    const subtitles: Subtitle[] = [];
+
+    for (const addon of this.addons) {
+      if (!addon.resources.includes('subtitles')) continue;
+      if (!addon.types.includes(type)) continue;
+
+      try {
+        const response = await this.fetchAddon(addon, `/subtitles/${type}/${id}.json`);
+        if (response?.subtitles) {
+          subtitles.push(...response.subtitles);
+        }
+      } catch (e) {
+        console.warn(`Addon ${addon.name} subtitles failed:`, e);
+      }
     }
-    return 0
+
+    this.setCache(cacheKey, subtitles);
+    return subtitles;
   }
 
-  async setPipedInstances(instances: string[]) {
-    return window.electronAPI.stream.setPipedInstances(instances)
+  async search(query: string, type?: 'movie' | 'series'): Promise<SearchResult> {
+    const cacheKey = `search:${type || 'all'}:${query}`;
+    const cached = this.getCached(cacheKey);
+    if (cached) return cached;
+
+    const results: SearchResult = { movies: [], series: [] };
+
+    for (const addon of this.addons) {
+      if (!addon.resources.includes('catalog')) continue;
+
+      for (const catalog of addon.catalogs) {
+        if (type && catalog.type !== type) continue;
+
+        try {
+          const response = await this.fetchAddon(addon, `/catalog/${catalog.type}/${catalog.id}/search=${encodeURIComponent(query)}.json`);
+          if (response?.metas) {
+            for (const meta of response.metas) {
+              if (meta.type === 'movie') results.movies.push(meta as Movie);
+              else if (meta.type === 'series') results.series.push(meta as Series);
+            }
+          }
+        } catch (e) {
+          console.warn(`Addon ${addon.name} search failed:`, e);
+        }
+      }
+    }
+
+    this.setCache(cacheKey, results);
+    return results;
   }
 
-  async setYtmInstances(instances: string[]) {
-    return window.electronAPI.stream.setYtmInstances(instances)
+  async getCatalog(catalogId: string, type: 'movie' | 'series', extra?: Record<string, string>): Promise<MetaItem[]> {
+    const cacheKey = `catalog:${catalogId}:${type}:${JSON.stringify(extra)}`;
+    const cached = this.getCached(cacheKey);
+    if (cached) return cached;
+
+    const items: MetaItem[] = [];
+
+    for (const addon of this.addons) {
+      const catalog = addon.catalogs.find((c) => c.id === catalogId);
+      if (!catalog) continue;
+
+      try {
+        let url = `/catalog/${type}/${catalogId}.json`;
+        if (extra) {
+          const params = new URLSearchParams(extra).toString();
+          if (params) url += `?${params}`;
+        }
+        const response = await this.fetchAddon(addon, url);
+        if (response?.metas) {
+          items.push(...response.metas);
+        }
+      } catch (e) {
+        console.warn(`Addon ${addon.name} catalog failed:`, e);
+      }
+    }
+
+    this.setCache(cacheKey, items);
+    return items;
+  }
+
+  private async fetchAddon(addon: Addon, path: string): Promise<any> {
+    if (!addon.transportUrl) return null;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), addon.timeout || 10000);
+
+    try {
+      const response = await fetch(`${addon.transportUrl}${path}`, {
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  private getCached(key: string): any {
+    const entry = this.cache.get(key);
+    if (entry && Date.now() - entry.time < this.cacheExpiry) {
+      return entry.data;
+    }
+    this.cache.delete(key);
+    return null;
+  }
+
+  private setCache(key: string, data: any) {
+    this.cache.set(key, { data, time: Date.now() });
   }
 
   clearCache() {
-    this.searchCache.clear()
-    this.trendingCache = null
+    this.cache.clear();
   }
 }
 
-export const streamService = StreamService.getInstance()
+export const streamService = new StreamService();

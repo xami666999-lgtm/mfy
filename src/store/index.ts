@@ -1,329 +1,210 @@
-import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
-import type { Game, System, Emulator, ControllerProfile, SaveFile, SaveBackup, Theme, Download, ScanFolder, Collection, PlaySession, AppSettings, Statistics, GameSettings, EmulatorCapabilities } from '../types'
-import { databaseService } from '../services/database'
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import type {
+  AppStore,
+  Page,
+  Settings,
+  ContinueWatching,
+  LibraryItem,
+  SearchResult,
+  Addon,
+  PlayerState,
+  Notification,
+  UserProfile,
+  Subtitle,
+} from '../types';
 
-// Simplified store - database loading happens in App.tsx useEffect
-interface EmulatorStore {
-  installedEmulators: Emulator[]
-  availableEmulators: Emulator[]
-  selectedEmulator: Emulator | null
-  setInstalledEmulators: (emulators: Emulator[]) => void
-  setAvailableEmulators: (emulators: Emulator[]) => void
-  setSelectedEmulator: (emulator: Emulator | null) => void
-  emulatorSearchQuery: string
-  setEmulatorSearchQuery: (query: string) => void
-  emulatorSearchResults: Emulator[]
-  setEmulatorSearchResults: (results: Emulator[]) => void
-}
-
-interface ControllerStore {
-  detectedControllers: ControllerProfile[]
-  selectedControllerProfile: ControllerProfile | null
-  setDetectedControllers: (controllers: ControllerProfile[]) => void
-  setSelectedControllerProfile: (profile: ControllerProfile | null) => void
-  controllerSearchQuery: string
-  setControllerSearchQuery: (query: string) => void
-  controllerSearchResults: ControllerProfile[]
-  setControllerSearchResults: (results: ControllerProfile[]) => void
-}
-
-interface DownloadStore {
-  activeDownloads: Download[]
-  pendingDownloads: Download[]
-  completedDownloads: Download[]
-  failedDownloads: Download[]
-  downloadHistory: Download[]
-  setActiveDownloads: (downloads: Download[]) => void
-  setPendingDownloads: (downloads: Download[]) => void
-  setCompletedDownloads: (downloads: Download[]) => void
-  setFailedDownloads: (downloads: Download[]) => void
-  addToHistory: (download: Download) => void
-}
-
-interface ScanFolderStore {
-  scanFolders: ScanFolder[]
-  selectedScanFolder: ScanFolder | null
-  setScanFolders: (folders: ScanFolder[]) => void
-  setSelectedScanFolder: (folder: ScanFolder | null) => void
-}
-
-interface StatisticsStore {
-  statistics: Statistics | null
-  setStatistics: (stats: Statistics) => void
-}
-
-interface GameLibraryStore {
-  allGames: Game[]
-  favorites: Game[]
-  recentlyAdded: Game[]
-  recentlyPlayed: Game[]
-  collections: Collection[]
-  gameViewState: {
-    viewMode: 'grid' | 'list' | 'compact' | 'carousel' | 'xmb'
-    sortField: 'name' | 'releaseDate' | 'playtime' | 'lastPlayed' | 'addedAt' | 'launchCount' | 'rating'
-    sortDirection: 'asc' | 'desc'
-    filters: {
-      systems: string[]
-      genres: string[]
-      developers: string[]
-      publishers: string[]
-      years: number[]
-      emulators: string[]
-      favoritesOnly: boolean
-      installedOnly: boolean
-      uninstalledOnly: boolean
-      searchQuery: string
-      hasSaves: boolean
-    }
-    groupBy: 'none' | 'system' | 'genre' | 'year' | 'developer' | 'publisher' | 'emulator'
-  }
-  setAllGames: (games: Game[]) => void
-  setFavorites: (games: Game[]) => void
-  setRecentlyAdded: (games: Game[]) => void
-  setRecentlyPlayed: (games: Game[]) => void
-  setCollections: (collections: Collection[]) => void
-  setGameViewState: (state: any) => void
-  addGame: (game: Game) => void
-  removeGame: (id: string) => void
-  updateGame: (game: Game) => void
-  searchGames: (query: string) => void
-  filterGames: (filters: any) => void
-  sortGames: (sortField: string, sortDirection: string) => void
-}
-
-interface SystemStore {
-  systems: System[]
-  selectedSystem: System | null
-  setSystems: (systems: System[]) => void
-  setSelectedSystem: (system: System | null) => void
-}
-
-export interface AppStore {
-  // Navigation
-  currentPage: 'home' | 'games' | 'systems' | 'emulators' | 'themes' | 'downloads' | 'saves' | 'controllers' | 'settings' | 'game-detail' | 'system-detail' | 'emulator-detail' | 'search'
-  setCurrentPage: (page: AppStore['currentPage']) => void
-  sidebarCollapsed: boolean
-  toggleSidebar: () => void
-  setSidebarCollapsed: (collapsed: boolean) => void
-  searchQuery: string
-  setSearchQuery: (query: string) => void
-  searchResults: { games: Game[]; systems: System[]; emulators: Emulator[]; themes: Theme[] }
-  setSearchResults: (results: { games: Game[]; systems: System[]; emulators: Emulator[]; themes: Theme[] }) => void
-  searchDebounceTimer: number | null
-  setSearchDebounceTimer: (timer: number | null) => void
-  miniPlayerOpen: boolean
-  toggleMiniPlayer: () => void
-  setMiniPlayerOpen: (open: boolean) => void
-
-  // Emulator state
-  emulator: EmulatorStore
-
-  // Controller state
-  controller: ControllerStore
-
-  // Download state
-  downloads: DownloadStore
-
-  // Scan folder state
-  scanFolders: ScanFolderStore
-
-  // Statistics state
-  statistics: StatisticsStore
-
-  // Game library state
-  gameLibrary: GameLibraryStore
-
-  // System state
-  systems: SystemStore
-
-  // Theme
-  theme: 'dark' | 'light' | 'system'
-  setTheme: (theme: 'dark' | 'light' | 'system') => void
-}
-
-const defaultStore: AppStore = {
-  // Navigation
-  currentPage: 'home',
-  setCurrentPage: (page: AppStore['currentPage']) => {},
-  sidebarCollapsed: false,
-  toggleSidebar: () => {},
-  setSidebarCollapsed: (collapsed: boolean) => {},
-  searchQuery: '',
-  setSearchQuery: (query: string) => {},
-  searchResults: { games: [], systems: [], emulators: [], themes: [] },
-  setSearchResults: (results: { games: Game[]; systems: System[]; emulators: Emulator[]; themes: Theme[] }) => {},
-
-  // Mini player
-  miniPlayerOpen: false,
-  toggleMiniPlayer: () => {},
-  setMiniPlayerOpen: (open: boolean) => {},
-
-  // Emulator state - initialized empty, loaded from database later
-  emulator: {
-    installedEmulators: [],
-    availableEmulators: [],
-    selectedEmulator: null,
-    setInstalledEmulators: (emulators: Emulator[]) => {},
-    setAvailableEmulators: (emulators: Emulator[]) => {},
-    setSelectedEmulator: (emulator: Emulator | null) => {},
-    emulatorSearchQuery: '',
-    setEmulatorSearchQuery: (query: string) => {},
-    emulatorSearchResults: [],
-    setEmulatorSearchResults: (results: Emulator[]) => {},
+const defaultSettings: Settings = {
+  general: {
+    language: 'en',
+    region: 'US',
+    contentLanguage: ['en'],
+    adultContent: false,
+    autoPlayNext: true,
+    autoPlayTrailers: false,
+    skipIntro: false,
+    skipCredits: false,
   },
-
-  // Controller state
-  controller: {
-    detectedControllers: [],
-    selectedControllerProfile: null,
-    setDetectedControllers: (controllers: ControllerProfile[]) => {},
-    setSelectedControllerProfile: (profile: ControllerProfile | null) => {},
-    controllerSearchQuery: '',
-    setControllerSearchQuery: (query: string) => {},
-    controllerSearchResults: [],
-    setControllerSearchResults: (results: ControllerProfile[]) => {},
+  playback: {
+    quality: 'auto',
+    bufferSize: 10,
+    hardwareAcceleration: true,
+    preferredAudioLanguage: 'en',
+    preferredSubtitleLanguage: 'en',
+    subtitleFontSize: 16,
+    subtitleColor: '#ffffff',
+    subtitleBackground: 'rgba(0,0,0,0.7)',
+    subtitleOutline: true,
   },
-
-  // Download state
-  downloads: {
-    activeDownloads: [],
-    pendingDownloads: [],
-    completedDownloads: [],
-    failedDownloads: [],
-    downloadHistory: [],
-    setActiveDownloads: (downloads: Download[]) => {},
-    setPendingDownloads: (downloads: Download[]) => {},
-    setCompletedDownloads: (downloads: Download[]) => {},
-    setFailedDownloads: (downloads: Download[]) => {},
-    addToHistory: (download: Download) => {},
+  appearance: {
+    theme: 'system',
+    accentColor: '#e50914',
+    compactMode: false,
+    showBackdrops: true,
+    reduceMotion: false,
+    fontScale: 1,
   },
-
-  // Scan folder state
-  scanFolders: {
-    scanFolders: [],
-    selectedScanFolder: null,
-    setScanFolders: (folders: ScanFolder[]) => {},
-    setSelectedScanFolder: (folder: ScanFolder | null) => {},
+  addons: {
+    installedAddons: [],
+    communityAddons: [],
+    officialAddons: [],
+    autoUpdateAddons: true,
+    addonTimeout: 10000,
   },
-
-  // Statistics state
-  statistics: {
-    statistics: null,
-    setStatistics: (stats: Statistics) => {},
+  library: {
+    syncWithTrakt: false,
+    autoAddToLibrary: true,
+    showInLibrary: ['watching', 'completed', 'plan_to_watch'],
   },
-
-  // Game library state - initialized empty, loaded from database later
-  gameLibrary: {
-    allGames: [],
-    favorites: [],
-    recentlyAdded: [],
-    recentlyPlayed: [],
-    collections: [],
-    gameViewState: {
-      viewMode: 'grid',
-      sortField: 'name',
-      sortDirection: 'asc',
-      filters: {
-        systems: [],
-        genres: [],
-        developers: [],
-        publishers: [],
-        years: [],
-        emulators: [],
-        favoritesOnly: false,
-        installedOnly: false,
-        uninstalledOnly: false,
-        searchQuery: '',
-        hasSaves: false,
-      },
-      groupBy: 'none',
-    },
-    setAllGames: (games: Game[]) => {},
-    setFavorites: (games: Game[]) => {},
-    setRecentlyAdded: (games: Game[]) => {},
-    setRecentlyPlayed: (games: Game[]) => {},
-    setCollections: (collections: Collection[]) => {},
-    setGameViewState: (state: any) => {},
-    addGame: (game: Game) => {},
-    removeGame: (id: string) => {},
-    updateGame: (game: Game) => {},
-    searchGames: (query: string) => {},
-    filterGames: (filters: any) => {},
-    sortGames: (sortField: string, sortDirection: string) => {},
+  profiles: {
+    profiles: [],
+    activeProfileId: '',
   },
-
-  // System state - initialized empty, loaded from database later
-  systems: {
-    systems: [],
-    selectedSystem: null,
-    setSystems: (systems: System[]) => {},
-    setSelectedSystem: (system: System | null) => {},
+  network: {
+    dnsOverHttps: false,
   },
+  privacy: {
+    analytics: false,
+    crashReporting: false,
+    shareUsageData: false,
+    clearHistoryOnExit: false,
+  },
+};
 
-  // Theme
-  theme: 'dark',
-  setTheme: (theme: 'dark' | 'light' | 'system') => {},
-}
-
-// Create the store with persistence
 export const useStore = create<AppStore>()(
   persist(
-    (set) => ({ ...defaultStore }),
+    (set, get) => ({
+      currentPage: 'home',
+      setCurrentPage: (page: Page) => set({ currentPage: page }),
+      
+      sidebarCollapsed: false,
+      setSidebarCollapsed: (collapsed: boolean) => set({ sidebarCollapsed: collapsed }),
+      
+      theme: 'system',
+      setTheme: (theme) => set({ theme }),
+      
+      mediaItems: [],
+      setMediaItems: (items) => set({ mediaItems: items }),
+      
+      continueWatching: [],
+      setContinueWatching: (items: ContinueWatching[]) => set({ continueWatching: items }),
+      addToContinueWatching: (item: ContinueWatching) =>
+        set((state) => {
+          const filtered = state.continueWatching.filter((cw) => cw.mediaId !== item.mediaId || cw.profileId !== item.profileId);
+          return { continueWatching: [item, ...filtered].slice(0, 20) };
+        }),
+      updateContinueWatching: (id: string, progress: number, currentTime: number) =>
+        set((state) => ({
+          continueWatching: state.continueWatching.map((cw) =>
+            cw.id === id ? { ...cw, progress, currentTime, watchedAt: new Date().toISOString() } : cw
+          ),
+        })),
+      removeFromContinueWatching: (id: string) =>
+        set((state) => ({
+          continueWatching: state.continueWatching.filter((cw) => cw.id !== id),
+        })),
+      
+      library: [],
+      setLibrary: (items: LibraryItem[]) => set({ library: items }),
+      upsertLibraryItem: (item: LibraryItem) =>
+        set((state) => ({
+          library: state.library.some((l) => l.mediaId === item.mediaId && l.profileId === item.profileId)
+            ? state.library.map((l) => (l.mediaId === item.mediaId && l.profileId === item.profileId ? item : l))
+            : [item, ...state.library],
+        })),
+      removeFromLibrary: (mediaId: string) =>
+        set((state) => ({
+          library: state.library.filter((l) => l.mediaId !== mediaId),
+        })),
+      getLibraryItem: (mediaId: string) => get().library.find((l) => l.mediaId === mediaId),
+      
+      searchQuery: '',
+      setSearchQuery: (query: string) => set({ searchQuery: query }),
+      searchResults: { movies: [], tv: [], anime: [] },
+      setSearchResults: (results: SearchResult) => set({ searchResults: results }),
+      searchDebounceTimer: null,
+      setSearchDebounceTimer: (timer) => set({ searchDebounceTimer: timer }),
+      
+      addons: [],
+      setAddons: (addons: Addon[]) => set({ addons }),
+      installAddon: (addon: Addon) =>
+        set((state) => ({
+          addons: state.addons.some((a) => a.id === addon.id)
+            ? state.addons.map((a) => (a.id === addon.id ? addon : a))
+            : [...state.addons, addon],
+        })),
+      uninstallAddon: (addonId: string) =>
+        set((state) => ({
+          addons: state.addons.filter((a) => a.id !== addonId),
+          enabledAddons: state.enabledAddons.filter((id) => id !== addonId),
+        })),
+      getAddon: (id: string) => get().addons.find((a) => a.id === id),
+      enabledAddons: [],
+      setEnabledAddons: (ids: string[]) => set({ enabledAddons: ids }),
+      
+      settings: defaultSettings,
+      setSettings: (partialSettings: Partial<Settings>) =>
+        set((state) => ({
+          settings: {
+            ...state.settings,
+            ...partialSettings,
+            general: { ...state.settings.general, ...partialSettings.general },
+            playback: { ...state.settings.playback, ...partialSettings.playback },
+            appearance: { ...state.settings.appearance, ...partialSettings.appearance },
+            addons: { ...state.settings.addons, ...partialSettings.addons },
+            library: { ...state.settings.library, ...partialSettings.library },
+            profiles: { ...state.settings.profiles, ...partialSettings.profiles },
+            network: { ...state.settings.network, ...partialSettings.network },
+            privacy: { ...state.settings.privacy, ...partialSettings.privacy },
+          },
+        })),
+      
+      playerState: null,
+      setPlayerState: (state: PlayerState | null) => set({ playerState: state }),
+      
+      profiles: [],
+      setProfiles: (profiles: UserProfile[]) => set({ profiles }),
+      activeProfile: null,
+      setActiveProfile: (profile: UserProfile | null) => set({ activeProfile: profile }),
+      addProfile: (profile: UserProfile) =>
+        set((state) => ({
+          profiles: [...state.profiles, profile],
+          activeProfile: state.profiles.length === 0 ? profile : state.activeProfile,
+        })),
+      updateProfile: (id: string, updates: Partial<UserProfile>) =>
+        set((state) => ({
+          profiles: state.profiles.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+          activeProfile: state.activeProfile?.id === id ? { ...state.activeProfile, ...updates } : state.activeProfile,
+        })),
+      removeProfile: (id: string) =>
+        set((state) => ({
+          profiles: state.profiles.filter((p) => p.id !== id),
+          activeProfile: state.activeProfile?.id === id ? (state.profiles[1] || null) : state.activeProfile,
+        })),
+      
+      notifications: [],
+      addNotification: (notification) =>
+        set((state) => ({
+          notifications: [...state.notifications, { ...notification, id: crypto.randomUUID() }],
+        })),
+      removeNotification: (id: string) =>
+        set((state) => ({
+          notifications: state.notifications.filter((n) => n.id !== id),
+        })),
+    }),
     {
-      name: 'mfy-emulator-store',
+      name: 'mfy-storage',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state: any) => ({
-        // Persist only essential state
-        currentPage: state.currentPage,
+      partialize: (state) => ({
         sidebarCollapsed: state.sidebarCollapsed,
-        searchQuery: state.searchQuery,
-        searchResults: state.searchResults,
-        miniPlayerOpen: state.miniPlayerOpen,
         theme: state.theme,
-        // Emulator state
-        emulator: {
-          installedEmulators: state.emulator.installedEmulators,
-          availableEmulators: state.emulator.availableEmulators,
-          selectedEmulator: state.emulator.selectedEmulator,
-        },
-        // Controller state
-        controller: {
-          detectedControllers: state.controller.detectedControllers,
-          selectedControllerProfile: state.controller.selectedControllerProfile,
-        },
-        // Download state
-        downloads: {
-          activeDownloads: state.downloads.activeDownloads,
-          pendingDownloads: state.downloads.pendingDownloads,
-          completedDownloads: state.downloads.completedDownloads,
-          failedDownloads: state.downloads.failedDownloads,
-          downloadHistory: state.downloads.downloadHistory,
-        },
-        // Scan folders
-        scanFolders: {
-          scanFolders: state.scanFolders.scanFolders,
-          selectedScanFolder: state.scanFolders.selectedScanFolder,
-        },
-        // Statistics
-        statistics: state.statistics.statistics,
-        // Game library
-        gameLibrary: {
-          allGames: state.gameLibrary.allGames,
-          favorites: state.gameLibrary.favorites,
-          recentlyAdded: state.gameLibrary.recentlyAdded,
-          recentlyPlayed: state.gameLibrary.recentlyPlayed,
-          collections: state.gameLibrary.collections,
-          gameViewState: state.gameLibrary.gameViewState,
-        },
-        // Systems
-        systems: {
-          systems: state.systems.systems,
-          selectedSystem: state.systems.selectedSystem,
-        },
+        continueWatching: state.continueWatching,
+        library: state.library,
+        enabledAddons: state.enabledAddons,
+        settings: state.settings,
+        profiles: state.profiles,
+        activeProfile: state.activeProfile,
       }),
     }
   )
-)
-
-export default useStore
+);

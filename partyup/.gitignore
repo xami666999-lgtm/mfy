@@ -1,0 +1,88 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/*.exe
+build/*.msi
+build/*.dmg
+build/*.AppImage
+build/*.snap
+build/*.deb
+build/*.rpm
+build/*.flatpak
+build/*.apk
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+electron-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Cache
+.cache/
+.eslintcache
+.stylelintcache
+
+# TypeScript
+*.tsbuildinfo
+
+# Electron
+dist-electron/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# User data
+user-data/
+
+# Temporary
+tmp/
+temp/
+*.tmp
+
+# OS specific
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env*.local
+
+# Vercel
+.vercel
+
+# TypeScript cache
+*.tsbuildinfo

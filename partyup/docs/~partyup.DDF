@@ -1,0 +1,37 @@
+;Auto-generated Diamond Directive File. Can be deleted without harm.
+.Set CabinetNameTemplate=C:\Users\Noah\Documents\Default Project\partyup\docs\~partyup.CAB
+.Set CompressionType=LZX
+.Set CompressionLevel=7
+.Set InfFileName=C:\Users\Noah\Documents\Default Project\partyup\docs\~partyup_LAYOUT.INF
+.Set RptFileName=C:\Users\Noah\Documents\Default Project\partyup\docs\~partyup.RPT
+.Set MaxDiskSize=CDROM
+.Set ReservePerCabinetSize=0
+.Set InfCabinetLineFormat=*cab#*=Application Source Media,*cabfile*,0
+.Set Compress=on
+.Set CompressionMemory=21
+.Set DiskDirectoryTemplate=
+.Set Cabinet=ON
+.Set MaxCabinetSize=999999999
+.Set InfDiskHeader=
+.Set InfDiskLineFormat=
+.Set InfCabinetHeader=[SourceDisksNames]
+.Set InfFileHeader=
+.Set InfFileHeader1=[SourceDisksFiles]
+.Set InfFileLineFormat=*file*=*cab#*,,*size*,*csum*
+C:\Users\Noah\DOCUME~1\Default Project\partyup\.eslintrc.cjs
+C:\Users\Noah\DOCUME~1\Default Project\partyup\.gitignore
+C:\Users\Noah\DOCUME~1\Default Project\partyup\.prettierrc.cjs
+C:\Users\Noah\DOCUME~1\Default Project\partyup\CONTRIBUTING.md
+C:\Users\Noah\DOCUME~1\Default Project\partyup\electron-builder.yml
+C:\Users\Noah\DOCUME~1\Default Project\partyup\LICENSE
+C:\Users\Noah\DOCUME~1\Default Project\partyup\package.json
+C:\Users\Noah\DOCUME~1\Default Project\partyup\playwright.config.ts
+C:\Users\Noah\DOCUME~1\Default Project\partyup\README.md
+C:\Users\Noah\DOCUME~1\Default Project\partyup\SPEC.md
+C:\Users\Noah\DOCUME~1\Default Project\partyup\tsconfig.json
+C:\Users\Noah\DOCUME~1\Default Project\partyup\tsconfig.main.json
+C:\Users\Noah\DOCUME~1\Default Project\partyup\tsconfig.plugins.json
+C:\Users\Noah\DOCUME~1\Default Project\partyup\tsconfig.preload.json
+C:\Users\Noah\DOCUME~1\Default Project\partyup\tsconfig.renderer.json
+C:\Users\Noah\DOCUME~1\Default Project\partyup\vite.renderer.config.ts
+C:\Users\Noah\DOCUME~1\Default Project\partyup\vitest.config.ts
