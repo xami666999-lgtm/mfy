@@ -1,4 +1,5 @@
 import { ipcMain, BrowserWindow } from 'electron'
+import { setupJellyfinSidecar } from './jellyfin-ipc'
 
 const VIDEO_EXT = /\.(mp4|mkv|avi|mov|webm|m4v|ts|flv|wmv|mpg|mpeg|3gp|ogv)$/i
 let clientPromise: Promise<any> | null = null
@@ -179,6 +180,7 @@ function registerHandlers() {
 
 export async function setupTorrentEngine() {
   registerHandlers()
+  try { setupJellyfinSidecar() } catch (e) { console.error('[jellyfin]', e) }
   try {
     await ensureServer()
   } catch (e) {
