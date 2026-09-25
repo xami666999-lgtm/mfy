@@ -19,8 +19,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
+      - run: npm install
       - name: Build NSIS Setup
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
@@ -28,8 +27,10 @@ jobs:
       - name: Upload Setup artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MFY-Setup-1.7.6
-          path: release/MFY-Setup-*.exe
+          name: MFY-Setup
+          path: |
+            release/MFY-Setup-*.exe
+            release/latest.yml
           if-no-files-found: error
       - name: Publish GitHub Release
         env:
@@ -38,7 +39,10 @@ jobs:
           $ver = node -p "require('./package.json').version"
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git tag "v$ver"
-          git push origin "v$ver"
-          gh release create "v$ver" "release/MFY-Setup-$ver.exe" --title "$ver 1.6.69 + intro" --notes "Full 1.6.69 app with launch intro." --target ${{ github.sha }}
-        continue-on-error: true
+          git tag -f "v$ver"
+          git push -f origin "v$ver"
+          gh release delete "v$ver" -y 2>$null
+          $files = @("release/MFY-Setup-$ver.exe")
+          if (Test-Path "release/latest.yml") { $files += "release/latest.yml" }
+          if (Test-Path "release/MFY-Setup-$ver.exe.blockmap") { $files += "release/MFY-Setup-$ver.exe.blockmap" }
+          gh release create "v$ver" @files --title "$ver themes + Jellyfin sidecar" --notes "Windows Setup. Settings Themes: Netflix, Apple TV, Max. Then add Jellyfin plugins from Settings." --target ${{ github.sha }}
