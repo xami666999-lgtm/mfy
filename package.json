@@ -1,6 +1,6 @@
 {
   "name": "mfy",
-  "version": "1.7.13",
+  "version": "1.7.14",
   "description": "MFY - Movies For You",
   "main": "dist-electron/main.js",
   "author": "xami666999-lgtm",
@@ -53,21 +53,10 @@
     "appId": "com.mfy.app",
     "productName": "MFY",
     "npmRebuild": false,
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "dist/**/*",
-      "dist-electron/**/*",
-      "public/data/**/*"
-    ],
+    "directories": { "output": "release" },
+    "files": ["dist/**/*", "dist-electron/**/*", "public/data/**/*"],
     "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": ["x64"]
-        }
-      ],
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
       "icon": "public/icons/mfy.ico",
       "signAndEditExecutable": false
     },
@@ -79,23 +68,8 @@
       "shortcutName": "MFY",
       "artifactName": "MFY-Setup-${version}.${ext}"
     },
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "xami666999-lgtm",
-        "repo": "mfy",
-        "releaseType": "release"
-      }
-    ],
-    "extraResources": [
-      {
-        "from": "public/icons/mfy.ico",
-        "to": "mfy.ico"
-      }
-    ]
+    "publish": [{ "provider": "github", "owner": "xami666999-lgtm", "repo": "mfy", "releaseType": "release" }],
+    "extraResources": [{ "from": "public/icons/mfy.ico", "to": "mfy.ico" }]
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/xami666999-lgtm/mfy.git"
-  }
+  "repository": { "type": "git", "url": "https://github.com/xami666999-lgtm/mfy.git" }
 }
