@@ -1,7 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  // Window controls
   minimize: () => ipcRenderer.send('window-minimize'),
   maximize: () => ipcRenderer.send('window-maximize'),
   fullscreen: () => ipcRenderer.send('window-fullscreen'),
@@ -10,31 +9,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
   moveDisplay: () => ipcRenderer.send('window-move-display'),
   isMaximized: () => ipcRenderer.invoke('window-is-maximized'),
 
-  // Store
   get: (key: string) => ipcRenderer.invoke('store-get', key),
   set: (key: string, value: unknown) => ipcRenderer.invoke('store-set', key, value),
   delete: (key: string) => ipcRenderer.invoke('store-delete', key),
 
-  // External
   openExternal: (url: string) => ipcRenderer.send('open-external', url),
   openVlc: (url: string) => ipcRenderer.send('open-vlc', url),
 
-  // CORS-free text fetch (IPTV playlists)
   fetchText: (url: string, timeoutMs?: number) => ipcRenderer.invoke('fetch-text', url, timeoutMs),
   fetchJson: (url: string, init?: { method?: string; headers?: Record<string, string>; body?: string; timeoutMs?: number }) => ipcRenderer.invoke('fetch-json', url, init),
 
-  // Dialog
   selectFolder: () => ipcRenderer.invoke('select-folder'),
   selectFileText: () => ipcRenderer.invoke('select-file-text'),
 
-  // Notifications
   showNotification: (title: string, body: string) => ipcRenderer.send('show-notification', title, body),
 
-  // Setup
   isSetupComplete: () => ipcRenderer.invoke('is-setup-complete'),
   setSetupComplete: () => ipcRenderer.invoke('set-setup-complete'),
 
-  // Auto-update
   onPlayerEscape: (cb: () => void) => {
     const listener = () => cb()
     ipcRenderer.on('mfy-player-escape', listener)
@@ -58,14 +50,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('mfy:update-available', listener)
   },
 
-  // Window visibility (for the intro splash)
   onWindowShown: (cb: () => void) => {
     const listener = () => cb()
     ipcRenderer.on('mfy-window-shown', listener)
     return () => ipcRenderer.removeListener('mfy-window-shown', listener)
   },
 
-  // Desktop shortcut
   createDesktopShortcut: () => ipcRenderer.invoke('createDesktopShortcut'),
   launchAndroidApp: (key: 'sportzx' | 'ak47') => ipcRenderer.invoke('launch-android-app', key),
   loadProgress: (email?: string, profileId?: string) => ipcRenderer.invoke('progress-load', email, profileId),
@@ -79,6 +69,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   openYouTubeLogin: () => ipcRenderer.invoke('youtube-login'),
   youtubeLoginStatus: () => ipcRenderer.invoke('youtube-login-status'),
+
+  jellyfinStatus: () => ipcRenderer.invoke('jellyfin-status'),
+  jellyfinStart: () => ipcRenderer.invoke('jellyfin-start'),
+  jellyfinStop: () => ipcRenderer.invoke('jellyfin-stop'),
+  jellyfinPickPlugin: () => ipcRenderer.invoke('jellyfin-pick-plugin'),
+  jellyfinInstallUrl: (url: string) => ipcRenderer.invoke('jellyfin-install-url', url),
+  jellyfinOpenDashboard: () => ipcRenderer.invoke('jellyfin-open-dashboard'),
+  jellyfinOpenPlugins: () => ipcRenderer.invoke('jellyfin-open-plugins'),
 })
 
 contextBridge.exposeInMainWorld('torrentAPI', {
