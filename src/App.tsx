@@ -7,6 +7,7 @@ import { useKeyboardNav } from './hooks/useKeyboardNav'
 import TitleBar from './components/TitleBar'
 import Navbar from './components/Navbar'
 import AppleRail from './components/AppleRail'
+import PhoneTabBar from './components/PhoneTabBar'
 import Board from './pages/Board'
 import NuvioHome from './pages/NuvioHome'
 import Discover from './pages/Discover'
@@ -40,6 +41,7 @@ import CalendarPage from './pages/CalendarPage'
 import DetailExtras from './components/DetailExtras'
 import EpisodePanel from './components/EpisodePanel'
 import { youtubeEmbedUrl } from './api/youtubio'
+import { isPhoneShell } from './lib/device'
 
 void Board
 void Navbar
@@ -49,6 +51,7 @@ export default function App() {
   const [showIntro, setShowIntro] = useState(true)
   const [updateInfo, setUpdateInfo] = useState<{ version?: string } | null>(null)
   const [updateDismissed, setUpdateDismissed] = useState(false)
+  const phone = isPhoneShell()
   const {
     currentPage,
     selectedMedia,
@@ -83,6 +86,11 @@ export default function App() {
     const { init } = useStore.getState()
     init()
   }, [])
+
+  useEffect(() => {
+    if (phone) document.documentElement.classList.add('mfy-phone')
+    else document.documentElement.classList.remove('mfy-phone')
+  }, [phone])
 
   useEffect(() => {
     const api = (window as any).electronAPI
@@ -164,11 +172,11 @@ export default function App() {
 
   return (
     <div className="h-screen flex flex-col bg-[#0a0a0a] font-sans">
-      <RemoteHelp />
+      {!phone && <RemoteHelp />}
       <IdleWall />
       <IntroSkip />
       <EpisodePanel />
-      {updateInfo && !updateDismissed && currentPage !== 'player' && (
+      {updateInfo && !updateDismissed && currentPage !== 'player' && !phone && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#14101a] border border-white/15 shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
           <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
           <div className="text-xs text-white/80">
@@ -189,9 +197,10 @@ export default function App() {
           </button>
         </div>
       )}
-      <TitleBar />
-      <div className="flex-1 min-h-0 relative" style={{ paddingTop: 36 }}>
-      {currentPage !== 'player' && currentPage !== 'detail' && <AppleRail />}
+      {!phone && <TitleBar />}
+      <div className={`flex-1 min-h-0 relative mfy-phone-main`} style={{ paddingTop: phone ? 0 : 36 }}>
+      {currentPage !== 'player' && currentPage !== 'detail' && !phone && <AppleRail />}
+      {phone && currentPage !== 'player' && <PhoneTabBar />}
       <main className="absolute inset-0 overflow-y-auto overflow-x-hidden">
         {currentPage === 'home' && <NuvioHome />}
         {currentPage === 'discover' && <Discover />}
