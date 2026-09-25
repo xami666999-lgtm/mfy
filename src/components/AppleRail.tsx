@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../store'
 import BugReport from './BugReport'
-import { Search, Home, Film, Tv, Sparkles, BookOpen, Youtube, Music, Trophy, Radio, Bookmark, Settings, PanelLeftClose, PanelLeft, CalendarDays } from 'lucide-react'
+import { Search, Home, Film, Tv, Sparkles, BookOpen, Youtube, Music, Trophy, Radio, Bookmark, Settings, PanelLeftClose, PanelLeft, CalendarDays, Server } from 'lucide-react'
 
 const LINKS: [string, string, any][] = [
   ['home', 'Home', Home],
@@ -9,6 +9,7 @@ const LINKS: [string, string, any][] = [
   ['tv', 'TV', Tv],
   ['anime', 'Anime', Sparkles],
   ['calendar', 'Calendar', CalendarDays],
+  ['jellyfin', 'Jellyfin', Server],
   ['manga', 'Manga', BookOpen],
   ['comics', 'Comics', BookOpen],
   ['books', 'Books', BookOpen],
