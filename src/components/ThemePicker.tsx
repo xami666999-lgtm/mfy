@@ -3,10 +3,10 @@ import { useEffect, useState } from 'react'
 export const THEME_PACKS = [
   { id: 'mfy', name: 'MFY' },
   { id: 'netflix', name: 'Netflix' },
+  { id: 'appletv', name: 'Apple TV' },
+  { id: 'hbo', name: 'Max' },
   { id: 'prime', name: 'Prime Video' },
   { id: 'paramount', name: 'Paramount+' },
-  { id: 'appletv', name: 'Apple TV' },
-  { id: 'hbo', name: 'HBO Max' },
   { id: 'sleekfin', name: 'SleekFin' },
 ] as const
 
@@ -33,10 +33,14 @@ export default function ThemePicker() {
   async function loadPlugins() {
     const api = (window as any).electronAPI
     if (!api?.jellyfinStatus) return
-    const s = await api.jellyfinStatus()
-    setPlugins([...(s?.plugins || [])].map(String).sort((a: string, b: string) => a.localeCompare(b)))
-    setJf(s?.running ? s.url : '')
-    if (s?.error) setMsg(s.error)
+    try {
+      const s = await api.jellyfinStatus()
+      setPlugins([...(s?.plugins || [])].map(String).sort((a: string, b: string) => a.localeCompare(b)))
+      setJf(s?.running ? s.url : '')
+      if (s?.error) setMsg(String(s.error))
+    } catch (e: any) {
+      setMsg(e?.message || 'plugin list failed')
+    }
   }
 
   useEffect(() => {
@@ -49,7 +53,7 @@ export default function ThemePicker() {
   return (
     <section className="p-8 max-w-2xl pb-0">
       <h2 className="text-lg font-semibold text-white tracking-tight mb-2">Themes</h2>
-      <p className="text-xs text-white/40 mb-4">Skins MFY. Catalog stays movies / shows / anime. After you drop plugins, they list below — tell me where each should go and I will pin them.</p>
+      <p className="text-xs text-white/40 mb-4">Restyles MFY only. Movies / shows / anime stay MFY. Jellyfin plugins stay in their own list — pick a theme does not touch plugin files.</p>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6">
         {THEME_PACKS.map((p) => (
           <button
@@ -63,10 +67,10 @@ export default function ThemePicker() {
         ))}
       </div>
       <div className="flex flex-wrap gap-2 mb-4">
-        <button type="button" className="h-9 px-3 rounded-lg bg-white text-black text-xs font-semibold" onClick={() => api?.jellyfinStart?.().then(loadPlugins)}>
+        <button type="button" className="h-9 px-3 rounded-lg bg-white text-black text-xs font-semibold" onClick={() => api?.jellyfinStart?.().then(loadPlugins).catch((e: any) => setMsg(e?.message || 'start failed'))}>
           Start local Jellyfin
         </button>
-        <button type="button" className="h-9 px-3 rounded-lg bg-white/10 text-white text-xs" onClick={() => api?.jellyfinPickPlugin?.().then(loadPlugins)}>
+        <button type="button" className="h-9 px-3 rounded-lg bg-white/10 text-white text-xs" onClick={() => api?.jellyfinPickPlugin?.().then(loadPlugins).catch((e: any) => setMsg(e?.message || 'install failed'))}>
           Install plugin zip
         </button>
         <button type="button" className="h-9 px-3 rounded-lg bg-white/10 text-white text-xs" onClick={() => api?.jellyfinOpenDashboard?.()}>
@@ -78,14 +82,11 @@ export default function ThemePicker() {
       </div>
       {msg && <p className="text-xs text-red-400 mb-2">{msg}</p>}
       {pack === 'sleekfin' && (
-        <p className="text-xs text-white/45 mb-4">
-          SleekFin tint is on MFY. Real SleekFin plugin: start Jellyfin, install File Transformation + SleekFin, open Dashboard.
-          {jf ? ` ${jf}` : ''}
-        </p>
+        <p className="text-xs text-white/45 mb-4">SleekFin tint is on MFY. Real plugin still needs File Transformation + SleekFin in the sidecar.{jf ? ` ${jf}` : ''}</p>
       )}
       <h3 className="text-sm font-medium text-white/70 mb-2">Installed Jellyfin plugins</h3>
       {plugins.length === 0 ? (
-        <p className="text-xs text-white/30 mb-6">None yet.</p>
+        <p className="text-xs text-white/30 mb-6">None yet. Add zips here later and tell me where to pin each one.</p>
       ) : (
         <ul className="mb-6 space-y-1">
           {plugins.map((name) => (

@@ -1,43 +1,81 @@
-:root, [data-pack='mfy'] {
+:root, html[data-pack='mfy'] {
   --pack-accent: #ffffff;
   --pack-bg: #0a0a0a;
   --pack-card: #141414;
+  --pack-play: #ffffff;
+  --pack-play-fg: #000000;
 }
-[data-pack='netflix'] {
+html[data-pack='netflix'] {
   --pack-accent: #e50914;
   --pack-bg: #141414;
   --pack-card: #1f1f1f;
+  --pack-play: #e50914;
+  --pack-play-fg: #ffffff;
 }
-[data-pack='prime'] {
+html[data-pack='prime'] {
   --pack-accent: #00a8e1;
   --pack-bg: #0f171e;
   --pack-card: #1b2530;
+  --pack-play: #00a8e1;
+  --pack-play-fg: #041018;
 }
-[data-pack='paramount'] {
+html[data-pack='paramount'] {
   --pack-accent: #0064ff;
   --pack-bg: #000814;
   --pack-card: #0b1b33;
+  --pack-play: #0064ff;
+  --pack-play-fg: #ffffff;
 }
-[data-pack='appletv'] {
+html[data-pack='appletv'] {
   --pack-accent: #f5f5f7;
   --pack-bg: #000000;
   --pack-card: #1c1c1e;
+  --pack-play: #f5f5f7;
+  --pack-play-fg: #000000;
 }
-[data-pack='hbo'] {
+html[data-pack='hbo'] {
   --pack-accent: #b535f6;
-  --pack-bg: #050308;
-  --pack-card: #16081f;
+  --pack-bg: #0b0612;
+  --pack-card: #1a0e24;
+  --pack-play: #b535f6;
+  --pack-play-fg: #ffffff;
 }
-[data-pack='sleekfin'] {
+html[data-pack='sleekfin'] {
   --pack-accent: #e11d2a;
   --pack-bg: #000000;
   --pack-card: #121212;
-  font-family: Inter, Sora, Manrope, sans-serif;
+  --pack-play: #e11d2a;
+  --pack-play-fg: #ffffff;
 }
-html[data-pack] body {
-  background: var(--pack-bg);
+
+html[data-pack] body,
+html[data-pack] .nv-page,
+html[data-pack] .h-screen {
+  background: var(--pack-bg) !important;
+  color: #fff;
 }
-html[data-pack] .nv-h,
-html[data-pack] button.on {
-  color: var(--pack-accent);
+html[data-pack] .nv-hero-fade {
+  background: linear-gradient(90deg, var(--pack-bg) 0%, color-mix(in srgb, var(--pack-bg) 40%, transparent) 46%, transparent 72%),
+    linear-gradient(0deg, var(--pack-bg) 0%, transparent 44%);
 }
+html[data-pack] .nv-h { color: #fff; }
+html[data-pack] .nv-h::after { background: var(--pack-accent); }
+html[data-pack] .nv-bar > i { background: var(--pack-accent); }
+html[data-pack] .nv-dot.on { background: var(--pack-accent); }
+html[data-pack] .nv-poster img,
+html[data-pack] .nv-art img,
+html[data-pack] .nv-cw img {
+  background: var(--pack-card);
+}
+html[data-pack='netflix'] .nv-poster img { border-radius: 4px; }
+html[data-pack='netflix'] .nv-cw img { border-radius: 4px; }
+html[data-pack='netflix'] .nv-page { font-family: Inter, Manrope, sans-serif; }
+html[data-pack='appletv'] .nv-poster img { border-radius: 14px; }
+html[data-pack='appletv'] .nv-cw img { border-radius: 14px; }
+html[data-pack='hbo'] .nv-poster img { border-radius: 16px; }
+html[data-pack='hbo'] .nv-page {
+  background:
+    radial-gradient(1200px 500px at 10% -10%, #3a1460 0%, transparent 55%),
+    var(--pack-bg) !important;
+}
+html[data-pack='sleekfin'] .nv-page { font-family: Inter, Sora, sans-serif; }
