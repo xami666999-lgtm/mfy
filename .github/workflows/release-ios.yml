@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   ipa:
@@ -32,11 +32,30 @@ jobs:
         run: |
           APP=$(find ~/Library/Developer/Xcode/DerivedData -name 'App.app' | head -n 1)
           if [ -z "$APP" ]; then APP=$(find . -name 'App.app' | head -n 1); fi
+          test -n "$APP"
           mkdir -p Payload
           cp -R "$APP" Payload/MFY.app
-          zip -r MFY.ipa Payload
+          VER=$(node -p "require('./package.json').version")
+          echo "VER=$VER" >> $GITHUB_ENV
+          zip -r "MFY-iOS-$VER.ipa" Payload
       - uses: actions/upload-artifact@v4
         with:
-          name: MFY-iOS-unsigned
-          path: MFY.ipa
+          name: MFY-iOS-ipa
+          path: MFY-iOS-*.ipa
           if-no-files-found: error
+      - name: Publish separate iOS GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          TAG="ios-v$VER"
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git tag "$TAG" || true
+          git push origin "$TAG" || true
+          gh release delete "$TAG" --yes || true
+          gh release create "$TAG" "MFY-iOS-$VER.ipa" \
+            --title "MFY iOS $VER (IPA)" \
+            --notes "Phone-style MFY wrap. File: MFY-iOS-$VER.ipa. Unsigned — install with Sideloadly. Separate from the Windows Setup release so auto-update is not affected." \
+            --target ${{ github.sha }} \
+            --latest=false
