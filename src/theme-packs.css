@@ -1,0 +1,43 @@
+:root, [data-pack='mfy'] {
+  --pack-accent: #ffffff;
+  --pack-bg: #0a0a0a;
+  --pack-card: #141414;
+}
+[data-pack='netflix'] {
+  --pack-accent: #e50914;
+  --pack-bg: #141414;
+  --pack-card: #1f1f1f;
+}
+[data-pack='prime'] {
+  --pack-accent: #00a8e1;
+  --pack-bg: #0f171e;
+  --pack-card: #1b2530;
+}
+[data-pack='paramount'] {
+  --pack-accent: #0064ff;
+  --pack-bg: #000814;
+  --pack-card: #0b1b33;
+}
+[data-pack='appletv'] {
+  --pack-accent: #f5f5f7;
+  --pack-bg: #000000;
+  --pack-card: #1c1c1e;
+}
+[data-pack='hbo'] {
+  --pack-accent: #b535f6;
+  --pack-bg: #050308;
+  --pack-card: #16081f;
+}
+[data-pack='sleekfin'] {
+  --pack-accent: #e11d2a;
+  --pack-bg: #000000;
+  --pack-card: #121212;
+  font-family: Inter, Sora, Manrope, sans-serif;
+}
+html[data-pack] body {
+  background: var(--pack-bg);
+}
+html[data-pack] .nv-h,
+html[data-pack] button.on {
+  color: var(--pack-accent);
+}
