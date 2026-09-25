@@ -10,11 +10,15 @@
     "build": "vite build && electron-builder",
     "build:win": "vite build && electron-builder --win --x64 --publish never",
     "build:folder": "vite build && electron-builder --win --x64 --dir",
+    "build:web": "vite build --config vite.web.config.ts",
+    "ios:sync": "npm run build:web && npx cap sync ios",
+    "ios:open": "npx cap open ios",
     "preview": "vite preview",
     "electron:dev": "vite --config vite.config.ts",
     "release": "vite build && electron-builder --win --x64 --publish never"
   },
   "dependencies": {
+    "@capacitor/core": "^7.4.3",
     "clsx": "^2.1.1",
     "electron-store": "^10.0.1",
     "electron-updater": "^6.3.9",
@@ -30,6 +34,8 @@
     "zustand": "^5.0.5"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.4.3",
+    "@capacitor/ios": "^7.4.3",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.5.2",

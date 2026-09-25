@@ -25,3 +25,9 @@ Thumbs.db
 # Installers
 *.exe
 *.msi
+
+# Capacitor iOS (generated on a Mac with `npx cap add ios`)
+ios/App/Pods/
+ios/App/App/public/
+ios/App/build/
+*.xcuserstate
