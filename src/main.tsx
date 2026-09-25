@@ -6,6 +6,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import './index.css'
 import './nuvio-clean.css'
 import './nuvio-home.css'
+import './phone.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
