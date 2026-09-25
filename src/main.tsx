@@ -7,6 +7,10 @@ import './index.css'
 import './nuvio-clean.css'
 import './nuvio-home.css'
 import './phone.css'
+import './theme-packs.css'
+import { bootPack } from './components/ThemePicker'
+
+bootPack()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
