@@ -1,0 +1,42 @@
+name: Release iOS IPA
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ipa:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:web
+      - name: Add Capacitor iOS project
+        run: |
+          npx cap add ios || true
+          npx cap sync ios
+      - name: CocoaPods
+        run: |
+          cd ios/App
+          pod install --repo-update
+      - name: Unsigned device build
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+      - name: Pack IPA
+        run: |
+          APP=$(find ~/Library/Developer/Xcode/DerivedData -name 'App.app' | head -n 1)
+          if [ -z "$APP" ]; then APP=$(find . -name 'App.app' | head -n 1); fi
+          mkdir -p Payload
+          cp -R "$APP" Payload/MFY.app
+          zip -r MFY.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MFY-iOS-unsigned
+          path: MFY.ipa
+          if-no-files-found: error
