@@ -28,6 +28,23 @@ Packaged `.exe` only — `npm run electron:dev` does not auto-update.
 
 ---
 
+## iPhone / iPad wrap (Capacitor)
+
+Same UI in an iOS WebView. Steps and TestFlight notes: **[IOS.md](IOS.md)**.
+
+```bash
+git checkout restore-168-intro
+npm install
+npm run build:web
+npx cap add ios
+npx cap sync ios
+npx cap open ios
+```
+
+Free Apple ID = run on **your** phone from Xcode (~7 days). **TestFlight for other people needs the paid Apple Developer program.** I cannot upload an `.ipa` from here.
+
+---
+
 ## Sections (Menu)
 
 | Section | What it does |
