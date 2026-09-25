@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../store'
 import BugReport from './BugReport'
+import ThemePicker from './ThemePicker'
 import { Search, Home, Film, Tv, Sparkles, BookOpen, Youtube, Music, Trophy, Radio, Bookmark, Settings, PanelLeftClose, PanelLeft, CalendarDays, Server } from 'lucide-react'
 
 const LINKS: [string, string, any][] = [
@@ -52,27 +53,34 @@ export default function AppleRail() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  const themes = currentPage === 'settings' ? <ThemePicker /> : null
+
   if (hidden) {
     return (
-      <button
-        type="button"
-        className="absolute z-40 left-4 top-4 h-10 px-3 rounded-full bg-black/60 backdrop-blur-xl border border-white/15 text-sm font-semibold text-white pointer-events-auto"
-        onClick={() => toggle(false)}
-        title="Show sidebar ([)"
-      >
-        <span className="inline-flex items-center gap-2"><PanelLeft size={16} /> Menu</span>
-      </button>
+      <>
+        {themes}
+        <button
+          type="button"
+          className="absolute z-40 left-4 top-4 h-10 px-3 rounded-full bg-black/60 backdrop-blur-xl border border-white/15 text-sm font-semibold text-white pointer-events-auto"
+          onClick={() => toggle(false)}
+          title="Show sidebar ([)"
+        >
+          <span className="inline-flex items-center gap-2"><PanelLeft size={16} /> Menu</span>
+        </button>
+      </>
     )
   }
 
   return (
+    <>
+    {themes}
     <aside className="pointer-events-none absolute z-40 left-4 top-4 bottom-4 w-[280px]">
       <div className="pointer-events-auto h-full rounded-[28px] bg-black/55 backdrop-blur-2xl border border-white/10 shadow-2xl p-3 flex flex-col overflow-y-auto">
         <div className="flex items-center gap-2 px-2 py-2 mb-1">
           <div className="w-8 h-8 rounded-full bg-white text-black grid place-items-center text-xs font-black">{(currentProfile?.name || 'M')[0]}</div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold truncate font-display">{currentProfile?.name || 'MFY'}</p>
-            <p className="text-[10px] text-white/35">1.7.8</p>
+            <p className="text-[10px] text-white/35">1.7.10</p>
           </div>
           <button type="button" className="h-8 w-8 rounded-full hover:bg-white/10 grid place-items-center" title="Hide sidebar ([)" onClick={() => toggle(true)}>
             <PanelLeftClose size={16} />
@@ -99,5 +107,6 @@ export default function AppleRail() {
         {bug && <BugReport onClose={() => setBug(false)} />}
       </div>
     </aside>
+    </>
   )
 }
