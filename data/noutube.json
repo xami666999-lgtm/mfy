@@ -1,0 +1,119 @@
+{
+  "videos": [
+    {
+      "videoId": "dQw4w9WgXcQ",
+      "title": "Rick Astley - Never Gonna Give You Up (Official Music Video)",
+      "author": "Rick Astley",
+      "authorId": "UCuAXFkgsw1L7xaCfnd5JJOw",
+      "authorUrl": "https://www.youtube.com/user/officialrickastley",
+      "videoThumbnails": [
+        { "quality": "default", "url": "https://i.ytimg.com/vi/dQw4w9WgXcQ/default.jpg", "width": 120, "height": 90 },
+        { "quality": "medium", "url": "https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg", "width": 320, "height": 180 },
+        { "quality": "high", "url": "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg", "width": 480, "height": 360 }
+      ],
+      "description": "The official music video for Rick Astley's \"Never Gonna Give You Up\"",
+      "viewCount": 1400000000,
+      "published": 1210000000,
+      "publishedText": "Oct 25, 2009",
+      "lengthSeconds": 213,
+      "duration": "3:33",
+      "liveNow": false,
+      "premium": false,
+      "isFamilyFriendly": true,
+      "allowedRegions": ["US", "CA", "GB", "AU"],
+      "genre": "Music"
+    },
+    {
+      "videoId": "kJQP7kiw5Fk",
+      "title": "Luis Fonsi - Despacito ft. Daddy Yankee",
+      "author": "Luis Fonsi",
+      "authorId": "UCnT8zY_gJqLmQzQqL9QK5Hg",
+      "authorUrl": "https://www.youtube.com/user/LuisFonsiVEVO",
+      "videoThumbnails": [
+        { "quality": "default", "url": "https://i.ytimg.com/vi/kJQP7kiw5Fk/default.jpg", "width": 120, "height": 90 },
+        { "quality": "medium", "url": "https://i.ytimg.com/vi/kJQP7kiw5Fk/mqdefault.jpg", "width": 320, "height": 180 },
+        { "quality": "high", "url": "https://i.ytimg.com/vi/kJQP7kiw5Fk/hqdefault.jpg", "width": 480, "height": 360 }
+      ],
+      "description": "Luis Fonsi - Despacito ft. Daddy Yankee",
+      "viewCount": 8200000000,
+      "published": 1483000000,
+      "publishedText": "Jan 12, 2017",
+      "lengthSeconds": 281,
+      "duration": "4:41",
+      "liveNow": false,
+      "premium": false,
+      "isFamilyFriendly": true,
+      "allowedRegions": ["US", "CA", "GB", "AU"],
+      "genre": "Music"
+    },
+    {
+      "videoId": "JGwWNGJdvx8",
+      "title": "Ed Sheeran - Shape of You (Official Music Video)",
+      "author": "Ed Sheeran",
+      "authorId": "UC9c6J_F6l2p-wB7Y4fJ0F7A",
+      "authorUrl": "https://www.youtube.com/user/edsheeran",
+      "videoThumbnails": [
+        { "quality": "default", "url": "https://i.ytimg.com/vi/JGwWNGJdvx8/default.jpg", "width": 120, "height": 90 },
+        { "quality": "medium", "url": "https://i.ytimg.com/vi/JGwWNGJdvx8/mqdefault.jpg", "width": 320, "height": 180 },
+        { "quality": "high", "url": "https://i.ytimg.com/vi/JGwWNGJdvx8/hqdefault.jpg", "width": 480, "height": 360 }
+      ],
+      "description": "Ed Sheeran - Shape of You (Official Music Video)",
+      "viewCount": 6000000000,
+      "published": 1487000000,
+      "publishedText": "Jan 30, 2017",
+      "lengthSeconds": 233,
+      "duration": "3:53",
+      "liveNow": false,
+      "premium": false,
+      "isFamilyFriendly": true,
+      "allowedRegions": ["US", "CA", "GB", "AU"],
+      "genre": "Music"
+    },
+    {
+      "videoId": "K4DyBUG242c",
+      "title": "Mark Ronson - Uptown Funk ft. Bruno Mars",
+      "author": "Mark Ronson",
+      "authorId": "UCeZ9_R9u2A5kFY4EoA0K6Ng",
+      "authorUrl": "https://www.youtube.com/user/MarkRonsonVEVO",
+      "videoThumbnails": [
+        { "quality": "default", "url": "https://i.ytimg.com/vi/K4DyBUG242c/default.jpg", "width": 120, "height": 90 },
+        { "quality": "medium", "url": "https://i.ytimg.com/vi/K4DyBUG242c/mqdefault.jpg", "width": 320, "height": 180 },
+        { "quality": "high", "url": "https://i.ytimg.com/vi/K4DyBUG242c/hqdefault.jpg", "width": 480, "height": 360 }
+      ],
+      "description": "Mark Ronson - Uptown Funk ft. Bruno Mars",
+      "viewCount": 5000000000,
+      "published": 1412000000,
+      "publishedText": "Nov 19, 2014",
+      "lengthSeconds": 270,
+      "duration": "4:30",
+      "liveNow": false,
+      "premium": false,
+      "isFamilyFriendly": true,
+      "allowedRegions": ["US", "CA", "GB", "AU"],
+      "genre": "Music"
+    },
+    {
+      "videoId": "fJ9rUzIMcZQ",
+      "title": "Queen - Bohemian Rhapsody (Official Video)",
+      "author": "Queen Official",
+      "authorId": "UC1z3JO3O0POFXPqCTg1WErg",
+      "authorUrl": "https://www.youtube.com/user/QueenOfficial",
+      "videoThumbnails": [
+        { "quality": "default", "url": "https://i.ytimg.com/vi/fJ9rUzIMcZQ/default.jpg", "width": 120, "height": 90 },
+        { "quality": "medium", "url": "https://i.ytimg.com/vi/fJ9rUzIMcZQ/mqdefault.jpg", "width": 320, "height": 180 },
+        { "quality": "high", "url": "https://i.ytimg.com/vi/fJ9rUzIMcZQ/hqdefault.jpg", "width": 480, "height": 360 }
+      ],
+      "description": "Queen - Bohemian Rhapsody (Official Video)",
+      "viewCount": 1800000000,
+      "published": 1300000000,
+      "publishedText": "Aug 1, 2008",
+      "lengthSeconds": 354,
+      "duration": "5:54",
+      "liveNow": false,
+      "premium": false,
+      "isFamilyFriendly": true,
+      "allowedRegions": ["US", "CA", "GB", "AU"],
+      "genre": "Music"
+    }
+  ]
+}
