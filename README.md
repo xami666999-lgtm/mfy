@@ -1,5 +1,7 @@
 # MFY — Movies For You
 
+**Site:** https://xami666999-lgtm.github.io/mfy/
+
 **Downloads (two separate releases)**
 
 | Platform | File | Link |
