@@ -1,5 +1,7 @@
 # MFY — Movies For You
 
+**Site:** https://xami666999-lgtm.github.io/mfy/
+
 Private Windows catalog + player. Lean-back home, official title logos, and your own lists — movies, TV, anime, YouTube, sports, IPTV, manga, comics, books, and music in one app.
 
 **Current Windows build: [v1.7.9](https://github.com/xami666999-lgtm/mfy/releases/tag/v1.7.9)**  
