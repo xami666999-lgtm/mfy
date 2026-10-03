@@ -164,14 +164,17 @@ export default function App() {
     })
   }, [])
 
-  if (!authenticated) return <LoginGate />
-  if (showIntro) return <Intro onDone={() => setShowIntro(false)} />
-  if (!isSetupComplete) return <Wizard />
+  const web = typeof window !== 'undefined' && !(window as any).electronAPI?.googleSignIn
+
+  if (!web && !authenticated) return <LoginGate />
+  if (!web && showIntro) return <Intro onDone={() => setShowIntro(false)} />
+  if (!web && !isSetupComplete) return <Wizard />
 
   const ytId = (selectedMedia as any)?.youtubeId || ((selectedMedia as any)?.type === 'youtube' ? selectedMedia?.id : '')
 
   return (
     <div className="h-screen flex flex-col bg-[#0a0a0a] font-sans">
+      {web && <div className="shrink-0 text-center text-[11px] tracking-[0.22em] uppercase text-white/45 bg-white/[0.04] py-1.5">Site in progress</div>}
       {!phone && <RemoteHelp />}
       <IdleWall />
       <IntroSkip />
