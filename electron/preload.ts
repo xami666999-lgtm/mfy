@@ -69,6 +69,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   openYouTubeLogin: () => ipcRenderer.invoke('youtube-login'),
   youtubeLoginStatus: () => ipcRenderer.invoke('youtube-login-status'),
+  googleSignIn: () => ipcRenderer.invoke('google-login'),
 
   jellyfinStatus: () => ipcRenderer.invoke('jellyfin-status'),
   jellyfinStart: () => ipcRenderer.invoke('jellyfin-start'),

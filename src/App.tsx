@@ -164,9 +164,9 @@ export default function App() {
     })
   }, [])
 
+  if (!authenticated) return <LoginGate />
   if (showIntro) return <Intro onDone={() => setShowIntro(false)} />
   if (!isSetupComplete) return <Wizard />
-  if (!authenticated) return <LoginGate />
 
   const ytId = (selectedMedia as any)?.youtubeId || ((selectedMedia as any)?.type === 'youtube' ? selectedMedia?.id : '')
 

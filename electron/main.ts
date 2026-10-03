@@ -9,6 +9,7 @@ import { setupAdBlocker } from './adblock'
 import { loadAllProgress, saveProgressRow, saveProgressList } from './progress'
 import { launchAndroidApp } from './android-apps'
 import { allowYouTubeNavigation, setupYouTubeLogin } from './youtube-login'
+import { openGoogleLogin } from './google-login'
 
 // Auto-updater (only active in packaged builds)
 let autoUpdater: any = null
@@ -342,6 +343,7 @@ app.whenReady().then(() => {
   setupTorrentEngine()
   setupAdBlocker()
   setupYouTubeLogin(store, () => mainWindow)
+  ipcMain.handle('google-login', () => openGoogleLogin(mainWindow))
   if (app.isPackaged) addDesktopShortcut()
 
   app.on('activate', () => {
