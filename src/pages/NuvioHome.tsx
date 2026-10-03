@@ -96,8 +96,9 @@ export default function NuvioHome() {
   const seasons = heroDetail?.number_of_seasons
   const match = hero?.vote_average ? Math.round(hero.vote_average * 10) : 0
   const fresh = (item: any) => {
-    const y = Number(yearOf(item))
-    return y && y >= new Date().getFullYear() - 1
+    const raw = item?.release_date || item?.first_air_date
+    const t = raw ? Date.parse(raw) : NaN
+    return Number.isFinite(t) && Date.now() - t < 1000 * 60 * 60 * 24 * 100
   }
 
   return (

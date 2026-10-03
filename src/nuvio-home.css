@@ -12,7 +12,7 @@
 .nv-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center 22%;transform:scale(1.04);animation:nvKen 18s ease-in-out infinite alternate}
 @keyframes nvKen{from{transform:scale(1.02)}to{transform:scale(1.08)}}
 .nv-hero-fade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,16,30,.88) 0%,rgba(7,16,30,.42) 40%,rgba(7,16,30,.05) 68%),linear-gradient(180deg,rgba(0,0,0,.18) 0%,transparent 24%,transparent 58%,rgba(7,16,30,.55) 100%)}
-.nv-hero-copy{position:relative;z-index:2;padding:54px 42px 40px;max-width:560px}
+.nv-hero-copy{position:absolute;left:0;bottom:0;z-index:2;padding:36px 42px 46px;max-width:620px}
 .nv-genre{font-size:14px;color:#e8e8e8;margin:6px 0 8px;font-weight:500}
 .nv-syn{font-size:15px;line-height:1.4;color:#f2f2f2;max-width:460px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;text-shadow:0 1px 8px rgba(0,0,0,.45)}
 .nv-dots{position:absolute;right:22px;bottom:16px;z-index:3;display:flex;gap:6px}
@@ -31,7 +31,7 @@
 .nv-poster{flex:none;width:156px;background:none;border:0;padding:0;border-radius:4px}
 .nv-poster img{width:156px;height:234px;object-fit:cover;border-radius:4px;background:#1b2838;transition:transform .28s ease,box-shadow .28s ease}
 .nv-poster:hover img{transform:scale(1.06);box-shadow:0 12px 28px rgba(0,0,0,.45)}
-.title-logo{max-width:min(460px,78vw);max-height:110px;width:auto;object-fit:contain;object-position:left center;filter:drop-shadow(0 8px 18px rgba(0,0,0,.65));animation:logoIn .7s cubic-bezier(.16,.84,.32,1) both}
+.title-logo{display:block;height:auto!important;width:auto!important;max-width:min(440px,70vw)!important;max-height:104px!important;object-fit:contain;object-position:left bottom;filter:drop-shadow(0 8px 18px rgba(0,0,0,.65));animation:logoIn .7s cubic-bezier(.16,.84,.32,1) both}
 .title-logo.fallback{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-weight:800;font-size:54px;line-height:.92;letter-spacing:-.035em;color:#fff;margin:0 0 8px;text-transform:uppercase}
 @keyframes logoIn{0%{opacity:0;transform:translateY(16px) scale(.86);filter:blur(8px)}60%{opacity:1;filter:blur(0)}100%{opacity:1;transform:none}}
 
@@ -133,7 +133,7 @@
 html[data-pack] .nv-page{background:radial-gradient(1200px 680px at 82% -8%, #1c4578 0%, transparent 56%),radial-gradient(900px 560px at 0% 22%, #123056 0%, transparent 52%),linear-gradient(180deg,#081422 0%,#0b1b30 38%,#08111c 100%)!important}
 @media (max-width:800px){
   .nv-hero{margin:64px 12px 8px;min-height:52vh;border-radius:12px}
-  .nv-hero-copy{padding:28px 18px 24px}
+  .nv-hero-copy{padding:24px 18px 28px;max-width:none}
   .nf-spots{grid-template-columns:1fr}
   .nf-face{position:static;display:block;margin:0 0 12px}
   .nf-bar{padding:0 12px;height:58px}
