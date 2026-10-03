@@ -305,7 +305,7 @@ export default function Sports() {
     {together && <TogetherPanel streamUrl={watchUrl} onClose={() => setTogether(false)} />}
     <div className="page-fade-enter min-h-full bg-[#0b0f14] text-white flex">
       <aside className="w-52 flex-shrink-0 bg-[#0a0e12] border-r border-white/10 p-3 hidden md:block">
-        <p className="text-[10px] tracking-[0.25em] text-[#FF1493] font-bold mb-3">MFY SPORTS</p>
+        <p className="text-[10px] tracking-[0.25em] text-[#e50914] font-bold mb-3">MFY SPORTS</p>
         {sports.map((s) => (
           <button key={s.id} type="button" onClick={() => setSportId(s.id)} className={cn('w-full text-left px-3 py-2 rounded-md text-sm mb-0.5', sportId === s.id ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white')}>
             {s.name || s.id}
@@ -354,7 +354,7 @@ export default function Sports() {
             <button key={w} type="button" onClick={() => setWhen(w)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold capitalize', when === w ? 'bg-white text-black' : 'bg-white/10 text-white/45')}>{w}</button>
           ))}
           {(['streamed', 'nuvio', 'metegol'] as const).map((e) => (
-            <button key={e} type="button" onClick={() => setEngine(e)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold capitalize', engine === e ? 'bg-[#FF1493] text-white' : 'bg-white/10 text-white/45')}>{e === 'nuvio' ? 'Nuvio Live' : e}</button>
+            <button key={e} type="button" onClick={() => setEngine(e)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold capitalize', engine === e ? 'bg-[#e50914] text-white' : 'bg-white/10 text-white/45')}>{e === 'nuvio' ? 'Nuvio Live' : e}</button>
           ))}
         </div>
       </div>
@@ -363,14 +363,14 @@ export default function Sports() {
         <button
           type="button"
           onClick={() => setShowSearch(!showSearch)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#FF1493]/15 border border-[#FF1493]/30 text-xs text-[#FF1493] hover:bg-[#FF1493]/25 transition-all"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#e50914]/15 border border-[#e50914]/30 text-xs text-[#e50914] hover:bg-[#e50914]/25 transition-all"
           title="Search">
           <Search className="w-3.5 h-3.5" /> Search
         </button>
         <button
           type="button"
           onClick={() => setMultiView(!multiView)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#FF1493]/15 border border-[#FF1493]/30 text-xs text-[#FF1493] hover:bg-[#FF1493]/25 transition-all"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#e50914]/15 border border-[#e50914]/30 text-xs text-[#e50914] hover:bg-[#e50914]/25 transition-all"
           title="Multi-view">
           <PlayCircle className="w-3.5 h-3.5" /> Multi-view
         </button>
@@ -417,15 +417,15 @@ export default function Sports() {
       {engine === 'nuvio' && (
         <section className="mb-8">
           <div className="flex items-center gap-2 mb-3">
-            <Radio className="w-3.5 h-3.5 text-[#FF1493]" />
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#FF1493]">Nuvio · Sports Streams</span>
+            <Radio className="w-3.5 h-3.5 text-[#e50914]" />
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#e50914]">Nuvio · Sports Streams</span>
           </div>
           <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
             {nuvio.map((e: any) => (
               <button
                 key={e.id}
                 type="button"
-                className="text-left rounded-xl border border-white/10 bg-white/[0.03] p-3 hover:border-[#FF1493]/40"
+                className="text-left rounded-xl border border-white/10 bg-white/[0.03] p-3 hover:border-[#e50914]/40"
                 onClick={async () => {
                   const nid = String(e.stremioId || e.id || '')
                   const bags = await Promise.all([
@@ -453,15 +453,15 @@ export default function Sports() {
       {engine === 'metegol' && (
         <section className="mb-8">
           <div className="flex items-center gap-2 mb-3">
-            <Radio className="w-3.5 h-3.5 text-[#FF1493]" />
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#FF1493]">Metegol</span>
+            <Radio className="w-3.5 h-3.5 text-[#e50914]" />
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#e50914]">Metegol</span>
           </div>
           <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
             {metegol.map((e: any) => (
               <button
                 key={e.id}
                 type="button"
-                className="text-left rounded-xl border border-white/10 bg-white/[0.03] p-3 hover:border-[#FF1493]/40"
+                className="text-left rounded-xl border border-white/10 bg-white/[0.03] p-3 hover:border-[#e50914]/40"
                 onClick={async () => {
                   const url = e.streams?.[0]?.url || e.url || e.embed || ''
                   const title = String(e.title || '')
@@ -497,7 +497,7 @@ export default function Sports() {
 
       <section className="mb-10">
         <div className="flex items-center gap-2 mb-4">
-          <span className="w-1 h-4 bg-[#FF1493] rounded-full" />
+          <span className="w-1 h-4 bg-[#e50914] rounded-full" />
           <h3 className="text-sm font-bold tracking-[0.18em] text-white">LIVE EVENTS</h3>
         </div>
         <div className="flex gap-3 overflow-x-auto pb-2 scroll-row">
@@ -510,10 +510,10 @@ export default function Sports() {
             </button>
           ))}
           {timLive.map((ev: any) => (
-            <button key={ev.url || ev.name} type="button" onClick={() => openTim(ev)} className="shrink-0 w-56 text-left rounded-2xl overflow-hidden bg-[#12131a] border border-white/10 hover:border-[#FF1493]/50">
+            <button key={ev.url || ev.name} type="button" onClick={() => openTim(ev)} className="shrink-0 w-56 text-left rounded-2xl overflow-hidden bg-[#12131a] border border-white/10 hover:border-[#e50914]/50">
               <div className="relative h-36 bg-[#1b1c24]">
-                {ev.logo ? <img src={String(ev.logo).replace(/&amp;/g, '&')} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gradient-to-br from-[#FF1493]/40 to-[#111]" />}
-                <span className="absolute top-2 left-2 text-[10px] font-black bg-[#FF1493] text-white px-2 py-0.5 rounded">LIVE</span>
+                {ev.logo ? <img src={String(ev.logo).replace(/&amp;/g, '&')} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gradient-to-br from-[#e50914]/40 to-[#111]" />}
+                <span className="absolute top-2 left-2 text-[10px] font-black bg-[#e50914] text-white px-2 py-0.5 rounded">LIVE</span>
               </div>
               <div className="p-3">
                 <p className="text-xs font-semibold text-white line-clamp-2">{ev.name}</p>
@@ -526,9 +526,9 @@ export default function Sports() {
             </button>
           ))}
           {live.slice(0, 8).map((m) => (
-            <button key={m.id} type="button" onClick={() => openMatch(m)} className="shrink-0 w-56 text-left rounded-2xl overflow-hidden bg-[#12131a] border border-white/10 hover:border-[#FF1493]/50">
+            <button key={m.id} type="button" onClick={() => openMatch(m)} className="shrink-0 w-56 text-left rounded-2xl overflow-hidden bg-[#12131a] border border-white/10 hover:border-[#e50914]/50">
               <div className="relative h-36 bg-gradient-to-r from-[#1e3a5f] to-[#0f766e] flex items-center justify-center gap-4 px-3">
-                <span className="absolute top-2 left-2 text-[10px] font-black bg-[#FF1493] text-white px-2 py-0.5 rounded">LIVE</span>
+                <span className="absolute top-2 left-2 text-[10px] font-black bg-[#e50914] text-white px-2 py-0.5 rounded">LIVE</span>
                 <div className="text-center">
                   {m.teams?.home?.badge ? <img src={badgeUrl(m.teams.home.badge)} alt="" className="w-12 h-12 object-contain mx-auto" /> : null}
                   <p className="text-[10px] text-white mt-1 line-clamp-1">{m.teams?.home?.name || m.title.split(/vs/i)[0]}</p>
@@ -552,12 +552,12 @@ export default function Sports() {
       {timReplays.length > 0 && (
         <section className="mb-10">
           <div className="flex items-center gap-2 mb-4">
-            <span className="w-1 h-4 bg-[#FF1493] rounded-full" />
+            <span className="w-1 h-4 bg-[#e50914] rounded-full" />
             <h3 className="text-sm font-bold tracking-[0.18em] text-white">LATEST REPLAYS</h3>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2 scroll-row">
             {timReplays.slice(0, 12).map((ev: any) => (
-              <button key={ev.url || ev.name} type="button" onClick={() => openTim(ev)} className="shrink-0 w-52 text-left rounded-2xl overflow-hidden bg-[#12131a] border border-white/10 hover:border-[#FF1493]/40">
+              <button key={ev.url || ev.name} type="button" onClick={() => openTim(ev)} className="shrink-0 w-52 text-left rounded-2xl overflow-hidden bg-[#12131a] border border-white/10 hover:border-[#e50914]/40">
                 <div className="relative h-32 bg-[#1b1c24]">
                   {ev.logo ? <img src={String(ev.logo).replace(/&amp;/g, '&')} alt="" className="w-full h-full object-cover" /> : null}
                   <span className="absolute top-2 left-2 text-[10px] font-black bg-white/15 text-white px-2 py-0.5 rounded">REPLAY</span>
@@ -575,12 +575,12 @@ export default function Sports() {
       {timChannels.length > 0 && (
         <section className="mb-10">
           <div className="flex items-center gap-2 mb-4">
-            <span className="w-1 h-4 bg-[#FF1493] rounded-full" />
+            <span className="w-1 h-4 bg-[#e50914] rounded-full" />
             <h3 className="text-sm font-bold tracking-[0.18em] text-white">24/7 CHANNELS</h3>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2 scroll-row">
             {timChannels.map((ch: any) => (
-              <button key={ch.url || ch.name} type="button" onClick={() => openTim(ch)} className="shrink-0 w-36 text-left rounded-2xl overflow-hidden bg-[#12131a] border border-white/10 hover:border-[#FF1493]/40">
+              <button key={ch.url || ch.name} type="button" onClick={() => openTim(ch)} className="shrink-0 w-36 text-left rounded-2xl overflow-hidden bg-[#12131a] border border-white/10 hover:border-[#e50914]/40">
                 <div className="h-20 bg-[#1b1c24] grid place-items-center p-3">
                   {ch.logo ? <img src={ch.logo} alt="" className="max-h-12 max-w-full object-contain" /> : <span className="text-xs text-white/60">{ch.name}</span>}
                 </div>
@@ -594,10 +594,10 @@ export default function Sports() {
       {multiView && (
         <section className="mb-6 rounded-2xl border border-white/10 bg-black/50 p-3">
           <div className="flex items-center gap-2 mb-3 flex-wrap">
-            <span className="text-[11px] uppercase tracking-widest text-[#FF1493]">Multi-view</span>
+            <span className="text-[11px] uppercase tracking-widest text-[#e50914]">Multi-view</span>
             {(['1x2', '2x1', '2x2', '1+2', '3x3'] as const).map((g) => (
               <button key={g} type="button" onClick={() => setMvGrid(g)}
-                className={`h-7 px-2.5 rounded-full text-[11px] ${mvGrid === g ? 'bg-[#FF1493] text-white' : 'bg-white/10 text-white/70'}`}>
+                className={`h-7 px-2.5 rounded-full text-[11px] ${mvGrid === g ? 'bg-[#e50914] text-white' : 'bg-white/10 text-white/70'}`}>
                 {g === '1x2' ? 'Side by side' : g === '2x1' ? 'Stacked' : g === '2x2' ? '2×2' : g === '1+2' ? 'Main + 2' : '3×3'}
               </button>
             ))}
@@ -662,12 +662,12 @@ export default function Sports() {
               value={addQ}
               onChange={(e) => setAddQ(e.target.value)}
               placeholder="Search for a match…"
-              className="w-full h-10 px-3 rounded-xl bg-black border border-[#FF1493]/70 text-sm mb-4 outline-none"
+              className="w-full h-10 px-3 rounded-xl bg-black border border-[#e50914]/70 text-sm mb-4 outline-none"
             />
             <p className="text-[11px] text-white/40 mb-2">Categories</p>
             <div className="grid grid-cols-4 gap-2 mb-4">
               {sports.slice(0, 16).map((s) => (
-                <button key={s.id} type="button" onClick={() => setSportId(s.id)} className={`rounded-xl px-2 py-3 text-[10px] border ${sportId === s.id ? 'border-[#FF1493] bg-[#FF1493]/15' : 'border-white/10 bg-white/5'}`}>
+                <button key={s.id} type="button" onClick={() => setSportId(s.id)} className={`rounded-xl px-2 py-3 text-[10px] border ${sportId === s.id ? 'border-[#e50914] bg-[#e50914]/15' : 'border-white/10 bg-white/5'}`}>
                   {s.name || s.id}
                 </button>
               ))}
@@ -714,7 +714,7 @@ export default function Sports() {
                     key={`${s.id}-${s.streamNo}-${i}`}
                     type="button"
                     onClick={() => s.embedUrl && playEmbed(s.embedUrl)}
-                    className="w-full flex items-center justify-between gap-2 p-3 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.07] hover:border-[#FF1493]/30 text-left transition-all"
+                    className="w-full flex items-center justify-between gap-2 p-3 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.07] hover:border-[#e50914]/30 text-left transition-all"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="relative flex w-2 h-2 flex-shrink-0">
@@ -733,7 +733,7 @@ export default function Sports() {
                         </div>
                       </div>
                     </div>
-                    <span className="flex items-center gap-1 text-[10px] text-[#FF1493] flex-shrink-0">Watch <ExternalLink className="w-3 h-3" /></span>
+                    <span className="flex items-center gap-1 text-[10px] text-[#e50914] flex-shrink-0">Watch <ExternalLink className="w-3 h-3" /></span>
                   </button>
                 ))}
               </div>
@@ -768,7 +768,7 @@ export default function Sports() {
               <code className="text-lg font-mono text-white/80">{partyCode}</code>
             </div>
             <button
-              className="bg-[#FF1493] text-white px-6 py-2 rounded-md hover:bg-[#FF1493]/90"
+              className="bg-[#e50914] text-white px-6 py-2 rounded-md hover:bg-[#e50914]/90"
               onClick={() => setPartyCode('')}
             >
               Close
@@ -792,7 +792,7 @@ export default function Sports() {
               placeholder="Search matches, teams, leagues..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white placeholder-white/20 focus:border-[#FF1493]/50 focus:outline-none focus:ring-1 focus:ring-[#FF1493]/30 text-sm"
+              className="w-full pl-10 pr-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white placeholder-white/20 focus:border-[#e50914]/50 focus:outline-none focus:ring-1 focus:ring-[#e50914]/30 text-sm"
             />
           </div>
         </div>

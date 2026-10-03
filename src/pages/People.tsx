@@ -100,11 +100,11 @@ export default function People() {
           <Search className="w-4 h-4 text-white/35" />
           <input value={q} onChange={(e) => setQ(e.target.value)} className="flex-1 bg-transparent text-sm text-white outline-none" placeholder="Eiichiro Oda" />
         </div>
-        <button type="submit" className="h-11 px-4 rounded-xl bg-[#FF1493] text-white text-sm font-semibold">Search</button>
+        <button type="submit" className="h-11 px-4 rounded-xl bg-[#e50914] text-white text-sm font-semibold">Search</button>
       </form>
       <div className="flex gap-2 mb-5">
         {([['all', 'All'], ['directors', 'Directors'], ['actors', 'Actors'], ['anime', 'Anime & manga']] as const).map(([id, label]) => (
-          <button key={id} type="button" onClick={() => setTab(id)} className={`h-8 px-3 rounded-full text-[11px] ${tab === id ? 'bg-[#FF1493] text-white' : 'bg-white/[0.06] text-white/45'}`}>{label}</button>
+          <button key={id} type="button" onClick={() => setTab(id)} className={`h-8 px-3 rounded-full text-[11px] ${tab === id ? 'bg-[#e50914] text-white' : 'bg-white/[0.06] text-white/45'}`}>{label}</button>
         ))}
       </div>
 
@@ -120,7 +120,7 @@ export default function People() {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-white">{source === 'tmdb' ? person.name : person.name?.full}</h2>
-              <p className="text-xs text-[#FF1493] mt-1">{source === 'tmdb' ? person.known_for_department : (person.primaryOccupations || []).join(' · ')}</p>
+              <p className="text-xs text-[#e50914] mt-1">{source === 'tmdb' ? person.known_for_department : (person.primaryOccupations || []).join(' · ')}</p>
               <p className="text-sm text-white/60 mt-3 max-h-32 overflow-y-auto">{(source === 'tmdb' ? person.biography : String(person.description || '').replace(/<[^>]+>/g, ' ')) || 'No bio.'}</p>
             </div>
           </div>

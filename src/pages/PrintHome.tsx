@@ -138,7 +138,7 @@ export default function PrintHome({ kind }: { kind: 'manga' | 'comics' | 'novels
                 key={t}
                 type="button"
                 onClick={() => setTab(t)}
-                className={`h-9 px-5 rounded-full text-xs font-bold tracking-wide ${tab === t ? 'bg-[#FF1493] text-white' : 'bg-white/10 text-white/60'}`}
+                className={`h-9 px-5 rounded-full text-xs font-bold tracking-wide ${tab === t ? 'bg-[#e50914] text-white' : 'bg-white/10 text-white/60'}`}
               >
                 {t === 'manga' ? 'Manga' : 'Novels'}
               </button>

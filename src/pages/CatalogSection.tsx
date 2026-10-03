@@ -184,7 +184,7 @@ export default function CatalogSection({ kind, title }: { kind: Kind; title: str
           <Search className="w-4 h-4 text-white/30" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${title.toLowerCase()}`} className="flex-1 bg-transparent text-sm text-white outline-none" />
         </div>
-        <button type="submit" className="h-11 px-4 rounded-xl bg-[#FF1493] text-white text-sm font-semibold">Search</button>
+        <button type="submit" className="h-11 px-4 rounded-xl bg-[#e50914] text-white text-sm font-semibold">Search</button>
       </form>
 
       <div className="flex gap-2 mb-5 flex-wrap">
@@ -193,7 +193,7 @@ export default function CatalogSection({ kind, title }: { kind: Kind; title: str
             key={c}
             type="button"
             onClick={() => { setChip(c); load(c, '') }}
-            className={`h-8 px-3 rounded-full text-[11px] font-medium ${chip === c ? 'bg-[#FF1493] text-white' : 'bg-white/[0.05] text-white/45 hover:text-white/70'}`}
+            className={`h-8 px-3 rounded-full text-[11px] font-medium ${chip === c ? 'bg-[#e50914] text-white' : 'bg-white/[0.05] text-white/45 hover:text-white/70'}`}
           >
             {c}
           </button>

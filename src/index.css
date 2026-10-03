@@ -7,13 +7,13 @@
    ========================================================= */
 
 :root {
-  --mfy-bg: #06050a;
-  --mfy-surface: #0c0b12;
-  --mfy-surface-2: #12111a;
-  --mfy-pink: #FF1493;
-  --mfy-pink-soft: rgba(255, 20, 147, 0.18);
-  --mfy-pink-glow: rgba(255, 20, 147, 0.45);
-  --mfy-cyan: #00E5FF;
+  --mfy-bg: #07111c;
+  --mfy-surface: #101820;
+  --mfy-surface-2: #16202c;
+  --mfy-pink: #e50914;
+  --mfy-pink-soft: rgba(229, 9, 20, 0.16);
+  --mfy-pink-glow: transparent;
+  --mfy-cyan: #e5e5e5;
   --mfy-border: rgba(255, 255, 255, 0.08);
   --mfy-border-strong: rgba(255, 255, 255, 0.14);
   --mfy-text: #ffffff;
@@ -33,7 +33,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body, #root { width: 100%; height: 100%; }
 body {
-  font-family: Figtree, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   letter-spacing: -0.011em;
   background: var(--mfy-bg);
   color: var(--mfy-text);
@@ -195,7 +195,7 @@ a:focus-visible,
 .btn-primary {
   display: inline-flex; align-items: center; gap: 8px;
   height: 42px; padding: 0 20px; border-radius: 999px;
-  background: linear-gradient(135deg, #FF1493, #ff4db8);
+  background: linear-gradient(135deg, #e50914, #b20710);
   color: #fff; font-weight: 700; font-size: 13px;
   box-shadow: 0 4px 20px var(--mfy-pink-glow);
   transition: transform var(--transition-spring), box-shadow var(--transition-fast), filter var(--transition-fast);
@@ -234,7 +234,7 @@ a:focus-visible,
 }
 .provider-item:hover { transform: translateY(-4px); }
 .provider-item:focus-visible .provider-logo-wrap {
-  outline: 2px solid #FF1493; outline-offset: 3px;
+  outline: 2px solid #e50914; outline-offset: 3px;
 }
 
 .provider-logo-wrap {
@@ -547,7 +547,7 @@ a:focus-visible,
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 .torrent-status { display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 300px; }
 .torrent-progress-bar { width: 100%; height: 5px; border-radius: 99px; background: rgba(255,255,255,.12); overflow: hidden; }
-.torrent-progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #00E5FF, #FF1493); transition: width .4s; }
+.torrent-progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #c8c8c8, #e50914); transition: width .4s; }
 
 /* "Starting soon" overlay with episode poster + small description */
 .player-intro {
@@ -662,7 +662,7 @@ a:focus-visible,
 .hero-play {
   display: inline-flex; align-items: center; gap: 8px;
   height: 42px; padding: 0 20px; border-radius: 999px;
-  background: linear-gradient(135deg, #FF1493, #ff4db8);
+  background: linear-gradient(135deg, #e50914, #b20710);
   color: #fff; font-weight: 700; font-size: 13px;
   box-shadow: 0 4px 20px var(--mfy-pink-glow);
   transition: transform var(--transition-spring), box-shadow var(--transition-fast);
@@ -958,7 +958,7 @@ a:focus-visible,
 }
 .app-tile:hover { transform: translateY(-3px) scale(1.04); }
 .app-tile:focus-visible {
-  outline: 2px solid #FF1493;
+  outline: 2px solid #e50914;
   outline-offset: 3px;
 }
 

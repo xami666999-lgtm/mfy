@@ -605,8 +605,8 @@ export const useStore = create<AppState>((set, get) => ({
 export function applyTheme(theme: ThemeId) {
   const root = document.documentElement
   const map: Record<ThemeId, { pink: string; glow: string }> = {
-    pink: { pink: '#FF1493', glow: 'rgba(255,20,147,0.45)' },
-    cyan: { pink: '#00E5FF', glow: 'rgba(0,229,255,0.45)' },
+    pink: { pink: '#e50914', glow: 'rgba(255,20,147,0.45)' },
+    cyan: { pink: '#c8c8c8', glow: 'rgba(0,229,255,0.45)' },
     emerald: { pink: '#10B981', glow: 'rgba(16,185,129,0.45)' },
     amber: { pink: '#F59E0B', glow: 'rgba(245,158,11,0.45)' },
     pure: { pink: '#E5E7EB', glow: 'rgba(229,231,235,0.35)' },

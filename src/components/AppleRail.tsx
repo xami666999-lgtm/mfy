@@ -1,112 +1,67 @@
-import { useEffect, useState } from 'react'
+import { useState, type FormEvent } from 'react'
+import { Search } from 'lucide-react'
 import { useStore } from '../store'
-import BugReport from './BugReport'
 import ThemePicker from './ThemePicker'
-import { Search, Home, Film, Tv, Sparkles, BookOpen, Youtube, Music, Trophy, Radio, Bookmark, Settings, PanelLeftClose, PanelLeft, CalendarDays, Server } from 'lucide-react'
+import ProfileManage from './ProfileManage'
 
-const LINKS: [string, string, any][] = [
-  ['home', 'Home', Home],
-  ['movies', 'Movies', Film],
-  ['tv', 'TV', Tv],
-  ['anime', 'Anime', Sparkles],
-  ['calendar', 'Calendar', CalendarDays],
-  ['jellyfin', 'Jellyfin', Server],
-  ['manga', 'Manga', BookOpen],
-  ['comics', 'Comics', BookOpen],
-  ['books', 'Books', BookOpen],
-  ['youtube', 'YouTube', Youtube],
-  ['music', 'Music', Music],
-  ['sports', 'Sport', Trophy],
-  ['iptv', 'IPTV', Radio],
-  ['library', 'Library', Bookmark],
-  ['settings', 'Settings', Settings],
+const LINKS: [string, string][] = [
+  ['home', 'Home'],
+  ['movies', 'Movies'],
+  ['tv', 'TV'],
+  ['anime', 'Anime'],
+  ['library', 'My Box'],
 ]
 
 export default function AppleRail() {
-  const { currentPage, setCurrentPage, currentProfile } = useStore()
+  const { currentPage, setCurrentPage, currentProfile, setAuthenticated } = useStore()
   const [q, setQ] = useState('')
-  const [bug, setBug] = useState(false)
-  const [hidden, setHidden] = useState(() => {
-    try {
-      const v = localStorage.getItem('mfy-rail-hidden')
-      if (v === '0') return false
-      return true
-    } catch { return true }
-  })
+  const [searchOn, setSearchOn] = useState(false)
+  const [menu, setMenu] = useState(false)
+  const [manage, setManage] = useState(false)
 
-  function toggle(next?: boolean) {
-    setHidden((prev) => {
-      const v = typeof next === 'boolean' ? next : !prev
-      try { localStorage.setItem('mfy-rail-hidden', v ? '1' : '0') } catch {}
-      return v
-    })
+  function go(id: string) {
+    setMenu(false)
+    setCurrentPage(id as any)
   }
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === '[' || (e.key.toLowerCase() === 'b' && (e.ctrlKey || e.metaKey))) {
-        e.preventDefault()
-        toggle()
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
-
-  const themes = currentPage === 'settings' ? <ThemePicker /> : null
-
-  if (hidden) {
-    return (
-      <>
-        {themes}
-        <button
-          type="button"
-          className="absolute z-40 left-4 top-4 h-10 px-3 rounded-full bg-black/60 backdrop-blur-xl border border-white/15 text-sm font-semibold text-white pointer-events-auto"
-          onClick={() => toggle(false)}
-          title="Show sidebar ([)"
-        >
-          <span className="inline-flex items-center gap-2"><PanelLeft size={16} /> Menu</span>
-        </button>
-      </>
-    )
+  function submitSearch(e: FormEvent) {
+    e.preventDefault()
+    if (!q.trim()) return
+    try { sessionStorage.setItem('mfy-q', q.trim()) } catch {}
+    setCurrentPage('search')
   }
 
   return (
     <>
-    {themes}
-    <aside className="pointer-events-none absolute z-40 left-4 top-4 bottom-4 w-[280px]">
-      <div className="pointer-events-auto h-full rounded-[28px] bg-black/55 backdrop-blur-2xl border border-white/10 shadow-2xl p-3 flex flex-col overflow-y-auto">
-        <div className="flex items-center gap-2 px-2 py-2 mb-1">
-          <div className="w-8 h-8 rounded-full bg-white text-black grid place-items-center text-xs font-black">{(currentProfile?.name || 'M')[0]}</div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold truncate font-display">{currentProfile?.name || 'MFY'}</p>
-            <p className="text-[10px] text-white/35">1.7.10</p>
+      {currentPage === 'settings' && <ThemePicker />}
+      <header className="nf-bar">
+        <button type="button" className="nf-logo" onClick={() => go('home')}>MFY</button>
+        <nav className="nf-pill">
+          {LINKS.map(([id, label]) => (
+            <button key={id} type="button" className={currentPage === id ? 'on' : ''} onClick={() => go(id)}>{label}</button>
+          ))}
+          {searchOn ? (
+            <form onSubmit={submitSearch}>
+              <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" onBlur={() => { if (!q) setSearchOn(false) }} />
+            </form>
+          ) : (
+            <button type="button" aria-label="Search" onClick={() => setSearchOn(true)}><Search size={16} /></button>
+          )}
+        </nav>
+        <button type="button" className="nf-avatar" onClick={() => setMenu((v) => !v)} aria-label="Profile">
+          {currentProfile?.avatar
+            ? <img src={currentProfile.avatar} alt="" />
+            : <span>{(currentProfile?.name || 'M')[0]}</span>}
+        </button>
+        {menu && (
+          <div className="nf-menu">
+            <button type="button" onClick={() => { setMenu(false); setManage(true) }}>Manage profile</button>
+            <button type="button" onClick={() => { setMenu(false); setAuthenticated(false) }}>Switch profile</button>
+            <button type="button" onClick={() => go('settings')}>Settings</button>
           </div>
-          <button type="button" className="h-8 w-8 rounded-full hover:bg-white/10 grid place-items-center" title="Hide sidebar ([)" onClick={() => toggle(true)}>
-            <PanelLeftClose size={16} />
-          </button>
-        </div>
-        <form className="px-1 mb-2" onSubmit={(e) => { e.preventDefault(); if (q.trim()) { try { sessionStorage.setItem('mfy-q', q.trim()) } catch {} ; setCurrentPage('search') } }}>
-          <div className="flex items-center gap-2 h-9 rounded-full bg-white/10 px-3">
-            <Search size={14} className="text-white/40" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" className="flex-1 bg-transparent text-sm outline-none" />
-          </div>
-        </form>
-        {LINKS.map(([id, label, Icon]) => (
-          <button
-            key={id}
-            type="button"
-            className={`flex items-center gap-3 h-10 px-3 rounded-full text-sm mb-0.5 ${currentPage === id ? 'bg-white text-black font-semibold' : 'text-white/80 hover:bg-white/10'}`}
-            onClick={() => setCurrentPage(id as any)}
-          >
-            <Icon size={16} />
-            {label}
-          </button>
-        ))}
-        <button type="button" className="mt-auto text-[11px] text-white/50 px-3 py-2" onClick={() => setBug(true)}>Bug</button>
-        {bug && <BugReport onClose={() => setBug(false)} />}
-      </div>
-    </aside>
+        )}
+      </header>
+      {manage && currentProfile && <ProfileManage id={currentProfile.id} onClose={() => setManage(false)} />}
     </>
   )
 }

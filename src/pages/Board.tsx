@@ -88,7 +88,7 @@ function Shelf({ title, items, onOpen, viewAll, onRemove }: { title: string; ite
                 <div className="text-[10px] text-white/55">{String(item.release_date || item.first_air_date || '').slice(0, 4)}</div>
               )}
               {item.progressLabel && !item.season && !item.episode && (
-                <div className="text-[10px] text-[#FF1493]">{item.progressLabel}</div>
+                <div className="text-[10px] text-[#e50914]">{item.progressLabel}</div>
               )}
             </div>
           </button>
@@ -320,7 +320,7 @@ export default function Board() {
 
       <div className="board-content px-5 pt-6">
         <div className="flex gap-2 px-6 mb-2">
-          <button type="button" className={`h-8 px-3 rounded-full text-xs ${hideWatched ? 'bg-[#FF1493]' : 'bg-white/10'}`} onClick={() => setHideWatched((v) => !v)}>Hide watched</button>
+          <button type="button" className={`h-8 px-3 rounded-full text-xs ${hideWatched ? 'bg-[#e50914]' : 'bg-white/10'}`} onClick={() => setHideWatched((v) => !v)}>Hide watched</button>
           <button type="button" className="h-8 px-3 rounded-full text-xs bg-white/10" onClick={() => {
             const pool = [...movies, ...shows, ...trending].filter(Boolean)
             const pick = pool[Math.floor(Math.random() * pool.length)]

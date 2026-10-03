@@ -14,6 +14,7 @@ import { trailerUrl, isOnePiece, pearioWatchUrl, pearioUserUrl } from '../api/st
 import { markLike, markDislike, isLiked, isDisliked } from '../lib/taste'
 import { sourceDot, reportBroken } from '../lib/playerStatus'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
+import TitleLogo from '../components/TitleLogo'
 
 export default function MetaDetails() {
   const { selectedMedia, setCurrentPage, setSelectedMedia, tmdbApiKey, setCurrentStreamUrl, addToWatchlist, removeFromWatchlist, isInWatchlist, addFavorite, removeFavorite, isFavorite, aiostreamsUrl, externalPlayer, mdblistApiKey, customLists, addToCustomList, removeFromCustomList, isInCustomList, createCustomList, watchHistory } = useStore()
@@ -281,7 +282,7 @@ export default function MetaDetails() {
   )
   if (!detail) return (
     <div className="p-10 text-white">
-      <button type="button" className="text-[#FF1493] mb-4" onClick={() => setCurrentPage('home')}>← Home</button>
+      <button type="button" className="text-[#e50914] mb-4" onClick={() => setCurrentPage('home')}>← Home</button>
       <p className="text-white/60">Couldn’t open this title. Go home and try again.</p>
     </div>
   )
@@ -331,7 +332,7 @@ export default function MetaDetails() {
           }}
         />
 
-        <div className="absolute top-4 left-4 z-20">
+        <div className="absolute top-20 left-6 z-20">
           <button
             type="button"
             onClick={goBack}
@@ -344,15 +345,7 @@ export default function MetaDetails() {
         <div className="relative z-10 h-full flex items-end px-8 md:px-12 pb-10 md:pb-14">
           <div className="max-w-xl">
             {/* Title as logo-style wordmark */}
-            <h1
-              className="text-4xl md:text-5xl font-black text-white tracking-tight leading-[1.05] mb-3 drop-shadow-[0_4px_24px_rgba(0,0,0,0.65)]"
-              style={{ fontFamily: 'system-ui, Segoe UI, sans-serif' }}
-            >
-              {title}
-              {watchHistory.some((h) => String(h.mediaId) === String(selectedMedia?.id) && ((h as any).seriesCompleted || (selectedMedia?.type === 'movie' && h.completed))) && (
-                <span className="ml-3 inline-flex w-8 h-8 rounded-full bg-emerald-500 text-white text-lg items-center justify-center align-middle">✓</span>
-              )}
-            </h1>
+            <TitleLogo id={detail.id} type={selectedMedia?.type === 'movie' ? 'movie' : 'tv'} title={title} />
 
             <div className="flex flex-wrap items-center gap-2 text-[12px] text-white/55 mb-3">
               {detail.genres?.[0]?.name && <span>{detail.genres[0].name}</span>}
@@ -444,7 +437,7 @@ export default function MetaDetails() {
                     setPlayerPick(p.id)
                     try { localStorage.setItem('mfy-player-engine', p.id) } catch {}
                   }}
-                  className={`h-8 px-3 rounded-full text-[11px] font-semibold border ${playerPick === p.id ? 'bg-[#FF1493] text-white border-[#FF1493]' : 'bg-[#1a1016] text-white border-white/15 hover:border-[#FF1493]/60'}`}
+                  className={`h-8 px-3 rounded-full text-[11px] font-semibold border ${playerPick === p.id ? 'bg-[#e50914] text-white border-[#e50914]' : 'bg-[#1a1016] text-white border-white/15 hover:border-[#e50914]/60'}`}
                 >
                   <span className="inline-block w-1.5 h-1.5 rounded-full mr-1" style={{background: sourceDot(p.id)==='green'?'#22c55e':sourceDot(p.id)==='red'?'#ef4444':'#64748b'}} />
                   {p.label}
@@ -464,7 +457,7 @@ export default function MetaDetails() {
                 <Play className="w-4 h-4" fill="black" />
                 Play
               </button>
-              <button type="button" className={`h-11 w-11 rounded-full text-lg ${isLiked(selectedMedia?.id || '') ? 'bg-[#FF1493]' : 'bg-white/10'}`} title="Like" onClick={() => {
+              <button type="button" className={`h-11 w-11 rounded-full text-lg ${isLiked(selectedMedia?.id || '') ? 'bg-[#e50914]' : 'bg-white/10'}`} title="Like" onClick={() => {
                 markLike({ id: String(selectedMedia?.id), type: selectedMedia?.type || 'movie', title: title || '', poster: detail?.poster_path })
                 setTasteN((n) => n + 1)
               }}>👍</button>
@@ -481,13 +474,13 @@ export default function MetaDetails() {
                 if (anime) return ['vlc','pipe','torrentio','comet','zangetsu','miruro','animepahe','playtorrio','simplstream','vidy','vixsrc','vidnest','moviebox','pengu'].includes(p.id)
                 return ['vlc','pipe','torrentio','comet','playtorrio','simplstream','vidy','moviebox','vixsrc','vidnest'].includes(p.id)
               })).map((p) => (
-                    <button key={p.id} type="button" className="w-full flex items-center justify-between h-10 px-3 rounded-xl bg-[#1a1016] border border-white/10 hover:border-[#FF1493]/50 text-left text-white" onClick={() => {
+                    <button key={p.id} type="button" className="w-full flex items-center justify-between h-10 px-3 rounded-xl bg-[#1a1016] border border-white/10 hover:border-[#e50914]/50 text-left text-white" onClick={() => {
                       setPlayerPick(p.id)
                       try { localStorage.setItem('mfy-player-engine', p.id) } catch {}
                       handlePlay()
                     }}>
                       <span className="text-sm">{p.label}</span>
-                      <span className="text-[10px] text-[#FF1493]">{p.q}</span>
+                      <span className="text-[10px] text-[#e50914]">{p.q}</span>
                     </button>
                   ))}
                 </div>
@@ -529,7 +522,7 @@ className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/8 bord
               <button
                 type="button"
                 onClick={() => window.open('https://google.com/cast', '_blank')}
-                className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-[#FF1493]/15 border border-[#FF1493]/30 text-sm text-[#FF1493] hover:bg-[#FF1493]/25 transition-all"
+                className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-[#e50914]/15 border border-[#e50914]/30 text-sm text-[#e50914] hover:bg-[#e50914]/25 transition-all"
                 title="Cast to TV"
               >
                 <Cast className="w-4 h-4" />
@@ -569,9 +562,9 @@ className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/8 bord
                               }}
                               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-white/70 hover:bg-white/[0.06] hover:text-white text-left transition-all"
                             >
-                              <span className={cn('w-2 h-2 rounded-full flex-shrink-0', inList ? 'bg-[#FF1493]' : 'bg-white/15')} />
+                              <span className={cn('w-2 h-2 rounded-full flex-shrink-0', inList ? 'bg-[#e50914]' : 'bg-white/15')} />
                               <span className="flex-1 truncate">{l.name}</span>
-                              {inList && <Check className="w-3.5 h-3.5 text-[#FF1493] flex-shrink-0" />}
+                              {inList && <Check className="w-3.5 h-3.5 text-[#e50914] flex-shrink-0" />}
                             </button>
                           )
                         })}
@@ -591,7 +584,7 @@ onKeyDown={(e) => {
                           }
                         }}
                         placeholder="New list name…"
-                        className="flex-1 min-w-0 h-8 px-2.5 rounded-lg bg-white/[0.06] border border-white/[0.08] text-[11px] text-white placeholder-white/20 focus:outline-none focus:border-[#FF1493]/40"
+                        className="flex-1 min-w-0 h-8 px-2.5 rounded-lg bg-white/[0.06] border border-white/[0.08] text-[11px] text-white placeholder-white/20 focus:outline-none focus:border-[#e50914]/40"
                       />
                       <button
                         type="button"
@@ -603,7 +596,7 @@ onKeyDown={(e) => {
                           setNewListName('')
                           setListOpen(false)
                         }}
-                        className="h-8 px-2.5 rounded-lg bg-[#FF1493]/20 text-[#FF1493] hover:bg-[#FF1493]/30 text-xs flex items-center gap-1"
+                        className="h-8 px-2.5 rounded-lg bg-[#e50914]/20 text-[#e50914] hover:bg-[#e50914]/30 text-xs flex items-center gap-1"
                       >
                         <Plus size={12} /> New
                       </button>
@@ -675,7 +668,7 @@ onKeyDown={(e) => {
       <div className="px-8 mt-6">
         <div className="flex gap-4 border-b border-white/[0.05] mb-5">
           {(['details', 'streams'] as const).map((t) => (
-            <button key={t} onClick={() => setActiveTab(t)} className={cn('pb-3 text-xs font-medium border-b-2 transition-all capitalize', activeTab === t ? 'text-white border-[#FF1493]' : 'text-white/30 border-transparent hover:text-white/50')}>
+            <button key={t} onClick={() => setActiveTab(t)} className={cn('pb-3 text-xs font-medium border-b-2 transition-all capitalize', activeTab === t ? 'text-white border-[#e50914]' : 'text-white/30 border-transparent hover:text-white/50')}>
               {t}
             </button>
           ))}
@@ -707,7 +700,7 @@ onKeyDown={(e) => {
                 <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Seasons</h3>
                 <div className="flex gap-1.5 mb-4 flex-wrap">
                   {detail.seasons.filter((s: any) => s.season_number >= 0).map((s: any) => (
-                    <button key={s.id} onClick={() => changeSeason(s.season_number)} className={cn('px-3 py-1.5 rounded-md text-[11px] font-medium transition-all border', activeSeason === s.season_number ? 'bg-[#00E5FF]/10 text-[#00E5FF] border-[#00E5FF]/20' : 'bg-white/[0.03] text-white/30 border-transparent hover:text-white/50')}>
+                    <button key={s.id} onClick={() => changeSeason(s.season_number)} className={cn('px-3 py-1.5 rounded-md text-[11px] font-medium transition-all border', activeSeason === s.season_number ? 'bg-[#c8c8c8]/10 text-[#c8c8c8] border-[#c8c8c8]/20' : 'bg-white/[0.03] text-white/30 border-transparent hover:text-white/50')}>
                       {s.season_number === 0 ? 'Specials' : `Season ${s.season_number}`}
                     </button>
                   ))}
@@ -734,13 +727,13 @@ onKeyDown={(e) => {
                           {ep.still_path && <img src={`${STILL_URL}${ep.still_path}`} alt={ep.name} className="w-full h-full object-cover" />}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[10px] text-[#00E5FF] font-medium">E{ep.episode_number}</p>
+                          <p className="text-[10px] text-[#c8c8c8] font-medium">E{ep.episode_number}</p>
                           <p className="text-xs text-white/70 truncate group-hover:text-white transition-colors">{ep.name}</p>
                           <p className="text-[10px] text-white/20 line-clamp-1">{ep.overview}</p>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           {isEpisodeWatched(watchHistory, selectedMedia?.id, activeSeason, ep.episode_number) && (
-                            <span className="h-6 w-6 rounded-full bg-[#FF1493] text-white grid place-items-center text-[11px] font-black">✓</span>
+                            <span className="h-6 w-6 rounded-full bg-[#e50914] text-white grid place-items-center text-[11px] font-black">✓</span>
                           )}
                           {ep.vote_average > 0 && <span className={cn('text-[10px] font-semibold', getRatingColor(ep.vote_average))}>★ {ep.vote_average.toFixed(1)}</span>}
                           {ep.runtime && <span className="text-[10px] text-white/15">{ep.runtime}m</span>}
@@ -808,16 +801,16 @@ onKeyDown={(e) => {
                 setCurrentStreamUrl(url)
                 setCurrentPage('player')
               }}
-              className="w-full flex items-center justify-between gap-3 p-3 rounded-xl bg-[#FF1493]/10 border border-[#FF1493]/25 hover:bg-[#FF1493]/15 text-left transition-all"
+              className="w-full flex items-center justify-between gap-3 p-3 rounded-xl bg-[#e50914]/10 border border-[#e50914]/25 hover:bg-[#e50914]/15 text-left transition-all"
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="text-xs font-medium text-white/85 truncate">Vidy Player</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#FF1493]/25 text-[#FF1493] flex-shrink-0">Instant</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#e50914]/25 text-[#e50914] flex-shrink-0">Instant</span>
                 </div>
                 <div className="text-[10px] text-white/30 truncate mt-0.5">HD embed stream · works without torrent peers</div>
               </div>
-              <span className="text-[10px] text-[#FF1493] flex-shrink-0">Play</span>
+              <span className="text-[10px] text-[#e50914] flex-shrink-0">Play</span>
             </button>
 
             {streamOptions.length > 0 && (
@@ -907,8 +900,8 @@ onKeyDown={(e) => {
                     {meta && <div className="text-[10px] text-white/30 truncate mt-0.5">{meta}</div>}
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {s.quality && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#FF1493]/20 text-[#FF1493]">{s.quality}</span>}
-                    <span className="text-[10px] text-[#FF1493]">Play</span>
+                    {s.quality && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#e50914]/20 text-[#e50914]">{s.quality}</span>}
+                    <span className="text-[10px] text-[#e50914]">Play</span>
                   </div>
                 </button>
               )

@@ -42,8 +42,8 @@ export default function RemoteHelp() {
 
   return (
     <div className="fixed inset-0 z-[120] grid place-items-center bg-black/70" onClick={() => setOpen(false)}>
-      <div className="w-[min(420px,92vw)] rounded-2xl border border-[#FF1493]/25 bg-[#0c0b12] p-5 shadow-[0_0_40px_rgba(255,20,147,0.15)]" onClick={(e) => e.stopPropagation()}>
-        <p className="text-[10px] tracking-[0.2em] text-[#FF1493] font-bold mb-1">REMOTE</p>
+      <div className="w-[min(420px,92vw)] rounded-2xl border border-[#e50914]/25 bg-[#0c0b12] p-5 shadow-[0_0_40px_rgba(255,20,147,0.15)]" onClick={(e) => e.stopPropagation()}>
+        <p className="text-[10px] tracking-[0.2em] text-[#e50914] font-bold mb-1">REMOTE</p>
         <h2 className="text-lg font-bold text-white mb-3">Keys</h2>
         <div className="space-y-1.5">
           {rows.map(([k, label]) => (

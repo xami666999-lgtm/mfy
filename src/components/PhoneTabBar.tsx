@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Home, Film, Tv, Sparkles, LayoutGrid, Youtube, Music, Trophy, Radio, Bookmark, Settings, CalendarDays, BookOpen, Search, Server } from 'lucide-react'
+import { Home, Film, Tv, Sparkles, LayoutGrid, Youtube, Music, Trophy, Bookmark, Settings, CalendarDays, Search } from 'lucide-react'
 import { useStore } from '../store'
 import ThemePicker from './ThemePicker'
 
@@ -12,16 +12,11 @@ const TABS: [string, string, any][] = [
 
 const MORE: [string, string, any][] = [
   ['search', 'Search', Search],
-  ['jellyfin', 'Jellyfin', Server],
   ['calendar', 'Calendar', CalendarDays],
   ['youtube', 'YouTube', Youtube],
   ['music', 'Music', Music],
   ['sports', 'Sport', Trophy],
-  ['iptv', 'IPTV', Radio],
-  ['manga', 'Manga', BookOpen],
-  ['comics', 'Comics', BookOpen],
-  ['books', 'Books', BookOpen],
-  ['library', 'Library', Bookmark],
+  ['library', 'My Box', Bookmark],
   ['settings', 'Settings', Settings],
 ]
 

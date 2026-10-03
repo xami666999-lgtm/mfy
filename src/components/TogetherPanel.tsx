@@ -19,7 +19,7 @@ export default function TogetherPanel({
   return (
     <div className="fixed inset-0 z-[130] bg-black/70 flex items-center justify-center p-4" onClick={onClose}>
       <div className="w-full max-w-lg rounded-2xl bg-[#140c14] border border-white/15 p-5" onClick={(e) => e.stopPropagation()}>
-        <div className="text-[10px] tracking-[0.3em] text-[#FF1493] mb-2">MFY TOGETHER</div>
+        <div className="text-[10px] tracking-[0.3em] text-[#e50914] mb-2">MFY TOGETHER</div>
         <h3 className="text-xl text-white font-semibold mb-4">Cast & watch together</h3>
 
         <p className="text-sm text-white/70 mb-2">Cast to TV</p>
@@ -38,7 +38,7 @@ export default function TogetherPanel({
         <p className="text-sm text-white/70 mb-2">Watch a movie with someone</p>
         <p className="text-xs text-white/45 mb-3">Peario syncs the same title. Share the room, or search their username.</p>
         <div className="flex gap-2 mb-3">
-          <button type="button" className="h-9 px-3 rounded-full bg-[#FF1493] text-white text-xs font-semibold" onClick={() => window.open(room, '_blank')}>Open Peario room</button>
+          <button type="button" className="h-9 px-3 rounded-full bg-[#e50914] text-white text-xs font-semibold" onClick={() => window.open(room, '_blank')}>Open Peario room</button>
           <input value={user} onChange={(e) => setUser(e.target.value)} placeholder="their username" className="h-9 px-3 rounded-full bg-white/10 text-xs text-white flex-1" />
           <button type="button" className="h-9 px-3 rounded-full bg-white/10 text-white text-xs" onClick={() => user && window.open(pearioUserUrl(user), '_blank')}>Find</button>
         </div>

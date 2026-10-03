@@ -143,7 +143,7 @@ export default function Search() {
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && recordQuery(searchQuery)}
           placeholder="Movies, shows, people…"
-          className="w-full h-12 pl-12 pr-20 rounded-2xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#FF1493]/40"
+          className="w-full h-12 pl-12 pr-20 rounded-2xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder-white/25 focus:outline-none focus:border-[#e50914]/40"
         />
         {searchQuery && (
           <button
@@ -159,7 +159,7 @@ export default function Search() {
           onClick={() => setShowFilters((v) => !v)}
           className={cn(
             'absolute right-3 top-1/2 -translate-y-1/2 transition-all',
-            showFilters ? 'text-[#FF1493]' : 'text-white/30 hover:text-white/60'
+            showFilters ? 'text-[#e50914]' : 'text-white/30 hover:text-white/60'
           )}
           title="Filters"
         >
@@ -179,7 +179,7 @@ export default function Search() {
                 className={cn(
                   'h-7 px-3 rounded-full text-[11px] border transition-all',
                   typeFilter === t
-                    ? 'bg-[#FF1493]/15 border-[#FF1493]/35 text-[#FF1493]'
+                    ? 'bg-[#e50914]/15 border-[#e50914]/35 text-[#e50914]'
                     : 'border-white/[0.06] text-white/35 hover:text-white/55'
                 )}
               >
@@ -192,7 +192,7 @@ export default function Search() {
             <select
               value={genre}
               onChange={(e) => setGenre(Number(e.target.value))}
-              className="h-7 px-2 rounded-full bg-white/[0.04] border border-white/[0.06] text-[11px] text-white/50 focus:outline-none focus:border-[#FF1493]/30"
+              className="h-7 px-2 rounded-full bg-white/[0.04] border border-white/[0.06] text-[11px] text-white/50 focus:outline-none focus:border-[#e50914]/30"
             >
               <option value={0}>Any</option>
               {GENRES.map((g) => (
@@ -203,7 +203,7 @@ export default function Search() {
               value={year}
               onChange={(e) => setYear(e.target.value.replace(/\D/g, '').slice(0, 4))}
               placeholder="Year"
-              className="h-7 w-16 px-2 rounded-full bg-white/[0.04] border border-white/[0.06] text-[11px] text-white/50 text-center focus:outline-none focus:border-[#FF1493]/30"
+              className="h-7 w-16 px-2 rounded-full bg-white/[0.04] border border-white/[0.06] text-[11px] text-white/50 text-center focus:outline-none focus:border-[#e50914]/30"
             />
           </div>
         </div>
@@ -242,7 +242,7 @@ export default function Search() {
                 key={q}
                 type="button"
                 onClick={() => pickHistory(q)}
-                className="h-8 px-3 rounded-full bg-[#FF1493]/10 border border-[#FF1493]/20 text-xs text-[#FF1493]/70 hover:bg-[#FF1493]/20 transition-all"
+                className="h-8 px-3 rounded-full bg-[#e50914]/10 border border-[#e50914]/20 text-xs text-[#e50914]/70 hover:bg-[#e50914]/20 transition-all"
               >
                 {q}
               </button>

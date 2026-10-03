@@ -90,7 +90,7 @@ export default function MusicPage() {
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
               <div className="absolute bottom-5 left-6">
-                <div className="text-[#FF1493] text-xs font-bold tracking-widest">MFY MUSIC</div>
+                <div className="text-[#e50914] text-xs font-bold tracking-widest">MFY MUSIC</div>
                 <div className="text-3xl font-black tracking-tight">Crunch + Flix</div>
               </div>
             </div>
@@ -135,7 +135,7 @@ export default function MusicPage() {
             <button type="button" onClick={() => skip(1)} className="text-white/70 hover:text-white"><SkipForward size={18} /></button>
           </div>
           <div className="w-full max-w-md h-1 rounded-full bg-white/15 mt-2 overflow-hidden">
-            <div className="h-full bg-[#FF1493]" style={{ width: dur ? `${Math.min(100, (progress / dur) * 100)}%` : playing ? '12%' : '0%' }} />
+            <div className="h-full bg-[#e50914]" style={{ width: dur ? `${Math.min(100, (progress / dur) * 100)}%` : playing ? '12%' : '0%' }} />
           </div>
         </div>
         <button type="button" onClick={() => setFocus(true)} className="text-white/50 hover:text-white"><Mic2 size={16} /></button>
@@ -175,7 +175,7 @@ function Row({ title, tracks, onPlay }: { title: string; tracks: Track[]; onPlay
           <button key={t.id} type="button" onClick={() => onPlay(t, tracks)} className="group flex-none w-36 text-left rounded-xl bg-white/5 hover:bg-white/10 p-2 transition-all duration-300">
             <div className="relative">
               <img src={t.poster} alt="" className="w-32 h-32 object-cover rounded-xl shadow-lg shadow-black/50 group-hover:scale-105 transition-transform" />
-              <span className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-[#FF1493] grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity"><Play size={14} /></span>
+              <span className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-[#e50914] grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity"><Play size={14} /></span>
             </div>
             <p className="text-sm mt-2 truncate tracking-tight">{t.title}</p>
             <p className="text-[11px] text-white/40 truncate">{t.artist}</p>
@@ -193,7 +193,7 @@ function Grid({ tracks, onPlay }: { tracks: Track[]; onPlay: (t: Track, list?: T
         <button key={t.id} type="button" onClick={() => onPlay(t, tracks)} className="group text-left rounded-xl bg-white/5 hover:bg-white/10 p-2 transition-all">
           <div className="relative">
             <img src={t.poster} alt="" className="w-full aspect-square object-cover rounded-xl shadow-lg shadow-black/50 group-hover:scale-105 transition-transform" />
-            <span className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-[#FF1493] grid place-items-center opacity-0 group-hover:opacity-100"><Play size={14} /></span>
+            <span className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-[#e50914] grid place-items-center opacity-0 group-hover:opacity-100"><Play size={14} /></span>
           </div>
           <p className="text-sm mt-2 truncate">{t.title}</p>
           <p className="text-[11px] text-white/40 truncate">{t.artist}</p>

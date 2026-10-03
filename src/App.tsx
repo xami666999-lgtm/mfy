@@ -54,6 +54,7 @@ export default function App() {
   const phone = isPhoneShell()
   const {
     currentPage,
+    setCurrentPage,
     selectedMedia,
     isSetupComplete,
     authenticated,
@@ -164,14 +165,21 @@ export default function App() {
     })
   }, [])
 
+  useEffect(() => {
+    if (currentPage === 'iptv' || currentPage === 'manga' || currentPage === 'comics' || currentPage === 'books' || currentPage === 'manga-detail') {
+      setCurrentPage('home')
+    }
+  }, [currentPage, setCurrentPage])
+
   if (showIntro) return <Intro onDone={() => setShowIntro(false)} />
   if (!isSetupComplete) return <Wizard />
   if (!authenticated) return <LoginGate />
 
+  const electron = typeof navigator !== 'undefined' && /Electron/i.test(navigator.userAgent)
   const ytId = (selectedMedia as any)?.youtubeId || ((selectedMedia as any)?.type === 'youtube' ? selectedMedia?.id : '')
 
   return (
-    <div className="h-screen flex flex-col bg-[#0a0a0a] font-sans">
+    <div className="h-screen flex flex-col bg-[#07111c] font-sans">
       {!phone && <RemoteHelp />}
       <IdleWall />
       <IntroSkip />
@@ -197,9 +205,9 @@ export default function App() {
           </button>
         </div>
       )}
-      {!phone && <TitleBar />}
-      <div className={`flex-1 min-h-0 relative mfy-phone-main`} style={{ paddingTop: phone ? 0 : 36 }}>
-      {currentPage !== 'player' && currentPage !== 'detail' && !phone && <AppleRail />}
+      {electron && !phone && <TitleBar />}
+      <div className={`flex-1 min-h-0 relative mfy-phone-main`} style={{ paddingTop: electron && !phone ? 36 : 0 }}>
+      {currentPage !== 'player' && !phone && <AppleRail />}
       {phone && currentPage !== 'player' && <PhoneTabBar />}
       <main className="absolute inset-0 overflow-y-auto overflow-x-hidden">
         {currentPage === 'home' && <NuvioHome />}
@@ -233,12 +241,7 @@ export default function App() {
         {currentPage === 'tv' && <TvShows />}
         {currentPage === 'anime' && <Anime />}
         {currentPage === 'sports' && <Sports />}
-        {currentPage === 'iptv' && <Iptv />}
         {currentPage === 'calendar' && <CalendarPage />}
-        {currentPage === 'manga' && <PrintHome kind="manga" />}
-        {currentPage === 'comics' && <PrintHome kind="comics" />}
-        {currentPage === 'manga-detail' && <MangaReader />}
-        {currentPage === 'books' && <CatalogSection kind="books" title="Books" />}
         {currentPage === 'youtube' && <YouTubePage />}
         {currentPage === 'music' && <MusicPage />}
         {currentPage === 'people' && <People />}

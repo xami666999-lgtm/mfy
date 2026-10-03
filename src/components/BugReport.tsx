@@ -28,13 +28,13 @@ export default function BugReport({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[90] bg-black/70 grid place-items-center p-4">
       <div className="w-full max-w-md rounded-2xl bg-[#140810] border border-white/10 p-5 text-white">
-        <p className="text-[11px] tracking-[0.2em] text-[#FF1493] font-bold">REPORT A BUG</p>
+        <p className="text-[11px] tracking-[0.2em] text-[#e50914] font-bold">REPORT A BUG</p>
         <h2 className="text-lg font-black mt-1 mb-3">Tell Grok what broke</h2>
         <p className="text-xs text-white/40 mb-3">Current page: {page}</p>
         <textarea value={what} onChange={(e) => setWhat(e.target.value)} placeholder="What did you click? What happened? (YouTube error, black Play, empty manga…)" className="w-full h-28 rounded-xl bg-white/5 border border-white/10 p-3 text-sm mb-3" />
-        {sent ? <p className="text-sm text-[#FF1493] mb-3">GitHub issue window opened. Submit it there so I see it next time.</p> : null}
+        {sent ? <p className="text-sm text-[#e50914] mb-3">GitHub issue window opened. Submit it there so I see it next time.</p> : null}
         <div className="flex gap-2">
-          <button type="button" className="flex-1 h-11 rounded-xl bg-[#FF1493] font-bold" onClick={send}>Open GitHub issue</button>
+          <button type="button" className="flex-1 h-11 rounded-xl bg-[#e50914] font-bold" onClick={send}>Open GitHub issue</button>
           <button type="button" className="h-11 px-4 rounded-xl bg-white/10" onClick={onClose}>Close</button>
         </div>
       </div>

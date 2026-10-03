@@ -1134,11 +1134,11 @@ export default function PlayerPage() {
       <div style={{ position: 'fixed', right: 24, bottom: 88, zIndex: 80, width: 360, maxWidth: 'calc(100vw - 48px)', background: 'rgba(12,8,14,0.94)', border: '1px solid rgba(255,20,147,0.35)', borderRadius: 16, padding: 12, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 12px 40px rgba(0,0,0,0.45)' }}>
         {nextUp.still ? <img src={`${POSTER_URL.replace('/w500','/w300')}${nextUp.still}`} alt="" style={{ width: 120, height: 68, objectFit: 'cover', borderRadius: 10, flexShrink: 0 }} /> : <div style={{ width: 120, height: 68, borderRadius: 10, background: '#1a1016' }} />}
         <div style={{ minWidth: 0, flex: 1 }}>
-          <p style={{ fontSize: 11, color: '#FF1493', fontWeight: 700, marginBottom: 2 }}>Next on {(selectedMedia as any)?.title || 'this show'}</p>
+          <p style={{ fontSize: 11, color: '#e50914', fontWeight: 700, marginBottom: 2 }}>Next on {(selectedMedia as any)?.title || 'this show'}</p>
           <p style={{ fontSize: 14, color: '#fff', fontWeight: 650 }}>{nextUp.name} (S{nextUp.season}E{nextUp.episode})</p>
           <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
             <button type="button" onClick={() => setShowNext(false)} style={{ background: 'transparent', border: 'none', color: '#fff', opacity: 0.7, cursor: 'pointer' }}>Dismiss</button>
-            <button type="button" onClick={playNextEpisode} style={{ background: '#FF1493', border: 'none', color: '#fff', borderRadius: 999, padding: '8px 14px', fontWeight: 700, cursor: 'pointer' }}>Watch now</button>
+            <button type="button" onClick={playNextEpisode} style={{ background: '#e50914', border: 'none', color: '#fff', borderRadius: 999, padding: '8px 14px', fontWeight: 700, cursor: 'pointer' }}>Watch now</button>
           </div>
         </div>
       </div>
@@ -1146,7 +1146,7 @@ export default function PlayerPage() {
     {stillWatching && (
       <div className="fixed inset-0 z-[80] bg-black/70 flex items-center justify-center">
         <div className="rounded-3xl bg-[#120a12] border border-white/15 px-10 py-8 text-center max-w-md">
-          <div className="text-[#FF1493] text-[10px] tracking-[0.35em] mb-3">MFY</div>
+          <div className="text-[#e50914] text-[10px] tracking-[0.35em] mb-3">MFY</div>
           <h2 className="text-2xl font-semibold text-white mb-2">Are you still watching?</h2>
           <p className="text-sm text-white/50 mb-6">Playback paused so it does not keep going.</p>
           <div className="flex justify-center gap-3">
@@ -1168,18 +1168,18 @@ export default function PlayerPage() {
         <div className="mfy-player" onMouseMove={onMouseMove} style={{ background: '#000', minHeight: '100vh', cursor: showUI ? 'default' : 'none' }}>
       {showUI && (
       <button type="button" onClick={goBack} title="Exit player"
-        style={{ position: 'fixed', top: 14, left: 14, zIndex: 400, background: '#FF1493', color: '#fff', border: 'none', borderRadius: 999, padding: '8px 16px', cursor: 'pointer', fontWeight: 800, fontSize: 12, letterSpacing: 0.4, boxShadow: '0 6px 20px rgba(255,20,147,0.35)' }}>
+        style={{ position: 'fixed', top: 14, left: 14, zIndex: 400, background: '#e50914', color: '#fff', border: 'none', borderRadius: 999, padding: '8px 16px', cursor: 'pointer', fontWeight: 800, fontSize: 12, letterSpacing: 0.4, boxShadow: '0 6px 20px rgba(255,20,147,0.35)' }}>
         ← Exit
       </button>
       )}
       {showUI && <div className="player-topbar visible" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 90, padding: '12px 16px 12px 108px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)', pointerEvents: 'auto' }}>
         <div className="flex items-center gap-2">
-        <button type="button" onClick={() => setShowRate(true)} style={{ background: '#FF1493', padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white' }}>Mark watched</button>
+        <button type="button" onClick={() => setShowRate(true)} style={{ background: '#e50914', padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white' }}>Mark watched</button>
         </div>
         <div className="player-title text-white font-medium truncate" style={{ maxWidth: 420 }}>
           {title}
           {selectedMedia && selectedMedia.type !== 'movie' && selectedMedia.type !== 'iptv' ? (
-            <span style={{ marginLeft: 10, color: '#FF1493', fontWeight: 800 }}>S{selectedMedia.season || 1}E{selectedMedia.episode || 1}</span>
+            <span style={{ marginLeft: 10, color: '#e50914', fontWeight: 800 }}>S{selectedMedia.season || 1}E{selectedMedia.episode || 1}</span>
           ) : null}
         </div>
         <div className="player-top-actions flex items-center gap-2">
@@ -1187,7 +1187,7 @@ export default function PlayerPage() {
             <button
               type="button"
               onClick={() => setSrcOpen((v) => !v)}
-              style={{ background: '#1a1016', border: '1px solid #FF1493', borderRadius: 999, padding: '7px 14px', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+              style={{ background: '#1a1016', border: '1px solid #e50914', borderRadius: 999, padding: '7px 14px', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
             >
               {sourceNames[playerSource] || playerSource} ▾
             </button>
@@ -1204,7 +1204,7 @@ export default function PlayerPage() {
                     }}
                     style={{
                       width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer',
-                      background: playerSource === s ? '#FF1493' : 'transparent',
+                      background: playerSource === s ? '#e50914' : 'transparent',
                       color: '#fff', borderRadius: 10, padding: '9px 12px', fontSize: 13, fontWeight: 600, marginBottom: 4,
                     }}
                   >
@@ -1215,7 +1215,7 @@ export default function PlayerPage() {
             )}
             <button type="button" onClick={tryNextSource} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>Next source</button>
             {selectedMedia && selectedMedia.type !== 'movie' && selectedMedia.type !== 'iptv' ? (
-              <button type="button" onClick={playNextEpisode} style={{ background: '#FF1493', border: 'none', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>
+              <button type="button" onClick={playNextEpisode} style={{ background: '#e50914', border: 'none', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>
                 Next ep {nextUp ? `S${nextUp.season}E${nextUp.episode}` : `E${(selectedMedia.episode || 1) + 1}`}
               </button>
             ) : null}
@@ -1235,14 +1235,14 @@ export default function PlayerPage() {
               if (!url) return
               try { (window as any).electronAPI?.openVlc?.(url) } catch {}
             }} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>VLC</button>
-            <button type="button" onClick={() => setPlayerSource('webtorrent')} style={{ background: playerSource === 'webtorrent' ? '#FF1493' : '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>P2P</button>
+            <button type="button" onClick={() => setPlayerSource('webtorrent')} style={{ background: playerSource === 'webtorrent' ? '#e50914' : '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>P2P</button>
             <div className="relative">
               <button type="button" onClick={() => setSubOpen((v) => !v)} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>
                 Subs {subtitleLabel ? `· ${subtitleLabel.slice(0, 10)}` : ''}
               </button>
               {subOpen && (
                 <div style={{ position: 'absolute', right: 0, top: 36, width: 260, maxHeight: 280, overflow: 'auto', background: '#12080d', border: '1px solid rgba(255,20,147,0.4)', borderRadius: 12, padding: 8, zIndex: 90 }}>
-                  <p style={{ fontSize: 10, color: '#FF1493', marginBottom: 6 }}>OpenSubtitles · formats</p>
+                  <p style={{ fontSize: 10, color: '#e50914', marginBottom: 6 }}>OpenSubtitles · formats</p>
                   {subList.length === 0 && <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>No tracks yet</p>}
                   {subList.map((s) => (
                     <button key={s.url} type="button" onClick={() => applySub(s)} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 'none', color: '#fff', padding: '7px 8px', fontSize: 12, cursor: 'pointer' }}>
@@ -1264,7 +1264,7 @@ export default function PlayerPage() {
 
       {showUI && picks.length > 0 && (
         <div style={{ position: 'fixed', left: 16, top: 70, width: 300, maxHeight: '55vh', overflow: 'auto', zIndex: 120, background: '#12080d', border: '1px solid rgba(255,20,147,0.35)', borderRadius: 16, padding: 12 }}>
-          <p style={{ color: '#FF1493', fontSize: 11, fontWeight: 800 }}>PIPE · TORRENTIO · COMET</p>
+          <p style={{ color: '#e50914', fontSize: 11, fontWeight: 800 }}>PIPE · TORRENTIO · COMET</p>
           {picks.slice(0, 16).map((p) => (
             <button key={p.url} type="button" onClick={() => {
               setStreamUrl(p.url)
@@ -1279,10 +1279,10 @@ export default function PlayerPage() {
       )}
       {(playerSource === 'webtorrent' || magnetBox) && (
         <div style={{ position: 'fixed', right: 16, top: 70, width: 320, maxHeight: '70vh', overflow: 'auto', zIndex: 120, background: '#12080d', border: '1px solid rgba(255,20,147,0.35)', borderRadius: 16, padding: 12 }}>
-          <p style={{ color: '#FF1493', fontSize: 11, fontWeight: 800, letterSpacing: 1 }}>WEBTORRENT</p>
+          <p style={{ color: '#e50914', fontSize: 11, fontWeight: 800, letterSpacing: 1 }}>WEBTORRENT</p>
           <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, marginBottom: 8 }}>Paste a magnet or pick a ranked file. No VLC install needed.</p>
           <input value={magnetBox} onChange={(e) => setMagnetBox(e.target.value)} placeholder="magnet:?xt=urn:btih:…" style={{ width: '100%', background: '#1a1016', color: '#fff', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', fontSize: 12, marginBottom: 8 }} />
-          <button type="button" onClick={() => playMagnet(magnetBox)} style={{ width: '100%', background: '#FF1493', color: '#fff', border: 'none', borderRadius: 8, padding: 8, fontWeight: 700, marginBottom: 10 }}>Play link</button>
+          <button type="button" onClick={() => playMagnet(magnetBox)} style={{ width: '100%', background: '#e50914', color: '#fff', border: 'none', borderRadius: 8, padding: 8, fontWeight: 700, marginBottom: 10 }}>Play link</button>
           {torrentBusy && <p style={{ fontSize: 11, color: '#fff', marginBottom: 8 }}>{torrentBusy}</p>}
           {torrents.slice(0, 12).map((t) => (
             <button key={t.url} type="button" onClick={() => playMagnet(t.url, t.name)} style={{ width: '100%', textAlign: 'left', background: 'rgba(255,255,255,0.04)', border: 'none', color: '#fff', borderRadius: 8, padding: '8px 10px', marginBottom: 6, cursor: 'pointer' }}>
@@ -1319,7 +1319,7 @@ export default function PlayerPage() {
                 <img src={`${POSTER_URL}${meta.poster}`} alt="" style={{ width: 92, height: 138, objectFit: 'cover', borderRadius: 10, flexShrink: 0 }} />
               )}
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 10, letterSpacing: 1.4, color: '#FF1493', fontWeight: 700, marginBottom: 4 }}>
+                <div style={{ fontSize: 10, letterSpacing: 1.4, color: '#e50914', fontWeight: 700, marginBottom: 4 }}>
                   {selectedMedia?.type === 'movie' ? 'MOVIE' : isAnimeItem(selectedMedia) ? 'ANIME' : 'SERIES'}
                 </div>
                 <div style={{ color: '#fff', fontWeight: 700, fontSize: 16, marginBottom: 6 }}>{title}</div>
@@ -1327,7 +1327,7 @@ export default function PlayerPage() {
                   {meta?.overview || 'Ready when you are.'}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
-                  <button type="button" onClick={() => setGate(false)} style={{ background: '#FF1493', color: '#fff', border: 'none', borderRadius: 999, padding: '8px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                  <button type="button" onClick={() => setGate(false)} style={{ background: '#e50914', color: '#fff', border: 'none', borderRadius: 999, padding: '8px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
                     ▶ Play Now
                   </button>
                   <button type="button" onClick={() => leavePlayer('detail')} style={{ background: 'rgba(255,255,255,0.08)', color: '#fff', border: 'none', borderRadius: 999, padding: '8px 14px', fontSize: 13, cursor: 'pointer' }}>
@@ -1375,14 +1375,14 @@ export default function PlayerPage() {
                 <>
                   <div onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); if (total > 0) seek((e.clientX - r.left) / r.width * total) }}
                     style={{ cursor: 'pointer', height: 5, background: 'rgba(255,255,255,0.18)', borderRadius: 99, marginBottom: 12 }}>
-                    <div style={{ height: '100%', width: `${pct}%`, background: '#FF1493', borderRadius: 99 }} />
+                    <div style={{ height: '100%', width: `${pct}%`, background: '#e50914', borderRadius: 99 }} />
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <button type="button" onClick={() => seekBy(-5)} title="-5s" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, color: '#fff', cursor: 'pointer' }}><SkipBack size={18} /></button>
-                      <button type="button" onClick={togglePlay} style={{ background: '#FF1493', border: 'none', borderRadius: '50%', padding: 10, color: '#fff', cursor: 'pointer' }}>{playing ? <Pause size={22} /> : <Play size={22} />}</button>
+                      <button type="button" onClick={togglePlay} style={{ background: '#e50914', border: 'none', borderRadius: '50%', padding: 10, color: '#fff', cursor: 'pointer' }}>{playing ? <Pause size={22} /> : <Play size={22} />}</button>
                       <button type="button" onClick={() => seekBy(5)} title="+5s" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, color: '#fff', cursor: 'pointer' }}><SkipForward size={18} /></button>
-                      <button type="button" onClick={() => seekBy(90)} title="Skip intro" style={{ background: '#FF1493', border: 'none', borderRadius: 8, padding: '8px 10px', color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>Skip intro</button>
+                      <button type="button" onClick={() => seekBy(90)} title="Skip intro" style={{ background: '#e50914', border: 'none', borderRadius: 8, padding: '8px 10px', color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>Skip intro</button>
                       <span style={{ color: '#fff', fontSize: 13, fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
                         {fmt(progress)} / {fmt(total || dur)}
                       </span>

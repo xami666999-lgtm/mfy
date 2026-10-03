@@ -108,16 +108,16 @@ export default function Wizard() {
                 onClick={() => i < step && setStep(i)}
                 className={cn(
                   'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs font-medium transition-all',
-                  active && 'bg-[#FF1493]/12 text-[#FF1493] border border-[#FF1493]/25',
-                  done && !active && 'text-[#00E5FF]/80 hover:bg-white/[0.03]',
+                  active && 'bg-[#e50914]/12 text-[#e50914] border border-[#e50914]/25',
+                  done && !active && 'text-[#c8c8c8]/80 hover:bg-white/[0.03]',
                   !active && !done && 'text-white/25'
                 )}
               >
                 <span
                   className={cn(
                     'w-6 h-6 rounded-full flex items-center justify-center border text-[10px]',
-                    done && 'bg-[#00E5FF]/15 border-[#00E5FF]/35 text-[#00E5FF]',
-                    active && 'bg-[#FF1493]/15 border-[#FF1493]/40 text-[#FF1493]',
+                    done && 'bg-[#c8c8c8]/15 border-[#c8c8c8]/35 text-[#c8c8c8]',
+                    active && 'bg-[#e50914]/15 border-[#e50914]/40 text-[#e50914]',
                     !active && !done && 'border-white/10 text-white/20'
                   )}
                 >
@@ -140,7 +140,7 @@ export default function Wizard() {
           {/* Progress bar */}
           <div className="h-1 rounded-full bg-white/[0.06] mb-8 overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#FF1493] to-[#00E5FF] transition-all duration-300"
+              className="h-full rounded-full bg-gradient-to-r from-[#e50914] to-[#c8c8c8] transition-all duration-300"
               style={{ width: `${((step + 1) / steps.length) * 100}%` }}
             />
           </div>
@@ -175,7 +175,7 @@ export default function Wizard() {
                 <button
                   type="button"
                   onClick={() => openLink('https://www.themoviedb.org/settings/api')}
-                  className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-[#00E5FF]/70 hover:text-[#00E5FF] transition-colors"
+                  className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-[#c8c8c8]/70 hover:text-[#c8c8c8] transition-colors"
                 >
                   Get a free TMDB key <ExternalLink className="w-3 h-3" />
                 </button>
@@ -215,8 +215,8 @@ export default function Wizard() {
 
 {step === 4 && (
               <div className="text-center py-4">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#FF1493]/20 to-[#00E5FF]/20 border border-[#FF1493]/30 flex items-center justify-center mx-auto mb-5">
-                  <Check className="w-8 h-8 text-[#00E5FF]" />
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#e50914]/20 to-[#c8c8c8]/20 border border-[#e50914]/30 flex items-center justify-center mx-auto mb-5">
+                  <Check className="w-8 h-8 text-[#c8c8c8]" />
                 </div>
                 <h2 className="text-xl font-bold text-white mb-2 tracking-tight">You're all set</h2>
                 <p className="text-sm text-white/35 max-w-sm mx-auto leading-relaxed">
@@ -228,7 +228,7 @@ export default function Wizard() {
                     type="checkbox"
                     checked={shortcut}
                     onChange={(e) => setShortcut(e.target.checked)}
-                    className="w-4 h-4 accent-[#FF1493] rounded border-white/20 bg-white/5"
+                    className="w-4 h-4 accent-[#e50914] rounded border-white/20 bg-white/5"
                   />
                   <span>Create desktop shortcut</span>
                 </label>
@@ -268,7 +268,7 @@ export default function Wizard() {
                     type="button"
                     onClick={finish}
                     disabled={saving}
-                    className="flex items-center gap-1.5 h-9 px-6 rounded-full bg-gradient-to-r from-[#FF1493] to-[#00E5FF] text-xs font-bold text-white shadow-[0_0_24px_rgba(255,20,147,0.35)] hover:brightness-110 transition-all disabled:opacity-60"
+                    className="flex items-center gap-1.5 h-9 px-6 rounded-full bg-gradient-to-r from-[#e50914] to-[#c8c8c8] text-xs font-bold text-white shadow-[0_0_24px_rgba(255,20,147,0.35)] hover:brightness-110 transition-all disabled:opacity-60"
                   >
                     <Check className="w-3.5 h-3.5" />
                     {saving ? 'Saving…' : 'Launch MFY'}
@@ -322,7 +322,7 @@ function Input({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#FF1493]/45 focus:ring-1 focus:ring-[#FF1493]/20 transition-all"
+      className="w-full h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#e50914]/45 focus:ring-1 focus:ring-[#e50914]/20 transition-all"
     />
   )
 }
@@ -332,7 +332,7 @@ function LinkBtn({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="mt-1.5 text-[11px] text-[#00E5FF]/55 hover:text-[#00E5FF] transition-colors"
+      className="mt-1.5 text-[11px] text-[#c8c8c8]/55 hover:text-[#c8c8c8] transition-colors"
     >
       Open setup page →
     </button>

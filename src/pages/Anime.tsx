@@ -84,7 +84,7 @@ export default function Anime() {
       <div className="board-content px-6 pt-6">
         <div className="flex gap-2 mb-4">
           {(['all', 'sub', 'dub'] as const).map((a) => (
-            <button key={a} type="button" className={`h-8 px-3 rounded-full text-xs ${audio === a ? 'bg-[#FF1493]' : 'bg-white/10'}`} onClick={() => setAudio(a)}>{a.toUpperCase()}</button>
+            <button key={a} type="button" className={`h-8 px-3 rounded-full text-xs ${audio === a ? 'bg-[#e50914]' : 'bg-white/10'}`} onClick={() => setAudio(a)}>{a.toUpperCase()}</button>
           ))}
         </div>
         <section className="media-row">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../store'
 import { GoogleUser, googleClientId, renderGoogleButton } from '../auth/google'
+import ProfileManage from './ProfileManage'
 
 const AVATARS = Array.from({ length: 8 }, (_, i) => `https://api.dicebear.com/9.x/adventurer/svg?seed=mfy${i + 1}`)
 const EPOCH = '1713'
@@ -36,6 +37,8 @@ export default function LoginGate() {
   const [code, setCode] = useState('')
   const [sent, setSent] = useState('')
   const [picked, setPicked] = useState(profiles[0]?.id || '')
+  const [editing, setEditing] = useState(false)
+  const [manageId, setManageId] = useState('')
   const [err, setErr] = useState('')
 
   function enter(id: string) {
@@ -144,38 +147,41 @@ export default function LoginGate() {
 
   if (step === 'who') {
     const list = useStore.getState().profiles
+    if (manageId) return <ProfileManage id={manageId} onClose={() => setManageId('')} />
     return (
-      <div className="h-screen grid place-items-center bg-black">
-        <div className="text-center px-6">
-          <p className="text-white/40 text-xs tracking-[0.35em] font-bold mb-3">MFY</p>
-          <h1 className="text-4xl font-bold text-white mb-10">Who’s watching?</h1>
-          <div className="flex justify-center gap-8 flex-wrap">
-            {list.map((p) => (
-              <button key={p.id} type="button" onClick={() => setPicked(p.id)} className="w-28">
-                <div className={`w-24 h-24 mx-auto rounded-md overflow-hidden border-2 ${picked === p.id ? 'border-white' : 'border-white/15'}`}>
-                  {p.avatar ? <img src={p.avatar} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full grid place-items-center bg-[#1a1a1a] text-2xl">{p.name[0]}</div>}
-                </div>
-                <p className={`mt-3 text-sm ${picked === p.id ? 'text-white' : 'text-white/50'}`}>{p.name}</p>
-              </button>
-            ))}
-          </div>
-          {picked && list.find((p) => p.id === picked)?.pin && (
-            <input className={`${field} max-w-xs mx-auto mt-8`} type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          )}
-          {err && <p className="text-red-400 text-xs mt-3">{err}</p>}
-          <button type="button" className="mt-8 h-11 px-10 rounded bg-white text-black font-semibold" onClick={() => {
-            const p = list.find((x) => x.id === picked)
-            if (!p) return
-            if (p.pin && p.pin !== password) return setErr('Wrong password.')
-            enter(picked)
-          }}>Enter MFY</button>
+      <div className="nf-gate">
+        <h1>{editing ? 'Manage Profiles' : "Who's watching?"}</h1>
+        <div className="nf-profiles">
+          {list.map((p) => (
+            <button key={p.id} type="button" className="nf-profile" onClick={() => {
+              if (editing) { setManageId(p.id); return }
+              if (p.pin) { setPicked(p.id); return }
+              enter(p.id)
+            }}>
+              <span className={picked === p.id ? 'ring' : ''}>
+                {p.avatar ? <img src={p.avatar} alt="" /> : <b>{p.name[0]}</b>}
+                {editing && <i>Edit</i>}
+              </span>
+              <small>{p.name}</small>
+            </button>
+          ))}
         </div>
+        {picked && list.find((p) => p.id === picked)?.pin && !editing && (
+          <input className="nf-pin" type="password" placeholder="PIN" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => {
+            if (e.key !== 'Enter') return
+            const p = list.find((x) => x.id === picked)
+            if (p && p.pin === password) enter(picked)
+            else setErr('Wrong PIN.')
+          }} />
+        )}
+        {err && <p className="nf-err">{err}</p>}
+        <button type="button" className="nf-edit" onClick={() => { setEditing((v) => !v); setErr('') }}>{editing ? 'Done' : 'Edit'}</button>
       </div>
     )
   }
 
   return (
-    <div className="h-screen grid place-items-center bg-black px-4">
+    <div className="nf-gate" style={{ justifyContent: 'flex-start', paddingTop: 72 }}>
       <div className="w-full max-w-sm">
         <p className="text-center text-white/40 text-xs tracking-[0.35em] font-bold mb-2">MFY</p>
         <h1 className="text-center text-2xl font-bold text-white mb-6">{mode === 'create' ? 'Create profile' : mode === 'reset' ? 'Reset password' : 'Sign in'}</h1>

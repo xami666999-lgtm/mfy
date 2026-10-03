@@ -73,7 +73,7 @@ export default function ThemePicker() {
     setBusy('')
   }
 
-  const groups = Array.from(new Set(catalog.map((x) => x.slot)))
+  const groups = Array.from(new Set(catalog.filter((x) => x.kind !== 'jellyfin' && !/manga|comic|book|iptv/i.test(`${x.slot} ${x.name}`)).map((x) => x.slot)))
 
   return (
     <section className="p-8 max-w-3xl pb-16">
@@ -97,7 +97,7 @@ export default function ThemePicker() {
         <div key={slot} className="mb-5">
           <h3 className="text-xs uppercase tracking-wider text-white/40 mb-2">{slot}</h3>
           <ul className="space-y-2">
-            {catalog.filter((x) => x.slot === slot).map((item) => (
+            {catalog.filter((x) => x.slot === slot && x.kind !== 'jellyfin' && !/manga|comic|book|iptv/i.test(`${x.slot} ${x.name}`)).map((item) => (
               <li key={item.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
                 <div className="flex items-start gap-2">
                   <div className="flex-1 min-w-0">

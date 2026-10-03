@@ -72,7 +72,7 @@ export default function Library() {
                 </div>
                 {pct > 0 && (
                   <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/15">
-                    <div className="h-full bg-[#FF1493]" style={{ width: `${pct}%` }} />
+                    <div className="h-full bg-[#e50914]" style={{ width: `${pct}%` }} />
                   </div>
                 )}
               </button>
@@ -95,7 +95,7 @@ export default function Library() {
   return (
     <div className="board page-fade-enter">
       <div className="mx-6 mt-6 mb-2 rounded-[28px] px-8 pt-10 pb-8" style={{ background: 'linear-gradient(135deg,#2b0618 0%,#12040c 55%,#050810 100%)', border: '1px solid rgba(255,20,147,0.25)' }}>
-        <p className="text-[11px] tracking-[0.28em] text-[#FF1493] font-bold">LIBRARY</p>
+        <p className="text-[11px] tracking-[0.28em] text-[#e50914] font-bold">LIBRARY</p>
         <h1 className="text-5xl font-black text-white mt-2">Your titles</h1>
         <p className="text-sm text-white/45 mt-2">Saved · favorites · history · collections</p>
         <div className="flex gap-2 mt-5 flex-wrap">
@@ -108,7 +108,7 @@ export default function Library() {
                 onClick={() => setTab(t.id)}
                 className={cn(
                   'h-9 px-4 rounded-full text-xs font-semibold inline-flex items-center gap-2 border',
-                  tab === t.id ? 'bg-[#FF1493] border-[#FF1493] text-white' : 'bg-white/5 border-white/10 text-white/50 hover:text-white'
+                  tab === t.id ? 'bg-[#e50914] border-[#e50914] text-white' : 'bg-white/5 border-white/10 text-white/50 hover:text-white'
                 )}
               >
                 <Icon size={13} /> {t.label} {t.count}
@@ -135,7 +135,7 @@ export default function Library() {
                 placeholder="New collection name"
                 className="flex-1 h-11 px-4 rounded-full bg-white/[0.05] border border-white/10 text-sm text-white"
               />
-              <button type="button" onClick={() => { if (newListName.trim()) { createCustomList(newListName.trim()); setNewListName('') } }} className="h-11 px-5 rounded-full bg-[#FF1493] text-sm font-bold inline-flex items-center gap-1">
+              <button type="button" onClick={() => { if (newListName.trim()) { createCustomList(newListName.trim()); setNewListName('') } }} className="h-11 px-5 rounded-full bg-[#e50914] text-sm font-bold inline-flex items-center gap-1">
                 <Plus size={14} /> Create
               </button>
             </div>

@@ -102,7 +102,7 @@ export default function IdleWall() {
       </div>
       <div className="absolute inset-0 flex items-center justify-center bg-black/45">
         <div className="rounded-3xl bg-[#120a12]/95 border border-white/15 px-10 py-8 text-center max-w-md shadow-[0_20px_80px_rgba(0,0,0,0.7)]">
-          <div className="text-[#FF1493] text-[10px] tracking-[0.35em] mb-3">MFY</div>
+          <div className="text-[#e50914] text-[10px] tracking-[0.35em] mb-3">MFY</div>
           <h2 className="text-2xl font-semibold text-white mb-2">Are you still watching?</h2>
           <p className="text-sm text-white/50 mb-6">You have been away for 5 minutes.</p>
           <div className="flex justify-center gap-3">

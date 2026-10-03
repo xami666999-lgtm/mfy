@@ -5,19 +5,15 @@ import BugReport from './BugReport'
 import { cn } from '../lib/utils'
 
 const tabs = [
-  { id: 'home', label: 'Board', icon: Home },
+  { id: 'home', label: 'Home', icon: Home },
   { id: 'movies', label: 'Movies', icon: Film },
   { id: 'tv', label: 'TV', icon: Tv },
   { id: 'anime', label: 'Anime', icon: Sparkles },
-  { id: 'manga', label: 'Manga', icon: BookOpen },
-  { id: 'comics', label: 'Comics', icon: BookOpen },
-  { id: 'books', label: 'Books', icon: BookOpen },
   { id: 'youtube', label: 'YouTube', icon: Youtube },
   { id: 'music', label: 'Music', icon: Music },
   { id: 'sports', label: 'Sports', icon: Trophy },
-  { id: 'iptv', label: 'IPTV', icon: Radio },
   { id: 'search', label: 'Search', icon: Search },
-  { id: 'library', label: 'Library', icon: Bookmark },
+  { id: 'library', label: 'My Box', icon: Bookmark },
   { id: 'settings', label: 'Settings', icon: Settings },
 ]
 
@@ -29,7 +25,7 @@ export default function Navbar() {
       <button onClick={() => setCurrentPage('home')} className="brand" aria-label="MFY Board" type="button">
         <img src="./icon.png" alt="MFY" />
         <span>MFY</span>
-        <span className="text-[10px] text-[#FF1493] font-bold ml-1">1.6.11</span>
+        <span className="text-[10px] text-[#e50914] font-bold ml-1">1.6.11</span>
       </button>
       <nav className="nav-tabs">
         {tabs.map((tab) => {
@@ -45,7 +41,7 @@ export default function Navbar() {
       </nav>
       <div className="navbar-spacer" />
       <button type="button" className="nav-tab" onClick={() => setBug(true)} title="Report a bug">
-        <span className="text-[11px] text-[#FF1493] font-bold">Bug</span>
+        <span className="text-[11px] text-[#e50914] font-bold">Bug</span>
       </button>
       {bug && <BugReport onClose={() => setBug(false)} />}
     </header>

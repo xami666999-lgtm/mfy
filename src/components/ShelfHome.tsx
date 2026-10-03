@@ -89,7 +89,7 @@ export function CategoryChips({
           key={label}
           type="button"
           onClick={() => onPick(label)}
-          className={`h-8 px-3 rounded-full text-[11px] font-medium ${active === label ? 'bg-[#FF1493] text-white' : 'bg-white/[0.06] text-white/45 hover:text-white/70'}`}
+          className={`h-8 px-3 rounded-full text-[11px] font-medium ${active === label ? 'bg-[#e50914] text-white' : 'bg-white/[0.06] text-white/45 hover:text-white/70'}`}
         >
           {label}
         </button>

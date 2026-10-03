@@ -186,7 +186,7 @@ export default function Settings() {
     <div className="p-8 max-w-2xl">
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-lg font-semibold text-white tracking-tight">Settings</h2>
-        <a className="text-xs text-[#FF1493]" href="https://github.com/xami666999-lgtm/mfy/issues/new" target="_blank" rel="noreferrer">Report a bug on GitHub</a>
+        <a className="text-xs text-[#e50914]" href="https://github.com/xami666999-lgtm/mfy/issues/new" target="_blank" rel="noreferrer">Report a bug on GitHub</a>
         <div className="flex items-center gap-2">
           <button onClick={checkUpdates} className="flex items-center gap-2 h-8 px-3 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-medium text-white/60 hover:bg-white/[0.08] transition-all">
             <RefreshCw className="w-3.5 h-3.5" />
@@ -199,7 +199,7 @@ export default function Settings() {
         </div>
       </div>
 
-      <p className="text-xs text-white/25 mb-5 max-w-xl leading-relaxed">TMDB provides the broad catalog and metadata index. Jellyfin can be used as an optional local library source. MFY only plays stream URLs you provide or obtain from services you are authorized to use.</p>
+      <p className="text-xs text-white/40 mb-5 max-w-xl leading-relaxed">Movies and series come from TMDB. Playback uses the sources you connect.</p>
 
       <div className="space-y-4">
         <Section title="API Keys">
@@ -291,7 +291,7 @@ export default function Settings() {
                 <button
                   onClick={loginSerializd}
                   disabled={serializdStatus === 'loading'}
-                  className="w-full h-10 rounded-lg bg-[#FF1493]/10 border border-[#FF1493]/30 text-white font-medium text-sm hover:bg-[#FF1493]/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full h-10 rounded-lg bg-[#e50914]/10 border border-[#e50914]/30 text-white font-medium text-sm hover:bg-[#e50914]/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {serializdStatus === 'loading' ? (
                     <span className="flex items-center justify-center gap-2">
@@ -309,7 +309,7 @@ export default function Settings() {
                 </button>
                 <p className="text-xs text-white/30 text-center">
                   Creates a local account that syncs your watch history and ratings to{' '}
-                  <a href="https://serializd.com" target="_blank" rel="noopener noreferrer" className="text-[#FF1493] hover:underline">
+                  <a href="https://serializd.com" target="_blank" rel="noopener noreferrer" className="text-[#e50914] hover:underline">
                     Serializd.com
                   </a>
                 </p>
@@ -354,14 +354,12 @@ export default function Settings() {
           <Input label="AIOStreams URL" value={aiosUrl} onChange={setAiosUrl} placeholder="http://localhost:3000 (when ready)" />
           <Input label="Real-Debrid API" value={rdKey} onChange={setRdKey} placeholder="Real-Debrid token" link="https://realdebrid.com/apitoken" type="password" />
           <Input label="Trakt Token (optional)" value={traktTok} onChange={setTraktTok} placeholder="Not required — local lists used by default" type="password" />
-          <Input label="Jellyfin Server" value={jellyfinUrl} onChange={setJellyfinUrl} placeholder="http://127.0.0.1:8096" />
-          <Input label="Jellyfin API Key" value={jellyfinKey} onChange={setJellyfinKey} placeholder="Optional local media library key" type="password" />
         </Section>
 
         <Section title="Desktop">
           <button
             type="button"
-            className="h-10 px-4 rounded-xl bg-[#FF1493] text-white text-sm font-semibold"
+            className="h-10 px-4 rounded-xl bg-[#e50914] text-white text-sm font-semibold"
             onClick={async () => {
               const api = (window as any).electronAPI
               const ok = await api?.createDesktopShortcut?.()
@@ -414,7 +412,7 @@ export default function Settings() {
                 onClick={() => store.setTheme(id)}
                 className={`h-8 px-3 rounded-lg text-xs border transition-all ${
                   theme === id
-                    ? 'bg-[#FF1493]/15 border-[#FF1493]/40 text-[#FF1493]'
+                    ? 'bg-[#e50914]/15 border-[#e50914]/40 text-[#e50914]'
                     : 'bg-white/[0.04] border-white/[0.06] text-white/40 hover:text-white/60'
                 }`}
               >
@@ -451,7 +449,7 @@ export default function Settings() {
                   onClick={() => store.switchProfile(pr.id)}
                   className={`h-8 px-3 rounded-lg text-xs border ${
                     store.currentProfile?.id === pr.id
-                      ? 'border-[#FF1493]/40 text-[#FF1493] bg-[#FF1493]/10'
+                      ? 'border-[#e50914]/40 text-[#e50914] bg-[#e50914]/10'
                       : 'border-white/[0.06] text-white/40'
                   }`}
                 >
@@ -493,7 +491,7 @@ export default function Settings() {
             <div className="flex items-center justify-between mb-2">
               <p className="text-[10px] text-white/25">Avatar for {store.currentProfile?.name || 'current profile'}</p>
               {avatarOptions.length === 0 && !avatarsLoading && (
-                <button onClick={loadAvatars} className="text-[10px] text-[#FF1493]/70 hover:text-[#FF1493] transition-colors">Load actors</button>
+                <button onClick={loadAvatars} className="text-[10px] text-[#e50914]/70 hover:text-[#e50914] transition-colors">Load actors</button>
               )}
             </div>
             <div className="flex items-center gap-2 mb-2">
@@ -506,7 +504,7 @@ export default function Settings() {
                 className={cn(
                   'h-8 px-3 rounded-lg text-xs border transition-all',
                   !store.currentProfile?.avatar || store.currentProfile.avatar === './icon.png'
-                    ? 'border-[#FF1493]/40 text-[#FF1493] bg-[#FF1493]/10'
+                    ? 'border-[#e50914]/40 text-[#e50914] bg-[#e50914]/10'
                     : 'border-white/[0.06] text-white/40'
                 )}
               >
@@ -525,7 +523,7 @@ export default function Settings() {
                       className={cn(
                         'aspect-square rounded-full overflow-hidden border-2 transition-all',
                         store.currentProfile?.avatar === `https://image.tmdb.org/t/p/w185${o.path}`
-                          ? 'border-[#FF1493] shadow-[0_0_12px_rgba(255,20,147,0.35)]'
+                          ? 'border-[#e50914] shadow-[0_0_12px_rgba(255,20,147,0.35)]'
                           : 'border-transparent hover:border-white/25'
                       )}
                     >
@@ -620,7 +618,7 @@ export default function Settings() {
                 </button>
               </div>
               <div className="h-1.5 rounded-full bg-white/[0.08] overflow-hidden">
-                <div className="h-full rounded-full bg-gradient-to-r from-[#00E5FF] to-[#FF1493] transition-all" style={{ width: `${Math.round((t.progress || 0) * 100)}%` }} />
+                <div className="h-full rounded-full bg-gradient-to-r from-[#c8c8c8] to-[#e50914] transition-all" style={{ width: `${Math.round((t.progress || 0) * 100)}%` }} />
               </div>
               <div className="flex items-center justify-between text-[10px] text-white/30">
                 <span>{Math.round((t.progress || 0) * 100)}%</span>
@@ -689,7 +687,7 @@ function Input({ label, value, onChange, placeholder, link, type = 'text' }: {
       <div className="flex items-center justify-between mb-1.5">
         <label className="text-xs text-white/50">{label}</label>
         {link && (
-          <button onClick={() => (window as any).electronAPI?.openExternal(link)} className="flex items-center gap-1 text-[10px] text-[#00E5FF]/60 hover:text-[#00E5FF] transition-colors">
+          <button onClick={() => (window as any).electronAPI?.openExternal(link)} className="flex items-center gap-1 text-[10px] text-[#c8c8c8]/60 hover:text-[#c8c8c8] transition-colors">
             Get Key <ExternalLink className="w-2.5 h-2.5" />
           </button>
         )}
@@ -699,7 +697,7 @@ function Input({ label, value, onChange, placeholder, link, type = 'text' }: {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.06] text-xs text-white placeholder-white/15 focus:outline-none focus:border-[#FF1493]/30 transition-all"
+        className="w-full h-9 px-3 rounded-lg bg-white/[0.04] border border-white/[0.06] text-xs text-white placeholder-white/15 focus:outline-none focus:border-[#e50914]/30 transition-all"
       />
     </div>
   )
@@ -712,7 +710,7 @@ function Toggle({ label, description, checked, onChange }: { label: string; desc
         <p className="text-xs text-white/60">{label}</p>
         <p className="text-[10px] text-white/20 mt-0.5">{description}</p>
       </div>
-      <button onClick={() => onChange?.(!checked)} className={`w-9 h-5 rounded-full transition-all relative ${checked ? 'bg-[#FF1493]' : 'bg-white/[0.08]'}`}>
+      <button onClick={() => onChange?.(!checked)} className={`w-9 h-5 rounded-full transition-all relative ${checked ? 'bg-[#e50914]' : 'bg-white/[0.08]'}`}>
         <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${checked ? 'left-[18px]' : 'left-0.5'}`} />
       </button>
     </div>

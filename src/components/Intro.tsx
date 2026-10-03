@@ -17,9 +17,8 @@ export default function Intro({ onDone }: Props) {
 
   return (
     <div className="h-screen grid place-items-center bg-black" onClick={onDone} role="presentation">
-      <div className="text-center">
-        <div className="text-white text-6xl font-black tracking-[0.35em]">MFY</div>
-        <div className="mt-3 text-[11px] tracking-[0.28em] text-white/40">MOVIES FOR YOU</div>
+      <div className="nf-intro" aria-label="MFY">
+        <span>M</span><span>F</span><span>Y</span>
       </div>
     </div>
   )

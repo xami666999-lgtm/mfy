@@ -192,7 +192,7 @@ export default function Iptv() {
             onClick={toggleMultiview}
             className={cn(
               'p-2 rounded-lg text-white/60 hover:text-white transition-colors',
-              multiviewMode && 'bg-[#FF1493]/20 text-[#FF1493] border border-[#FF1493]/30'
+              multiviewMode && 'bg-[#e50914]/20 text-[#e50914] border border-[#e50914]/30'
             )}
             title={multiviewMode ? 'Exit multiview' : 'Enter multiview (max 4)'}
           >
@@ -271,7 +271,7 @@ export default function Iptv() {
                       className={cn(
                         'w-full px-3 py-2 rounded-lg text-left text-sm transition-all',
                         group === null
-                          ? 'bg-[#FF1493]/20 text-[#FF1493] border border-[#FF1493]/30'
+                          ? 'bg-[#e50914]/20 text-[#e50914] border border-[#e50914]/30'
                           : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/10'
                       )}
                     >
@@ -286,7 +286,7 @@ export default function Iptv() {
                           className={cn(
                             'w-full px-3 py-2 rounded-lg text-left text-sm transition-all',
                             group === g
-                              ? 'bg-[#FF1493]/20 text-[#FF1493] border border-[#FF1493]/30'
+                              ? 'bg-[#e50914]/20 text-[#e50914] border border-[#e50914]/30'
                               : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/10'
                           )}
                         >
@@ -303,15 +303,15 @@ export default function Iptv() {
 
         <main className="lg:col-span-1 min-w-0">
           {multiviewMode && selectedForMultiview.length > 0 && (
-            <div className="mb-6 p-4 bg-[#FF1493]/10 border border-[#FF1493]/30 rounded-xl flex items-center justify-between">
-              <span className="text-sm text-[#FF1493]">Multiview active: {selectedForMultiview.length}/4 channels selected</span>
+            <div className="mb-6 p-4 bg-[#e50914]/10 border border-[#e50914]/30 rounded-xl flex items-center justify-between">
+              <span className="text-sm text-[#e50914]">Multiview active: {selectedForMultiview.length}/4 channels selected</span>
               <button
                 onClick={() => {
                   setIptvMultiview(true)
                   setIptvMultiviewUrls(selectedForMultiview)
                   setCurrentPage('player')
                 }}
-                className="px-4 py-2 rounded-lg bg-[#FF1493] text-white text-sm hover:bg-[#FF1493]/80 transition-colors"
+                className="px-4 py-2 rounded-lg bg-[#e50914] text-white text-sm hover:bg-[#e50914]/80 transition-colors"
               >
                 Launch Multiview
               </button>
@@ -371,7 +371,7 @@ export default function Iptv() {
                       <Tv className="w-5 h-5 text-white/30" />
                     </div>
                     {multiviewMode && selectedForMultiview.includes(c.url) && (
-                      <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#FF1493] flex items-center justify-center">
+                      <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#e50914] flex items-center justify-center">
                         <Play className="w-3 h-3 text-white" />
                       </div>
                     )}

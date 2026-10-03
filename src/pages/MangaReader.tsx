@@ -132,9 +132,9 @@ export default function MangaReader() {
       </button>
       <div className="flex items-center justify-between mb-1">
         <h1 className="text-2xl font-bold">{title}</h1>
-        <button type="button" className="text-xs px-3 h-8 rounded-lg bg-[#FF1493]" onClick={() => setRateOpen(true)}>Rate on AniList</button>
+        <button type="button" className="text-xs px-3 h-8 rounded-lg bg-[#e50914]" onClick={() => setRateOpen(true)}>Rate on AniList</button>
       </div>
-      <p className="text-xs text-[#FF1493] mb-5">MFY Reader · MangaDex / FireFly</p>
+      <p className="text-xs text-[#e50914] mb-5">MFY Reader · MangaDex / FireFly</p>
       {rateOpen && (
         <RateModal
           title={title}
@@ -160,7 +160,7 @@ export default function MangaReader() {
       ) : (
         <div className="grid gap-2">
           {chapters.map((c) => (
-            <button key={c.id} type="button" className="text-left px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:border-[#FF1493]/40" onClick={() => openChapter(c.id, c.ff)}>
+            <button key={c.id} type="button" className="text-left px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:border-[#e50914]/40" onClick={() => openChapter(c.id, c.ff)}>
               Chapter {c.attributes?.chapter || '?'} {c.attributes?.title ? `· ${c.attributes.title}` : ''}
             </button>
           ))}
