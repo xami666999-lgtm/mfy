@@ -204,7 +204,7 @@ function Flag({ code }: { code: string }) {
 }
 
 export default function NuvioHome() {
-  const { setSelectedMedia, setCurrentPage, watchHistory, setCurrentStreamUrl, setSelectedProviderId, setSelectedFranchiseId, profiles, currentProfile, addToWatchlist } = useStore() as any
+  const { setSelectedMedia, setCurrentPage, watchHistory, setCurrentStreamUrl, setSelectedProviderId, setSelectedFranchiseId, profiles, currentProfile, addToWatchlist, removeHistory } = useStore() as any
   const [heroPool, setHeroPool] = useState<any[]>([])
   const [idx, setIdx] = useState(0)
   const [heroDetail, setHeroDetail] = useState<any>(null)
@@ -566,23 +566,33 @@ export default function NuvioHome() {
             {cw.map((h: any) => {
               const face = watchFace([h], h.mediaId, h)
               return (
-                <button key={`${h.mediaId}-${h.season}-${h.episode}`} type="button" className="nv-cw" onClick={() => open({ id: h.mediaId, title: h.title, media_type: h.mediaType }, h.mediaType || 'movie')}>
-                  <div className="nv-shot">
-                    {h.backdropPath || h.posterPath
-                      ? <img src={`${h.backdropPath ? BACKDROP_URL : POSTER_URL}${h.backdropPath || h.posterPath}`} alt="" />
-                      : <div className="ph" />}
-                    <PosterStatus
-                      state={face.state === 'fresh' ? 'progress' : face.state}
-                      pct={Math.max(8, face.pct)}
-                      label={face.label || leftLabel(h.progress, h.duration)}
-                    />
-                    <TitleLogo id={h.mediaId} type={h.mediaType === 'movie' ? 'movie' : 'tv'} title={h.title || ''} className="cw-logo" />
-                  </div>
-                  <p>{h.title || 'Title'}</p>
-                  {[stopLine(h), leftMap[`${h.mediaId}-${h.season}`]].filter(Boolean).length > 0 && (
-                    <small>{[stopLine(h), leftMap[`${h.mediaId}-${h.season}`]].filter(Boolean).join(' · ')}</small>
-                  )}
-                </button>
+                <div key={`${h.mediaId}-${h.season}-${h.episode}`} className="nv-cw">
+                  <button type="button" className="nv-cw-open" onClick={() => open({ id: h.mediaId, title: h.title, media_type: h.mediaType }, h.mediaType || 'movie')}>
+                    <div className="nv-shot">
+                      {h.backdropPath || h.posterPath
+                        ? <img src={`${h.backdropPath ? BACKDROP_URL : POSTER_URL}${h.backdropPath || h.posterPath}`} alt="" />
+                        : <div className="ph" />}
+                      <PosterStatus
+                        state={face.state === 'fresh' ? 'progress' : face.state}
+                        pct={Math.max(8, face.pct)}
+                        label={face.label || leftLabel(h.progress, h.duration)}
+                      />
+                      <TitleLogo id={h.mediaId} type={h.mediaType === 'movie' ? 'movie' : 'tv'} title={h.title || ''} className="cw-logo" />
+                    </div>
+                    <p>{h.title || 'Title'}</p>
+                    {[stopLine(h), leftMap[`${h.mediaId}-${h.season}`]].filter(Boolean).length > 0 && (
+                      <small>{[stopLine(h), leftMap[`${h.mediaId}-${h.season}`]].filter(Boolean).join(' · ')}</small>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    className="nv-x"
+                    aria-label={`Remove ${h.title || 'title'} from Continue Watching`}
+                    onClick={() => removeHistory(h.mediaId, h.mediaType)}
+                  >
+                    ×
+                  </button>
+                </div>
               )
             })}
           </div>

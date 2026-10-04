@@ -24,6 +24,8 @@
 .nv-sc,.nf-top,.nf-love,.nf-eps{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
 .nv-sc::-webkit-scrollbar,.nf-top::-webkit-scrollbar,.nf-love::-webkit-scrollbar,.nf-eps::-webkit-scrollbar{display:none}
 .nv-cw{flex:none;width:260px;text-align:left;color:#fff;background:none;border:0;padding:0;position:relative}
+.nv-cw-open{display:block;width:260px;text-align:left;color:#fff;background:none;border:0;padding:0;cursor:pointer}
+.nv-x{position:absolute;top:6px;right:6px;z-index:6;width:22px;height:22px;border:0;border-radius:99px;background:rgba(0,0,0,.72);color:#fff;font-size:16px;line-height:22px;cursor:pointer}
 .nv-cw img,.nv-cw .ph{width:260px;height:146px;object-fit:cover;border-radius:6px;background:#1b2838;display:block}
 .nv-cw p{margin:8px 0 0;font-size:13px;font-weight:600}
 .nv-poster{position:relative;display:block;border-radius:6px;overflow:hidden}
