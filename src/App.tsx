@@ -33,7 +33,6 @@ import PrintHome from './pages/PrintHome'
 import MangaReader from './pages/MangaReader'
 import People from './pages/People'
 import IdleWall from './components/IdleWall'
-import IntroSkip from './components/IntroSkip'
 import CalendarPage from './pages/CalendarPage'
 import ShelfBrowse from './pages/ShelfBrowse'
 import DetailExtras from './components/DetailExtras'
@@ -200,7 +199,6 @@ export default function App() {
     <div className="h-screen flex flex-col bg-[#07111c] font-sans">
       {!phone && <RemoteHelp />}
       <IdleWall />
-      {currentPage === 'player' && <IntroSkip />}
       {currentPage === 'player' && <EpisodePanel />}
       {updateInfo && !updateDismissed && currentPage !== 'player' && !phone && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#14101a] border border-white/15 shadow-[0_10px_40px_rgba(0,0,0,0.6)]">

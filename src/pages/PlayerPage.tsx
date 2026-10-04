@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, createElement } from 'react'
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Settings2, Maximize, Minimize, Subtitles, ArrowLeft, Cast, RefreshCw, Zap } from 'lucide-react'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 import { tmdb, POSTER_URL, BACKDROP_URL } from '../api/tmdb'
@@ -9,6 +9,7 @@ import { addonStreams, isOnePiece, STREAM_HOST, onePaceStreams } from '../api/st
 import { ANIME_SOURCES, MOVIE_TV_SOURCES, ALL_PLAY_SOURCES } from '../api/vidy'
 import { useStore } from '../store'
 import RateModal from '../components/RateModal'
+import IntroSkip from '../components/IntroSkip'
 import TogetherPanel from '../components/TogetherPanel'
 import { syncRating, isAnimeItem } from '../lib/trackers'
 import { markSource } from '../lib/playerStatus'
@@ -100,8 +101,9 @@ export default function PlayerPage() {
     const at = Number((selectedMedia as any)?.resumeAt || 0)
     const row = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id) && Number(h.season || 0) === Number(selectedMedia?.season || 0) && Number(h.episode || 0) === Number(selectedMedia?.episode || 0))
     const saved = Math.max(at, Number(row?.progress || 0))
-    if (saved > 20 && !['pipe', 'torrentio', 'comet', 'webtorrent'].includes(String(playerSource))) {
-      setPlayerSource('pipe')
+    if (saved > 8) {
+      bestProgress.current = Math.max(bestProgress.current, saved)
+      setProgress(saved)
     }
   }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
 
@@ -556,6 +558,23 @@ export default function PlayerPage() {
     const id = setTimeout(() => setShowUI(false), 2500)
     return () => clearTimeout(id)
   }, [streamUrl, selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
+
+  useEffect(() => {
+    if (!loaded || gate) return
+    const id = setInterval(() => {
+      const v = videoRef.current
+      if (v && v.currentTime > 1 && !isPlayerEmbedUrl(streamUrl)) return
+      const wall = Math.max(0, (Date.now() - startedAt.current) / 1000)
+      if (wall < 2) return
+      bestProgress.current = Math.max(bestProgress.current, wall)
+      setProgress((p) => Math.max(p, wall))
+      if (expectedSec > 60) {
+        bestDuration.current = Math.max(bestDuration.current, expectedSec)
+        setDur((d) => Math.max(d, expectedSec))
+      }
+    }, 1000)
+    return () => clearInterval(id)
+  }, [loaded, gate, streamUrl, expectedSec])
 
   useEffect(() => {
     setShowNext(false)
@@ -1074,15 +1093,6 @@ export default function PlayerPage() {
         seriesCompleted: true,
       } as any)
     }
-    if (selectedMedia && isAnimeItem(selectedMedia)) {
-      const name = String((selectedMedia as any).title || (selectedMedia as any).name || selectedMedia.id)
-      const url = `https://anisync.qzz.io/?title=${encodeURIComponent(name)}&ep=${selectedMedia.episode || 1}`
-      try {
-        const api = (window as any).electronAPI
-        if (api?.openExternal) api.openExternal(url)
-        else window.open(url, '_blank')
-      } catch {}
-    }
     if (score && selectedMedia) {
       const anime = isAnimeItem(selectedMedia)
       const print = /manga|novel|book/i.test(String(selectedMedia.type))
@@ -1166,132 +1176,6 @@ export default function PlayerPage() {
         <RateModal title={title} kind={isAnimeItem(selectedMedia) ? 'anime' : (selectedMedia?.type === 'movie' ? 'movie' : 'tv')} onSubmit={(s, n) => finishRate(s, n)} onSkip={() => finishRate()} />
       )}
         <div className="mfy-player" onMouseMove={onMouseMove} style={{ background: '#000', minHeight: '100vh', cursor: showUI ? 'default' : 'none' }}>
-      {showUI && (
-      <button type="button" onClick={goBack} title="Exit player"
-        style={{ position: 'fixed', top: 14, left: 14, zIndex: 400, background: '#e50914', color: '#fff', border: 'none', borderRadius: 999, padding: '8px 16px', cursor: 'pointer', fontWeight: 800, fontSize: 12, letterSpacing: 0.4, boxShadow: '0 6px 20px rgba(255,255,255,0.16)' }}>
-        ← Exit
-      </button>
-      )}
-      {showUI && <div className="player-topbar visible" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 90, padding: '12px 16px 12px 108px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%)', pointerEvents: 'auto' }}>
-        <div className="flex items-center gap-2">
-        <button type="button" onClick={() => setShowRate(true)} style={{ background: '#e50914', padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white' }}>Mark watched</button>
-        </div>
-        <div className="player-title text-white font-medium truncate" style={{ maxWidth: 420 }}>
-          {title}
-          {selectedMedia && selectedMedia.type !== 'movie' && selectedMedia.type !== 'iptv' ? (
-            <span style={{ marginLeft: 10, color: '#e50914', fontWeight: 800 }}>S{selectedMedia.season || 1}E{selectedMedia.episode || 1}</span>
-          ) : null}
-        </div>
-        <div className="player-top-actions flex items-center gap-2">
-          <div className="relative flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSrcOpen((v) => !v)}
-              style={{ background: '#1a1016', border: '1px solid #e50914', borderRadius: 999, padding: '7px 14px', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
-            >
-              {sourceNames[playerSource] || playerSource} ▾
-            </button>
-            {srcOpen && (
-              <div style={{ position: 'absolute', right: 0, top: 40, width: 220, background: '#12080d', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 16, padding: 8, zIndex: 80, boxShadow: '0 16px 40px rgba(0,0,0,0.55)' }}>
-                {(isOnePiece(String((selectedMedia as any)?.title || '')) ? (['onepace', ...ALL_PLAY_SOURCES] as PlayerSource[]) : ALL_PLAY_SOURCES).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => {
-                      setPlayerSource(s)
-                      setSrcOpen(false)
-                      try { localStorage.setItem('mfy-player-engine', s) } catch {}
-                    }}
-                    style={{
-                      width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer',
-                      background: playerSource === s ? '#e50914' : 'transparent',
-                      color: '#fff', borderRadius: 10, padding: '9px 12px', fontSize: 13, fontWeight: 600, marginBottom: 4,
-                    }}
-                  >
-                    {sourceNames[s] || s}
-                  </button>
-                ))}
-              </div>
-            )}
-            <button type="button" onClick={tryNextSource} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>Next source</button>
-            {selectedMedia && selectedMedia.type !== 'movie' && selectedMedia.type !== 'iptv' ? (
-              <button type="button" onClick={playNextEpisode} style={{ background: '#e50914', border: 'none', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>
-                Next ep {nextUp ? `S${nextUp.season}E${nextUp.episode}` : `E${(selectedMedia.episode || 1) + 1}`}
-              </button>
-            ) : null}
-            <button type="button" onClick={() => seekBy(90)} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>Skip intro</button>
-            <button type="button" onClick={() => setFit((f) => f === 'contain' ? 'cover' : f === 'cover' ? 'fill' : 'contain')} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>{fit === 'cover' ? 'Crop' : fit === 'fill' ? 'Fill' : 'Fit'}</button>
-            <button type="button" onClick={async () => {
-              if (!selectedMedia) return
-              const pick = await bestPlayable({
-                type: selectedMedia.type === 'movie' ? 'movie' : 'tv',
-                tmdbId: selectedMedia.id,
-                season: selectedMedia.season,
-                episode: selectedMedia.episode,
-                anime: isAnimeItem(selectedMedia),
-                title: String((selectedMedia as any).title || ''),
-              })
-              const url = pick?.url || streamUrl
-              if (!url) return
-              try { (window as any).electronAPI?.openVlc?.(url) } catch {}
-            }} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>VLC</button>
-            <button type="button" onClick={() => setPlayerSource('webtorrent')} style={{ background: playerSource === 'webtorrent' ? '#e50914' : '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>P2P</button>
-            <div className="relative">
-              <button type="button" onClick={() => setSubOpen((v) => !v)} style={{ background: '#1a1016', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '7px 12px', color: '#fff', fontSize: 11, cursor: 'pointer' }}>
-                Subs {subtitleLabel ? `· ${subtitleLabel.slice(0, 10)}` : ''}
-              </button>
-              {subOpen && (
-                <div style={{ position: 'absolute', right: 0, top: 36, width: 260, maxHeight: 280, overflow: 'auto', background: '#12080d', border: '1px solid rgba(255,20,147,0.4)', borderRadius: 12, padding: 8, zIndex: 90 }}>
-                  <p style={{ fontSize: 10, color: '#e50914', marginBottom: 6 }}>OpenSubtitles · formats</p>
-                  {subList.length === 0 && <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>No tracks yet</p>}
-                  {subList.map((s) => (
-                    <button key={s.url} type="button" onClick={() => applySub(s)} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 'none', color: '#fff', padding: '7px 8px', fontSize: 12, cursor: 'pointer' }}>
-                      {(s.lang || '').toUpperCase()} · {s.format} · {s.name}
-                    </button>
-                  ))}
-                  <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-                    <button type="button" onClick={() => setSubSize((n) => Math.max(0.4, +(n - 0.1).toFixed(2)))} style={{ flex: 1, background: '#1a1016', border: 'none', color: '#fff', padding: 6, fontSize: 11, cursor: 'pointer' }}>Smaller</button>
-                    <button type="button" onClick={() => setSubSize((n) => Math.min(1.6, +(n + 0.1).toFixed(2)))} style={{ flex: 1, background: '#1a1016', border: 'none', color: '#fff', padding: 6, fontSize: 11, cursor: 'pointer' }}>Bigger</button>
-                    <button type="button" onClick={() => setSubBg((v) => !v)} style={{ flex: 1, background: '#1a1016', border: 'none', color: '#fff', padding: 6, fontSize: 11, cursor: 'pointer' }}>{subBg ? 'Box' : 'Clean'}</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          <button className="player-icon-button" onClick={toggleFullscreen} style={{ background: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: 8, border: 'none', cursor: 'pointer', color: 'white' }}><Maximize size={18} /></button>
-        </div>
-      </div>}
-
-      {showUI && picks.length > 0 && (
-        <div style={{ position: 'fixed', left: 16, top: 70, width: 300, maxHeight: '55vh', overflow: 'auto', zIndex: 120, background: '#12080d', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 16, padding: 12 }}>
-          <p style={{ color: '#e50914', fontSize: 11, fontWeight: 800 }}>PIPE · TORRENTIO · COMET</p>
-          {picks.slice(0, 16).map((p) => (
-            <button key={p.url} type="button" onClick={() => {
-              setStreamUrl(p.url)
-              setCurrentStreamUrl(p.url)
-              if (/^magnet:/i.test(p.url)) setPlayerSource('webtorrent')
-            }} style={{ width: '100%', textAlign: 'left', background: 'rgba(255,255,255,0.04)', border: 'none', color: '#fff', borderRadius: 8, padding: '7px 8px', marginTop: 6, cursor: 'pointer' }}>
-              <div style={{ fontSize: 11, fontWeight: 700 }}>{p.quality || p.addon} · {p.addon}</div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>{p.title.slice(0, 80)}</div>
-            </button>
-          ))}
-        </div>
-      )}
-      {(playerSource === 'webtorrent' || magnetBox) && (
-        <div style={{ position: 'fixed', right: 16, top: 70, width: 320, maxHeight: '70vh', overflow: 'auto', zIndex: 120, background: '#12080d', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 16, padding: 12 }}>
-          <p style={{ color: '#e50914', fontSize: 11, fontWeight: 800, letterSpacing: 1 }}>WEBTORRENT</p>
-          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, marginBottom: 8 }}>Paste a magnet or pick a ranked file. No VLC install needed.</p>
-          <input value={magnetBox} onChange={(e) => setMagnetBox(e.target.value)} placeholder="magnet:?xt=urn:btih:…" style={{ width: '100%', background: '#1a1016', color: '#fff', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', fontSize: 12, marginBottom: 8 }} />
-          <button type="button" onClick={() => playMagnet(magnetBox)} style={{ width: '100%', background: '#e50914', color: '#fff', border: 'none', borderRadius: 8, padding: 8, fontWeight: 700, marginBottom: 10 }}>Play link</button>
-          {torrentBusy && <p style={{ fontSize: 11, color: '#fff', marginBottom: 8 }}>{torrentBusy}</p>}
-          {torrents.slice(0, 12).map((t) => (
-            <button key={t.url} type="button" onClick={() => playMagnet(t.url, t.name)} style={{ width: '100%', textAlign: 'left', background: 'rgba(255,255,255,0.04)', border: 'none', color: '#fff', borderRadius: 8, padding: '8px 10px', marginBottom: 6, cursor: 'pointer' }}>
-              <div style={{ fontSize: 12, fontWeight: 700 }}>{t.quality || 'Auto'} {t.size ? `· ${t.size}` : ''}</div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>{t.seeds ? `${t.seeds} seeds · ` : ''}{t.name}</div>
-            </button>
-          ))}
-        </div>
-      )}
       <div className="player-stage" style={{ position: 'relative', width: '100%', height: '100vh', minHeight: '100vh', overflow: 'hidden' }}
         onMouseMove={onMouseMove}
         onClick={(e) => { if ((e.target as HTMLElement).closest('button, input, a, .mfy-bar')) return; togglePlay() }}
@@ -1342,29 +1226,43 @@ export default function PlayerPage() {
           </div>
         )}
         {error && <div className="player-error" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'red', padding: 24, textAlign: 'center' }}>{error}</div>}
-        {loaded && !error && isPlayerEmbedUrl(streamUrl) && (
-          // @ts-expect-error Electron webview
-          <webview
+        {loaded && !error && isPlayerEmbedUrl(streamUrl) && !(window as any).electronAPI && (
+          <iframe
+            ref={iframeRef}
             key={streamUrl}
             src={streamUrl}
-            partition="persist:mfy"
-            style={{
-              width: '100%',
-              height: '100%',
-              background: '#000',
-              pointerEvents: 'auto',
-            }}
-            allowpopups="false"
-            allowfullscreen="true"
-            useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-            webpreferences="allowRunningInsecureContent, javascript=yes, autoplayPolicy=no-user-gesture-required"
+            title={title || 'Player'}
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+            allowFullScreen
+            referrerPolicy="no-referrer"
+            style={{ width: '100%', height: '100%', border: 0, background: '#000' }}
           />
         )}
+        {loaded && !error && isPlayerEmbedUrl(streamUrl) && (window as any).electronAPI && createElement('webview', {
+          key: streamUrl,
+          src: streamUrl,
+          partition: 'persist:mfy',
+          style: { width: '100%', height: '100%', background: '#000' },
+          allowpopups: 'false',
+          useragent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        })}
         {loaded && !error && !isPlayerEmbedUrl(streamUrl) && (
-          <video ref={videoRef} playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: fit, background: '#000' }} />
+          <video ref={videoRef} playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: fit === 'full' ? 'contain' : fit, background: '#000' }} />
+        )}
+        {cueText && (
+          <div style={{ position: 'absolute', left: '8%', right: '8%', bottom: 96, zIndex: 30, textAlign: 'center', pointerEvents: 'none', fontSize: Math.round(22 * subSize + 10), fontWeight: 700, color: '#fff', lineHeight: 1.35, textShadow: '0 2px 8px #000', background: subBg ? 'rgba(0,0,0,0.55)' : 'transparent', padding: '4px 8px', whiteSpace: 'pre-wrap' }}>
+            {cueText}
+          </div>
+        )}
+        <IntroSkip />
+        {showUI && loaded && !error && (
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20, display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: 'linear-gradient(180deg, rgba(0,0,0,.72), transparent)', pointerEvents: 'none' }}>
+            <button type="button" onClick={goBack} style={{ pointerEvents: 'auto', background: 'transparent', color: '#fff', border: 0, fontWeight: 700, cursor: 'pointer' }}>← Exit</button>
+            <span style={{ fontWeight: 650, fontSize: 15 }}>{title}{selectedMedia && selectedMedia.type !== 'movie' && selectedMedia.type !== 'iptv' ? `  S${selectedMedia.season || 1}E${selectedMedia.episode || 1}` : ''}</span>
+          </div>
         )}
 
-        {showUI && loaded && !error && !isPlayerEmbedUrl(streamUrl) && (
+        {showUI && loaded && !error && (
           <div className="mfy-bar" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 300, padding: '18px 22px 20px', background: 'linear-gradient(0deg, rgba(0,0,0,0.92) 0%, transparent 100%)', pointerEvents: 'auto' }}
             onClick={(e) => e.stopPropagation()}>
             {(() => {
@@ -1390,11 +1288,40 @@ export default function PlayerPage() {
                         −{fmt(left)}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <button type="button" onClick={() => setSubSize((n) => Math.max(0.4, +(n - 0.1).toFixed(2)))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>CC−</button>
-                      <button type="button" onClick={() => setSubSize((n) => Math.min(1.4, +(n + 0.1).toFixed(2)))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>CC+</button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+                      <button type="button" onClick={() => { setSrcOpen((v) => !v); setSubOpen(false) }} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{sourceNames[playerSource] || 'Source'}</button>
+                      <button type="button" onClick={() => { setSubOpen((v) => !v); setSrcOpen(false) }} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Subtitles{subtitleOffset ? ` ${subtitleOffset > 0 ? '+' : ''}${subtitleOffset.toFixed(1)}s` : ''}</button>
+                      <button type="button" onClick={() => setSubSize((n) => Math.max(0.4, +(n - 0.1).toFixed(2)))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>A−</button>
+                      <button type="button" onClick={() => setSubSize((n) => Math.min(1.6, +(n + 0.1).toFixed(2)))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>A+</button>
+                      <button type="button" onClick={() => setSubtitleOffset((n) => +(n - 0.5).toFixed(1))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>Sync −</button>
+                      <button type="button" onClick={() => setSubtitleOffset((n) => +(n + 0.5).toFixed(1))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>Sync +</button>
                       <button type="button" onClick={() => setFit((f) => f === 'contain' ? 'cover' : f === 'cover' ? 'fill' : 'contain')} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{fit === 'cover' ? 'Crop' : fit === 'fill' ? 'Fill' : 'Fit'}</button>
+                      {selectedMedia && selectedMedia.type !== 'movie' && selectedMedia.type !== 'iptv' && (
+                        <button type="button" onClick={playNextEpisode} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Next</button>
+                      )}
+                      <button type="button" onClick={() => setShowRate(true)} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>Watched</button>
                       <button type="button" onClick={toggleFullscreen} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, color: '#fff', cursor: 'pointer' }}>{fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}</button>
+                      {srcOpen && (
+                        <div style={{ position: 'absolute', right: 0, bottom: 42, width: 220, maxHeight: 280, overflow: 'auto', background: '#141414', border: '1px solid rgba(255,255,255,.12)', borderRadius: 10, padding: 6, zIndex: 40 }}>
+                          {(isOnePiece(String((selectedMedia as any)?.title || '')) ? (['onepace', ...ALL_PLAY_SOURCES] as PlayerSource[]) : ALL_PLAY_SOURCES).filter((s) => s !== 'vlc').map((s) => (
+                            <button key={s} type="button" onClick={() => { setPlayerSource(s); setSrcOpen(false); try { localStorage.setItem('mfy-player-engine', s) } catch {} }} style={{ width: '100%', textAlign: 'left', border: 0, cursor: 'pointer', background: playerSource === s ? '#e50914' : 'transparent', color: '#fff', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+                              {sourceNames[s] || s}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {subOpen && (
+                        <div style={{ position: 'absolute', right: 80, bottom: 42, width: 260, maxHeight: 280, overflow: 'auto', background: '#141414', border: '1px solid rgba(255,255,255,.12)', borderRadius: 10, padding: 8, zIndex: 40 }}>
+                          <button type="button" onClick={() => { setSubtitleEnabled(false); setCueText(''); setSubOpen(false) }} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 0, color: '#fff', padding: '7px 8px', cursor: 'pointer' }}>Off</button>
+                          {subList.length === 0 && <p style={{ fontSize: 12, color: 'rgba(255,255,255,.45)', padding: '6px 8px' }}>No tracks yet</p>}
+                          {subList.map((s) => (
+                            <button key={s.url} type="button" onClick={() => applySub(s)} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 0, color: '#fff', padding: '7px 8px', fontSize: 12, cursor: 'pointer' }}>
+                              {(s.lang || '').toUpperCase()} · {s.name}
+                            </button>
+                          ))}
+                          <button type="button" onClick={() => setSubBg((v) => !v)} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 0, color: '#fff', padding: '7px 8px', cursor: 'pointer' }}>{subBg ? 'Background on' : 'Background off'}</button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </>

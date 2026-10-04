@@ -50,7 +50,7 @@
 @keyframes logoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 .fr-row{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
 .fr-row::-webkit-scrollbar{display:none}
-.intro-skip{position:fixed;right:28px;bottom:28px;z-index:75;height:44px;padding:0 18px;border:0;border-radius:4px;background:#fff;color:#111;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 10px 30px #0008}
+.intro-skip{position:absolute;right:24px;bottom:108px;z-index:40;height:40px;padding:0 16px;border:0;border-radius:6px;background:rgba(20,20,20,.9);color:#fff;font-size:14px;font-weight:700;cursor:pointer;border:1px solid rgba(255,255,255,.2)}
 .set-page{max-width:720px;margin:0 auto;padding:36px 28px 80px;color:#fff;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif}
 .set-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}
 .set-head h1{margin:0;font-size:32px;font-weight:700;letter-spacing:-.03em}
