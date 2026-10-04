@@ -38,6 +38,7 @@ import ShelfBrowse from './pages/ShelfBrowse'
 import DetailExtras from './components/DetailExtras'
 import EpisodePanel from './components/EpisodePanel'
 import { youtubeEmbedUrl } from './api/youtubio'
+import { consumeTrackerReturn } from './lib/trackerLogin'
 import { isPhoneShell } from './lib/device'
 
 void Board
@@ -46,6 +47,7 @@ void PrintHome
 void tmdb
 
 export default function App() {
+  useEffect(() => { consumeTrackerReturn().catch(() => {}) }, [])
   const [showIntro, setShowIntro] = useState(true)
   const [updateInfo, setUpdateInfo] = useState<{ version?: string } | null>(null)
   const [updateDismissed, setUpdateDismissed] = useState(false)
