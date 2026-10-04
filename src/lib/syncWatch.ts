@@ -1,4 +1,4 @@
-import { anilist } from '../api/anilist'
+import { anilistFetch } from '../api/anilist'
 import { serializdApi } from '../api/serializd'
 import { useStore } from '../store'
 import { isAnimeItem } from './trackers'
@@ -73,7 +73,20 @@ async function pushAnilist(opts: Finished) {
   const anime = opts.type === 'anime' || isAnimeItem(opts.item)
   const print = /manga|novel|book/i.test(opts.type)
   if (!anime && !print) return false
-  await anilist.saveProgress(opts.title, Number(opts.episode || 1), anime ? 'ANIME' : 'MANGA')
+  const type = anime ? 'ANIME' : 'MANGA'
+  const found = await anilistFetch<{ Media: { id: number; episodes: number | null } | null }>(
+    `query ($search: String, $type: MediaType) { Media(search: $search, type: $type) { id episodes } }`,
+    { search: opts.title, type }
+  )
+  const id = found?.Media?.id
+  if (!id) return false
+  const progress = Number(opts.episode || 1)
+  const total = Number(found?.Media?.episodes || 0)
+  const status = total > 0 && progress >= total ? 'COMPLETED' : 'CURRENT'
+  await anilistFetch(
+    `mutation ($id: Int, $progress: Int, $status: MediaListStatus) { SaveMediaListEntry(mediaId: $id, progress: $progress, status: $status) { id progress status } }`,
+    { id, progress, status }
+  )
   return true
 }
 
