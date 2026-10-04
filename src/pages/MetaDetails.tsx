@@ -17,6 +17,29 @@ import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 import TitleLogo from '../components/TitleLogo'
 import { facesInCommon, rememberCast } from '../lib/faces'
 
+function clock(sec: number) {
+  const s = Math.max(0, Math.floor(Number(sec) || 0))
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const r = s % 60
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`
+  return `${m}:${String(r).padStart(2, '0')}`
+}
+
+function streamBadges(s: any) {
+  const blob = `${s?.quality || ''} ${s?.name || ''} ${s?.title || ''} ${s?.provider || ''}`
+  const out: { t: string; c: string }[] = []
+  if (/2160|4k/i.test(blob)) out.push({ t: '4K', c: 'y' })
+  else if (/1080/i.test(blob)) out.push({ t: '1080p', c: 'g' })
+  else if (/720/i.test(blob)) out.push({ t: '720p', c: 'b' })
+  if (/web[- ]?dl/i.test(blob)) out.push({ t: 'WebDL', c: 'b' })
+  if (/bluray|blu-ray/i.test(blob)) out.push({ t: 'BluRay', c: 'b' })
+  if (/hevc|x265|h\.265/i.test(blob)) out.push({ t: 'HEVC', c: 't' })
+  else if (/avc|x264|h\.264/i.test(blob)) out.push({ t: 'AVC', c: 'g' })
+  if (s?.size) out.push({ t: String(s.size), c: 'w' })
+  return out
+}
+
 export default function MetaDetails() {
   const { selectedMedia, setCurrentPage, setSelectedMedia, tmdbApiKey, setCurrentStreamUrl, addToWatchlist, removeFromWatchlist, isInWatchlist, addFavorite, removeFavorite, isFavorite, aiostreamsUrl, externalPlayer, mdblistApiKey, customLists, addToCustomList, removeFromCustomList, isInCustomList, createCustomList, watchHistory } = useStore()
   const [detail, setDetail] = useState<any>(null)
@@ -269,19 +292,23 @@ export default function MetaDetails() {
     return [...list].sort((a, b) => rank(b) - rank(a))[0]
   }
 
-  // Populate the streams list (addons + torrents) whenever the streams tab is shown.
+  const [srcFilter, setSrcFilter] = useState('all')
+  const [streamNonce, setStreamNonce] = useState(0)
+
+  // Populate the streams list (addons + torrents) for the right-hand source panel.
   useEffect(() => {
-    if (activeTab !== 'streams' || !selectedMedia || !detail || streamOptions.length > 0) return
-    // Skip streams for IPTV
-    if (selectedMedia.type === 'iptv') return
+    if (!selectedMedia || !detail) return
+    const kind = selectedMedia.type
+    if (kind !== 'movie' && kind !== 'tv') return
     let cancelled = false
     setResolving(true)
+    setStreamError('')
     ;(async () => {
       try {
         const { resolveFromAiostreams, resolveFromTorrentio, getExternalIds } = await import('../api/streams')
         let idForAddon = String(selectedMedia.id)
-        if (tmdbApiKey && (selectedMedia.type === 'movie' || selectedMedia.type === 'tv')) {
-          const ext = await getExternalIds(selectedMedia.type, selectedMedia.id as number, tmdbApiKey)
+        if (tmdbApiKey) {
+          const ext = await getExternalIds(kind, selectedMedia.id as number, tmdbApiKey)
           if (ext?.imdb_id) idForAddon = ext.imdb_id
         }
         const season = selectedMedia.season
@@ -289,12 +316,10 @@ export default function MetaDetails() {
         let streams: any[] = []
         let torrents: any[] = []
         const mediaId = selectedMedia.id as number
-        if (aiostreamsUrl && (selectedMedia.type === 'movie' || selectedMedia.type === 'tv')) {
-          streams = await resolveFromAiostreams(aiostreamsUrl, selectedMedia.type, String(mediaId), season, episode)
+        if (aiostreamsUrl) {
+          streams = await resolveFromAiostreams(aiostreamsUrl, kind, String(mediaId), season, episode)
         }
-        if (selectedMedia.type === 'movie' || selectedMedia.type === 'tv') {
-          torrents = await resolveFromTorrentio(selectedMedia.type, String(mediaId), { season, episode })
-        }
+        torrents = await resolveFromTorrentio(kind, idForAddon, { season, episode })
         const list = [...streams, ...torrents]
         if (!cancelled) setStreamOptions(list)
       } catch {
@@ -302,11 +327,9 @@ export default function MetaDetails() {
       }
       if (!cancelled) setResolving(false)
     })()
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, selectedMedia, detail])
+  }, [selectedMedia?.id, detail?.id, streamNonce])
 
   // Skip streams for iptv type
   useEffect(() => {
@@ -367,6 +390,30 @@ export default function MetaDetails() {
     setCurrentPage('player')
   }
 
+  async function openStream(s: any) {
+    if (!s) return
+    const isTorrent = s?.infoHash || /^magnet:/i.test(s?.url || '')
+    if (isTorrent && s.url) {
+      setResolving(true)
+      try {
+        const { pickBestFile } = await import('../api/torrent')
+        const picked = await pickBestFile(s.url, s.fileIdx)
+        if (picked?.streamUrl) {
+          setCurrentStreamUrl(picked.streamUrl)
+          setCurrentPage('player')
+        } else setStreamError('Could not start that torrent. Try another source.')
+      } catch {
+        setStreamError('Could not start that torrent. Try another source.')
+      } finally {
+        setResolving(false)
+      }
+      return
+    }
+    if (!s.url) return
+    setCurrentStreamUrl(s.url)
+    setCurrentPage('player')
+  }
+
   function goBack() {
     const anime = isAnimeItem(selectedMedia as any)
     setSelectedMedia(null)
@@ -412,10 +459,16 @@ export default function MetaDetails() {
     return parts.join(' ')
   }
 
+  const resumeAt = Number((watchHistory || []).find((h) => String(h.mediaId) === String(selectedMedia?.id))?.progress || 0)
+  const sourceNames = Array.from(new Set(streamOptions.map((s) => String(s.provider || s.addon || 'Source'))))
+  const shownSources = streamOptions
+    .filter((s) => srcFilter === 'all' || String(s.provider || s.addon || 'Source') === srcFilter)
+    .slice(0, 8)
+
   return (
     <div className="page-fade-enter">
       {/* Cinematic full-bleed hero */}
-      <div className="relative min-h-[min(72vh,640px)] h-[560px] max-h-[80vh]">
+      <div className="src-hero relative min-h-[640px] h-[680px] max-h-[86vh]">
         <div
           className="absolute inset-0 bg-cover bg-center scale-105"
           style={{
@@ -446,7 +499,7 @@ export default function MetaDetails() {
         </div>
 
         <div className="relative z-10 h-full flex items-end px-8 md:px-12 pb-10 md:pb-14">
-          <div className="max-w-xl">
+          <div className="src-copy max-w-xl">
             {/* Title as logo-style wordmark */}
             <TitleLogo id={detail.id} type={selectedMedia?.type === 'movie' ? 'movie' : 'tv'} title={title} />
 
@@ -743,6 +796,29 @@ onKeyDown={(e) => {
             </div>
           </div>
         </div>
+        {selectedMedia?.type !== 'iptv' && (
+          <aside className="src-panel">
+            {resumeAt > 20 && <div className="src-resume">Resume from {clock(resumeAt)}</div>}
+            <div className="src-filters">
+              <button type="button" onClick={() => { setStreamOptions([]); setStreamNonce((n) => n + 1) }} title="Refresh sources">↻</button>
+              <button type="button" className={srcFilter === 'all' ? 'on' : ''} onClick={() => setSrcFilter('all')}>All</button>
+              {sourceNames.slice(0, 6).map((name) => (
+                <button key={name} type="button" className={srcFilter === name ? 'on' : ''} onClick={() => setSrcFilter(name)}>{name}</button>
+              ))}
+            </div>
+            {resolving && shownSources.length === 0 && <p className="src-empty">Looking for sources…</p>}
+            {!resolving && streamOptions.length === 0 && <p className="src-empty">{streamError || 'No sources yet.'}</p>}
+            {shownSources.map((s, i) => (
+              <button key={`${s.url || s.name || i}-${i}`} type="button" className="src-card" onClick={() => openStream(s)}>
+                <b>{String(s.name || s.title || s.provider || 'Source').slice(0, 72)}</b>
+                <small>{[s.provider, s.language || s.lang, s.seeds ? `${s.seeds} seeds` : ''].filter(Boolean).join(' · ')}</small>
+                <span className="src-badges">
+                  {streamBadges(s).map((b) => <i key={b.t + b.c} className={b.c}>{b.t}</i>)}
+                </span>
+              </button>
+            ))}
+          </aside>
+        )}
       </div>
 
       {/* Compact poster strip under hero (optional identity) */}
