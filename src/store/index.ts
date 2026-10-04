@@ -176,7 +176,7 @@ function uid() {
 }
 
 /** Bump to wipe every saved profile once. Old accounts cannot sign back in. */
-const ACCOUNT_EPOCH = '20261004-reset'
+const ACCOUNT_EPOCH = '20261005-login'
 
 function resetSavedAccounts() {
   try {
@@ -185,10 +185,14 @@ function resetSavedAccounts() {
     localStorage.setItem('mfy-authenticated', 'false')
     localStorage.setItem('mfy-profiles', '[]')
     localStorage.removeItem('mfy-currentProfileId')
+    ;[
+      'mfy-simkl', 'mfy-simkl-token', 'mfy-simkl-client',
+      'mfy-anilist-token', 'mfy-anilist-username', 'mfy-anilist-client',
+    ].forEach((key) => localStorage.removeItem(key))
     const drop: string[] = []
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)
-      if (key && key.startsWith('mfy-profile')) drop.push(key)
+      if (key && (key.startsWith('mfy-profile') || key.startsWith('mfy-serializd'))) drop.push(key)
     }
     drop.forEach((key) => localStorage.removeItem(key))
   } catch { /* ignore */ }

@@ -90,19 +90,27 @@ async function pushAnilist(opts: Finished) {
   return true
 }
 
+const inflight = new Set<string>()
+
 /** Mark a finished episode on Serializd, AniList, and Simkl. Safe to call often. */
 export async function syncFinished(opts: Finished) {
   const key = `mfy-synced-${opts.tmdbId}-${opts.season || 0}-${opts.episode || 0}`
   try { if (localStorage.getItem(key)) return [] } catch {}
+  if (inflight.has(key)) return []
+  inflight.add(key)
   const notes: string[] = []
-  const jobs: Array<Promise<void>> = [
-    pushSerializd(opts).then((ok) => { if (ok) notes.push('Serializd') }).catch(() => {}),
-    pushAnilist(opts).then((ok) => { if (ok) notes.push('AniList') }).catch(() => {}),
-    pushSimkl(opts).then((ok) => { if (ok) notes.push('Simkl') }).catch(() => {}),
-  ]
-  await Promise.all(jobs)
-  if (notes.length) {
-    try { localStorage.setItem(key, notes.join(',')) } catch {}
+  try {
+    const jobs: Array<Promise<void>> = [
+      pushSerializd(opts).then((ok) => { if (ok) notes.push('Serializd') }).catch(() => {}),
+      pushAnilist(opts).then((ok) => { if (ok) notes.push('AniList') }).catch(() => {}),
+      pushSimkl(opts).then((ok) => { if (ok) notes.push('Simkl') }).catch(() => {}),
+    ]
+    await Promise.all(jobs)
+    if (notes.length) {
+      try { localStorage.setItem(key, notes.join(',')) } catch {}
+    }
+    return notes
+  } finally {
+    inflight.delete(key)
   }
-  return notes
 }

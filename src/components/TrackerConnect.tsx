@@ -37,7 +37,8 @@ export default function TrackerConnect({ onDone }: { onDone?: () => void }) {
       setPass('')
       setNote('Serializd connected. Finished TV episodes will be logged.')
     } catch (error) {
-      setErr(error instanceof Error ? error.message : 'Serializd login failed.')
+      const msg = error instanceof Error ? error.message : 'Serializd login failed.'
+      setErr(/fetch|network/i.test(msg) ? 'Serializd blocked this website. Sign in from the desktop app, or use Simkl for progress.' : msg)
     } finally {
       setBusy(false)
     }

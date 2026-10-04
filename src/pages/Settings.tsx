@@ -6,7 +6,7 @@ import { setRuntimeTmdbKey, DEFAULT_TMDB_API_KEY } from '../api/tmdb'
 import { setRuntimeOmdbKey } from '../api/omdb'
 import { setRuntimeMdblistKey } from '../api/mdblist'
 import { setRuntimeSubtitleKey } from '../api/subtitles'
-import { serializdApi } from '../api/serializd'
+import TrackerConnect from '../components/TrackerConnect'
 
 export default function Settings() {
   const store = useStore()
@@ -16,24 +16,8 @@ export default function Settings() {
   const [subtitleKey, setSubtitleKey] = useState(store.opensubtitlesKey || '')
   const [traktTok, setTraktTok] = useState(store.traktToken || '')
   const [saved, setSaved] = useState(false)
-  const [serializdEmail, setSerializdEmail] = useState(store.serializdEmail || '')
-  const [serializdPassword, setSerializdPassword] = useState('')
-  const [serializdError, setSerializdError] = useState('')
-  const [serializdBusy, setSerializdBusy] = useState(false)
-  const [anilistUser, setAnilistUser] = useState(() => {
-    try { return localStorage.getItem('mfy-anilist-username') || '' } catch { return '' }
-  })
-  const [anilistToken, setAnilistToken] = useState(() => {
-    try { return localStorage.getItem('mfy-anilist-token') || '' } catch { return '' }
-  })
   const [letterboxd, setLetterboxd] = useState(() => {
     try { return localStorage.getItem('mfy-letterboxd-user') || '' } catch { return '' }
-  })
-  const [simklClient, setSimklClient] = useState(() => {
-    try { return localStorage.getItem('mfy-simkl-client') || '' } catch { return '' }
-  })
-  const [simklToken, setSimklToken] = useState(() => {
-    try { return localStorage.getItem('mfy-simkl-token') || '' } catch { return '' }
   })
   const [hideGlobalCal, setHideGlobalCal] = useState(() => {
     try { return localStorage.getItem('mfy-cal-hide-global') === '1' } catch { return false }
@@ -50,11 +34,7 @@ export default function Settings() {
     store.setOpensubtitlesKey(subtitleKey.trim())
     setRuntimeSubtitleKey(subtitleKey.trim())
     store.setTraktToken(traktTok.trim())
-    try { localStorage.setItem('mfy-anilist-username', anilistUser.trim()) } catch {}
-    try { localStorage.setItem('mfy-anilist-token', anilistToken.trim()) } catch {}
     try { localStorage.setItem('mfy-letterboxd-user', letterboxd.trim()) } catch {}
-    try { localStorage.setItem('mfy-simkl-client', simklClient.trim()) } catch {}
-    try { localStorage.setItem('mfy-simkl-token', simklToken.trim()) } catch {}
     const api = (window as any).electronAPI
     if (api?.set) {
       await api.set('tmdbApiKey', key)
@@ -65,35 +45,6 @@ export default function Settings() {
     }
     setSaved(true)
     setTimeout(() => setSaved(false), 1600)
-  }
-
-  async function loginSerializd() {
-    if (!serializdEmail || !serializdPassword) {
-      setSerializdError('Email and password required')
-      return
-    }
-    setSerializdBusy(true)
-    setSerializdError('')
-    try {
-      const res = await serializdApi.login(serializdEmail, serializdPassword)
-      serializdApi.loadToken(res.access_token)
-      store.setSerializdEmail(serializdEmail)
-      store.setSerializdToken(res.access_token)
-      store.setSerializdUser(res.user)
-      store.setSerializdSyncEnabled(true)
-      setSerializdPassword('')
-      const api = (window as any).electronAPI
-      if (api?.set) {
-        await api.set('serializdEmail', serializdEmail)
-        await api.set('serializdToken', res.access_token)
-        await api.set('serializdUser', res.user)
-        await api.set('serializdSyncEnabled', true)
-      }
-    } catch (e: any) {
-      setSerializdError(e?.message || 'Login failed')
-    } finally {
-      setSerializdBusy(false)
-    }
   }
 
   return (
@@ -148,38 +99,17 @@ export default function Settings() {
         </select>
       </Section>
 
+      <Section title="Trackers">
+        <TrackerConnect />
+      </Section>
+
       <Section title="Ratings">
         <Field label="TMDB API key" value={tmdbKey} onChange={setTmdbKey} placeholder="Leave blank to use the built-in key" link="https://www.themoviedb.org/settings/api" />
         <Field label="OMDb API key" value={omdbKey} onChange={setOmdbKey} placeholder="IMDb and Rotten Tomatoes" link="https://www.omdbapi.com/apikey.aspx" />
         <Field label="MDBList API key" value={mdblistKey} onChange={setMdblistKey} placeholder="Optional extra scores" link="https://mdblist.com/apikey" />
         <Field label="OpenSubtitles API key" value={subtitleKey} onChange={setSubtitleKey} placeholder="Optional subtitles" link="https://www.opensubtitles.com/en/consumers" />
         <Field label="Trakt token" value={traktTok} onChange={setTraktTok} placeholder="Optional" secret />
-        <Field label="Simkl client ID" value={simklClient} onChange={setSimklClient} placeholder="From simkl.com/settings/developer" link="https://simkl.com/settings/developer/" />
-        <Field label="Simkl access token" value={simklToken} onChange={setSimklToken} placeholder="Optional" secret />
-        <Field label="AniList username" value={anilistUser} onChange={setAnilistUser} placeholder="For anime scores" link="https://anilist.co" />
-        <Field label="AniList token" value={anilistToken} onChange={setAnilistToken} placeholder="Only if you rate anime" secret link="https://anilist.co/settings/developer" />
         <Field label="Letterboxd username" value={letterboxd} onChange={setLetterboxd} placeholder="Movies only" link="https://letterboxd.com" />
-        <div className="set-split">
-          <h3>Serializd</h3>
-          {store.serializdToken ? (
-            <div className="set-row">
-              <span>Signed in{store.serializdUser?.username ? ` as ${store.serializdUser.username}` : ''}</span>
-              <button type="button" className="set-btn ghost" onClick={() => {
-                serializdApi.accessToken = null
-                store.setSerializdToken('')
-                store.setSerializdUser(null)
-                store.setSerializdSyncEnabled(false)
-              }}>Log out</button>
-            </div>
-          ) : (
-            <>
-              <Field label="Email" value={serializdEmail} onChange={setSerializdEmail} placeholder="you@email.com" />
-              <Field label="Password" value={serializdPassword} onChange={setSerializdPassword} placeholder="Password" secret />
-              {serializdError && <p className="set-err">{serializdError}</p>}
-              <button type="button" className="set-btn" disabled={serializdBusy} onClick={loginSerializd}>{serializdBusy ? 'Signing in…' : 'Sign in to Serializd'}</button>
-            </>
-          )}
-        </div>
       </Section>
     </div>
   )

@@ -12,6 +12,7 @@ import RateModal from '../components/RateModal'
 import IntroSkip from '../components/IntroSkip'
 import TogetherPanel from '../components/TogetherPanel'
 import { syncRating, isAnimeItem } from '../lib/trackers'
+import { syncFinished } from '../lib/syncWatch'
 import { markSource } from '../lib/playerStatus'
 import { searchStremioSubtitles } from '../api/subtitles'
 import { resolveFromTorrentio } from '../api/streams'
@@ -1048,6 +1049,17 @@ export default function PlayerPage() {
       profileId: useStore.getState().currentProfile?.id || 'default',
       completed: reallyDone,
     })
+    if (reallyDone) {
+      const anime = isAnimeItem(selectedMedia)
+      syncFinished({
+        title: String((selectedMedia as any).title || (selectedMedia as any).name || prev?.title || ''),
+        tmdbId: selectedMedia.id,
+        type: anime ? 'anime' : selectedMedia.type === 'movie' ? 'movie' : 'tv',
+        season: selectedMedia.season,
+        episode: selectedMedia.episode,
+        item: selectedMedia,
+      }).catch(() => {})
+    }
     try { localStorage.setItem(`mfy-ep-${selectedMedia.id}-${selectedMedia.season || 0}-${selectedMedia.episode || 0}`, JSON.stringify({ p, d, completed: reallyDone, at: Date.now() })) } catch {}
     try {
       await (window as any).electronAPI?.saveProgressRow?.({
