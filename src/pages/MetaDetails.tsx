@@ -34,6 +34,10 @@ export default function MetaDetails() {
   const [mdblistRatings, setMdblistRatings] = useState<MdblistRating[] | null>(null)
   const [aggRatings, setAggRatings] = useState<AggRating[]>([])
   const [watchLogos, setWatchLogos] = useState<{ name: string; logo: string }[]>([])
+  const [aniScore, setAniScore] = useState('')
+  const [serScore, setSerScore] = useState('')
+  const [simklScore, setSimklScore] = useState('')
+  const [badgeHay, setBadgeHay] = useState('')
   const [listOpen, setListOpen] = useState(false)
   const [newListName, setNewListName] = useState('')
   const [tasteN, setTasteN] = useState(0)
@@ -140,6 +144,72 @@ export default function MetaDetails() {
       setMdblistRatings(null)
     }
   }
+
+  useEffect(() => {
+    if (!detail || !selectedMedia || selectedMedia.type === 'iptv') return
+    let dead = false
+    const title = String(detail.title || detail.name || '')
+    const anime = isAnimeItem(detail) || isAnimeItem(selectedMedia) || (detail.original_language === 'ja' && (detail.genres || []).some((g: any) => /anim/i.test(g.name || '')))
+    setAniScore('')
+    setSerScore('')
+    setSimklScore('')
+    if (anime && title) {
+      import('../api/anilist').then(({ anilist }) => anilist.search(title, 'ANIME', 1, 3)).then((r) => {
+        const score = r.media?.[0]?.averageScore
+        if (!dead && score) setAniScore((Number(score) / 10).toFixed(1))
+      }).catch(() => {})
+    }
+    if (imdbId) {
+      const kind = selectedMedia.type === 'movie' ? 'movie' : 'series'
+      fetch(`https://v3-cinemeta.strem.io/meta/${kind}/${imdbId}.json`)
+        .then((r) => r.json())
+        .then((d) => {
+          const rating = d?.meta?.imdbRating
+          if (!dead && rating) setOmdb((prev) => prev?.imdbRating ? prev : { imdbRating: String(rating), rottenTomatoes: prev?.rottenTomatoes || null, imdbVotes: null })
+        }).catch(() => {})
+      import('../api/streams').then(({ resolveFromTorrentio }) => resolveFromTorrentio(
+        selectedMedia.type === 'movie' ? 'movie' : 'tv',
+        imdbId,
+        { season: Number(selectedMedia.season || 1), episode: Number(selectedMedia.episode || 1) }
+      )).then((list) => {
+        if (dead) return
+        setBadgeHay((list || []).slice(0, 12).map((s) => `${s.title || ''} ${s.name || ''} ${s.quality || ''}`).join('\n'))
+      }).catch(() => {})
+    }
+    const client = (() => { try { return localStorage.getItem('mfy-simkl-client') || '' } catch { return '' } })()
+    if (client && title && (selectedMedia.type === 'movie' || selectedMedia.type === 'tv')) {
+      const path = selectedMedia.type === 'movie' ? 'movie' : 'tv'
+      fetch(`https://api.simkl.com/search/${path}?q=${encodeURIComponent(title)}&client_id=${encodeURIComponent(client)}`)
+        .then((r) => r.ok ? r.json() : [])
+        .then((rows) => {
+          if (dead || !Array.isArray(rows)) return
+          const hit = rows.find((row: any) => String(row?.ids?.tmdb) === String(selectedMedia.id)) || rows[0]
+          const s = hit?.ratings?.simkl?.rating
+          const im = hit?.ratings?.imdb?.rating
+          if (s) setSimklScore(Number(s).toFixed(1))
+          if (im) setOmdb((prev) => prev?.imdbRating ? prev : { imdbRating: String(im), rottenTomatoes: prev?.rottenTomatoes || null, imdbVotes: null })
+        }).catch(() => {})
+    }
+    if (selectedMedia.type === 'tv' && title) {
+      const token = useStore.getState().serializdToken
+      const headers: Record<string, string> = {
+        Origin: 'https://www.serializd.com',
+        Referer: 'https://www.serializd.com/',
+        'X-Requested-With': 'serializd_vercel',
+      }
+      if (token) headers.Authorization = `Bearer ${token}`
+      fetch(`https://serializd.onrender.com/api/search/shows?query=${encodeURIComponent(title)}`, { headers })
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => {
+          if (dead || !data) return
+          const list = data.results || data.shows || data.items || (Array.isArray(data) ? data : [])
+          const hit = (list || []).find((row: any) => String(row?.tmdb_id || row?.ids?.tmdb || '') === String(selectedMedia.id)) || list?.[0]
+          const score = hit?.vote_average ?? hit?.rating ?? hit?.average_rating ?? hit?.user_data?.rating
+          if (score) setSerScore(Number(score).toFixed(1))
+        }).catch(() => {})
+    }
+    return () => { dead = true }
+  }, [detail?.id, imdbId, selectedMedia?.id, selectedMedia?.type])
 
   async function changeSeason(num: number) {
     if (!selectedMedia || selectedMedia.type !== 'tv') return
@@ -379,6 +449,24 @@ export default function MetaDetails() {
                   {omdb?.imdbRating || Number(detail.vote_average).toFixed(1)}
                 </span>
               )}
+              {aniScore && (
+                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
+                  <span className="bg-[#02a9ff] text-white text-[9px] font-black px-1 rounded">AniList</span>
+                  {aniScore}
+                </span>
+              )}
+              {selectedMedia?.type === 'tv' && serScore && (
+                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
+                  <span className="bg-[#fff] text-black text-[9px] font-black px-1 rounded">Serializd</span>
+                  {serScore}
+                </span>
+              )}
+              {simklScore && (
+                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
+                  <span className="bg-[#e50914] text-white text-[9px] font-black px-1 rounded">Simkl</span>
+                  {simklScore}
+                </span>
+              )}
               {(omdb?.rottenTomatoes || rtExtra?.critics) && (
                 <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
                   <span className="bg-[#fa320a] text-white text-[9px] font-black px-1 rounded">RT</span>
@@ -413,7 +501,8 @@ export default function MetaDetails() {
             </div>
             <QualityBadges
               year={(detail.release_date || detail.first_air_date || '').slice(0, 4)}
-              haystack={[detail.title, detail.name, detail.tagline, ...(detail.genres||[]).map((g:any)=>g.name)].join(' ')}
+              haystack={badgeHay}
+              providers={watchLogos.map((p) => p.name)}
             />
 
             {detail.overview && (

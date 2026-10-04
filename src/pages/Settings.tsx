@@ -42,6 +42,12 @@ export default function Settings() {
   const [anilistUser, setAnilistUser] = useState(() => {
     try { return localStorage.getItem('mfy-anilist-username') || '' } catch { return '' }
   })
+  const [simklClient, setSimklClient] = useState(() => {
+    try { return localStorage.getItem('mfy-simkl-client') || '' } catch { return '' }
+  })
+  const [simklToken, setSimklToken] = useState(() => {
+    try { return localStorage.getItem('mfy-simkl-token') || '' } catch { return '' }
+  })
 
   const api = (window as any).electronAPI
 
@@ -354,6 +360,30 @@ export default function Settings() {
           <Input label="AIOStreams URL" value={aiosUrl} onChange={setAiosUrl} placeholder="http://localhost:3000 (when ready)" />
           <Input label="Real-Debrid API" value={rdKey} onChange={setRdKey} placeholder="Real-Debrid token" link="https://realdebrid.com/apitoken" type="password" />
           <Input label="Trakt Token (optional)" value={traktTok} onChange={setTraktTok} placeholder="Not required — local lists used by default" type="password" />
+          <div className="pt-4 border-t border-white/[0.06]">
+            <h4 className="text-sm font-medium text-white/60 mb-3">Simkl</h4>
+            <Input
+              label="Simkl Client ID"
+              value={simklClient}
+              onChange={(v: string) => {
+                setSimklClient(v)
+                try { localStorage.setItem('mfy-simkl-client', v.trim()) } catch {}
+              }}
+              placeholder="Client ID from simkl.com/settings/developer"
+              link="https://simkl.com/settings/developer/"
+            />
+            <Input
+              label="Simkl access token"
+              value={simklToken}
+              onChange={(v: string) => {
+                setSimklToken(v)
+                try { localStorage.setItem('mfy-simkl-token', v.trim()) } catch {}
+              }}
+              placeholder="Optional — user token for your lists"
+              type="password"
+            />
+            <p className="text-[11px] text-white/30 -mt-1">Used for Simkl ratings on movies and shows. IMDb still shows without it. AniList scores show on anime. Serializd scores show on series when you are signed in above.</p>
+          </div>
         </Section>
 
         <Section title="Desktop">

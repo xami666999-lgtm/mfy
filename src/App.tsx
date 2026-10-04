@@ -38,6 +38,7 @@ import People from './pages/People'
 import IdleWall from './components/IdleWall'
 import IntroSkip from './components/IntroSkip'
 import CalendarPage from './pages/CalendarPage'
+import ShelfBrowse from './pages/ShelfBrowse'
 import DetailExtras from './components/DetailExtras'
 import EpisodePanel from './components/EpisodePanel'
 import { youtubeEmbedUrl } from './api/youtubio'
@@ -149,8 +150,20 @@ export default function App() {
       } catch {}
     })
     api.get('profiles').then(async (list: any) => {
-      const loaded: any[] = Array.isArray(list) ? list : []
-      if (loaded.length) setProfiles(loaded)
+      let loaded: any[] = Array.isArray(list) ? list : []
+      try {
+        const raw = localStorage.getItem('mfy-profiles')
+        if (raw) {
+          const local = JSON.parse(raw)
+          if (Array.isArray(local)) loaded = local
+        }
+      } catch {}
+      if (!loaded.length) {
+        setProfiles([])
+        api.set?.('profiles', [])
+        return
+      }
+      setProfiles(loaded)
       const id = await api.get('currentProfileId')
       if (id) {
         const p = loaded.find((x) => x.id === id)
@@ -242,6 +255,7 @@ export default function App() {
         {currentPage === 'anime' && <Anime />}
         {currentPage === 'sports' && <Sports />}
         {currentPage === 'calendar' && <CalendarPage />}
+        {currentPage === 'shelf' && <ShelfBrowse />}
         {currentPage === 'youtube' && <YouTubePage />}
         {currentPage === 'music' && <MusicPage />}
         {currentPage === 'people' && <People />}

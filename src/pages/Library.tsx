@@ -93,12 +93,11 @@ export default function Library() {
   }
 
   return (
-    <div className="board page-fade-enter">
-      <div className="mx-6 mt-6 mb-2 rounded-[28px] px-8 pt-10 pb-8" style={{ background: 'linear-gradient(135deg,#2b0618 0%,#12040c 55%,#050810 100%)', border: '1px solid rgba(255,20,147,0.25)' }}>
-        <p className="text-[11px] tracking-[0.28em] text-[#e50914] font-bold">LIBRARY</p>
-        <h1 className="text-5xl font-black text-white mt-2">Your titles</h1>
-        <p className="text-sm text-white/45 mt-2">Saved · favorites · history · collections</p>
-        <div className="flex gap-2 mt-5 flex-wrap">
+    <div className="board page-fade-enter nv-page" style={{ minHeight: '100%' }}>
+      <div className="px-8 pt-8 pb-4">
+        <h1 className="text-[34px] font-semibold text-white tracking-tight" style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}>Library</h1>
+        <p className="text-sm text-white/45 mt-1 mb-5">Saved, favorites, history, collections</p>
+        <div className="flex gap-2 flex-wrap">
           {tabs.map((t) => {
             const Icon = t.icon
             return (
@@ -108,7 +107,7 @@ export default function Library() {
                 onClick={() => setTab(t.id)}
                 className={cn(
                   'h-9 px-4 rounded-full text-xs font-semibold inline-flex items-center gap-2 border',
-                  tab === t.id ? 'bg-[#e50914] border-[#e50914] text-white' : 'bg-white/5 border-white/10 text-white/50 hover:text-white'
+                  tab === t.id ? 'bg-white border-white text-black' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'
                 )}
               >
                 <Icon size={13} /> {t.label} {t.count}

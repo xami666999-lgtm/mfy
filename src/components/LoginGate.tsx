@@ -1,26 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useStore } from '../store'
 import { GoogleUser, googleClientId, renderGoogleButton } from '../auth/google'
 import ProfileManage from './ProfileManage'
 
 const AVATARS = Array.from({ length: 8 }, (_, i) => `https://api.dicebear.com/9.x/adventurer/svg?seed=mfy${i + 1}`)
-const EPOCH = '1713'
 
 function validEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
 }
 
 export default function LoginGate() {
-  const { profiles, addProfile, setProfilePin, setProfileAvatar, switchProfile, setAuthenticated, setCurrentPage, setProfiles } = useStore()
-  useEffect(() => {
-    try {
-      if (localStorage.getItem('mfy-epoch') === EPOCH) return
-      localStorage.setItem('mfy-epoch', EPOCH)
-      setProfiles([])
-      setAuthenticated(false)
-    } catch {}
-  }, [])
-  const hasAccount = useStore.getState().profiles.length > 0
+  const { profiles, addProfile, setProfilePin, setProfileAvatar, switchProfile, setAuthenticated, setCurrentPage } = useStore()
+  const hasAccount = profiles.length > 0
   const [step, setStep] = useState<'auth' | 'trackers' | 'who'>(hasAccount ? 'who' : 'auth')
   const [avatar, setAvatar] = useState(AVATARS[0])
   const [simkl, setSimkl] = useState('')
@@ -36,7 +27,8 @@ export default function LoginGate() {
   const [confirm, setConfirm] = useState('')
   const [code, setCode] = useState('')
   const [sent, setSent] = useState('')
-  const [picked, setPicked] = useState(profiles[0]?.id || '')
+  const [picked, setPicked] = useState('')
+  const [pinTry, setPinTry] = useState('')
   const [editing, setEditing] = useState(false)
   const [manageId, setManageId] = useState('')
   const [err, setErr] = useState('')
@@ -81,7 +73,17 @@ export default function LoginGate() {
     if (password !== confirm) return setErr('Passwords do not match.')
     const id = addProfile(username.trim(), avatar, email.trim().toLowerCase())
     setProfilePin(id, password)
-    setPicked(id)
+    setUsername('')
+    setEmail('')
+    setPassword('')
+    setConfirm('')
+    let already = false
+    try { already = !!(localStorage.getItem('mfy-simkl') || localStorage.getItem('mfy-simkl-client')) } catch {}
+    if (already) {
+      setPicked('')
+      setStep('who')
+      return
+    }
     setStep('trackers')
   }
 
@@ -91,8 +93,8 @@ export default function LoginGate() {
     const p = useStore.getState().profiles.find((x) => (x.email || '').toLowerCase() === q || x.name.toLowerCase() === q || x.name.toLowerCase() === username.trim().toLowerCase())
     if (!p) return setErr('No account for that Gmail / username.')
     if (p.pin && p.pin !== password) return setErr('Wrong password.')
-    setPicked(p.id)
-    setStep('trackers')
+    setPassword('')
+    enter(p.id)
   }
 
   function sendReset() {
@@ -138,6 +140,8 @@ export default function LoginGate() {
               if (discord) localStorage.setItem('mfy-discord', discord)
               if (serializdMail) useStore.getState().setSerializdEmail(serializdMail)
             } catch {}
+            setPicked('')
+            setPinTry('')
             setStep('who')
           }}>Continue</button>
         </div>
@@ -146,16 +150,24 @@ export default function LoginGate() {
   }
 
   if (step === 'who') {
-    const list = useStore.getState().profiles
     if (manageId) return <ProfileManage id={manageId} onClose={() => setManageId('')} />
+    if (!profiles.length) {
+      return (
+        <div className="nf-gate">
+          <h1>Who's watching?</h1>
+          <button type="button" className="nf-edit" onClick={() => { setMode('create'); setStep('auth') }}>Add Profile</button>
+        </div>
+      )
+    }
+    const pickedProfile = profiles.find((p) => p.id === picked)
     return (
       <div className="nf-gate">
         <h1>{editing ? 'Manage Profiles' : "Who's watching?"}</h1>
         <div className="nf-profiles">
-          {list.map((p) => (
+          {profiles.map((p) => (
             <button key={p.id} type="button" className="nf-profile" onClick={() => {
               if (editing) { setManageId(p.id); return }
-              if (p.pin) { setPicked(p.id); return }
+              if (p.pin) { setPicked(p.id); setPinTry(''); setErr(''); return }
               enter(p.id)
             }}>
               <span className={picked === p.id ? 'ring' : ''}>
@@ -165,17 +177,37 @@ export default function LoginGate() {
               <small>{p.name}</small>
             </button>
           ))}
+          <button type="button" className="nf-profile add" onClick={() => {
+            setEditing(false)
+            setPicked('')
+            setMode('create')
+            setUsername('')
+            setEmail('')
+            setPassword('')
+            setConfirm('')
+            setErr('')
+            setStep('auth')
+          }}>
+            <span><b>+</b></span>
+            <small>Add Profile</small>
+          </button>
         </div>
-        {picked && list.find((p) => p.id === picked)?.pin && !editing && (
-          <input className="nf-pin" type="password" placeholder="PIN" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => {
-            if (e.key !== 'Enter') return
-            const p = list.find((x) => x.id === picked)
-            if (p && p.pin === password) enter(picked)
+        {pickedProfile?.pin && !editing && (
+          <form className="nf-pin-form" onSubmit={(e) => {
+            e.preventDefault()
+            if (pickedProfile.pin === pinTry) enter(pickedProfile.id)
             else setErr('Wrong PIN.')
-          }} />
+          }}>
+            <p>PIN for {pickedProfile.name}</p>
+            <input className="nf-pin" type="password" placeholder="PIN" value={pinTry} autoFocus onChange={(e) => setPinTry(e.target.value)} />
+            <button type="submit" className="nf-edit">Continue</button>
+          </form>
         )}
         {err && <p className="nf-err">{err}</p>}
-        <button type="button" className="nf-edit" onClick={() => { setEditing((v) => !v); setErr('') }}>{editing ? 'Done' : 'Edit'}</button>
+        <div className="nf-gate-actions">
+          <button type="button" className="nf-edit" onClick={() => { setEditing((v) => !v); setErr(''); setPicked('') }}>{editing ? 'Done' : 'Manage Profiles'}</button>
+          <button type="button" className="nf-edit" onClick={() => { setMode('signin'); setStep('auth'); setErr(''); setPassword(''); setEmail(''); setUsername('') }}>Use another account</button>
+        </div>
       </div>
     )
   }

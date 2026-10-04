@@ -99,6 +99,24 @@ export const franchises: Franchise[] = [
     keywords: [210624],
     collections: [],
   },
+  {
+    id: 'hobbit',
+    name: 'The Hobbit',
+    tagline: 'An unexpected journey',
+    color: '#8a5a12',
+    logo: './logos/lotr.png',
+    keywords: [380963],
+    collections: [121938],
+  },
+  {
+    id: 'bond',
+    name: 'James Bond',
+    tagline: '007',
+    color: '#111',
+    logo: '',
+    keywords: [370194],
+    collections: [645],
+  },
 ]
 
 export interface FranchiseItem {

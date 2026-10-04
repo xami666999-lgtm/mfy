@@ -51,12 +51,12 @@ export default function ProviderBrowse() {
   return (
     <div className="p-8 page-fade-enter">
       <button type="button" onClick={back} className="text-xs text-white/40 hover:text-white/70 flex items-center gap-1 mb-4">
-        <ArrowLeft className="w-3.5 h-3.5" /> Board
+        <ArrowLeft className="w-3.5 h-3.5" /> Home
       </button>
 
       <div className="flex items-center gap-3 mb-6">
         <div className="w-12 h-12 rounded-2xl bg-white/[0.06] border border-white/[0.08] flex items-center justify-center overflow-hidden p-2">
-          <img src={service.logo} alt="" className="max-w-full max-h-full object-contain" />
+          {service.logo ? <img src={service.logo} alt="" className="max-w-full max-h-full object-contain" /> : <span className="text-[10px] font-bold text-white text-center">{service.name}</span>}
         </div>
         <div>
           <h2 className="text-lg font-semibold text-white tracking-tight">{service.name}</h2>

@@ -62,7 +62,7 @@ export default function Franchise() {
       </button>
 
       <div className="relative h-40 sm:h-48 flex items-center justify-center" style={{ background: franchise.color }}>
-        <img src={franchise.logo} alt={franchise.name} className="h-16 sm:h-20 w-auto max-w-[70%] object-contain drop-shadow-lg" />
+        {franchise.logo ? <img src={franchise.logo} alt={franchise.name} className="h-16 sm:h-20 w-auto max-w-[70%] object-contain drop-shadow-lg" /> : <span className="text-3xl font-bold text-white">{franchise.name}</span>}
       </div>
 
       <div className="px-6 md:px-10 pb-12">

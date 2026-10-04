@@ -13,7 +13,7 @@ const tabs = [
   { id: 'music', label: 'Music', icon: Music },
   { id: 'sports', label: 'Sports', icon: Trophy },
   { id: 'search', label: 'Search', icon: Search },
-  { id: 'library', label: 'My Box', icon: Bookmark },
+  { id: 'library', label: 'Library', icon: Bookmark },
   { id: 'settings', label: 'Settings', icon: Settings },
 ]
 

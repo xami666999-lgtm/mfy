@@ -8,15 +8,15 @@ export interface StreamingService {
 
 export const streamingServices: StreamingService[] = [
   { id: 'netflix', name: 'Netflix', color: '#E50914', logo: './logos/netflix.png', tmdbId: 8 },
-  { id: 'prime', name: 'Amazon Prime Video', color: '#00A8E1', logo: './logos/amazon-prime.png', tmdbId: 9 },
-  { id: 'disney', name: 'Disney Plus', color: '#113CCF', logo: './logos/disney-plus.png', tmdbId: 337 },
-  { id: 'apple', name: 'Apple TV+', color: '#A3AAAE', logo: './logos/apple-tv.svg', tmdbId: 350 },
-  { id: 'hbo', name: 'Max', color: '#B01CDB', logo: './logos/max.png', tmdbId: 384 },
+  { id: 'prime', name: 'Prime Video', color: '#00A8E1', logo: './logos/amazon-prime.png', tmdbId: 9 },
+  { id: 'disney', name: 'Disney+', color: '#113CCF', logo: './logos/disney-plus.png', tmdbId: 337 },
+  { id: 'apple', name: 'Apple TV+', color: '#55585c', logo: './logos/apple-tv.svg', tmdbId: 350 },
   { id: 'hulu', name: 'Hulu', color: '#1CE783', logo: './logos/hulu.png', tmdbId: 15 },
   { id: 'paramount', name: 'Paramount+', color: '#0064FF', logo: './logos/paramount-plus.png', tmdbId: 531 },
-  { id: 'peacock', name: 'Peacock', color: '#FFFFFF', logo: './logos/peacock.png', tmdbId: 387 },
+  { id: 'peacock', name: 'Peacock', color: '#0c1222', logo: './logos/peacock.png', tmdbId: 387 },
+  { id: 'hbo', name: 'HBO Max', color: '#4b1d8f', logo: './logos/max.png', tmdbId: 1899 },
   { id: 'crunchyroll', name: 'Crunchyroll', color: '#F47521', logo: './logos/crunchyroll.svg', tmdbId: 283 },
-  { id: 'iplayer', name: 'BBC iPlayer', color: '#F54997', logo: './logos/bbc-iplayer.png', tmdbId: 38 },
+  { id: 'viki', name: 'Rakuten Viki', color: '#3a22b8', logo: '', tmdbId: 344 },
 ]
 
 export function getProvidersForMedia(watchProviders: any): string[] {

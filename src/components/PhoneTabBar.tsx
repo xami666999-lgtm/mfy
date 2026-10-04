@@ -16,12 +16,12 @@ const MORE: [string, string, any][] = [
   ['youtube', 'YouTube', Youtube],
   ['music', 'Music', Music],
   ['sports', 'Sport', Trophy],
-  ['library', 'My Box', Bookmark],
+  ['library', 'Library', Bookmark],
   ['settings', 'Settings', Settings],
 ]
 
 export default function PhoneTabBar() {
-  const { currentPage, setCurrentPage } = useStore()
+  const { currentPage, setCurrentPage, setAuthenticated, currentProfile } = useStore()
   const [more, setMore] = useState(false)
   const onTab = TABS.some(([id]) => id === currentPage)
 
@@ -32,6 +32,9 @@ export default function PhoneTabBar() {
         <div className="mfy-more" onClick={() => setMore(false)}>
           <div className="mfy-more-sheet" onClick={(e) => e.stopPropagation()}>
             <p>More</p>
+            <button type="button" className="mfy-switch" onClick={() => { setAuthenticated(false); setMore(false) }}>
+              Switch profile{currentProfile?.name ? ` · ${currentProfile.name}` : ''}
+            </button>
             <div className="mfy-more-grid">
               {MORE.map(([id, label, Icon]) => (
                 <button key={id} type="button" onClick={() => { setCurrentPage(id as any); setMore(false) }}>

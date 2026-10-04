@@ -175,6 +175,33 @@ function uid() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36)
 }
 
+/** Bump to wipe every saved profile once. Old accounts cannot sign back in. */
+const ACCOUNT_EPOCH = '20261004-reset'
+
+function resetSavedAccounts() {
+  try {
+    if (localStorage.getItem('mfy-epoch') === ACCOUNT_EPOCH) return
+    localStorage.setItem('mfy-epoch', ACCOUNT_EPOCH)
+    localStorage.setItem('mfy-authenticated', 'false')
+    localStorage.setItem('mfy-profiles', '[]')
+    localStorage.removeItem('mfy-currentProfileId')
+    const drop: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && key.startsWith('mfy-profile')) drop.push(key)
+    }
+    drop.forEach((key) => localStorage.removeItem(key))
+  } catch { /* ignore */ }
+  try {
+    const api = (window as any).electronAPI
+    api?.set?.('profiles', [])
+    api?.set?.('currentProfileId', '')
+    api?.set?.('authenticated', false)
+  } catch { /* ignore */ }
+}
+
+resetSavedAccounts()
+
 export const useStore = create<AppState>((set, get) => ({
   currentPage: 'home',
   setCurrentPage: (page) => set({ currentPage: page }),

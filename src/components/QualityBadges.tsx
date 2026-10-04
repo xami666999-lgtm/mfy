@@ -1,29 +1,106 @@
-const BADGES: { id: string; group: string; src: string; test: RegExp }[] = [
-  { id: '4k', group: 'res', src: 'https://raw.githubusercontent.com/leonevz/Elite-Badges/main/Badges/4k_ultra_hd.png', test: /2160p|uhd|\b4k\b/i },
-  { id: '1080', group: 'res', src: 'https://raw.githubusercontent.com/leonevz/Elite-Badges/main/Badges/1080p_full_hd.png', test: /1080p|fhd|full\s*hd/i },
-  { id: '720', group: 'res', src: 'https://raw.githubusercontent.com/leonevz/Elite-Badges/main/Badges/720p_hd.png', test: /720p/i },
-  { id: '480', group: 'res', src: 'https://raw.githubusercontent.com/leonevz/Elite-Badges/main/Badges/480p_sd.png', test: /480p|\bsd\b/i },
-  { id: 'dv', group: 'vid', src: 'https://raw.githubusercontent.com/leonevz/Elite-Badges/main/Badges/dolby_vision.png', test: /dolby[\s._-]*vision|\bdv\b/i },
-  { id: 'hdr', group: 'vid', src: 'https://raw.githubusercontent.com/leonevz/Elite-Badges/main/Badges/hdr.png', test: /\bhdr\b/i },
-  { id: 'hdr10', group: 'vid', src: 'https://raw.githubusercontent.com/leonevz/Elite-Badges/main/Badges/hdr10.png', test: /hdr10(?!\+)/i },
-  { id: 'hdr10p', group: 'vid', src: 'https://raw.githubusercontent.com/leonevz/Elite-Badges/main/Badges/hdr10_plus.png', test: /hdr10\+/i },
-  { id: 'imax', group: 'vid', src: 'https://raw.githubusercontent.com/leonevz/Elite-Badges/main/Badges/imax.png', test: /\bimax\b/i },
-  { id: 'atmos', group: 'aud', src: 'https://raw.githubusercontent.com/leonevz/Elite-Badges/main/Badges/dolby_atmos.png', test: /atmos/i },
-  { id: 'ddp', group: 'aud', src: 'https://raw.githubusercontent.com/leonevz/Elite-Badges/main/Badges/dolby_digital.png', test: /dolby[\s._-]*digital|\bddp\b|\bac3\b/i },
-  { id: 'truehd', group: 'aud', src: 'https://raw.githubusercontent.com/leonevz/Elite-Badges/main/Badges/truehd.png', test: /true[\s._-]*hd/i },
-  { id: 'dts', group: 'aud', src: 'https://raw.githubusercontent.com/leonevz/Elite-Badges/main/Badges/dts.png', test: /\bdts\b/i },
-  { id: '51', group: 'ch', src: 'https://raw.githubusercontent.com/leonevz/Elite-Badges/main/Badges/5_1_audio.png', test: /5[\s._-]*1/ },
-  { id: '71', group: 'ch', src: 'https://raw.githubusercontent.com/leonevz/Elite-Badges/main/Badges/7_1_audio.png', test: /7[\s._-]*1/ },
-]
+import { useEffect, useState } from 'react'
+import badges from '../data/badges.json'
 
-export default function QualityBadges({ haystack = '' }: { haystack?: string; year?: string }) {
-  const hits = BADGES.filter((b) => b.test.test(haystack || ''))
+type Filter = { id: string; name: string; groupId: string; pattern: string; imageURL: string }
+type Group = { id: string; name: string }
+
+const FILTERS = (badges as { filters: Filter[]; groups: Group[] }).filters
+const GROUPS = (badges as { filters: Filter[]; groups: Group[] }).groups
+
+function toRegExp(pattern: string): RegExp | null {
+  let src = pattern || ''
+  let flags = ''
+  if (src.startsWith('(?i)')) {
+    src = src.slice(4)
+    flags = 'i'
+  }
+  try { return new RegExp(src, flags) } catch { return null }
+}
+
+const COMPILED = FILTERS.map((f) => ({ ...f, re: toRegExp(f.pattern) })).filter((f) => f.re)
+
+export function matchBadgeFilters(text: string) {
+  const hay = text || ''
+  if (!hay.trim()) return []
+  return COMPILED.filter((f) => f.re!.test(hay))
+}
+
+export function sourceBadge(text: string): string {
+  const hit = matchBadgeFilters(text).find((f) => f.groupId === 'source')
+  return hit?.imageURL || ''
+}
+
+const cropCache = new Map<string, string>()
+
+export function BadgeImg({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  const [url, setUrl] = useState(cropCache.get(src) || src)
+  useEffect(() => {
+    if (!src || cropCache.has(src)) { setUrl(cropCache.get(src) || src); return }
+    let dead = false
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      try {
+        const c = document.createElement('canvas')
+        c.width = img.width
+        c.height = img.height
+        const ctx = c.getContext('2d', { willReadFrequently: true })
+        if (!ctx) return
+        ctx.drawImage(img, 0, 0)
+        const { data, width, height } = ctx.getImageData(0, 0, c.width, c.height)
+        let minX = width, minY = height, maxX = 0, maxY = 0
+        const step = width > 800 ? 3 : 1
+        for (let y = 0; y < height; y += step) {
+          for (let x = 0; x < width; x += step) {
+            if (data[(y * width + x) * 4 + 3] > 18) {
+              if (x < minX) minX = x
+              if (y < minY) minY = y
+              if (x > maxX) maxX = x
+              if (y > maxY) maxY = y
+            }
+          }
+        }
+        if (maxX <= minX || maxY <= minY) return
+        const pad = 6
+        const sx = Math.max(0, minX - pad)
+        const sy = Math.max(0, minY - pad)
+        const sw = Math.min(width - sx, maxX - minX + pad * 2)
+        const sh = Math.min(height - sy, maxY - minY + pad * 2)
+        const out = document.createElement('canvas')
+        out.width = sw
+        out.height = sh
+        out.getContext('2d')!.drawImage(c, sx, sy, sw, sh, 0, 0, sw, sh)
+        const next = out.toDataURL('image/png')
+        cropCache.set(src, next)
+        if (!dead) setUrl(next)
+      } catch { /* keep the original if the host blocks canvas reads */ }
+    }
+    img.src = src
+    return () => { dead = true }
+  }, [src])
+  return <img className={className} src={url} alt={alt} title={alt} referrerPolicy="no-referrer" />
+}
+
+export default function QualityBadges({ haystack = '', providers = [] }: { haystack?: string; providers?: string[]; year?: string }) {
+  const text = [haystack, ...(providers || [])].filter(Boolean).join('\n')
+  const hits = matchBadgeFilters(text)
   if (!hits.length) return null
   return (
-    <div className="flex flex-wrap items-center gap-1.5 mb-4">
-      {hits.map((b) => (
-        <img key={b.id} src={b.src} alt={b.id} title={b.id} className="h-6 object-contain" referrerPolicy="no-referrer" />
-      ))}
+    <div className="mfy-badges">
+      {GROUPS.map((g) => {
+        const rows = hits.filter((h) => h.groupId === g.id)
+        if (!rows.length) return null
+        return (
+          <div key={g.id} className="mfy-badge-line">
+            <span>{g.name}</span>
+            <div>
+              {rows.map((b) => (
+                <BadgeImg key={b.id} src={b.imageURL} alt={b.name} />
+              ))}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
