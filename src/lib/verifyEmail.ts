@@ -7,7 +7,7 @@ export async function sendVerificationEmail(to: string): Promise<{ code: string 
     body: JSON.stringify({
       name: 'MFY',
       email: to,
-      message: `Your MFY verification code is ${code}. Enter it in the app to finish. If you did not ask for this, ignore the email.`,
+      message: `Your MFY verification code is ${code}. Enter it on the sign-up or reset screen. If you did not ask for this, ignore the email.`,
       _subject: 'Your MFY verification code',
       _template: 'box',
       _captcha: 'false',
