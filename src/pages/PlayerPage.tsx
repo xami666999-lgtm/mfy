@@ -89,13 +89,7 @@ export default function PlayerPage() {
   const [showNext, setShowNext] = useState(false)
   const [expectedSec, setExpectedSec] = useState(0)
   const failTried = useRef<string[]>([])
-  const [playerSource, setPlayerSource] = useState<PlayerSource>(() => {
-    try {
-      const s = (localStorage.getItem('mfy-player-engine') as PlayerSource) || 'playtorrio'
-      if (s === 'pengu') return 'playtorrio'
-      return s
-    } catch { return 'playtorrio' }
-  })
+  const [playerSource, setPlayerSource] = useState<PlayerSource>('playtorrio')
 
   useEffect(() => {
     const at = Number((selectedMedia as any)?.resumeAt || 0)
@@ -118,11 +112,26 @@ export default function PlayerPage() {
     }
     const anime = isAnimeItem(selectedMedia)
     const title = String((selectedMedia as any).title || (selectedMedia as any).name || '')
-    let src: PlayerSource = playerSource
+    if (currentStreamUrl && /^https?:/i.test(currentStreamUrl)) {
+      setStreamUrl(currentStreamUrl)
+      setLoaded(true)
+      setLoading(false)
+      setError('')
+      return
+    }
+    let src: PlayerSource = anime ? 'zangetsu' : 'playtorrio'
     if (isOnePiece(title)) src = 'onepace'
     else if (src === 'webtorrent') src = 'webtorrent'
     else if (anime && !(ANIME_SOURCES as string[]).includes(src) && src !== 'onepace' && src !== 'webtorrent') src = 'zangetsu'
     else if (!anime && !(MOVIE_TV_SOURCES as string[]).includes(src) && src !== 'webtorrent') src = 'playtorrio'
+    const embed = getPlayerUrl(src, selectedMedia.type === 'movie' ? 'movie' : 'tv', selectedMedia.id, selectedMedia.season, selectedMedia.episode, anime)
+    if (embed && /^https?:/i.test(embed)) {
+      setStreamUrl(embed)
+      setLoaded(true)
+      setLoading(false)
+      setError('')
+      return
+    }
     if (src === 'webtorrent') {
       setLoaded(true)
       setLoading(false)
@@ -1289,7 +1298,6 @@ export default function PlayerPage() {
                       </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
-                      <button type="button" onClick={() => { setSrcOpen((v) => !v); setSubOpen(false) }} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{sourceNames[playerSource] || 'Source'}</button>
                       <button type="button" onClick={() => { setSubOpen((v) => !v); setSrcOpen(false) }} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Subtitles{subtitleOffset ? ` ${subtitleOffset > 0 ? '+' : ''}${subtitleOffset.toFixed(1)}s` : ''}</button>
                       <button type="button" onClick={() => setSubSize((n) => Math.max(0.4, +(n - 0.1).toFixed(2)))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>A−</button>
                       <button type="button" onClick={() => setSubSize((n) => Math.min(1.6, +(n + 0.1).toFixed(2)))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>A+</button>
@@ -1301,15 +1309,6 @@ export default function PlayerPage() {
                       )}
                       <button type="button" onClick={() => setShowRate(true)} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>Watched</button>
                       <button type="button" onClick={toggleFullscreen} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, color: '#fff', cursor: 'pointer' }}>{fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}</button>
-                      {srcOpen && (
-                        <div style={{ position: 'absolute', right: 0, bottom: 42, width: 220, maxHeight: 280, overflow: 'auto', background: '#141414', border: '1px solid rgba(255,255,255,.12)', borderRadius: 10, padding: 6, zIndex: 40 }}>
-                          {(isOnePiece(String((selectedMedia as any)?.title || '')) ? (['onepace', ...ALL_PLAY_SOURCES] as PlayerSource[]) : ALL_PLAY_SOURCES).filter((s) => s !== 'vlc').map((s) => (
-                            <button key={s} type="button" onClick={() => { setPlayerSource(s); setSrcOpen(false); try { localStorage.setItem('mfy-player-engine', s) } catch {} }} style={{ width: '100%', textAlign: 'left', border: 0, cursor: 'pointer', background: playerSource === s ? '#e50914' : 'transparent', color: '#fff', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
-                              {sourceNames[s] || s}
-                            </button>
-                          ))}
-                        </div>
-                      )}
                       {subOpen && (
                         <div style={{ position: 'absolute', right: 80, bottom: 42, width: 260, maxHeight: 280, overflow: 'auto', background: '#141414', border: '1px solid rgba(255,255,255,.12)', borderRadius: 10, padding: 8, zIndex: 40 }}>
                           <button type="button" onClick={() => { setSubtitleEnabled(false); setCueText(''); setSubOpen(false) }} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 0, color: '#fff', padding: '7px 8px', cursor: 'pointer' }}>Off</button>

@@ -467,7 +467,7 @@ export default function NuvioHome() {
   function play(item: any) {
     const t = kindOf(item)
     setSelectedMedia({ id: item.id, type: t, title: titleOf(item) })
-    setCurrentStreamUrl(getPlayerUrl((localStorage.getItem('mfy-player-engine') as any) || 'vidy', t, item.id, 1, 1))
+    setCurrentStreamUrl(getPlayerUrl(t === 'tv' && /anime|jp/i.test(String(item.original_language || '')) ? 'zangetsu' : 'playtorrio', t, item.id, 1, 1))
     setCurrentPage('player')
   }
 
@@ -576,6 +576,7 @@ export default function NuvioHome() {
                       pct={Math.max(8, face.pct)}
                       label={face.label || leftLabel(h.progress, h.duration)}
                     />
+                    <TitleLogo id={h.mediaId} type={h.mediaType === 'movie' ? 'movie' : 'tv'} title={h.title || ''} className="cw-logo" />
                   </div>
                   <p>{h.title || 'Title'}</p>
                   {[stopLine(h), leftMap[`${h.mediaId}-${h.season}`]].filter(Boolean).length > 0 && (

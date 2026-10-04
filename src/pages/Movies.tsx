@@ -27,7 +27,7 @@ export default function Movies() {
 
   function play(item: any) {
     setSelectedMedia({ id: item.id, type: 'movie', title: item.title || item.name })
-    setCurrentStreamUrl(getPlayerUrl((localStorage.getItem('mfy-player-engine') as any) || 'vidy', 'movie', item.id, 1, 1))
+    setCurrentStreamUrl(getPlayerUrl('playtorrio', 'movie', item.id, 1, 1))
     setCurrentPage('player')
   }
 
@@ -48,7 +48,7 @@ export default function Movies() {
 
   return (
     <div className="board page-fade-enter">
-      <PageHero item={popular[0] || now[0]} kicker="MOVIE" onPlay={() => (popular[0] || now[0]) && play(popular[0] || now[0])} />
+      <PageHero items={(popular.length ? popular : now).slice(0, 8)} kicker="MOVIE" onPlay={(item) => item && play(item)} />
       <div className="board-content px-6 pt-6">
         <TrailerRail title="Trailers" items={popular.slice(0, 8).map((x) => ({ id: x.id, type: 'movie' as const, title: x.title || x.name || 'Movie', backdrop: x.backdrop_path }))} />
         <MediaShelf title="Popular Movies" items={popular} onOpen={preview} />

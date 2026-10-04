@@ -367,16 +367,8 @@ export default function MetaDetails() {
     const kind = selectedMedia.type === 'movie' ? 'movie' : 'tv'
     const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
     const op = isOnePiece((detail as any)?.title || (detail as any)?.name || (selectedMedia as any)?.title)
-    const pick = op ? 'onepace' : (anime && !['vlc','pipe','torrentio','comet','zangetsu', 'miruro', 'animepahe', 'playtorrio', 'simplstream', 'vidy', 'vixsrc', 'vidnest', 'moviebox'].includes(playerPick) ? 'zangetsu' : playerPick)
-    let url = getPlayerUrl(pick as any, kind, selectedMedia.id as number, activeSeason, selectedMedia.episode || 1, anime)
-    if (pick === 'moviebox') {
-      const name = (detail as any)?.title || (detail as any)?.name || String(selectedMedia.id)
-      url = `https://moviebox.ph/web/searchResult?keyword=${encodeURIComponent(name)}`
-    }
-    if (pick === 'animepahe') {
-      const name = (detail as any)?.title || (detail as any)?.name || String(selectedMedia.id)
-      url = `https://animepahe.ru/`
-    }
+    const pick = op ? 'onepace' : (anime ? 'zangetsu' : 'playtorrio')
+    const url = getPlayerUrl(pick as any, kind, selectedMedia.id as number, activeSeason, selectedMedia.episode || 1, anime)
     const saved = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia.id) && Number(h.season || 0) === Number(activeSeason || 0) && Number(h.episode || 0) === Number(selectedMedia.episode || 0))
     setSelectedMedia({
       ...selectedMedia,
@@ -527,7 +519,6 @@ export default function MetaDetails() {
               )}
             </div>
 
-            {/* Ratings row */}
             <div className="flex flex-wrap items-center gap-2 mb-4">
               {omdb?.imdbRating && (
                 <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
@@ -535,66 +526,22 @@ export default function MetaDetails() {
                   {omdb.imdbRating}
                 </span>
               )}
-              {detail.vote_average > 0 && (
-                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
-                  ★ {Number(detail.vote_average).toFixed(1)}
-                </span>
-              )}
-              {aniScore && (
-                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
-                  <span className="bg-[#02a9ff] text-white text-[9px] font-black px-1 rounded">AniList</span>
-                  {aniScore}
-                </span>
-              )}
-              {selectedMedia?.type === 'tv' && serScore && (
+              {selectedMedia?.type === 'tv' && !isAnimeItem(selectedMedia) && serScore && (
                 <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
                   <span className="bg-[#fff] text-black text-[9px] font-black px-1 rounded">Serializd</span>
                   {serScore}
                 </span>
               )}
-              {simklScore && (
+              {isAnimeItem(selectedMedia) && aniScore && (
                 <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
-                  <span className="bg-[#e50914] text-white text-[9px] font-black px-1 rounded">Simkl</span>
-                  {simklScore}
+                  <span className="bg-[#02a9ff] text-white text-[9px] font-black px-1 rounded">AniList</span>
+                  {aniScore}
                 </span>
               )}
-              {(omdb?.rottenTomatoes || rtExtra?.critics) && (
-                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
-                  <span className="bg-[#fa320a] text-white text-[9px] font-black px-1 rounded">RT</span>
-                  {omdb?.rottenTomatoes || rtExtra?.critics}
-                </span>
-              )}
-              {aggRatings.filter((r) => r.key === 'tmdb' || r.key === 'mc').map((r) => (
-                <span key={r.key} className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
-                  {r.label} {r.value}
-                </span>
-              ))}
-              {watchLogos.map((p) => (
-                <span key={p.name} title={p.name} className="inline-flex items-center h-7 px-1.5 rounded-md bg-black/40 border border-white/10">
-                  <img src={p.logo} alt={p.name} className="h-5 w-5 object-contain" />
-                </span>
-              ))}
-              {rtExtra?.audience && (
-                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-[#fa320a]/10 border border-[#fa320a]/25 text-[11px] font-bold text-[#ff8a6a]">
-                  Audience {rtExtra.audience}
-                </span>
-              )}
-              {false && mdblistRatings}
-              {imdbId && (
-                <button
-                  type="button"
-                  className="text-[10px] text-white/35 hover:text-white/70"
-                  onClick={() => (window as any).electronAPI?.openExternal?.(`https://www.imdb.com/title/${imdbId}/`)}
-                >
-                  {imdbId}
-                </button>
-              )}
+              <span className="inline-flex items-center h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
+                {/2160|4K/i.test(badgeHay || '') ? '4K' : /1080/i.test(badgeHay || '') ? '1080p' : 'HD'}
+              </span>
             </div>
-            <QualityBadges
-              year={(detail.release_date || detail.first_air_date || '').slice(0, 4)}
-              haystack={badgeHay}
-              providers={watchLogos.map((p) => p.name)}
-            />
 
             {detail.overview && (
               <p className="text-[13px] text-white/70 leading-relaxed line-clamp-4 max-w-lg mb-6 drop-shadow-sm">
@@ -602,69 +549,16 @@ export default function MetaDetails() {
               </p>
             )}
 
-            <div className="flex flex-wrap items-center gap-1.5 mb-3">
-              {(PLAYERS.filter((p) => {
-                const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
-                const op = isOnePiece(detail?.title || detail?.name || (selectedMedia as any)?.title)
-                if (op) return p.id === 'onepace'
-                if (anime) return ['vlc','pipe','torrentio','comet','zangetsu','miruro','animepahe','playtorrio','simplstream','vidy','vixsrc','vidnest','moviebox','pengu'].includes(p.id)
-                return ['vlc','pipe','torrentio','comet','playtorrio','simplstream','vidy','moviebox','vixsrc','vidnest'].includes(p.id)
-              })).map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => {
-                    setPlayerPick(p.id)
-                    try { localStorage.setItem('mfy-player-engine', p.id) } catch {}
-                  }}
-                  className={`h-8 px-3 rounded-full text-[11px] font-semibold border ${playerPick === p.id ? 'bg-[#e50914] text-white border-[#e50914]' : 'bg-[#1a1016] text-white border-white/15 hover:border-[#e50914]/60'}`}
-                >
-                  <span className="inline-block w-1.5 h-1.5 rounded-full mr-1" style={{background: sourceDot(p.id)==='green'?'#22c55e':sourceDot(p.id)==='red'?'#ef4444':'#64748b'}} />
-                  {p.label}
-                </button>
-              ))}
-            </div>
             <div className="flex flex-wrap items-center gap-2.5">
               <button
                 type="button"
-                onClick={() => {
-                  try { localStorage.setItem('mfy-player-engine', playerPick) } catch {}
-                  handlePlay()
-                }}
+                onClick={() => handlePlay()}
                 disabled={resolving}
                 className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all disabled:opacity-60 shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
               >
                 <Play className="w-4 h-4" fill="black" />
                 Play
               </button>
-              <button type="button" className={`h-11 w-11 rounded-full text-lg ${isLiked(selectedMedia?.id || '') ? 'bg-[#e50914]' : 'bg-white/10'}`} title="Like" onClick={() => {
-                markLike({ id: String(selectedMedia?.id), type: selectedMedia?.type || 'movie', title: title || '', poster: detail?.poster_path })
-                setTasteN((n) => n + 1)
-              }}>👍</button>
-              <button type="button" className={`h-11 w-11 rounded-full text-lg ${isDisliked(selectedMedia?.id || '') ? 'bg-white/25' : 'bg-white/10'}`} title="Dislike" onClick={() => {
-                markDislike({ id: String(selectedMedia?.id), type: selectedMedia?.type || 'movie', title: title || '' })
-                setTasteN((n) => n + 1)
-              }}>👎</button>
-              {pickOpen && (
-                <div className="w-full mt-3 rounded-2xl bg-black/55 border border-white/10 p-3 space-y-2">
-                  {(PLAYERS.filter((p) => {
-                const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
-                const op = isOnePiece(detail?.title || detail?.name || (selectedMedia as any)?.title)
-                if (op) return p.id === 'onepace'
-                if (anime) return ['vlc','pipe','torrentio','comet','zangetsu','miruro','animepahe','playtorrio','simplstream','vidy','vixsrc','vidnest','moviebox','pengu'].includes(p.id)
-                return ['vlc','pipe','torrentio','comet','playtorrio','simplstream','vidy','moviebox','vixsrc','vidnest'].includes(p.id)
-              })).map((p) => (
-                    <button key={p.id} type="button" className="w-full flex items-center justify-between h-10 px-3 rounded-xl bg-[#1a1016] border border-white/10 hover:border-[#e50914]/50 text-left text-white" onClick={() => {
-                      setPlayerPick(p.id)
-                      try { localStorage.setItem('mfy-player-engine', p.id) } catch {}
-                      handlePlay()
-                    }}>
-                      <span className="text-sm">{p.label}</span>
-                      <span className="text-[10px] text-[#e50914]">{p.q}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
               <button
                 type="button"
                 onClick={() => {
@@ -796,29 +690,6 @@ onKeyDown={(e) => {
             </div>
           </div>
         </div>
-        {selectedMedia?.type !== 'iptv' && (
-          <aside className="src-panel">
-            {resumeAt > 20 && <div className="src-resume">Resume from {clock(resumeAt)}</div>}
-            <div className="src-filters">
-              <button type="button" onClick={() => { setStreamOptions([]); setStreamNonce((n) => n + 1) }} title="Refresh sources">↻</button>
-              <button type="button" className={srcFilter === 'all' ? 'on' : ''} onClick={() => setSrcFilter('all')}>All</button>
-              {sourceNames.slice(0, 6).map((name) => (
-                <button key={name} type="button" className={srcFilter === name ? 'on' : ''} onClick={() => setSrcFilter(name)}>{name}</button>
-              ))}
-            </div>
-            {resolving && shownSources.length === 0 && <p className="src-empty">Looking for sources…</p>}
-            {!resolving && streamOptions.length === 0 && <p className="src-empty">{streamError || 'No sources yet.'}</p>}
-            {shownSources.map((s, i) => (
-              <button key={`${s.url || s.name || i}-${i}`} type="button" className="src-card" onClick={() => openStream(s)}>
-                <b>{String(s.name || s.title || s.provider || 'Source').slice(0, 72)}</b>
-                <small>{[s.provider, s.language || s.lang, s.seeds ? `${s.seeds} seeds` : ''].filter(Boolean).join(' · ')}</small>
-                <span className="src-badges">
-                  {streamBadges(s).map((b) => <i key={b.t + b.c} className={b.c}>{b.t}</i>)}
-                </span>
-              </button>
-            ))}
-          </aside>
-        )}
       </div>
 
       {/* Compact poster strip under hero (optional identity) */}

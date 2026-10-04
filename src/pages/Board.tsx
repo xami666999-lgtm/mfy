@@ -298,7 +298,7 @@ export default function Board() {
                 <button className="hero-play" type="button" onClick={() => {
                   const t = hero.media_type === 'tv' || hero.first_air_date ? 'tv' : 'movie'
                   setSelectedMedia({ id: hero.id, type: t })
-                  setCurrentStreamUrl(getPlayerUrl((localStorage.getItem('mfy-player-engine') as any) || 'vidy', t, hero.id, 1, 1))
+                  setCurrentStreamUrl(getPlayerUrl('playtorrio', t, hero.id, 1, 1))
                   setCurrentPage('player')
                 }}><Play fill="currentColor" size={16} /> Play</button>
                 <button className="hero-secondary" type="button" onClick={() => toggleList(hero)}>

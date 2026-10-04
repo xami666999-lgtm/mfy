@@ -366,7 +366,8 @@ function CalendarGrid({
             <b>{day.getDate()}</b>
             {items.map((item) => (
               <button key={item.key} type="button" onClick={() => onPick(item)}>
-                {item.title}
+                {item.poster ? <img src={`${POSTER_URL}${item.poster}`} alt="" /> : null}
+                <span>{item.title}</span>
                 <small>{item.note}</small>
               </button>
             ))}

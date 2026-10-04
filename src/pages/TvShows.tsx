@@ -27,7 +27,7 @@ export default function TvShows() {
 
   function play(item: any) {
     setSelectedMedia({ id: item.id, type: 'tv', title: item.name || item.title })
-    setCurrentStreamUrl(getPlayerUrl((localStorage.getItem('mfy-player-engine') as any) || 'vidy', 'tv', item.id, 1, 1))
+    setCurrentStreamUrl(getPlayerUrl('playtorrio', 'tv', item.id, 1, 1))
     setCurrentPage('player')
   }
 
@@ -52,7 +52,7 @@ export default function TvShows() {
 
   return (
     <div className="board page-fade-enter">
-      <PageHero item={popular[0] || airing[0]} kicker="SERIES" onPlay={() => (popular[0] || airing[0]) && play(popular[0] || airing[0])} />
+      <PageHero items={(popular.length ? popular : airing).slice(0, 8)} kicker="SERIES" onPlay={(item) => item && play(item)} />
       <div className="board-content px-6 pt-6">
         <TrailerRail title="Trailers" items={popular.slice(0, 8).map((x) => ({ id: x.id, type: 'tv' as const, title: x.name || x.title || 'Show', backdrop: x.backdrop_path }))} />
         <MediaShelf title="Popular Series" items={popular} onOpen={preview} />

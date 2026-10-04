@@ -45,7 +45,7 @@ export default function Anime() {
     const title = typeof item.title === 'string' ? item.title : (item.title?.english || item.title?.romaji || item.name)
     const type = item.media_type === 'movie' ? 'movie' : 'tv'
     setSelectedMedia({ id: item.id, type, isAnime: true, title } as any)
-    setCurrentStreamUrl(getPlayerUrl((localStorage.getItem('mfy-player-engine') as any) || 'vidy', type, item.id, 1, 1, true))
+    setCurrentStreamUrl(getPlayerUrl('zangetsu', type, item.id, 1, 1, true))
     setCurrentPage('player')
   }
 
@@ -104,7 +104,7 @@ export default function Anime() {
 
   return (
     <div className="board anime-page page-fade-enter">
-      <PageHero item={popular[0]} kicker="ANIME" onPlay={() => popular[0] && play(popular[0])} />
+      <PageHero items={popular.slice(0, 8)} kicker="ANIME" onPlay={(item) => item && play(item)} />
       <div className="board-content px-6 pt-6">
         <div className="flex gap-2 mb-4">
           {(['all', 'sub', 'dub'] as const).map((a) => (

@@ -62,8 +62,7 @@ export default function TitleSheet({ item, onClose }: { item: any; onClose: () =
       episode,
       isAnime: !!item.isAnime,
     } as any)
-    const engine = (localStorage.getItem('mfy-player-engine') as any) || 'vidy'
-    setCurrentStreamUrl(getPlayerUrl(engine, kind, item.id, season, episode))
+    setCurrentStreamUrl(getPlayerUrl(item.isAnime ? 'zangetsu' : 'playtorrio', kind, item.id, season, episode, !!item.isAnime))
     setCurrentPage('player')
     onClose()
   }

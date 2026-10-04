@@ -29,8 +29,7 @@ export default function Navbar() {
   return (
     <header className="mfy-navbar select-none">
       <button onClick={() => setCurrentPage('home')} className="brand" aria-label="MFY" type="button">
-        <img src="./icon.png" alt="" />
-        <span>MFY</span>
+        <img src="./icon.png" alt="MFY" />
       </button>
       <nav className="nav-tabs">
         {tabs.map((tab) => {
@@ -44,6 +43,7 @@ export default function Navbar() {
           )
         })}
       </nav>
+      <div className="nav-tools">
       <form className="nav-search" onSubmit={submit}>
         <Search size={14} />
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" aria-label="Search" />
@@ -56,6 +56,7 @@ export default function Navbar() {
         {currentProfile?.avatar ? <img src={currentProfile.avatar} alt="" /> : <b>{(currentProfile?.name || 'M')[0]}</b>}
       </button>
       <button type="button" className="nav-bug" onClick={() => setBug(true)}>Bug</button>
+      </div>
       {bug && <BugReport onClose={() => setBug(false)} />}
     </header>
   )
