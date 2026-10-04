@@ -1,11 +1,13 @@
-import { Bookmark, Heart, Star, Plus, Trash2, Play, List, Pencil, Check, X } from 'lucide-react'
+import { Bookmark, Heart, Star, Plus, Trash2, Play, List, Pencil, Check, X, Award } from 'lucide-react'
 import { useState } from 'react'
 import { useStore } from '../store'
 import { POSTER_URL } from '../api/tmdb'
 import { cn } from '../lib/utils'
 import { watchPercent } from '../lib/watchProgress'
+import { Achievements } from '../components/Achievements'
+import { viewingBadges } from '../lib/achievements'
 
-type Tab = 'watchlist' | 'favorites' | 'history' | 'lists'
+type Tab = 'watchlist' | 'favorites' | 'history' | 'lists' | 'badges'
 
 function posterUrl(path?: string | null) {
   if (!path) return ''
@@ -43,6 +45,7 @@ export default function Library() {
     { id: 'favorites' as const, label: 'Favorites', icon: Heart, count: favorites.length },
     { id: 'history' as const, label: 'History', icon: Star, count: watchHistory.length },
     { id: 'lists' as const, label: 'Collections', icon: List, count: customLists.length },
+    { id: 'badges' as const, label: 'Badges', icon: Award, count: viewingBadges(watchHistory).filter((b) => b.earned).length },
   ]
 
   function Grid({ items, onRemove }: { items: any[]; onRemove?: (item: any) => void }) {
@@ -96,7 +99,7 @@ export default function Library() {
     <div className="board page-fade-enter nv-page" style={{ minHeight: '100%' }}>
       <div className="px-8 pt-8 pb-4">
         <h1 className="text-[34px] font-semibold text-white tracking-tight" style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}>Library</h1>
-        <p className="text-sm text-white/45 mt-1 mb-5">Saved, favorites, history, collections</p>
+        <p className="text-sm text-white/45 mt-1 mb-5">Saved, favorites, history, collections, badges</p>
         <div className="flex gap-2 flex-wrap">
           {tabs.map((t) => {
             const Icon = t.icon
@@ -124,6 +127,7 @@ export default function Library() {
           <Grid items={favorites} onRemove={(i) => removeFavorite(i.mediaId, i.mediaType)} />
         )}
         {tab === 'history' && <Grid items={watchHistory} />}
+        {tab === 'badges' && <Achievements history={watchHistory} />}
         {tab === 'lists' && (
           <div className="space-y-6">
             <div className="flex gap-2 max-w-xl">

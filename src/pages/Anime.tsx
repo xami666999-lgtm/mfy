@@ -5,6 +5,7 @@ import { jikan } from '../api/jikan'
 import { useStore } from '../store'
 import { MediaShelf } from '../components/MediaShelf'
 import PageHero from '../components/PageHero'
+import { TrailerRail } from '../components/TrailerRail'
 import { OFFLINE_ANIME } from '../data/offlineCatalog'
 import { openAnime } from '../api/animeOpen'
 import { addonCatalog } from '../api/stremioAddons'
@@ -108,6 +109,15 @@ export default function Anime() {
             ))}
           </div>
         </section>
+        <TrailerRail
+          title="Trailers"
+          items={popular.filter((x) => String(x.poster_path || '').startsWith('/')).slice(0, 8).map((x) => ({
+            id: Number(x.id),
+            type: x.media_type === 'movie' ? 'movie' as const : 'tv' as const,
+            title: (typeof x.title === 'string' ? x.title : x.name) || 'Anime',
+            backdrop: String(x.backdrop_path || '').startsWith('/') ? x.backdrop_path : null,
+          }))}
+        />
         <MediaShelf title="Airing calendar" items={calendar} onOpen={open} />
         <MediaShelf title="Popular Anime" items={(() => {
           const list = audio === 'dub'

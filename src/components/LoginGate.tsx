@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useStore } from '../store'
 import { GoogleUser, googleClientId, renderGoogleButton } from '../auth/google'
 import ProfileManage from './ProfileManage'
+import { sendVerificationEmail } from '../lib/verifyEmail'
 
 const AVATARS = Array.from({ length: 8 }, (_, i) => `https://api.dicebear.com/9.x/adventurer/svg?seed=mfy${i + 1}`)
 
@@ -20,7 +21,7 @@ export default function LoginGate() {
   const [letterboxd, setLetterboxd] = useState('')
   const [serializdMail, setSerializdMail] = useState('')
   const [serializdPass, setSerializdPass] = useState('')
-  const [mode, setMode] = useState<'signin' | 'create' | 'reset'>(hasAccount ? 'signin' : 'create')
+  const [mode, setMode] = useState<'signin' | 'create' | 'reset' | 'verify'>(hasAccount ? 'signin' : 'create')
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -32,6 +33,10 @@ export default function LoginGate() {
   const [editing, setEditing] = useState(false)
   const [manageId, setManageId] = useState('')
   const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [pendingCode, setPendingCode] = useState('')
+  const [verifyNote, setVerifyNote] = useState('')
+  const [verifyPurpose, setVerifyPurpose] = useState<'create' | 'reset'>('create')
 
   function enter(id: string) {
     switchProfile(id)
@@ -71,10 +76,46 @@ export default function LoginGate() {
     if (!validEmail(email)) return setErr('Enter a Gmail / email.')
     if (password.length < 6) return setErr('Password min 6 characters.')
     if (password !== confirm) return setErr('Passwords do not match.')
+    void deliver(email.trim().toLowerCase(), 'create')
+  }
+
+  async function deliver(to: string, purpose: 'create' | 'reset') {
+    setBusy(true)
+    setErr('')
+    try {
+      const result = await sendVerificationEmail(to)
+      setVerifyPurpose(purpose)
+      setEmail(to)
+      if ('activation' in result) {
+        setPendingCode('')
+        setVerifyNote('We emailed that address. Open it and confirm, then tap Resend code. The next email has your 6-digit code.')
+        setMode('verify')
+        return
+      }
+      setPendingCode(result.code)
+      setVerifyNote(`A 6-digit code is on its way to ${to}.`)
+      setCode('')
+      setMode('verify')
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : 'Could not send the verification email.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function confirmCode() {
+    setErr('')
+    if (!pendingCode) return setErr('Confirm the email first, then resend the code.')
+    if (code.trim() !== pendingCode) return setErr('That code does not match the email.')
+    setCode('')
+    if (verifyPurpose === 'reset') {
+      setSent('ok')
+      setMode('reset')
+      return
+    }
     const id = addProfile(username.trim(), avatar, email.trim().toLowerCase())
     setProfilePin(id, password)
     setUsername('')
-    setEmail('')
     setPassword('')
     setConfirm('')
     let already = false
@@ -99,19 +140,20 @@ export default function LoginGate() {
 
   function sendReset() {
     const p = useStore.getState().profiles.find((x) => (x.email || '').toLowerCase() === email.trim().toLowerCase())
-    if (!p) return setErr('No account uses that Gmail.')
-    const c = String(Math.floor(100000 + Math.random() * 900000))
-    setSent(c)
-    setErr('')
+    if (!p?.email) return setErr('No account uses that Gmail.')
+    void deliver(p.email, 'reset')
   }
 
   function applyReset() {
     const p = useStore.getState().profiles.find((x) => (x.email || '').toLowerCase() === email.trim().toLowerCase())
     if (!p) return setErr('No account uses that Gmail.')
-    if (code !== sent) return setErr('Wrong code.')
+    if (sent !== 'ok') return setErr('Verify the email code first.')
     if (password.length < 6 || password !== confirm) return setErr('Set a matching password (6+).')
     setProfilePin(p.id, password)
     setMode('signin')
+    setSent('')
+    setPassword('')
+    setConfirm('')
     setErr('Password saved. Sign in.')
   }
 
@@ -212,6 +254,25 @@ export default function LoginGate() {
     )
   }
 
+  if (mode === 'verify') {
+    return (
+      <div className="nf-gate" style={{ justifyContent: 'flex-start', paddingTop: 72 }}>
+        <div className="w-full max-w-sm">
+          <p className="text-center text-white/40 text-xs tracking-[0.35em] font-bold mb-2">MFY</p>
+          <h1 className="text-center text-2xl font-bold text-white mb-3">Check your email</h1>
+          <p className="text-sm text-white/55 text-center mb-5">{verifyNote || `Enter the code sent to ${email}.`}</p>
+          <div className="space-y-3">
+            <input className={field} placeholder="6-digit code" value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" />
+            {err && <p className="text-red-400 text-xs">{err}</p>}
+            <button type="button" className="w-full h-11 rounded-xl bg-white text-black font-semibold" disabled={busy} onClick={confirmCode}>Verify</button>
+            <button type="button" className="w-full h-11 rounded-xl bg-white/10 text-white text-sm" disabled={busy} onClick={() => void deliver(email, verifyPurpose)}>{busy ? 'Sending…' : 'Resend code'}</button>
+            <button type="button" className="w-full text-[11px] text-white/40" onClick={() => { setMode(verifyPurpose === 'reset' ? 'reset' : 'create'); setErr('') }}>Back</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="nf-gate" style={{ justifyContent: 'flex-start', paddingTop: 72 }}>
       <div className="w-full max-w-sm">
@@ -238,18 +299,16 @@ export default function LoginGate() {
           <input className={field} placeholder="Gmail" value={email} onChange={(e) => setEmail(e.target.value)} />
           {mode !== 'reset' && <input className={field} type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />}
           {mode === 'create' && <input className={field} type="password" placeholder="Confirm password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />}
-          {mode === 'reset' && !sent && <button type="button" className="w-full h-11 rounded-xl bg-white/10 text-white text-sm" onClick={sendReset}>Send code</button>}
-          {mode === 'reset' && sent && (
+          {mode === 'reset' && !sent && <button type="button" className="w-full h-11 rounded-xl bg-white/10 text-white text-sm" disabled={busy} onClick={sendReset}>{busy ? 'Sending…' : 'Email me a code'}</button>}
+          {mode === 'reset' && sent === 'ok' && (
             <>
-              <p className="text-[11px] text-white/50">Code preview: <b>{sent}</b></p>
-              <input className={field} placeholder="Code" value={code} onChange={(e) => setCode(e.target.value)} />
               <input className={field} type="password" placeholder="New password" value={password} onChange={(e) => setPassword(e.target.value)} />
               <input className={field} type="password" placeholder="Confirm" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
               <button type="button" className="w-full h-11 rounded-xl bg-white text-black font-semibold" onClick={applyReset}>Save password</button>
             </>
           )}
           {err && <p className="text-red-400 text-xs">{err}</p>}
-          {mode === 'create' && <button type="button" className="w-full h-11 rounded-xl bg-white text-black font-semibold" onClick={create}>Continue</button>}
+          {mode === 'create' && <button type="button" className="w-full h-11 rounded-xl bg-white text-black font-semibold" disabled={busy} onClick={create}>{busy ? 'Sending email…' : 'Continue'}</button>}
           {mode === 'signin' && <button type="button" className="w-full h-11 rounded-xl bg-white text-black font-semibold" onClick={signin}>Sign in</button>}
         </div>
         <div className="mt-4 text-center text-[11px] text-white/35 space-y-1">

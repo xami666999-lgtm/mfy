@@ -735,7 +735,7 @@ onKeyDown={(e) => {
               id="mfy-trailer-frame"
               width="100%"
               height="100%"
-              src={`https://yewtu.be/embed/${trailerKey}?autoplay=1`}
+              src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&rel=0`}
               referrerPolicy="no-referrer"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -746,7 +746,7 @@ onKeyDown={(e) => {
               <button type="button" className="h-8 px-3 rounded-full bg-white/15 text-white text-xs" onClick={() => {
                 setTrailerKey(trailerKey)
                 const el = document.querySelector('#mfy-trailer-frame') as HTMLIFrameElement | null
-                if (el) el.src = `https://yewtu.be/embed/${trailerKey}?autoplay=1`
+                if (el) el.src = `https://www.youtube.com/embed/${trailerKey}?autoplay=1&rel=0`
               }}>Try other player</button>
             </div>
           </div>

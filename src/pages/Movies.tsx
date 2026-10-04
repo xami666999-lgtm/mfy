@@ -3,6 +3,7 @@ import { tmdb } from '../api/tmdb'
 import { useStore } from '../store'
 import { MediaShelf } from '../components/MediaShelf'
 import PageHero from '../components/PageHero'
+import { TrailerRail } from '../components/TrailerRail'
 
 const GENRES = [
   { id: 28, name: 'Action' }, { id: 12, name: 'Adventure' }, { id: 16, name: 'Animation' },
@@ -41,6 +42,7 @@ export default function Movies() {
     <div className="board page-fade-enter">
       <PageHero item={popular[0] || now[0]} kicker="MOVIE" onPlay={() => (popular[0] || now[0]) && open(popular[0] || now[0])} />
       <div className="board-content px-6 pt-6">
+        <TrailerRail title="Trailers" items={popular.slice(0, 8).map((x) => ({ id: x.id, type: 'movie' as const, title: x.title || x.name || 'Movie', backdrop: x.backdrop_path }))} />
         <MediaShelf title="Popular Movies" items={popular} onOpen={open} />
         <MediaShelf title="Now Playing" items={now} onOpen={open} />
         {GENRES.map((g) => (

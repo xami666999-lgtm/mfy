@@ -48,6 +48,9 @@ export default function Settings() {
   const [simklToken, setSimklToken] = useState(() => {
     try { return localStorage.getItem('mfy-simkl-token') || '' } catch { return '' }
   })
+  const [hideGlobalCal, setHideGlobalCal] = useState(() => {
+    try { return localStorage.getItem('mfy-cal-hide-global') === '1' } catch { return false }
+  })
 
   const api = (window as any).electronAPI
 
@@ -208,6 +211,17 @@ export default function Settings() {
       <p className="text-xs text-white/40 mb-5 max-w-xl leading-relaxed">Movies and series come from TMDB. Playback uses the sources you connect.</p>
 
       <div className="space-y-4">
+        <Section title="Calendar">
+          <Toggle
+            label="Hide Global Release Calendar"
+            description="The Calendar page will only show titles from your Library and Watchlist"
+            checked={hideGlobalCal}
+            onChange={(v) => {
+              setHideGlobalCal(v)
+              try { localStorage.setItem('mfy-cal-hide-global', v ? '1' : '0') } catch {}
+            }}
+          />
+        </Section>
         <Section title="API Keys">
           <Input label="TMDB API Key" value={tmdbKey} onChange={setTmdbKey} placeholder="Your TMDB API key" link="https://www.themoviedb.org/settings/api" />
           <Input label="OMDb API Key" value={omdbKey} onChange={setOmdbKey} placeholder="Optional — IMDb + Rotten Tomatoes scores" link="https://www.omdbapi.com/apikey.aspx" />
