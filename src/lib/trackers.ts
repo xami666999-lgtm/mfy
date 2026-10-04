@@ -1,5 +1,6 @@
 import { serializdApi } from '../api/serializd'
 import { anilist } from '../api/anilist'
+import { syncFinished } from './syncWatch'
 
 export function letterboxdUrl(title: string) {
   const q = encodeURIComponent(title)
@@ -46,7 +47,17 @@ export async function syncRating(opts: {
     } catch {}
   }
 
-  // Serializd — TV series only (never anime / movies)
+  try {
+    const pushed = await syncFinished({
+      title: title || String(opts.title),
+      tmdbId: opts.tmdbId || '',
+      type: opts.type,
+      season: opts.season,
+      episode: opts.episode,
+    })
+    notes.push(...pushed)
+  } catch {}
+
   if (opts.serializdOn && opts.type === 'tv') {
     try {
       const id = Number(opts.tmdbId)
@@ -56,28 +67,19 @@ export async function syncRating(opts: {
         } else {
           await serializdApi.logShow(id)
         }
-        notes.push('Serializd')
+        if (!notes.includes('Serializd')) notes.push('Serializd')
       }
     } catch {}
   }
 
-  // AniList — anime, manga, novels
   if (opts.type === 'anime' || opts.type === 'manga' || opts.type === 'novel') {
     try {
       const q = title && !/^\d+$/.test(title) ? title : String(opts.title)
       await anilist.saveScore(q, opts.score, opts.type === 'anime' ? 'ANIME' : 'MANGA')
-      notes.push('AniList')
-      if (opts.type === 'anime') {
-        const api = (window as any).electronAPI
-        const url = `https://anisync.qzz.io/?title=${encodeURIComponent(q)}&ep=${opts.episode || 1}`
-        if (api?.openExternal) api.openExternal(url)
-        else window.open(url, '_blank')
-        notes.push('AniSync')
-      }
+      if (!notes.includes('AniList')) notes.push('AniList')
     } catch {}
   }
 
-  // Letterboxd — movies only
   if (opts.type === 'movie') {
     try {
       const api = (window as any).electronAPI
