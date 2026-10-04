@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { Home, Film, Tv, Sparkles, LayoutGrid, Youtube, Music, Trophy, Bookmark, Settings, CalendarDays, Search } from 'lucide-react'
+import { Home, Film, Tv, Sparkles, LayoutGrid, Trophy, Bookmark, Settings, CalendarDays, Search } from 'lucide-react'
 import { useStore } from '../store'
-import ThemePicker from './ThemePicker'
 
 const TABS: [string, string, any][] = [
   ['home', 'Home', Home],
@@ -13,8 +12,6 @@ const TABS: [string, string, any][] = [
 const MORE: [string, string, any][] = [
   ['search', 'Search', Search],
   ['calendar', 'Calendar', CalendarDays],
-  ['youtube', 'YouTube', Youtube],
-  ['music', 'Music', Music],
   ['sports', 'Sport', Trophy],
   ['library', 'Library', Bookmark],
   ['settings', 'Settings', Settings],
@@ -27,7 +24,6 @@ export default function PhoneTabBar() {
 
   return (
     <>
-      {currentPage === 'settings' && <ThemePicker />}
       {more && (
         <div className="mfy-more" onClick={() => setMore(false)}>
           <div className="mfy-more-sheet" onClick={(e) => e.stopPropagation()}>

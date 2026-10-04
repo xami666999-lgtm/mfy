@@ -94,9 +94,7 @@ export function MediaShelf({
           <div className="poster-caption">
             <div className="poster-caption-title">{titleOf(item)}</div>
             <div className="poster-caption-sub">
-              {year ? `${year}-` : ''}
-              {genre ? ` ${genre}` : ''}
-              {score ? ` · ★ ${score.toFixed(1)}` : ''}
+              {[year, genre, score ? `★ ${score.toFixed(1)}` : ''].filter(Boolean).join(' · ')}
             </div>
           </div>
           </div>

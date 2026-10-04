@@ -36,8 +36,8 @@ export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId:
   const dub = anime ? 'dub=true&' : ''
   if (source === 'zangetsu') {
     return movie
-      ? `https://player.videasy.net/movie/${tmdbId}?${dub}color=FF1493`
-      : `https://player.videasy.net/tv/${tmdbId}/${s}/${e}?${dub}color=FF1493`
+      ? `https://player.videasy.net/movie/${tmdbId}?${dub}color=E50914`
+      : `https://player.videasy.net/tv/${tmdbId}/${s}/${e}?${dub}color=E50914`
   }
   if (source === 'miruro') {
     return movie

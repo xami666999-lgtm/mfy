@@ -4,6 +4,8 @@ import { useStore } from '../store'
 import { MediaShelf } from '../components/MediaShelf'
 import PageHero from '../components/PageHero'
 import { TrailerRail } from '../components/TrailerRail'
+import TitleSheet from '../components/TitleSheet'
+import { getPlayerUrl } from '../api/vidy'
 
 const GENRES = [
   { id: 28, name: 'Action' }, { id: 12, name: 'Adventure' }, { id: 16, name: 'Animation' },
@@ -13,14 +15,20 @@ const GENRES = [
 ]
 
 export default function Movies() {
-  const { setSelectedMedia, setCurrentPage } = useStore()
+  const { setSelectedMedia, setCurrentPage, setCurrentStreamUrl } = useStore()
   const [popular, setPopular] = useState<any[]>([])
   const [now, setNow] = useState<any[]>([])
   const [rows, setRows] = useState<Record<number, any[]>>({})
+  const [sheet, setSheet] = useState<any>(null)
 
-  function open(item: any) {
-    setSelectedMedia({ id: item.id, type: 'movie' })
-    setCurrentPage('detail')
+  function preview(item: any) {
+    setSheet({ ...item, media_type: 'movie' })
+  }
+
+  function play(item: any) {
+    setSelectedMedia({ id: item.id, type: 'movie', title: item.title || item.name })
+    setCurrentStreamUrl(getPlayerUrl((localStorage.getItem('mfy-player-engine') as any) || 'vidy', 'movie', item.id, 1, 1))
+    setCurrentPage('player')
   }
 
   useEffect(() => {
@@ -40,15 +48,16 @@ export default function Movies() {
 
   return (
     <div className="board page-fade-enter">
-      <PageHero item={popular[0] || now[0]} kicker="MOVIE" onPlay={() => (popular[0] || now[0]) && open(popular[0] || now[0])} />
+      <PageHero item={popular[0] || now[0]} kicker="MOVIE" onPlay={() => (popular[0] || now[0]) && play(popular[0] || now[0])} />
       <div className="board-content px-6 pt-6">
         <TrailerRail title="Trailers" items={popular.slice(0, 8).map((x) => ({ id: x.id, type: 'movie' as const, title: x.title || x.name || 'Movie', backdrop: x.backdrop_path }))} />
-        <MediaShelf title="Popular Movies" items={popular} onOpen={open} />
-        <MediaShelf title="Now Playing" items={now} onOpen={open} />
+        <MediaShelf title="Popular Movies" items={popular} onOpen={preview} />
+        <MediaShelf title="Now Playing" items={now} onOpen={preview} />
         {GENRES.map((g) => (
-          <MediaShelf key={g.id} title={g.name} items={rows[g.id] || []} onOpen={open} />
+          <MediaShelf key={g.id} title={g.name} items={rows[g.id] || []} onOpen={preview} />
         ))}
       </div>
+      {sheet && <TitleSheet item={sheet} onClose={() => setSheet(null)} />}
     </div>
   )
 }

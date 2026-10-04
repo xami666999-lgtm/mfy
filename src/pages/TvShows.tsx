@@ -4,6 +4,8 @@ import { useStore } from '../store'
 import { MediaShelf } from '../components/MediaShelf'
 import PageHero from '../components/PageHero'
 import { TrailerRail } from '../components/TrailerRail'
+import TitleSheet from '../components/TitleSheet'
+import { getPlayerUrl } from '../api/vidy'
 
 const GENRES = [
   { id: 10759, name: 'Action & Adventure' }, { id: 16, name: 'Animation' }, { id: 35, name: 'Comedy' },
@@ -13,14 +15,20 @@ const GENRES = [
 ]
 
 export default function TvShows() {
-  const { setSelectedMedia, setCurrentPage } = useStore()
+  const { setSelectedMedia, setCurrentPage, setCurrentStreamUrl } = useStore()
   const [popular, setPopular] = useState<any[]>([])
   const [airing, setAiring] = useState<any[]>([])
   const [rows, setRows] = useState<Record<number, any[]>>({})
+  const [sheet, setSheet] = useState<any>(null)
 
-  function open(item: any) {
-    setSelectedMedia({ id: item.id, type: 'tv' })
-    setCurrentPage('detail')
+  function preview(item: any) {
+    setSheet({ ...item, media_type: 'tv' })
+  }
+
+  function play(item: any) {
+    setSelectedMedia({ id: item.id, type: 'tv', title: item.name || item.title })
+    setCurrentStreamUrl(getPlayerUrl((localStorage.getItem('mfy-player-engine') as any) || 'vidy', 'tv', item.id, 1, 1))
+    setCurrentPage('player')
   }
 
   useEffect(() => {
@@ -44,15 +52,16 @@ export default function TvShows() {
 
   return (
     <div className="board page-fade-enter">
-      <PageHero item={popular[0] || airing[0]} kicker="SERIES" onPlay={() => (popular[0] || airing[0]) && open(popular[0] || airing[0])} />
+      <PageHero item={popular[0] || airing[0]} kicker="SERIES" onPlay={() => (popular[0] || airing[0]) && play(popular[0] || airing[0])} />
       <div className="board-content px-6 pt-6">
         <TrailerRail title="Trailers" items={popular.slice(0, 8).map((x) => ({ id: x.id, type: 'tv' as const, title: x.name || x.title || 'Show', backdrop: x.backdrop_path }))} />
-        <MediaShelf title="Popular Series" items={popular} onOpen={open} />
-        <MediaShelf title="Airing Now" items={airing} onOpen={open} />
+        <MediaShelf title="Popular Series" items={popular} onOpen={preview} />
+        <MediaShelf title="Airing Now" items={airing} onOpen={preview} />
         {GENRES.map((g) => (
-          <MediaShelf key={g.id} title={g.name} items={rows[g.id] || []} onOpen={open} />
+          <MediaShelf key={g.id} title={g.name} items={rows[g.id] || []} onOpen={preview} />
         ))}
       </div>
+      {sheet && <TitleSheet item={sheet} onClose={() => setSheet(null)} />}
     </div>
   )
 }

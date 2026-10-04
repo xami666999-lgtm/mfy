@@ -2,15 +2,17 @@ import { useEffect, useState } from 'react'
 import { useStore } from '../store'
 import { tmdb } from '../api/tmdb'
 import { fetchIntroSegments } from '../api/introdb'
-import { isAnimeItem } from '../lib/trackers'
 
 export default function IntroSkip() {
   const { selectedMedia, currentPage } = useStore()
   const [seg, setSeg] = useState<{ start: number; end: number; kind: string } | null>(null)
-  const [offset, setOffset] = useState(0)
+  const [now, setNow] = useState(0)
+  const [gone, setGone] = useState(false)
 
   useEffect(() => {
     setSeg(null)
+    setNow(0)
+    setGone(false)
     if (currentPage !== 'player' || !selectedMedia) return
     if (selectedMedia.type === 'iptv') return
     let live = true
@@ -24,8 +26,8 @@ export default function IntroSkip() {
           episode: selectedMedia.episode || 1,
           isMovie: selectedMedia.type === 'movie',
         })
-        const intro = rows.find((r) => r.kind === 'intro') || rows.find((r) => r.kind === 'recap') || rows[0]
-        if (live) setSeg(intro || null)
+        const intro = rows.find((r) => r.kind === 'intro') || rows.find((r) => r.kind === 'recap') || null
+        if (live) setSeg(intro)
       } catch {
         if (live) setSeg(null)
       }
@@ -33,41 +35,32 @@ export default function IntroSkip() {
     return () => { live = false }
   }, [currentPage, selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode, selectedMedia?.type])
 
-  function seekTo(t: number) {
+  useEffect(() => {
+    if (currentPage !== 'player' || !seg) return
+    const id = window.setInterval(() => {
+      const v = document.querySelector('video') as HTMLVideoElement | null
+      if (v && Number.isFinite(v.currentTime) && v.currentTime > 0) setNow(v.currentTime)
+    }, 500)
+    return () => window.clearInterval(id)
+  }, [currentPage, seg])
+
+  if (currentPage !== 'player' || !seg || gone) return null
+  const readable = now > 0.4
+  const inWindow = !readable || (now >= Math.max(0, seg.start - 1) && now <= seg.end + 0.4)
+  if (!inWindow) return null
+
+  function skip() {
+    const t = Math.max(0, seg!.end + 0.4)
     const w = document.querySelector('webview') as any
     try { w?.executeJavaScript?.(`(() => { const v = document.querySelector('video'); if (v) v.currentTime = ${t}; })()`) } catch {}
     const v = document.querySelector('video') as HTMLVideoElement | null
     if (v) try { v.currentTime = t } catch {}
+    setGone(true)
   }
-
-  function skip() {
-    if (!seg) return
-    seekTo(Math.max(0, seg.end + 0.4))
-  }
-
-  function resync() {
-    const next = Math.round((offset + 0.5) * 10) / 10
-    setOffset(next)
-    try { localStorage.setItem('mfy-sub-offset', String(next)) } catch {}
-    window.dispatchEvent(new CustomEvent('mfy-sub-resync', { detail: next }))
-    const w = document.querySelector('webview') as any
-    try {
-      w?.executeJavaScript?.(`(() => { document.querySelectorAll('video').forEach(v => { [...(v.textTracks||[])].forEach(tr => { try { tr.mode = 'showing' } catch {} }) }) })()`)
-    } catch {}
-  }
-
-  if (currentPage !== 'player') return null
 
   return (
-    <div className="fixed bottom-24 right-8 z-[80] flex flex-col items-end gap-2">
-      {seg && (
-        <button type="button" onClick={skip} className="h-11 px-5 rounded-full bg-white text-black text-sm font-semibold shadow-2xl">
-          Skip {seg.kind}
-        </button>
-      )}
-      <button type="button" onClick={resync} className="h-10 px-4 rounded-full bg-black/70 border border-white/20 text-white text-xs font-semibold">
-        Resync subs {offset ? `+${offset}s` : ''}
-      </button>
-    </div>
+    <button type="button" className="intro-skip" onClick={skip}>
+      Skip {seg.kind}
+    </button>
   )
 }

@@ -443,10 +443,15 @@ export default function MetaDetails() {
 
             {/* Ratings row */}
             <div className="flex flex-wrap items-center gap-2 mb-4">
-              {(omdb?.imdbRating || detail.vote_average > 0) && (
+              {omdb?.imdbRating && (
                 <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
                   <span className="bg-[#f5c518] text-black text-[9px] font-black px-1 rounded">IMDb</span>
-                  {omdb?.imdbRating || Number(detail.vote_average).toFixed(1)}
+                  {omdb.imdbRating}
+                </span>
+              )}
+              {detail.vote_average > 0 && (
+                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
+                  ★ {Number(detail.vote_average).toFixed(1)}
                 </span>
               )}
               {aniScore && (

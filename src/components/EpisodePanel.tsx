@@ -83,7 +83,7 @@ export default function EpisodePanel() {
     <>
       <button
         type="button"
-        className="fixed z-[85] right-5 bottom-24 h-11 px-4 rounded-full bg-black/70 border border-white/15 text-white text-sm font-medium backdrop-blur-md hover:bg-black/85"
+        className="fixed z-[70] left-5 bottom-6 h-10 px-4 rounded-md bg-white text-black text-sm font-semibold shadow-lg"
         onClick={() => setOpen(true)}
         title="Episodes (E)"
       >

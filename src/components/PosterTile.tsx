@@ -26,14 +26,12 @@ export function PosterTile({
     <button type="button" className="nv-card" onClick={onClick}>
       <span className="nv-poster">
         {src ? <img src={src} alt="" loading="lazy" referrerPolicy="no-referrer" /> : <div className="ph">{title}</div>}
-        {(genre || star) && (
-          <em className="nv-foot">{[genre, star ? `★ ${star}` : ''].filter(Boolean).join('  ')}</em>
-        )}
+        {star && <em className="nv-rate">★ {star}</em>}
         {badge ? <BadgeImg className="nv-badge" src={badge} alt="" /> : null}
         {pct > 2 && <i className="nv-prog" style={{ width: `${Math.min(100, pct)}%` }} />}
       </span>
       <strong>{title}</strong>
-      {year ? <small>{year}</small> : null}
+      {(year || genre) ? <small>{[year, genre].filter(Boolean).join(' · ')}</small> : null}
     </button>
   )
 }

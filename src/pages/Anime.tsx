@@ -1,35 +1,63 @@
 import { useEffect, useState } from 'react'
-import { tmdb } from '../api/tmdb'
+import { tmdb, BACKDROP_URL } from '../api/tmdb'
 import { anilist } from '../api/anilist'
 import { jikan } from '../api/jikan'
 import { useStore } from '../store'
 import { MediaShelf } from '../components/MediaShelf'
 import PageHero from '../components/PageHero'
 import { TrailerRail } from '../components/TrailerRail'
+import TitleSheet from '../components/TitleSheet'
+import TitleLogo from '../components/TitleLogo'
+import { getPlayerUrl } from '../api/vidy'
 import { OFFLINE_ANIME } from '../data/offlineCatalog'
 import { openAnime } from '../api/animeOpen'
 import { addonCatalog } from '../api/stremioAddons'
 
+const FRANCHISES = [
+  { id: 37854, name: 'One Piece', tint: '#e11d2e' },
+  { id: 46260, name: 'Naruto', tint: '#f59e0b' },
+  { id: 85937, name: 'Demon Slayer', tint: '#16a34a' },
+  { id: 95479, name: 'Jujutsu Kaisen', tint: '#7c3aed' },
+  { id: 1429, name: 'Attack on Titan', tint: '#b45309' },
+  { id: 60572, name: 'Pokémon', tint: '#eab308' },
+  { id: 12609, name: 'Dragon Ball', tint: '#f97316' },
+  { id: 30984, name: 'Bleach', tint: '#111827' },
+  { id: 73223, name: 'Black Clover', tint: '#14532d' },
+]
+
 export default function Anime() {
-  const { setSelectedMedia, setCurrentPage } = useStore()
+  const { setSelectedMedia, setCurrentPage, setCurrentStreamUrl } = useStore()
   const [popular, setPopular] = useState<any[]>(OFFLINE_ANIME || [])
   const [upcoming, setUpcoming] = useState<any[]>([])
   const [rows, setRows] = useState<Record<string, any[]>>({})
   const [audio, setAudio] = useState<'all' | 'sub' | 'dub'>('all')
   const [calendar, setCalendar] = useState<any[]>([])
+  const [sheet, setSheet] = useState<any>(null)
+  const [frArt, setFrArt] = useState<Record<number, string>>({})
 
   function open(item: any) {
     const title = typeof item.title === 'string' ? item.title : (item.title?.english || item.title?.romaji || item.name)
     const tmdbPoster = String(item.poster_path || '').startsWith('/')
     if (tmdbPoster) {
-      setSelectedMedia({ id: item.id, type: item.media_type === 'movie' ? 'movie' : 'tv', isAnime: true, title } as any)
-      setCurrentPage('detail')
+      setSheet({ ...item, title, name: title, media_type: item.media_type === 'movie' ? 'movie' : 'tv', isAnime: true })
       return
     }
     openAnime({ ...item, title: { english: title } }, (id, type) => {
       setSelectedMedia({ id, type, isAnime: true, title } as any)
       setCurrentPage('detail')
     })
+  }
+
+  function play(item: any) {
+    if (!String(item?.poster_path || '').startsWith('/')) {
+      open(item)
+      return
+    }
+    const title = typeof item.title === 'string' ? item.title : (item.title?.english || item.title?.romaji || item.name)
+    const type = item.media_type === 'movie' ? 'movie' : 'tv'
+    setSelectedMedia({ id: item.id, type, isAnime: true, title } as any)
+    setCurrentStreamUrl(getPlayerUrl((localStorage.getItem('mfy-player-engine') as any) || 'vidy', type, item.id, 1, 1, true))
+    setCurrentPage('player')
   }
 
   useEffect(() => {
@@ -77,35 +105,31 @@ export default function Anime() {
     addonCatalog('animeworld').then((list) => { if (list.length) setRows((r) => ({ ...r, AnimeWorld: list })) }).catch(() => {})
     addonCatalog('animecatalogs').then((list) => { if (list.length) setRows((r) => ({ ...r, 'Anime catalogs': list })) }).catch(() => {})
     addonCatalog('onepace').then((list) => { if (list.length) setRows((r) => ({ ...r, 'One Pace': list })) }).catch(() => {})
+    FRANCHISES.forEach((f) => {
+      tmdb.getTVDetail(f.id).then((d) => {
+        const path = d?.backdrop_path || d?.poster_path
+        if (path) setFrArt((prev) => ({ ...prev, [f.id]: path }))
+      }).catch(() => {})
+    })
   }, [])
 
   return (
-    <div className="board page-fade-enter">
-      <PageHero item={popular[0]} kicker="ANIME" onPlay={() => popular[0] && open(popular[0])} />
+    <div className="board anime-page page-fade-enter">
+      <PageHero item={popular[0]} kicker="ANIME" onPlay={() => popular[0] && play(popular[0])} />
       <div className="board-content px-6 pt-6">
         <div className="flex gap-2 mb-4">
           {(['all', 'sub', 'dub'] as const).map((a) => (
-            <button key={a} type="button" className={`h-8 px-3 rounded-full text-xs ${audio === a ? 'bg-[#e50914]' : 'bg-white/10'}`} onClick={() => setAudio(a)}>{a.toUpperCase()}</button>
+            <button key={a} type="button" className={`h-8 px-3 rounded-full text-xs font-semibold ${audio === a ? 'bg-[#e50914] text-white' : 'bg-white/10 text-white/80'}`} onClick={() => setAudio(a)}>{a.toUpperCase()}</button>
           ))}
         </div>
         <section className="media-row">
           <div className="media-row-header"><h2 className="media-row-title">Anime franchises</h2></div>
-          <div className="scroll-row">
-            {[
-              { q: 'One Piece', name: 'One Piece' },
-              { q: 'Naruto', name: 'Naruto' },
-              { q: 'Demon Slayer', name: 'Demon Slayer' },
-              { q: 'Jujutsu Kaisen', name: 'Jujutsu Kaisen' },
-              { q: 'Studio Ghibli', name: 'Ghibli' },
-              { q: 'Pokemon', name: 'Pokémon' },
-              { q: 'Attack on Titan', name: 'Attack on Titan' },
-            ].map((f) => (
-              <button key={f.q} type="button" className="mfy-live-chip shrink-0 h-14 px-4 rounded-2xl bg-white/5 border border-white/10 text-sm hover:scale-105 transition-transform" onClick={() => {
-                tmdb.searchMulti(f.q).then((d) => {
-                  const hit = (d?.results || []).find((x: any) => x.media_type === 'tv' || x.media_type === 'movie')
-                  if (hit) open(hit)
-                }).catch(() => {})
-              }}>{f.name}</button>
+          <div className="fr-row">
+            {FRANCHISES.map((f) => (
+              <button key={f.id} type="button" className="banner short fr" style={{ background: f.tint }} onClick={() => setSheet({ id: f.id, name: f.name, first_air_date: '2000-01-01', media_type: 'tv', isAnime: true, backdrop_path: frArt[f.id] })}>
+                {frArt[f.id] && <img src={`${BACKDROP_URL}${frArt[f.id]}`} alt="" />}
+                <TitleLogo id={f.id} type="tv" title={f.name} className="fr-logo" />
+              </button>
             ))}
           </div>
         </section>
@@ -132,6 +156,7 @@ export default function Anime() {
           <MediaShelf key={name} title={name} items={list} onOpen={open} />
         ))}
       </div>
+      {sheet && <TitleSheet item={sheet} onClose={() => setSheet(null)} />}
     </div>
   )
 }

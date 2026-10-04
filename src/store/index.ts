@@ -202,6 +202,37 @@ function resetSavedAccounts() {
 
 resetSavedAccounts()
 
+const SETTINGS_EPOCH = '20261004-settings'
+
+function resetSavedSettings() {
+  try {
+    if (localStorage.getItem('mfy-settings-epoch') === SETTINGS_EPOCH) return
+    localStorage.setItem('mfy-settings-epoch', SETTINGS_EPOCH)
+    const named = [
+      'mfy-tmdbApiKey', 'mfy-omdbApiKey', 'mfy-mdblistApiKey', 'mfy-opensubtitlesKey',
+      'mfy-traktToken', 'mfy-realDebridKey', 'mfy-aiostreamsUrl', 'mfy-jellyfinUrl', 'mfy-jellyfinApiKey',
+      'mfy-theme', 'mfy-externalPlayer', 'mfy-localFolders', 'mfy-cal-hide-global', 'mfy-rail-hidden',
+      'mfy-simkl-client', 'mfy-simkl-token', 'mfy-anilist-username', 'mfy-anilist-token',
+      'mfy-letterboxd-user', 'mfy-rt-rapid-key', 'mfy-theme-pack', 'mfy-player-engine',
+    ]
+    named.forEach((key) => localStorage.removeItem(key))
+    const drop: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && (key.startsWith('mfy-serializd') || key.startsWith('mfy-jellyfin'))) drop.push(key)
+    }
+    drop.forEach((key) => localStorage.removeItem(key))
+    localStorage.setItem('mfy-theme-pack', 'mfy')
+  } catch { /* ignore */ }
+  try {
+    const api = (window as any).electronAPI
+    ;['tmdbApiKey', 'omdbApiKey', 'mdblistApiKey', 'opensubtitlesKey', 'traktToken', 'realDebridKey', 'aiostreamsUrl', 'jellyfinUrl', 'jellyfinApiKey', 'externalPlayer', 'localFolders', 'serializdToken', 'serializdEmail'].forEach((key) => api?.set?.(key, ''))
+    api?.set?.('theme', 'red')
+  } catch { /* ignore */ }
+}
+
+resetSavedSettings()
+
 export const useStore = create<AppState>((set, get) => ({
   currentPage: 'home',
   setCurrentPage: (page) => set({ currentPage: page }),
@@ -494,7 +525,7 @@ export const useStore = create<AppState>((set, get) => ({
   discoverFilter: 'movies',
   setDiscoverFilter: (filter) => set({ discoverFilter: filter }),
 
-  theme: 'pink',
+  theme: 'red',
   setTheme: (theme) => {
     set({ theme })
     persist('theme', theme)
@@ -632,7 +663,7 @@ export const useStore = create<AppState>((set, get) => ({
 export function applyTheme(theme: ThemeId) {
   const root = document.documentElement
   const map: Record<ThemeId, { pink: string; glow: string }> = {
-    pink: { pink: '#e50914', glow: 'rgba(255,20,147,0.45)' },
+    pink: { pink: '#e50914', glow: 'rgba(229,9,20,0.28)' },
     cyan: { pink: '#c8c8c8', glow: 'rgba(0,229,255,0.45)' },
     emerald: { pink: '#10B981', glow: 'rgba(16,185,129,0.45)' },
     amber: { pink: '#F59E0B', glow: 'rgba(245,158,11,0.45)' },

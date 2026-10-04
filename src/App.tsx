@@ -6,7 +6,6 @@ import { setRuntimeMdblistKey } from './api/mdblist'
 import { useKeyboardNav } from './hooks/useKeyboardNav'
 import TitleBar from './components/TitleBar'
 import Navbar from './components/Navbar'
-import AppleRail from './components/AppleRail'
 import PhoneTabBar from './components/PhoneTabBar'
 import Board from './pages/Board'
 import NuvioHome from './pages/NuvioHome'
@@ -30,8 +29,6 @@ import Iptv from './pages/Iptv'
 import LoginGate from './components/LoginGate'
 import RemoteHelp from './components/RemoteHelp'
 import CatalogSection from './pages/CatalogSection'
-import YouTubePage from './pages/YouTubePage'
-import MusicPage from './pages/MusicPage'
 import PrintHome from './pages/PrintHome'
 import MangaReader from './pages/MangaReader'
 import People from './pages/People'
@@ -45,7 +42,8 @@ import { youtubeEmbedUrl } from './api/youtubio'
 import { isPhoneShell } from './lib/device'
 
 void Board
-void Navbar
+void CatalogSection
+void PrintHome
 void tmdb
 
 export default function App() {
@@ -87,6 +85,13 @@ export default function App() {
   useEffect(() => {
     const { init } = useStore.getState()
     init()
+  }, [])
+
+  useEffect(() => {
+    document.documentElement.dataset.rail = '0'
+    if (typeof navigator !== 'undefined' && /Electron/i.test(navigator.userAgent)) {
+      document.documentElement.classList.add('mfy-electron')
+    }
   }, [])
 
   useEffect(() => {
@@ -179,7 +184,7 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (currentPage === 'iptv' || currentPage === 'manga' || currentPage === 'comics' || currentPage === 'books' || currentPage === 'manga-detail') {
+    if (currentPage === 'iptv' || currentPage === 'manga' || currentPage === 'comics' || currentPage === 'books' || currentPage === 'manga-detail' || currentPage === 'youtube' || currentPage === 'music') {
       setCurrentPage('home')
     }
   }, [currentPage, setCurrentPage])
@@ -195,8 +200,8 @@ export default function App() {
     <div className="h-screen flex flex-col bg-[#07111c] font-sans">
       {!phone && <RemoteHelp />}
       <IdleWall />
-      <IntroSkip />
-      <EpisodePanel />
+      {currentPage === 'player' && <IntroSkip />}
+      {currentPage === 'player' && <EpisodePanel />}
       {updateInfo && !updateDismissed && currentPage !== 'player' && !phone && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#14101a] border border-white/15 shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
           <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
@@ -219,10 +224,10 @@ export default function App() {
         </div>
       )}
       {electron && !phone && <TitleBar />}
-      <div className={`flex-1 min-h-0 relative mfy-phone-main`} style={{ paddingTop: electron && !phone ? 36 : 0 }}>
-      {currentPage !== 'player' && !phone && <AppleRail />}
+      {currentPage !== 'player' && !phone && <Navbar />}
       {phone && currentPage !== 'player' && <PhoneTabBar />}
-      <main className="absolute inset-0 overflow-y-auto overflow-x-hidden">
+      <div className="flex-1 min-h-0 relative mfy-phone-main">
+      <main className="h-full overflow-y-auto overflow-x-hidden">
         {currentPage === 'home' && <NuvioHome />}
         {currentPage === 'discover' && <Discover />}
         {currentPage === 'search' && <Search />}
@@ -256,8 +261,6 @@ export default function App() {
         {currentPage === 'sports' && <Sports />}
         {currentPage === 'calendar' && <CalendarPage />}
         {currentPage === 'shelf' && <ShelfBrowse />}
-        {currentPage === 'youtube' && <YouTubePage />}
-        {currentPage === 'music' && <MusicPage />}
         {currentPage === 'people' && <People />}
       </main>
       </div>

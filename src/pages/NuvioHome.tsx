@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Play, Info } from 'lucide-react'
-import { tmdb, BACKDROP_URL, POSTER_URL, STILL_URL } from '../api/tmdb'
+import { tmdb, BACKDROP_URL, POSTER_URL } from '../api/tmdb'
 import { streamingServices } from '../api/streaming'
 import { useStore } from '../store'
 import TitleLogo from '../components/TitleLogo'
+import TitleSheet from '../components/TitleSheet'
 import { PosterTile } from '../components/PosterTile'
 import { sourceBadge, BadgeImg } from '../components/QualityBadges'
 import { getPlayerUrl } from '../api/vidy'
@@ -36,15 +37,15 @@ function leftLabel(progress: number, duration: number) {
 }
 
 const STUDIOS = [
-  { id: 'marvel', name: 'MARVEL', color: '#e50914', logo: './logos/marvel-word.svg', franchise: 'marvel' },
-  { id: 'dc', name: 'DC', color: '#111827', logo: './logos/dc-white.svg', franchise: 'dc' },
-  { id: 'a24', name: 'A24', color: '#141414', company: '41077' },
-  { id: 'pixar', name: 'PIXAR', color: '#0b3a73', company: '3' },
-  { id: 'disney', name: 'DISNEY', color: '#0c2340', company: '2' },
-  { id: 'ghibli', name: 'GHIBLI', color: '#1a2744', company: '10342' },
-  { id: 'universal', name: 'UNIVERSAL', color: '#161616', company: '33' },
-  { id: 'wb', name: 'WB', color: '#8a6a22', company: '174' },
-  { id: 'blum', name: 'BLUMHOUSE', color: '#14301f', company: '3172' },
+  { id: 'marvel', name: 'MARVEL', color: '#c8102e', accent: '#fff', logo: './logos/marvel-word.svg', franchise: 'marvel' },
+  { id: 'dc', name: 'DC', color: '#0476c0', accent: '#fff', logo: './logos/dc-white.svg', franchise: 'dc' },
+  { id: 'a24', name: 'A24', color: '#111111', accent: '#fff', logo: './logos/a24.svg', company: '41077' },
+  { id: 'pixar', name: 'PIXAR', color: '#222222', accent: '#f5c518', logo: './logos/pixar.svg', company: '3' },
+  { id: 'disney', name: 'DISNEY', color: '#0b1f4d', accent: '#7eb6ff', logo: './logos/disney.svg', company: '2' },
+  { id: 'ghibli', name: 'GHIBLI', color: '#16352a', accent: '#b7e4c7', logo: './logos/ghibli.svg', company: '10342' },
+  { id: 'universal', name: 'UNIVERSAL', color: '#141414', accent: '#f5c518', logo: './logos/universal.svg', company: '33' },
+  { id: 'wb', name: 'WB', color: '#041e42', accent: '#d6e4ff', logo: './logos/wb.svg', company: '174' },
+  { id: 'blum', name: 'BLUMHOUSE', color: '#2a0a10', accent: '#e50914', logo: './logos/blumhouse.svg', company: '3172' },
 ]
 
 const NETWORKS = [
@@ -95,12 +96,12 @@ const SHOWS = [
 ]
 
 const ANIME_CATS = [
-  { id: 'top', name: 'Top Rated', params: { with_genres: '16', with_original_language: 'ja', sort_by: 'vote_average.desc', 'vote_count.gte': '300' } },
-  { id: 'latest', name: 'Latest Release', params: { with_genres: '16', with_original_language: 'ja', sort_by: 'first_air_date.desc', 'vote_count.gte': '20' } },
-  { id: 'trend', name: 'Trending', params: { with_genres: '16', with_original_language: 'ja', sort_by: 'popularity.desc' } },
-  { id: 'pop', name: 'Most Popular', params: { with_genres: '16', with_original_language: 'ja', sort_by: 'popularity.desc', 'vote_count.gte': '80' } },
-  { id: 'soon', name: 'Upcoming', params: { with_genres: '16', with_original_language: 'ja', sort_by: 'popularity.desc', 'first_air_date.gte': new Date().toISOString().slice(0, 10) } },
-  { id: 'air', name: 'Airing Now', params: { with_genres: '16', with_original_language: 'ja', sort_by: 'popularity.desc', 'air_date.gte': new Date(Date.now() - 86400000 * 21).toISOString().slice(0, 10), 'air_date.lte': new Date().toISOString().slice(0, 10) } },
+  { id: 'top', name: 'Top Rated', tint: '#f5c518', params: { with_genres: '16', with_original_language: 'ja', sort_by: 'vote_average.desc', 'vote_count.gte': '300' } },
+  { id: 'latest', name: 'Latest Release', tint: '#7eb6ff', params: { with_genres: '16', with_original_language: 'ja', sort_by: 'first_air_date.desc', 'vote_count.gte': '20' } },
+  { id: 'trend', name: 'Trending', tint: '#e50914', params: { with_genres: '16', with_original_language: 'ja', sort_by: 'popularity.desc' } },
+  { id: 'pop', name: 'Most Popular', tint: '#f4a261', params: { with_genres: '16', with_original_language: 'ja', sort_by: 'popularity.desc', 'vote_count.gte': '80' } },
+  { id: 'soon', name: 'Upcoming', tint: '#c4b5fd', params: { with_genres: '16', with_original_language: 'ja', sort_by: 'popularity.desc', 'first_air_date.gte': new Date().toISOString().slice(0, 10) } },
+  { id: 'air', name: 'Airing Now', tint: '#86efac', params: { with_genres: '16', with_original_language: 'ja', sort_by: 'popularity.desc', 'air_date.gte': new Date(Date.now() - 86400000 * 21).toISOString().slice(0, 10), 'air_date.lte': new Date().toISOString().slice(0, 10) } },
 ]
 
 const ANIME_SHOWS = [
@@ -113,11 +114,11 @@ const ANIME_SHOWS = [
 ]
 
 const DISCOVER = [
-  { id: 'soon', name: 'Anticipated', gradient: 'linear-gradient(135deg,#ff2d8a,#7a3cff)', media: 'movie' as const, params: { sort_by: 'popularity.desc', 'primary_release_date.gte': new Date().toISOString().slice(0, 10) } },
-  { id: 'latest', name: 'Latest', gradient: 'linear-gradient(135deg,#ff8fab,#ffd0e0)', media: 'movie' as const, params: { sort_by: 'primary_release_date.desc', 'vote_count.gte': '30' } },
-  { id: 'pop', name: 'Popular', gradient: 'linear-gradient(135deg,#7ecbff,#d7f3ff)', media: 'movie' as const, params: { sort_by: 'popularity.desc' } },
-  { id: 'trend', name: 'Trending', gradient: 'linear-gradient(135deg,#ff7a45,#ffd29a)', media: 'movie' as const, mode: 'trending' as const },
-  { id: 'top', name: 'Top Rated', gradient: 'linear-gradient(135deg,#3a1d8f,#7aa2ff)', media: 'movie' as const, params: { sort_by: 'vote_average.desc', 'vote_count.gte': '800' } },
+  { id: 'soon', name: 'Anticipated', gradient: 'linear-gradient(160deg,#7f1d1d,#1c1917)', media: 'movie' as const, params: { sort_by: 'popularity.desc', 'primary_release_date.gte': new Date().toISOString().slice(0, 10) } },
+  { id: 'latest', name: 'Latest', gradient: 'linear-gradient(160deg,#1e3a5f,#0f172a)', media: 'movie' as const, params: { sort_by: 'primary_release_date.desc', 'vote_count.gte': '30' } },
+  { id: 'pop', name: 'Popular', gradient: 'linear-gradient(160deg,#134e4a,#0f172a)', media: 'movie' as const, params: { sort_by: 'popularity.desc' } },
+  { id: 'trend', name: 'Trending', gradient: 'linear-gradient(160deg,#9a3412,#1c1917)', media: 'movie' as const, mode: 'trending' as const },
+  { id: 'top', name: 'Top Rated', gradient: 'linear-gradient(160deg,#1e3a8a,#0f172a)', media: 'movie' as const, params: { sort_by: 'vote_average.desc', 'vote_count.gte': '800' } },
 ]
 
 export default function NuvioHome() {
@@ -142,8 +143,6 @@ export default function NuvioHome() {
   const [franchiseArt, setFranchiseArt] = useState<Record<number, string>>({})
   const [sources, setSources] = useState<Record<string, string>>({})
   const [sheet, setSheet] = useState<any | null>(null)
-  const [sheetExtra, setSheetExtra] = useState<any>(null)
-  const [eps, setEps] = useState<any[]>([])
 
   const hero = heroPool[idx]
 
@@ -273,23 +272,6 @@ export default function NuvioHome() {
     fn(hero.id).then(setHeroDetail).catch(() => setHeroDetail(null))
   }, [hero?.id])
 
-  useEffect(() => {
-    if (!sheet?.id) return
-    const kind = kindOf(sheet)
-    const fn = kind === 'tv' ? tmdb.getTVDetail : tmdb.getMovieDetail
-    let dead = false
-    setSheetExtra(null)
-    setEps([])
-    fn(sheet.id).then((d) => {
-      if (dead) return
-      setSheetExtra(d)
-      if (kind !== 'tv') return
-      const sn = (d?.seasons || []).find((s: any) => s.season_number > 0)?.season_number || 1
-      tmdb.getSeasonDetail(sheet.id, sn).then((s) => { if (!dead) setEps((s?.episodes || []).slice(0, 8)) }).catch(() => {})
-    }).catch(() => {})
-    return () => { dead = true }
-  }, [sheet?.id])
-
   function open(item: any, type?: string) {
     const t = type || kindOf(item)
     setSelectedMedia({ id: item.id, type: t, title: titleOf(item) })
@@ -410,7 +392,7 @@ export default function NuvioHome() {
               key={s.id}
               type="button"
               className="studio"
-              style={{ background: s.color }}
+              style={{ background: s.color, color: s.accent }}
               onClick={() => {
                 if (s.franchise) { setSelectedFranchiseId(s.franchise); setCurrentPage('franchise'); return }
                 openShelf(s.name, 'movie', { with_companies: s.company || '', sort_by: 'popularity.desc', 'vote_count.gte': '80' })
@@ -540,7 +522,7 @@ export default function NuvioHome() {
         <h2 className="nv-kicker">Anime</h2>
         <div className="mosaic-row">
           {ANIME_CATS.map((c) => (
-            <button key={c.id} type="button" className="mosaic" onClick={() => openShelf(c.name, 'tv', cleanParams(c.params))}>
+            <button key={c.id} type="button" className="mosaic" style={{ ['--tint' as any]: c.tint }} onClick={() => openShelf(c.name, 'tv', cleanParams(c.params))}>
               <span>
                 {(animeArt[c.id] || []).map((p) => <img key={p} src={`${POSTER_URL}${p}`} alt="" />)}
               </span>
@@ -554,9 +536,9 @@ export default function NuvioHome() {
         <h2 className="nv-kicker">Anime Franchises</h2>
         <div className="banner-row">
           {ANIME_SHOWS.map((s) => (
-            <button key={s.id} type="button" className="banner short" onClick={() => open({ id: s.id, name: s.name, first_air_date: 'tv' }, 'tv')}>
+            <button key={s.id} type="button" className="banner short fr" onClick={() => setSheet({ id: s.id, name: s.name, first_air_date: '2000-01-01', media_type: 'tv', isAnime: true })}>
               {franchiseArt[s.id] && <img src={`${franchiseArt[s.id]?.startsWith('/') ? BACKDROP_URL : POSTER_URL}${franchiseArt[s.id]}`} alt="" />}
-              <b>{s.name}</b>
+              <TitleLogo id={s.id} type="tv" title={s.name} className="fr-logo" />
             </button>
           ))}
         </div>
@@ -566,45 +548,7 @@ export default function NuvioHome() {
       <PosterRow title="Action & Adventure" items={action} genres={genreNames} pctOf={pctOf} badges={sources} onOpen={setSheet} />
       <PosterRow title="Laugh Out Loud" items={comedy} genres={genreNames} pctOf={pctOf} badges={sources} onOpen={setSheet} />
 
-      {sheet && (
-        <div className="nf-modal" onClick={() => setSheet(null)}>
-          <div className="nf-sheet" onClick={(e) => e.stopPropagation()}>
-            <button type="button" className="nf-x" onClick={() => setSheet(null)} aria-label="Close">×</button>
-            <div className="nf-sheet-hero" style={{ backgroundImage: `url(${sheet.backdrop_path ? BACKDROP_URL + sheet.backdrop_path : ''})` }}>
-              <div>
-                <TitleLogo id={sheet.id} type={kindOf(sheet)} title={titleOf(sheet)} />
-                <div className="nf-actions">
-                  <button type="button" className="nf-play" onClick={() => play(sheet)}><Play size={16} fill="currentColor" /> Play</button>
-                  <button type="button" className="nf-info" onClick={() => open(sheet)}>More Info</button>
-                </div>
-              </div>
-            </div>
-            <div className="nf-sheet-body">
-              <div className="nf-match">
-                {sheet.vote_average > 0 && <b>{Math.round(sheet.vote_average * 10)}% Match</b>}
-                <span>{yearOf(sheetExtra || sheet)}</span>
-                {sheetExtra?.number_of_seasons ? <span>{sheetExtra.number_of_seasons} Seasons</span> : null}
-                {(sheetExtra?.genres || []).slice(0, 3).map((g: any) => <span key={g.id}>{g.name}</span>)}
-              </div>
-              <p>{sheetExtra?.overview || sheet.overview}</p>
-              {eps.length > 0 && (
-                <>
-                  <h3>Episodes</h3>
-                  <div className="nf-eps">
-                    {eps.map((ep) => (
-                      <button key={ep.id} type="button" onClick={() => play(sheet)}>
-                        {ep.still_path ? <img src={`${STILL_URL}${ep.still_path}`} alt="" /> : <div className="ph" />}
-                        <strong>{ep.episode_number}. {ep.name}</strong>
-                        <small>{ep.overview}</small>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {sheet && <TitleSheet item={sheet} onClose={() => setSheet(null)} />}
     </div>
   )
 }

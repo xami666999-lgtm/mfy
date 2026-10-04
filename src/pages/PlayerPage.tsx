@@ -1131,7 +1131,7 @@ export default function PlayerPage() {
       <TogetherPanel streamUrl={streamUrl} imdbOrId={String((selectedMedia as any)?.imdb || selectedMedia?.id || '')} type={selectedMedia?.type === 'movie' ? 'movie' : 'series'} onClose={() => setTogether(false)} onSplitSports={() => { setTogether(false); setCurrentPage('sports') }} />
     )}
     {showNext && nextUp && (
-      <div style={{ position: 'fixed', right: 24, bottom: 88, zIndex: 80, width: 360, maxWidth: 'calc(100vw - 48px)', background: 'rgba(12,8,14,0.94)', border: '1px solid rgba(255,20,147,0.35)', borderRadius: 16, padding: 12, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 12px 40px rgba(0,0,0,0.45)' }}>
+      <div style={{ position: 'fixed', right: 24, bottom: 88, zIndex: 80, width: 360, maxWidth: 'calc(100vw - 48px)', background: 'rgba(12,8,14,0.94)', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 16, padding: 12, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 12px 40px rgba(0,0,0,0.45)' }}>
         {nextUp.still ? <img src={`${POSTER_URL.replace('/w500','/w300')}${nextUp.still}`} alt="" style={{ width: 120, height: 68, objectFit: 'cover', borderRadius: 10, flexShrink: 0 }} /> : <div style={{ width: 120, height: 68, borderRadius: 10, background: '#1a1016' }} />}
         <div style={{ minWidth: 0, flex: 1 }}>
           <p style={{ fontSize: 11, color: '#e50914', fontWeight: 700, marginBottom: 2 }}>Next on {(selectedMedia as any)?.title || 'this show'}</p>
@@ -1168,7 +1168,7 @@ export default function PlayerPage() {
         <div className="mfy-player" onMouseMove={onMouseMove} style={{ background: '#000', minHeight: '100vh', cursor: showUI ? 'default' : 'none' }}>
       {showUI && (
       <button type="button" onClick={goBack} title="Exit player"
-        style={{ position: 'fixed', top: 14, left: 14, zIndex: 400, background: '#e50914', color: '#fff', border: 'none', borderRadius: 999, padding: '8px 16px', cursor: 'pointer', fontWeight: 800, fontSize: 12, letterSpacing: 0.4, boxShadow: '0 6px 20px rgba(255,20,147,0.35)' }}>
+        style={{ position: 'fixed', top: 14, left: 14, zIndex: 400, background: '#e50914', color: '#fff', border: 'none', borderRadius: 999, padding: '8px 16px', cursor: 'pointer', fontWeight: 800, fontSize: 12, letterSpacing: 0.4, boxShadow: '0 6px 20px rgba(255,255,255,0.16)' }}>
         ← Exit
       </button>
       )}
@@ -1192,7 +1192,7 @@ export default function PlayerPage() {
               {sourceNames[playerSource] || playerSource} ▾
             </button>
             {srcOpen && (
-              <div style={{ position: 'absolute', right: 0, top: 40, width: 220, background: '#12080d', border: '1px solid rgba(255,20,147,0.45)', borderRadius: 16, padding: 8, zIndex: 80, boxShadow: '0 16px 40px rgba(0,0,0,0.55)' }}>
+              <div style={{ position: 'absolute', right: 0, top: 40, width: 220, background: '#12080d', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 16, padding: 8, zIndex: 80, boxShadow: '0 16px 40px rgba(0,0,0,0.55)' }}>
                 {(isOnePiece(String((selectedMedia as any)?.title || '')) ? (['onepace', ...ALL_PLAY_SOURCES] as PlayerSource[]) : ALL_PLAY_SOURCES).map((s) => (
                   <button
                     key={s}
@@ -1263,7 +1263,7 @@ export default function PlayerPage() {
       </div>}
 
       {showUI && picks.length > 0 && (
-        <div style={{ position: 'fixed', left: 16, top: 70, width: 300, maxHeight: '55vh', overflow: 'auto', zIndex: 120, background: '#12080d', border: '1px solid rgba(255,20,147,0.35)', borderRadius: 16, padding: 12 }}>
+        <div style={{ position: 'fixed', left: 16, top: 70, width: 300, maxHeight: '55vh', overflow: 'auto', zIndex: 120, background: '#12080d', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 16, padding: 12 }}>
           <p style={{ color: '#e50914', fontSize: 11, fontWeight: 800 }}>PIPE · TORRENTIO · COMET</p>
           {picks.slice(0, 16).map((p) => (
             <button key={p.url} type="button" onClick={() => {
@@ -1278,7 +1278,7 @@ export default function PlayerPage() {
         </div>
       )}
       {(playerSource === 'webtorrent' || magnetBox) && (
-        <div style={{ position: 'fixed', right: 16, top: 70, width: 320, maxHeight: '70vh', overflow: 'auto', zIndex: 120, background: '#12080d', border: '1px solid rgba(255,20,147,0.35)', borderRadius: 16, padding: 12 }}>
+        <div style={{ position: 'fixed', right: 16, top: 70, width: 320, maxHeight: '70vh', overflow: 'auto', zIndex: 120, background: '#12080d', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 16, padding: 12 }}>
           <p style={{ color: '#e50914', fontSize: 11, fontWeight: 800, letterSpacing: 1 }}>WEBTORRENT</p>
           <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, marginBottom: 8 }}>Paste a magnet or pick a ranked file. No VLC install needed.</p>
           <input value={magnetBox} onChange={(e) => setMagnetBox(e.target.value)} placeholder="magnet:?xt=urn:btih:…" style={{ width: '100%', background: '#1a1016', color: '#fff', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', fontSize: 12, marginBottom: 8 }} />

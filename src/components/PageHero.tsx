@@ -20,15 +20,17 @@ export default function PageHero({
     ? (item.media_type || 'manga')
     : (item.media_type === 'tv' || item.first_air_date) ? 'tv' : (item.media_type || 'movie')
   const inLib = item.id ? isInWatchlist(item.id, type) : false
+  const raw = Number(item.vote_average || item.averageScore || 0)
+  const score = raw > 10 ? raw / 10 : raw
   return (
-    <section className="hero" style={{ minHeight: '70vh' }}>
+    <section className="hero" style={{ minHeight: '62vh' }}>
       <div className="hero-backdrop" style={{ backgroundImage: bg ? `url(${bg})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center top' }} />
-      {bg ? <img src={bg} alt="" referrerPolicy="no-referrer" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.35, pointerEvents: 'none' }} /> : null}
       <div className="hero-overlay" />
       <div className="hero-content">
         <div className="hero-copy">
           <div className="hero-kicker">{kicker}</div>
           <TitleLogo id={item.id} type={type} title={titleOf(item)} />
+          {score > 0 && <div className="hero-meta"><span className="hero-score">★ {score.toFixed(1)}</span></div>}
           <p>{item.overview || item.description || ''}</p>
           <div className="hero-actions">
             <button className="hero-play" type="button" onClick={onPlay}>
