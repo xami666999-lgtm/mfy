@@ -370,9 +370,24 @@ export default function PlayerPage() {
     const v = videoRef.current
     if (!v || !streamUrl) return
     if (isPlayerEmbedUrl(streamUrl)) return
-    v.src = streamUrl
-    v.load()
-    v.play().catch(() => {})
+    let hls: { destroy: () => void } | null = null
+    const start = () => { v.play().catch(() => {}) }
+    if (/\.m3u8(\?|$)/i.test(streamUrl) && !v.canPlayType('application/vnd.apple.mpegurl')) {
+      import('hls.js').then(({ default: Hls }) => {
+        if (videoRef.current !== v) return
+        if (!Hls.isSupported()) { v.src = streamUrl; start(); return }
+        const player = new Hls()
+        hls = player
+        player.loadSource(streamUrl)
+        player.attachMedia(v)
+        player.on(Hls.Events.MANIFEST_PARSED, start)
+        player.on(Hls.Events.ERROR, (_e: unknown, data: { fatal?: boolean }) => { if (data?.fatal) setError('The stream could not be loaded.') })
+      }).catch(() => setError('The stream could not be loaded.'))
+    } else {
+      v.src = streamUrl
+      v.load()
+      start()
+    }
     const onMeta = () => {
       const row = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia?.id) && Number(h.season || 0) === Number(selectedMedia?.season || 0) && Number(h.episode || 0) === Number(selectedMedia?.episode || 0))
       const at = Number((selectedMedia as any)?.resumeAt || row?.progress || 0)
@@ -410,6 +425,7 @@ export default function PlayerPage() {
       v.removeEventListener('pause', onPause)
       v.removeEventListener('ended', onEnded)
       v.removeEventListener('error', onError)
+      try { hls?.destroy() } catch {}
     }
   }, [streamUrl])
 
@@ -928,6 +944,17 @@ export default function PlayerPage() {
     setAutoNextBusy(false)
   }
 
+  function toggleMute() {
+    const next = !muted
+    setMuted(next)
+    const v = videoRef.current
+    if (v) { v.muted = next; v.volume = next ? 0 : 1 }
+    try {
+      const w = document.querySelector('webview') as any
+      w?.executeJavaScript?.(`document.querySelectorAll('video').forEach(v => { v.muted = ${next}; v.volume = ${next ? 0 : 1} })`)
+    } catch {}
+  }
+
   function togglePlay() {
     const v = videoRef.current
     if (v && !isPlayerEmbedUrl(streamUrl)) {
@@ -1298,9 +1325,10 @@ export default function PlayerPage() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <button type="button" onClick={() => seekBy(-5)} title="-5s" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, color: '#fff', cursor: 'pointer' }}><SkipBack size={18} /></button>
+                      <button type="button" onClick={() => seekBy(selectedMedia?.type === 'iptv' ? -10 : -5)} title={selectedMedia?.type === 'iptv' ? '-10s' : '-5s'} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, color: '#fff', cursor: 'pointer' }}><SkipBack size={18} /></button>
                       <button type="button" onClick={togglePlay} style={{ background: '#e50914', border: 'none', borderRadius: '50%', padding: 10, color: '#fff', cursor: 'pointer' }}>{playing ? <Pause size={22} /> : <Play size={22} />}</button>
-                      <button type="button" onClick={() => seekBy(5)} title="+5s" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, color: '#fff', cursor: 'pointer' }}><SkipForward size={18} /></button>
+                      <button type="button" onClick={() => seekBy(selectedMedia?.type === 'iptv' ? 10 : 5)} title={selectedMedia?.type === 'iptv' ? '+10s' : '+5s'} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, color: '#fff', cursor: 'pointer' }}><SkipForward size={18} /></button>
+                      <button type="button" onClick={toggleMute} title={muted ? 'Sound on' : 'Mute'} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, color: '#fff', cursor: 'pointer' }}>{muted ? <VolumeX size={18} /> : <Volume2 size={18} />}</button>
                       <button type="button" onClick={() => seekBy(90)} title="Skip intro" style={{ background: '#e50914', border: 'none', borderRadius: 8, padding: '8px 10px', color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>Skip intro</button>
                       <span style={{ color: '#fff', fontSize: 13, fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
                         {fmt(progress)} / {fmt(total || dur)}

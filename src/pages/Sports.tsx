@@ -1,873 +1,248 @@
-import { useEffect, useState, useMemo } from 'react'
-import { Trophy, Radio, ExternalLink, Loader2, Activity, Flag, Volleyball, Target, Gauge, Swords, Medal, Siren, Dumbbell, Skull, Bike, Sparkles, PlayCircle, X, Search, Filter, SkipBack, SkipForward } from 'lucide-react'
-import { sportsApi, badgeUrl, badgeFallbacks, posterUrl, timStreamsApi, watchfootyApi, type SportCategory, type SportMatch, type SportStream } from '../api/sports'
-import { iptvEnhancedApi } from '../api/iptv-enhanced'
-import { useStore } from '../store'
+import { useEffect, useState } from 'react'
+import { Loader2 } from 'lucide-react'
+import { sportsApi, badgeFallbacks, watchfootyApi, wfSport, type SportMatch } from '../api/sports'
 import { addonCatalog, addonStreams, ADDONS } from '../api/stremioAddons'
-import { cn } from '../lib/utils'
-import TogetherPanel from '../components/TogetherPanel'
+import { useStore } from '../store'
 
-const SPORT_META: Record<string, { icon: any; color: string }> = {
-  football: { icon: Activity, color: '#22C55E' },
-  'american-football': { icon: Flag, color: '#F97316' },
-  basketball: { icon: Volleyball, color: '#F59E0B' },
-  hockey: { icon: Swords, color: '#3B82F6' },
-  baseball: { icon: Target, color: '#EF4444' },
-  'motor-sports': { icon: Gauge, color: '#A855F7' },
-  fight: { icon: Dumbbell, color: '#E11D48' },
-  tennis: { icon: Volleyball, color: '#84CC16' },
-  rugby: { icon: Skull, color: '#14B8A6' },
-  golf: { icon: Flag, color: '#10B981' },
-  billiards: { icon: Target, color: '#6366F1' },
-  afl: { icon: Medal, color: '#8B5CF6' },
-  darts: { icon: Target, color: '#F43F5E' },
-  cricket: { icon: Trophy, color: '#0EA5E9' },
-  other: { icon: Sparkles, color: '#94A3B8' },
+const ROWS = [
+  { id: 'american-football', label: 'American Football - TV' },
+  { id: 'basketball', label: 'Basketball - TV' },
+  { id: 'baseball', label: 'Baseball - TV' },
+  { id: 'football', label: 'Football - TV' },
+  { id: 'hockey', label: 'Hockey - TV' },
+  { id: 'fight', label: 'Fight - TV' },
+  { id: 'motor-sports', label: 'Motor Sports - TV' },
+  { id: 'tennis', label: 'Tennis - TV' },
+]
+
+const WASH = [
+  'linear-gradient(115deg,#16344a 0%,#1c3d3a 100%)',
+  'linear-gradient(115deg,#14362c 0%,#1e4a38 100%)',
+  'linear-gradient(115deg,#3a2456 0%,#2a3058 100%)',
+  'linear-gradient(115deg,#1a3344 0%,#1d4a34 100%)',
+  'linear-gradient(115deg,#4a2238 0%,#3a1844 100%)',
+  'linear-gradient(115deg,#1e2a4a 0%,#24324a 100%)',
+]
+
+const ESPN = [
+  ['football', 'nfl'],
+  ['football', 'college-football'],
+  ['basketball', 'nba'],
+  ['basketball', 'wnba'],
+  ['baseball', 'mlb'],
+  ['hockey', 'nhl'],
+]
+
+type Book = { score?: string; logo?: string }
+
+function norm(s: string) {
+  return String(s || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
 }
 
-const DEFAULT_SPORT = 'football'
+function stamp(n: number) {
+  if (!n) return 0
+  return String(n).length < 13 ? n * 1000 : n
+}
+
+function dayLabel(n: number) {
+  const t = stamp(n)
+  if (!t) return ''
+  const d = new Date(t)
+  return `${d.getFullYear()} ${d.toLocaleString('en-US', { month: 'long' })} ${d.getDate()}`
+}
 
 export default function Sports() {
   const { setCurrentStreamUrl, setCurrentPage, setSelectedMedia } = useStore()
-  const [sports, setSports] = useState<SportCategory[]>([])
-  const [sportId, setSportId] = useState(DEFAULT_SPORT)
-  const [matches, setMatches] = useState<SportMatch[]>([])
-  const [live, setLive] = useState<SportMatch[]>([])
-  const [multiView, setMultiView] = useState(false)
-  const [mvSlots, setMvSlots] = useState<{ id: string; title: string; url: string }[]>([])
-  const [mvGrid, setMvGrid] = useState<'1x2' | '2x1' | '2x2' | '1+2' | '3x3'>('2x2')
-  const [partyCode, setPartyCode] = useState('')
-  const [together, setTogether] = useState(false)
-  const [streams, setStreams] = useState<SportStream[] | null>(null)
-  const [activeMatch, setActiveMatch] = useState<SportMatch | null>(null)
-  const [streamError, setStreamError] = useState('')
-  const [resolving, setResolving] = useState(false)
+  const [rows, setRows] = useState<Record<string, SportMatch[]>>({})
+  const [book, setBook] = useState<Record<string, Book>>({})
+  const [feeds, setFeeds] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showSearch, setShowSearch] = useState(false)
-  const [engine, setEngine] = useState<'streamed' | 'metegol' | 'nuvio'>('streamed')
-  const [nuvio, setNuvio] = useState<any[]>([])
-  const [watchUrl, setWatchUrl] = useState('')
-  const [watchQuality, setWatchQuality] = useState('')
-  const [watchList, setWatchList] = useState<SportStream[]>([])
-  const [addSlot, setAddSlot] = useState<number | null>(null)
-  const [addQ, setAddQ] = useState('')
-  const [mvFull, setMvFull] = useState(false)
-  const [metegol, setMetegol] = useState<any[]>([])
-  const [when, setWhen] = useState<'live' | 'upcoming' | 'finished'>('live')
-  const [timLive, setTimLive] = useState<any[]>([])
-  const [timReplays, setTimReplays] = useState<any[]>([])
-  const [timChannels, setTimChannels] = useState<any[]>([])
-  const [footy, setFooty] = useState<any[]>([])
-  const [timGenres, setTimGenres] = useState<any[]>([])
-  const [sportChrome, setSportChrome] = useState(true)
-  const [sportFull, setSportFull] = useState(false)
-
-  const filteredMatches = useMemo(() => {
-    const now = Date.now()
-    let list = matches
-    if (when === 'live') list = matches.filter((m) => m.live || m.popular || Math.abs(Number(m.date) - Date.now()) < 4 * 60 * 60 * 1000) 
-    else if (when === 'upcoming') list = matches.filter((m) => !m.live && Number(m.date) * (String(m.date).length < 13 ? 1000 : 1) > now)
-    else list = matches.filter((m) => !m.live && Number(m.date) * (String(m.date).length < 13 ? 1000 : 1) <= now)
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase()
-      list = list.filter(m =>
-        m.title.toLowerCase().includes(q) ||
-        m.category.toLowerCase().includes(q) ||
-        m.teams?.home?.name?.toLowerCase().includes(q) ||
-        m.teams?.away?.name?.toLowerCase().includes(q)
-      )
-    }
-    return list
-  }, [matches, searchQuery, when])
+  const [busy, setBusy] = useState('')
+  const [err, setErr] = useState('')
 
   useEffect(() => {
-    Promise.all([
-      addonCatalog('sportsstreams').catch(() => []),
-      addonCatalog('nuvio').catch(() => []),
-      addonCatalog('nova').catch(() => []),
-      addonCatalog('nebula').catch(() => []),
-    ]).then(([hf, a, b, c]) => setNuvio([...(hf || []), ...(a || []), ...(b || []), ...(c || [])]))
-    iptvEnhancedApi.getMetegolEvents().then(setMetegol).catch(() => {
-      fetch('./data/metegol.json').then((r) => r.json()).then((d) => setMetegol(d.events || [])).catch(() => setMetegol([]))
-    })
-    timStreamsApi.live().then((d) => { setTimLive(d.events || []); setTimGenres(d.genres || []) }).catch(() => setTimLive([]))
-    timStreamsApi.replays().then((d) => setTimReplays(d.replays || [])).catch(() => setTimReplays([]))
-    timStreamsApi.channels().then((d) => setTimChannels((d.channels || []).slice(0, 24))).catch(() => setTimChannels([]))
-    watchfootyApi.live('football').then((rows) => setFooty((rows || []).filter((m: any) => (m.streams || []).length))).catch(() => setFooty([]))
-    sportsApi.getSports().then(setSports).catch(() => setSports([
-      { id: 'football', name: 'Football' },
-      { id: 'basketball', name: 'Basketball' },
-      { id: 'american-football', name: 'American Football' },
-      { id: 'baseball', name: 'Baseball' },
-      { id: 'hockey', name: 'Hockey' },
-      { id: 'tennis', name: 'Tennis' },
-      { id: 'fight', name: 'Fight' },
-    ]))
-    Promise.all([
-      sportsApi.getLivePopular().catch(() => []),
-      sportsApi.getLive().catch(() => []),
-    ]).then(([a, b]) => {
+    let stop = false
+    const catalogs = ['sports_live', 'sports_american_football', 'sports_basketball', 'sports_baseball', 'sports_football', 'sports_hockey']
+    Promise.all(catalogs.map((id) => addonCatalog('sportsstreams', 'sport', id).catch(() => [])))
+      .then((bags) => { if (!stop) setFeeds(bags.flat()) })
+      .catch(() => {})
+    Promise.all(ROWS.map(async (row) => {
+      const [pop, all] = await Promise.all([
+        sportsApi.getMatchesPopular(row.id).catch(() => [] as SportMatch[]),
+        sportsApi.getMatches(row.id).catch(() => [] as SportMatch[]),
+      ])
       const seen = new Set<string>()
-      const rows = [...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])].filter((x) => {
-        const id = String(x.id)
+      const list = [...(pop || []), ...(all || [])].filter((m) => {
+        const id = String(m.id)
         if (seen.has(id)) return false
         seen.add(id)
         return true
-      }).map((x) => ({ ...x, live: true, popular: true }))
-      setLive(rows)
-    }).catch(() => setLive([]))
+      }).slice(0, 16)
+      return [row.id, list] as const
+    })).then((pairs) => {
+      if (stop) return
+      const next: Record<string, SportMatch[]> = {}
+      pairs.forEach(([id, list]) => { next[id] = list })
+      setRows(next)
+    }).finally(() => { if (!stop) setLoading(false) })
+
+    const next: Record<string, Book> = {}
+    const put = (name: string, score?: string, logo?: string) => {
+      const k = norm(name)
+      if (!k) return
+      next[k] = { score: score ?? next[k]?.score, logo: logo || next[k]?.logo }
+    }
+    Promise.all([
+      ...ESPN.map(([sport, league]) => fetch(`https://site.api.espn.com/apis/site/v2/sports/${sport}/${league}/scoreboard`).then((r) => r.json()).catch(() => null)),
+      ...ROWS.map((row) => watchfootyApi.matches(wfSport(row.id)).catch(() => [])),
+    ]).then((bags) => {
+      if (stop) return
+      bags.forEach((bag: any) => {
+        const events = bag?.events
+        if (Array.isArray(events)) {
+          events.forEach((ev: any) => {
+            const comps = ev?.competitions?.[0]?.competitors || []
+            comps.forEach((c: any) => put(c?.team?.displayName || c?.team?.name, c?.score, c?.team?.logo))
+          })
+          return
+        }
+        const list = Array.isArray(bag) ? bag : []
+        list.forEach((m: any) => {
+          const home = m?.teams?.home
+          const away = m?.teams?.away
+          const hs = m?.scores?.home
+          const as = m?.scores?.away
+          if (home?.name) put(home.name, hs != null ? String(hs) : undefined, home.logoUrl ? `https://api.watchfooty.st${home.logoUrl}` : undefined)
+          if (away?.name) put(away.name, as != null ? String(as) : undefined, away.logoUrl ? `https://api.watchfooty.st${away.logoUrl}` : undefined)
+        })
+      })
+      setBook(next)
+    }).catch(() => {})
+    return () => { stop = true }
   }, [])
 
-  useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    watchfootyApi.live(sportId).then((rows) => {
-      if (!cancelled) setFooty((rows || []).filter((m: any) => (m.streams || []).length))
-    }).catch(() => { if (!cancelled) setFooty([]) })
-    Promise.all([
-      sportsApi.getMatchesPopular(sportId).catch(() => []),
-      sportsApi.getMatches(sportId).catch(() => []),
-    ]).then(([pop, all]) => {
-        if (cancelled) return
-        const seen = new Set<string>()
-        const rows = [...(Array.isArray(pop) ? pop : []), ...(Array.isArray(all) ? all : [])].filter((x) => {
-          const id = String(x.id)
-          if (seen.has(id)) return false
-          seen.add(id)
-          return true
-        })
-        setMatches(rows)
-      })
-      .catch(() => {
-        if (!cancelled) setMatches([])
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [sportId])
-
-  async function openMatch(match: SportMatch) {
-    setActiveMatch(match)
-    setStreams(null)
-    setStreamError('')
-    const sources = match.sources || []
-    if (!sources.length) {
-      setStreamError('No sources listed for this match.')
-      return
-    }
-    setResolving(true)
+  async function play(match: SportMatch) {
+    setErr('')
+    setBusy(match.id)
     try {
-      const bags = await Promise.all(sources.map(async (s) => {
-        const list = await sportsApi.getStreams(s.source, s.id).catch(() => [] as SportStream[])
-        if (Array.isArray(list) && list.some((x) => x.embedUrl)) {
-          return list.map((x) => ({ ...x, source: x.source || s.source }))
-        }
-        return [
-          { id: `${s.source}-embed`, streamNo: 1, language: 'English', hd: true, source: 'Nuvio Live', embedUrl: `https://embed.st/embed/${s.source}/${s.id}/1` },
-          { id: `${s.source}-footy`, streamNo: 1, language: 'WatchFooty', hd: true, source: 'Nuvio Live', embedUrl: `https://sportsembed.su/embed/${s.source}/${s.id}` },
-          { id: `${s.source}-watch`, streamNo: 1, language: 'Watch page', hd: true, source: s.source, embedUrl: `https://streamed.pk/watch/${match.id}/${s.source}/1` },
-        ] as SportStream[]
-      }))
-      const all = bags.flat()
-      const needle = match.title.toLowerCase()
-      const extra = footy.filter((m: any) => String(m.title || '').toLowerCase().includes(needle.split(' vs')[0].slice(0, 12)) || needle.includes(String(m.title || '').toLowerCase().slice(0, 12)))
-        .flatMap((m: any) => (m.streams || []).map((s: any, i: number) => ({
-          id: String(s.id || i),
-          streamNo: i + 1,
-          language: `${s.language || 'EN'} · ${s.quality || 'HD'}`,
-          hd: /hd|fhd|4k/i.test(s.quality || ''),
-          embedUrl: s.url,
-          source: 'WatchFooty',
-        })))
-      const hfHits = nuvio.filter((e: any) => {
-        const n = String(e.title || e.name || '').toLowerCase()
-        const part = needle.split(' vs')[0].slice(0, 10)
-        return part && n.includes(part)
+      const home = norm(match.teams?.home?.name || match.title.split(/\s+vs\s+/i)[0] || '')
+      const away = norm(match.teams?.away?.name || match.title.split(/\s+vs\s+/i)[1] || '')
+      const words = (s: string) => s.split(' ').filter((w) => w.length > 3)
+      const hit = feeds.find((e) => {
+        const n = norm(e.title || e.name || '')
+        const hw = words(home)
+        const aw = words(away)
+        return (hw.length ? hw.some((w) => n.includes(w)) : n.includes(home)) && (!aw.length || aw.some((w) => n.includes(w)))
       })
-      const hfStreams = (await Promise.all(hfHits.slice(0, 4).map((e: any) =>
-        addonStreams(ADDONS.sportsstreams.base, 'sport', String(e.stremioId || e.id)).catch(() => [])
-      ))).flat().map((s, i) => ({
-        id: `hf-${i}`,
-        streamNo: i + 1,
-        language: s.quality || 'HD',
-        hd: true,
-        embedUrl: s.url,
-        source: 'Sports Streams',
-      }))
-      const playable = (u?: string) => !!u && /^https?:\/\//i.test(u) && !/^magnet:/i.test(u)
-      const official = all.filter((s) => playable(s.embedUrl) && /embed\.st|streamed|embedme|sportsembed|watchfooty/i.test(s.embedUrl || ''))
-      const rest = [...extra, ...hfStreams, ...all].filter((s) => playable(s.embedUrl) && !official.some((o) => o.embedUrl === s.embedUrl))
-      setStreams([...official, ...rest])
-      if (!all.length) setStreamError('No players listed for this match right now.')
-    } catch {
-      setStreamError('Could not load players.')
-    }
-    setResolving(false)
-  }
-
-  function openFooty(m: any) {
-    setActiveMatch({ id: m.matchId || m.title, title: m.title, category: m.sport || sportId, date: m.timestamp || 0, sources: [] })
-    setStreams((m.streams || []).map((s: any, i: number) => ({
-      id: String(s.id || i),
-      streamNo: i + 1,
-      language: `${s.language || 'EN'} · ${s.quality || 'HD'}`,
-      hd: /hd|fhd|4k/i.test(String(s.quality || '')),
-      embedUrl: s.url,
-      source: 'WatchFooty',
-    })))
-    setStreamError((m.streams || []).length ? '' : 'WatchFooty has no feeds for this match.')
-  }
-
-  function openTim(ev: any) {
-    const feeds = (ev.streams || []).filter((s: any) => s.url && !s.vip)
-    setActiveMatch({ id: ev.url || ev.name, title: ev.name, category: String(ev.genre || ''), date: 0, sources: [] })
-    setStreams(feeds.map((s: any, i: number) => ({
-      id: String(s.url || i),
-      streamNo: i + 1,
-      language: s.name || `Feed ${i + 1}`,
-      hd: /4k|uhd|hd/i.test(s.name || ''),
-      embedUrl: s.url,
-      source: s.name || 'TimStreams',
-    })))
-    setStreamError(feeds.length ? '' : 'No free feeds for this event.')
-  }
-
-  useEffect(() => {
-    const w = document.querySelector('webview.mfy-sport') as any
-    if (!w || !watchUrl) return
-    const keep = watchUrl
-    const onNav = (e: any) => {
-      const u = String(e?.url || '')
-      if (!u) return
-      if (/google\.|gstatic\.com|recaptcha|doubleclick/i.test(u) || (/^https?:/i.test(u) && !/embed\.st|embedme|streamed\.pk|sportsembed|watchfooty|weakstream|daddylive|player\./i.test(u))) {
-        try { e.preventDefault?.() } catch {}
-        try { w.src = keep } catch {}
+      let url = ''
+      if (hit) {
+        const list = await addonStreams(ADDONS.sportsstreams.base, 'sport', String(hit.stremioId || hit.id)).catch(() => [])
+        const direct = list.find((r) => /^https?:/i.test(r.url) && /\.m3u8(\?|$)/i.test(r.url))
+        const any = list.find((r) => /^https?:/i.test(r.url) && !/^magnet:/i.test(r.url))
+        url = direct?.url || any?.url || ''
       }
-    }
-    w.addEventListener('will-navigate', onNav)
-    w.addEventListener('did-navigate', onNav)
-    return () => {
-      w.removeEventListener('will-navigate', onNav)
-      w.removeEventListener('did-navigate', onNav)
-    }
-  }, [watchUrl])
-
-  function sportSeek(delta: number) {
-    try {
-      const w = document.querySelector('webview.mfy-sport') as any
-      w?.executeJavaScript?.(`document.querySelectorAll('video').forEach(v => { v.currentTime = Math.max(0, (v.currentTime||0) + (${delta})) })`)
-    } catch {}
-  }
-
-  function playEmbed(url: string, title?: string) {
-    if (streams?.length) setWatchList(streams)
-    setWatchQuality(url)
-    setActiveMatch(null)
-    setStreams(null)
-    if (multiView) {
-      const cap = mvGrid === '1x2' || mvGrid === '2x1' ? 2 : mvGrid === '1+2' ? 3 : mvGrid === '3x3' ? 9 : 4
-      const item = { id: `${Date.now()}`, title: title || activeMatch?.title || 'Stream', url }
-      setMvSlots((cur) => {
-        const next = cur.slice()
-        while (next.length < cap) next.push({ id: `empty-${next.length}`, title: '', url: '' })
-        const idx = addSlot != null ? addSlot : next.findIndex((s) => !s.url)
-        if (idx >= 0 && idx < cap) next[idx] = item
-        else if (next.length < cap) next.push(item)
-        return next.slice(0, cap)
-      })
-      setAddSlot(null)
-      return
-    }
-    setWatchUrl(url)
-  }
-
-  function formatDate(ms: number) {
-    if (!ms) return ''
-    try {
-      return new Date(ms).toLocaleString(undefined, {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
+      if (!url) {
+        for (const s of match.sources || []) {
+          const list = await sportsApi.getStreams(s.source, s.id).catch(() => [])
+          const pick = list.find((x) => x.hd && x.embedUrl) || list.find((x) => x.embedUrl)
+          if (pick?.embedUrl) { url = pick.embedUrl; break }
+        }
+      }
+      if (!url && match.sources?.[0]) {
+        const s = match.sources[0]
+        url = `https://embed.st/embed/${s.source}/${s.id}/1`
+      }
+      if (!url) { setErr('No feed for this game yet.'); return }
+      setSelectedMedia({ id: match.id, type: 'iptv', title: match.title, name: match.title } as any)
+      setCurrentStreamUrl(url)
+      setCurrentPage('player')
     } catch {
-      return ''
+      setErr('Could not start that game.')
+    } finally {
+      setBusy('')
     }
   }
 
   return (
-    <>
-    {together && <TogetherPanel streamUrl={watchUrl} onClose={() => setTogether(false)} />}
-    <div className="page-fade-enter min-h-full bg-[#0b0f14] text-white flex">
-      <aside className="w-52 flex-shrink-0 bg-[#0a0e12] border-r border-white/10 p-3 hidden md:block">
-        <p className="text-[10px] tracking-[0.25em] text-[#e50914] font-bold mb-3">MFY SPORTS</p>
-        {sports.map((s) => (
-          <button key={s.id} type="button" onClick={() => setSportId(s.id)} className={cn('w-full text-left px-3 py-2 rounded-md text-sm mb-0.5', sportId === s.id ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white')}>
-            {s.name || s.id}
-          </button>
-        ))}
-      </aside>
-      <div className="flex-1 p-5 min-w-0">
-      {watchUrl && (
-        <div className="fixed inset-0 z-[90] bg-black flex flex-col">
-          <div className="h-11 flex-shrink-0 flex items-center gap-2 px-3 bg-[#0b0f14] border-b border-white/10">
-            <button type="button" className="h-8 px-3 rounded-full bg-white text-black text-sm font-semibold" onClick={() => { setWatchUrl(''); setWatchList([]); setSportFull(false) }}>Back</button>
-            <select
-              className="h-8 rounded-lg bg-[#12121a] text-white text-xs border border-white/15 px-2 max-w-md"
-              value={watchQuality || watchUrl}
-              onChange={(e) => { setWatchQuality(e.target.value); setWatchUrl(e.target.value) }}
-            >
-              {(watchList.length ? watchList : [{ embedUrl: watchUrl, language: 'Auto', hd: true, source: 'Live' } as SportStream]).map((s, i) => (
-                <option key={`${s.embedUrl}-${i}`} value={s.embedUrl || ''}>
-                  {(s.hd ? 'HD · ' : '') + (s.language || s.source || `Feed ${i + 1}`)}
-                </option>
-              ))}
-            </select>
-            <span className="text-[11px] text-white/35 ml-auto">Use the player inside the video. MFY stays off it.</span>
-          </div>
-          <div className="flex-1 min-h-0 bg-black">
-            {/* @ts-expect-error Electron webview */}
-            <webview
-              className="mfy-sport"
-              src={watchUrl}
-              partition="persist:mfy-sport"
-              allowpopups="true"
-              useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-              webpreferences="allowRunningInsecureContent, javascript=yes"
-              style={{ width: '100%', height: '100%', display: 'flex' }}
-            />
-          </div>
-        </div>
-      )}
-      <div className="flex items-end justify-between gap-4 mb-5">
-        <div>
-          <p className="text-[11px] tracking-[0.2em] text-[#22c55e] font-bold">LIVE</p>
-          <h2 className="text-3xl font-bold text-white">{sportId.replace(/-/g, ' ')}</h2>
-        </div>
-        <div className="flex gap-2">
-          {(['live', 'upcoming', 'finished'] as const).map((w) => (
-            <button key={w} type="button" onClick={() => setWhen(w)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold capitalize', when === w ? 'bg-white text-black' : 'bg-white/10 text-white/45')}>{w}</button>
-          ))}
-          {(['streamed', 'nuvio', 'metegol'] as const).map((e) => (
-            <button key={e} type="button" onClick={() => setEngine(e)} className={cn('h-8 px-3 rounded-full text-[11px] font-semibold capitalize', engine === e ? 'bg-[#e50914] text-white' : 'bg-white/10 text-white/45')}>{e === 'nuvio' ? 'Nuvio Live' : e}</button>
-          ))}
-        </div>
-      </div>
-      <div className="flex items-center gap-2 mb-3">
-        <div className="flex-1" />
-        <button
-          type="button"
-          onClick={() => setShowSearch(!showSearch)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#e50914]/15 border border-[#e50914]/30 text-xs text-[#e50914] hover:bg-[#e50914]/25 transition-all"
-          title="Search">
-          <Search className="w-3.5 h-3.5" /> Search
-        </button>
-        <button
-          type="button"
-          onClick={() => setMultiView(!multiView)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#e50914]/15 border border-[#e50914]/30 text-xs text-[#e50914] hover:bg-[#e50914]/25 transition-all"
-          title="Multi-view">
-          <PlayCircle className="w-3.5 h-3.5" /> Multi-view
-        </button>
-        <button
-          type="button"
-          onClick={() => setPartyCode((v) => (typeof v === 'string' ? '' : 'watching'))}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-xs hover:bg-emerald-500/15 transition-all"
-          title="Watch party">
-          <PlayCircle className="w-3.5 h-3.5" /> Party
-        </button>
-        <button type="button" onClick={() => setTogether(true)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 text-xs text-white">Together</button>
-      </div>
-
-      <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-4 scroll-row">
-        {sports.map((s) => {
-          const meta = SPORT_META[s.id] || SPORT_META.other
-          const Icon = meta.icon
-          const active = sportId === s.id
-          return (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setSportId(s.id)}
-              className={cn(
-                'flex-shrink-0 flex flex-col items-center justify-center gap-1 w-20 h-20 rounded-2xl border transition-all',
-                active
-                  ? 'bg-white/[0.06] border-white/25 scale-[1.02]'
-                  : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]'
-              )}
-              style={active ? { boxShadow: `0 0 24px ${meta.color}33` } : undefined}
-            >
-              <span
-                className="w-9 h-9 rounded-xl flex items-center justify-center"
-                style={{ background: `${meta.color}1f`, color: meta.color, border: `1px solid ${meta.color}40` }}
-              >
-                <Icon className="w-4.5 h-4.5" style={{ width: 18, height: 18 }} />
-              </span>
-              <span className="text-[9px] font-medium text-white/60 truncate max-w-[76px]">{s.name}</span>
-            </button>
-          )
-        })}
-      </div>
-
-      {engine === 'nuvio' && (
-        <section className="mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <Radio className="w-3.5 h-3.5 text-[#e50914]" />
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#e50914]">Nuvio · Sports Streams</span>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
-            {nuvio.map((e: any) => (
-              <button
-                key={e.id}
-                type="button"
-                className="text-left rounded-xl border border-white/10 bg-white/[0.03] p-3 hover:border-[#e50914]/40"
-                onClick={async () => {
-                  const nid = String(e.stremioId || e.id || '')
-                  const bags = await Promise.all([
-                    addonStreams(ADDONS.sportsstreams.base, 'sport', nid).catch(() => []),
-                    addonStreams(ADDONS.nuvio.base, 'tv', nid).catch(() => []),
-                    addonStreams(ADDONS.nova.base, 'tv', nid).catch(() => []),
-                  ])
-                  const rows = bags.flat()
-                  const hit = rows.find((r) => /^https?:/i.test(r.url)) || rows[0]
-                  if (hit?.url) {
-                    playEmbed(hit.url, e.title || e.name)
-                    return
-                  }
-                  if (nid) playEmbed(`https://sports.highfly.dev/watch/${encodeURIComponent(nid)}`, e.title || e.name)
-                }}
-              >
-                <p className="text-sm font-semibold text-white line-clamp-2">{e.title || e.name}</p>
-                <p className="text-[11px] text-white/40 mt-1">Nuvio</p>
-              </button>
-            ))}
-            {!nuvio.length && <p className="text-white/40 text-sm">No Nuvio events right now.</p>}
-          </div>
-        </section>
-      )}
-      {engine === 'metegol' && (
-        <section className="mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <Radio className="w-3.5 h-3.5 text-[#e50914]" />
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#e50914]">Metegol</span>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
-            {metegol.map((e: any) => (
-              <button
-                key={e.id}
-                type="button"
-                className="text-left rounded-xl border border-white/10 bg-white/[0.03] p-3 hover:border-[#e50914]/40"
-                onClick={async () => {
-                  const url = e.streams?.[0]?.url || e.url || e.embed || ''
-                  const title = String(e.title || '')
-                  if (/\.m3u8($|\?)/i.test(url)) {
-                    playEmbed(url, title)
-                    return
-                  }
-                  const liveHit = live.find((m) => title && m.title.toLowerCase().includes(title.split(' vs ')[0]?.toLowerCase?.() || '___nomatch'))
-                  if (liveHit) {
-                    await openMatch(liveHit)
-                    return
-                  }
-                  if (url && !/\.m3u($|\?)/i.test(url)) {
-                    playEmbed(url, title)
-                    return
-                  }
-                  const foot = matches.find((m) => title && m.title.toLowerCase().includes(title.split(' ')[0].toLowerCase()))
-                  if (foot) await openMatch(foot)
-                  else if (live[0]) await openMatch(live[0])
-                }}
-              >
-                <p className="text-[10px] text-red-400 font-bold">LIVE</p>
-                <p className="text-sm text-white font-medium">{e.title}</p>
-                <p className="text-[11px] text-white/40">{e.competition} · {e.sport}</p>
-              </button>
-            ))}
-          </div>
-          {metegol.length === 0 && <p className="text-sm text-white/30">No Metegol events loaded.</p>}
-        </section>
-      )}
-
-
-
-      <section className="mb-10">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="w-1 h-4 bg-[#e50914] rounded-full" />
-          <h3 className="text-sm font-bold tracking-[0.18em] text-white">LIVE EVENTS</h3>
-        </div>
-        <div className="flex gap-3 overflow-x-auto pb-2 scroll-row">
-          {footy.slice(0, 10).map((m: any) => (
-            <button key={m.matchId || m.title} type="button" onClick={() => openFooty(m)} className="shrink-0 w-56 text-left rounded-2xl overflow-hidden bg-[#12131a] border border-[#22c55e]/30 hover:border-[#22c55e]">
-              <div className="h-20 bg-[#102016] grid place-items-center px-3">
-                <p className="text-xs font-semibold text-center line-clamp-2">{m.title}</p>
-              </div>
-              <p className="px-3 py-2 text-[10px] text-emerald-400">{m.league || 'WatchFooty'} · {(m.streams || []).length} feeds</p>
-            </button>
-          ))}
-          {timLive.map((ev: any) => (
-            <button key={ev.url || ev.name} type="button" onClick={() => openTim(ev)} className="shrink-0 w-56 text-left rounded-2xl overflow-hidden bg-[#12131a] border border-white/10 hover:border-[#e50914]/50">
-              <div className="relative h-36 bg-[#1b1c24]">
-                {ev.logo ? <img src={String(ev.logo).replace(/&amp;/g, '&')} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gradient-to-br from-[#e50914]/40 to-[#111]" />}
-                <span className="absolute top-2 left-2 text-[10px] font-black bg-[#e50914] text-white px-2 py-0.5 rounded">LIVE</span>
-              </div>
-              <div className="p-3">
-                <p className="text-xs font-semibold text-white line-clamp-2">{ev.name}</p>
-                <div className="flex items-center justify-between mt-2 text-[10px] text-white/40">
-                  <span>{(timGenres.find((g: any) => g.id === ev.genre) || {}).name || 'Sport'}</span>
-                  <span>{ev.time ? String(ev.time).replace('T', ' ').slice(0, 16) : ''}</span>
-                </div>
-                <p className="text-[10px] text-emerald-400 mt-1">{ev.vip ? 'VIP' : 'FREE'} · {(ev.streams || []).length} feeds</p>
-              </div>
-            </button>
-          ))}
-          {live.slice(0, 8).map((m) => (
-            <button key={m.id} type="button" onClick={() => openMatch(m)} className="shrink-0 w-56 text-left rounded-2xl overflow-hidden bg-[#12131a] border border-white/10 hover:border-[#e50914]/50">
-              <div className="relative h-36 bg-gradient-to-r from-[#1e3a5f] to-[#0f766e] flex items-center justify-center gap-4 px-3">
-                <span className="absolute top-2 left-2 text-[10px] font-black bg-[#e50914] text-white px-2 py-0.5 rounded">LIVE</span>
-                <div className="text-center">
-                  {m.teams?.home?.badge ? <img src={badgeUrl(m.teams.home.badge)} alt="" className="w-12 h-12 object-contain mx-auto" /> : null}
-                  <p className="text-[10px] text-white mt-1 line-clamp-1">{m.teams?.home?.name || m.title.split(/vs/i)[0]}</p>
-                </div>
-                <span className="text-white/50 text-xs">VS</span>
-                <div className="text-center">
-                  {m.teams?.away?.badge ? <img src={badgeUrl(m.teams.away.badge)} alt="" className="w-12 h-12 object-contain mx-auto" /> : null}
-                  <p className="text-[10px] text-white mt-1 line-clamp-1">{m.teams?.away?.name || m.title.split(/vs/i)[1]}</p>
-                </div>
-              </div>
-              <div className="p-3">
-                <p className="text-xs font-semibold text-white line-clamp-2">{m.title}</p>
-                <p className="text-[10px] text-white/40 mt-1">{m.category} · {formatDate(m.date)}</p>
-              </div>
-            </button>
-          ))}
-          {!timLive.length && !live.length && <p className="text-sm text-white/35">No live events right now.</p>}
-        </div>
-      </section>
-
-      {timReplays.length > 0 && (
-        <section className="mb-10">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="w-1 h-4 bg-[#e50914] rounded-full" />
-            <h3 className="text-sm font-bold tracking-[0.18em] text-white">LATEST REPLAYS</h3>
-          </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 scroll-row">
-            {timReplays.slice(0, 12).map((ev: any) => (
-              <button key={ev.url || ev.name} type="button" onClick={() => openTim(ev)} className="shrink-0 w-52 text-left rounded-2xl overflow-hidden bg-[#12131a] border border-white/10 hover:border-[#e50914]/40">
-                <div className="relative h-32 bg-[#1b1c24]">
-                  {ev.logo ? <img src={String(ev.logo).replace(/&amp;/g, '&')} alt="" className="w-full h-full object-cover" /> : null}
-                  <span className="absolute top-2 left-2 text-[10px] font-black bg-white/15 text-white px-2 py-0.5 rounded">REPLAY</span>
-                </div>
-                <div className="p-3">
-                  <p className="text-xs font-semibold text-white line-clamp-2">{ev.name}</p>
-                  <p className="text-[10px] text-white/40 mt-1">{ev.date || ''} · FREE</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {timChannels.length > 0 && (
-        <section className="mb-10">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="w-1 h-4 bg-[#e50914] rounded-full" />
-            <h3 className="text-sm font-bold tracking-[0.18em] text-white">24/7 CHANNELS</h3>
-          </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 scroll-row">
-            {timChannels.map((ch: any) => (
-              <button key={ch.url || ch.name} type="button" onClick={() => openTim(ch)} className="shrink-0 w-36 text-left rounded-2xl overflow-hidden bg-[#12131a] border border-white/10 hover:border-[#e50914]/40">
-                <div className="h-20 bg-[#1b1c24] grid place-items-center p-3">
-                  {ch.logo ? <img src={ch.logo} alt="" className="max-h-12 max-w-full object-contain" /> : <span className="text-xs text-white/60">{ch.name}</span>}
-                </div>
-                <p className="px-2 py-2 text-[11px] text-white truncate">{ch.name}</p>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {multiView && (
-        <section className="mb-6 rounded-2xl border border-white/10 bg-black/50 p-3">
-          <div className="flex items-center gap-2 mb-3 flex-wrap">
-            <span className="text-[11px] uppercase tracking-widest text-[#e50914]">Multi-view</span>
-            {(['1x2', '2x1', '2x2', '1+2', '3x3'] as const).map((g) => (
-              <button key={g} type="button" onClick={() => setMvGrid(g)}
-                className={`h-7 px-2.5 rounded-full text-[11px] ${mvGrid === g ? 'bg-[#e50914] text-white' : 'bg-white/10 text-white/70'}`}>
-                {g === '1x2' ? 'Side by side' : g === '2x1' ? 'Stacked' : g === '2x2' ? '2×2' : g === '1+2' ? 'Main + 2' : '3×3'}
-              </button>
-            ))}
-            <button type="button" className="ml-auto text-[11px] text-white/50" onClick={() => setMvSlots([])}>Clear</button>
-            <button type="button" className="text-[11px] text-white" onClick={() => {
-              const el = document.getElementById('mfy-multiview')
-              if (!el) return
-              if (document.fullscreenElement) document.exitFullscreen()
-              else el.requestFullscreen().catch(() => {})
-              setMvFull((v) => !v)
-            }}>{mvFull ? 'Exit full' : 'Full screen'}</button>
-            <button type="button" className="text-[11px] text-red-400" onClick={() => { setMultiView(false); setMvSlots([]) }}>Close</button>
-          </div>
-          <div
-            id="mfy-multiview"
-            className={
-              mvGrid === '1x2' ? 'grid grid-cols-2 gap-2 h-[52vh] bg-black' :
-              mvGrid === '2x1' ? 'grid grid-cols-1 grid-rows-2 gap-2 h-[70vh]' :
-              mvGrid === '1+2' ? 'grid grid-cols-3 grid-rows-2 gap-2 h-[62vh]' :
-              mvGrid === '3x3' ? 'grid grid-cols-3 grid-rows-3 gap-2 h-[72vh]' :
-              'grid grid-cols-2 grid-rows-2 gap-2 h-[62vh]'
-            }
-          >
-            {Array.from({ length: mvGrid === '1x2' || mvGrid === '2x1' ? 2 : mvGrid === '1+2' ? 3 : mvGrid === '3x3' ? 9 : 4 }).map((_, i) => {
-              const slot = mvSlots[i]
-              const extra = mvGrid === '1+2' && i === 0 ? 'col-span-2 row-span-2' : ''
-              return (
-                <div key={i} className={`relative rounded-xl overflow-hidden bg-[#0c0c12] border border-white/10 ${extra}`}>
-                  {slot?.url ? (
-                    <>
-                      {/* @ts-expect-error Electron webview */}
-                      <webview title={slot.title} src={slot.url} partition="persist:mfy-sport" className="w-full h-full" style={{ width: '100%', height: '100%' }} allowpopups="false" />
-                      <div className="absolute top-1 left-1 right-1 flex justify-between text-[10px] text-white">
-                        <span className="bg-black/60 px-2 py-0.5 rounded">{slot.title}</span>
-                        <button type="button" className="bg-black/60 px-2 py-0.5 rounded" onClick={() => setMvSlots((s) => s.filter((x) => x.id !== slot.id))}>✕</button>
-                      </div>
-                    </>
-                  ) : (
-                    <button type="button" className="w-full h-full text-white/45 text-xs grid place-items-center" onClick={() => { setAddSlot(i); setAddQ('') }}>
-                      <span className="text-center">
-                        <span className="block text-3xl text-white/30 mb-2">+</span>
-                        Click to add stream
-                      </span>
-                    </button>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-          <p className="text-[11px] text-white/40 mt-2">Open matches while Multi-view is on — they drop into empty panes instead of taking the whole screen.</p>
-        </section>
-      )}
-
-      {addSlot != null && !activeMatch && !streams && !resolving && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4" onClick={() => setAddSlot(null)}>
-          <div className="w-full max-w-md max-h-[80vh] overflow-y-auto rounded-2xl bg-[#16161c] border border-white/10 p-5" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold">Add Stream</h3>
-              <button type="button" className="text-white/40" onClick={() => setAddSlot(null)}>✕</button>
-            </div>
-            <input
-              value={addQ}
-              onChange={(e) => setAddQ(e.target.value)}
-              placeholder="Search for a match…"
-              className="w-full h-10 px-3 rounded-xl bg-black border border-[#e50914]/70 text-sm mb-4 outline-none"
-            />
-            <p className="text-[11px] text-white/40 mb-2">Categories</p>
-            <div className="grid grid-cols-4 gap-2 mb-4">
-              {sports.slice(0, 16).map((s) => (
-                <button key={s.id} type="button" onClick={() => setSportId(s.id)} className={`rounded-xl px-2 py-3 text-[10px] border ${sportId === s.id ? 'border-[#e50914] bg-[#e50914]/15' : 'border-white/10 bg-white/5'}`}>
-                  {s.name || s.id}
-                </button>
+    <div className="min-h-full bg-[#0b0b0b] text-white px-6 py-6">
+      <h1 className="text-[22px] font-semibold mb-5">Sports</h1>
+      {err && <p className="text-sm text-red-400 mb-3">{err}</p>}
+      {loading && <p className="text-white/40 text-sm flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading games…</p>}
+      {ROWS.map((row) => {
+        const list = rows[row.id] || []
+        if (!list.length && !loading) return null
+        return (
+          <section key={row.id} className="mb-7">
+            <h2 className="text-[15px] font-semibold mb-3">{row.label}</h2>
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {list.map((m, i) => (
+                <GameCard key={m.id} match={m} wash={WASH[i % WASH.length]} book={book} busy={busy === m.id} onPlay={() => play(m)} />
               ))}
             </div>
-            <p className="text-[11px] text-white/40 mb-2">Popular live</p>
-            <div className="space-y-1">
-              {(live.length ? live : matches).filter((m) => !addQ || m.title.toLowerCase().includes(addQ.toLowerCase())).slice(0, 20).map((m) => (
-                <button key={m.id} type="button" className="w-full text-left px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10" onClick={() => openMatch(m)}>
-                  <p className="text-sm">{m.title}</p>
-                  <p className="text-[10px] text-white/35">{formatDate(m.date)}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeMatch || resolving || streams ? (
-        <div
-          className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-          onClick={() => {
-            setActiveMatch(null)
-            setStreams(null)
-            setStreamError('')
-          }}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl bg-[#12121a] border border-white/10 p-5 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-sm font-semibold text-white mb-1">Watch with</h3>
-            <p className="text-xs text-white/70 mb-1">{activeMatch?.title}</p>
-            <p className="text-[10px] text-white/30 mb-4">Pick a player for this match</p>
-            {resolving && (
-              <div className="flex items-center gap-2 text-xs text-white/40 py-6 justify-center">
-                <Loader2 className="w-4 h-4 animate-spin" /> Finding streams…
-              </div>
-            )}
-            {streamError && <div className="error-banner mb-3">{streamError}</div>}
-            {streams && streams.length > 0 && (
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {streams.map((s, i) => (
-                  <button
-                    key={`${s.id}-${s.streamNo}-${i}`}
-                    type="button"
-                    onClick={() => s.embedUrl && playEmbed(s.embedUrl)}
-                    className="w-full flex items-center justify-between gap-2 p-3 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.07] hover:border-[#e50914]/30 text-left transition-all"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="relative flex w-2 h-2 flex-shrink-0">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-60" />
-                        <span className="relative inline-flex rounded-full w-2 h-2 bg-red-500" />
-                      </span>
-                      <div className="min-w-0">
-                        <div className="text-xs text-white/85">
-                          {(s.source || 'Streamed').toString().replace(/^\w/, (c) => c.toUpperCase())} · {s.language || `Feed ${s.streamNo || i + 1}`}
-                          {s.hd ? (
-                            <span className="ml-1.5 text-[9px] px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-400">HD</span>
-                          ) : null}
-                        </div>
-                        <div className="text-[10px] text-white/30">
-                          {s.viewers != null ? `${s.viewers} watching` : s.source}
-                        </div>
-                      </div>
-                    </div>
-                    <span className="flex items-center gap-1 text-[10px] text-[#e50914] flex-shrink-0">Watch <ExternalLink className="w-3 h-3" /></span>
-                  </button>
-                ))}
-              </div>
-            )}
-            {streams && streams.length === 0 && !streamError && (
-              <p className="text-[11px] text-white/25 text-center py-4">No live embeds available for this match right now.</p>
-            )}
-            <button
-              type="button"
-              className="mt-4 text-[11px] text-white/35 hover:text-white/60"
-              onClick={() => {
-                setActiveMatch(null)
-                setStreams(null)
-              }}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="pb-6">
-          <p className="text-[11px] text-white/25 text-center">Select a sport above to see live matches</p>
-        </div>
-      )}
-
-      {activeMatch && partyCode && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
-          <div className="bg-white/90 rounded-2xl p-8 max-w-md w-full text-center">
-            <h3 className="text-lg font-bold mb-4">Watch Party</h3>
-            <p className="text-white/70 mb-6">Share this party code with friends:</p>
-            <div className="bg-white/20 rounded p-4 mb-6">
-              <code className="text-lg font-mono text-white/80">{partyCode}</code>
-            </div>
-            <button
-              className="bg-[#e50914] text-white px-6 py-2 rounded-md hover:bg-[#e50914]/90"
-              onClick={() => setPartyCode('')}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-
-      {loading ? (
-    <div className="flex items-center gap-2 text-white/30 text-xs py-12 justify-center">
-      <Loader2 className="w-4 h-4 animate-spin" /> Loading matches…
+          </section>
+        )
+      })}
     </div>
-  ) : (
-    <>
-      {showSearch && (
-        <div className="mb-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-            <input
-              type="text"
-              placeholder="Search matches, teams, leagues..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white placeholder-white/20 focus:border-[#e50914]/50 focus:outline-none focus:ring-1 focus:ring-[#e50914]/30 text-sm"
-            />
-          </div>
-        </div>
-      )}
-      {filteredMatches.length === 0 && searchQuery && !loading && (
-        <p className="text-xs text-white/25 text-center py-10">No matches found for "<span className="text-white/60">{searchQuery}</span>"</p>
-      )}
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        {filteredMatches.map((m) => (
-          <MatchCard key={m.id} match={m} onOpen={() => openMatch(m)} formatDate={formatDate} />
-        ))}
-        {!filteredMatches.length && !loading && !searchQuery && (
-          <p className="text-xs text-white/25 col-span-2 py-10 text-center">No matches for this sport right now.</p>
-        )}
-      </div>
-    </>
-    )}
-      </div>
-    </div>
-    </>
   )
 }
 
-function TeamCrest({ badge, name }: { badge?: string; name?: string }) {
-  const list = badgeFallbacks(badge)
+function GameCard({ match, wash, book, busy, onPlay }: { match: SportMatch; wash: string; book: Record<string, Book>; busy: boolean; onPlay: () => void }) {
+  const homeName = match.teams?.home?.name || match.title.split(/\s+vs\s+/i)[0] || match.title
+  const awayName = match.teams?.away?.name || match.title.split(/\s+vs\s+/i)[1] || ''
+  const home = book[norm(homeName)]
+  const away = book[norm(awayName)]
+  const when = stamp(match.date)
+  const live = !!match.live || (when > 0 && when <= Date.now() + 15 * 60 * 1000 && Date.now() - when < 4 * 60 * 60 * 1000)
+  const upcoming = !live && when > Date.now()
+  const hs = home?.score
+  const as = away?.score
+  const league = (match.category || '').replace(/-/g, ' ')
+  return (
+    <button type="button" onClick={onPlay} className="shrink-0 w-[248px] text-left">
+      <div className="relative h-[148px] rounded-xl overflow-hidden" style={{ background: wash }}>
+        <div className="flex items-center justify-between px-3 pt-2 text-[9px] tracking-wide text-white/70 uppercase">
+          <span className="truncate">{league}</span>
+          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${live ? 'bg-red-600 text-white' : 'bg-white/15 text-white'}`}>{live ? 'LIVE' : upcoming ? 'UPCOMING' : 'TODAY'}</span>
+        </div>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center px-3 pt-2 gap-1">
+          <Side name={homeName} badge={match.teams?.home?.badge} extra={home?.logo} />
+          <div className="text-white font-semibold text-[15px] tabular-nums px-1">{hs != null && as != null ? `${hs} - ${as}` : 'VS'}</div>
+          <Side name={awayName} badge={match.teams?.away?.badge} extra={away?.logo} />
+        </div>
+        {busy && <div className="absolute inset-0 grid place-items-center bg-black/45 text-xs">Starting…</div>}
+      </div>
+      <p className="mt-2 text-[13px] font-medium truncate">
+        {live && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 mr-1.5 align-middle" />}
+        {live ? 'LIVE: ' : ''}{match.title}
+      </p>
+      <p className="text-[11px] text-white/40">{dayLabel(match.date)}</p>
+    </button>
+  )
+}
+
+function Side({ name, badge, extra }: { name: string; badge?: string; extra?: string }) {
+  const sources = [...badgeFallbacks(badge), extra || ''].filter(Boolean)
+  return (
+    <div className="min-w-0 text-center">
+      <Crest sources={sources} name={name} />
+      <p className="mt-1 text-[9px] uppercase tracking-wide text-white/90 truncate">{name}</p>
+    </div>
+  )
+}
+
+function Crest({ sources, name }: { sources: string[]; name: string }) {
   const [i, setI] = useState(0)
-  const src = list[i]
+  const src = sources[i]
   if (!src) {
-    return <div className="w-11 h-11 rounded-full bg-white/10 grid place-items-center text-[9px] font-bold text-white/70">{(name || '?').slice(0, 2).toUpperCase()}</div>
+    return <span className="mx-auto grid place-items-center w-11 h-11 rounded-full bg-white text-[11px] font-bold text-black">{(name || '?').replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase() || '?'}</span>
   }
   return (
     <img
       src={src}
       alt=""
-      className="w-11 h-11 object-contain"
+      className="mx-auto w-11 h-11 rounded-full bg-white object-contain p-1"
       referrerPolicy="no-referrer"
       onError={() => setI((n) => n + 1)}
     />
-  )
-}
-
-function MatchCard({
-  match,
-  onOpen,
-  formatDate,
-}: {
-  match: SportMatch
-  onOpen: () => void
-  formatDate: (n: number) => string
-}) {
-  const home = match.teams?.home
-  const away = match.teams?.away
-  const parsed = String(match.title || '').match(/(\d+)\s*[-–]\s*(\d+)/)
-  const hs = match.score?.home ?? parsed?.[1]
-  const as = match.score?.away ?? parsed?.[2]
-  const homeName = home?.name || match.title.split(/vs|v\s/i)[0] || ''
-  const awayName = away?.name || match.title.split(/vs|v\s/i)[1] || ''
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="flex items-center gap-2 p-3 rounded-2xl bg-[#1b2433] border border-white/8 hover:border-[#22c55e]/40 text-left transition-all w-full"
-    >
-      <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
-        <div className="text-xs text-white truncate text-right">{homeName}</div>
-        <TeamCrest badge={home?.badge} name={homeName} />
-      </div>
-      <div className="flex flex-col items-center w-[72px] flex-shrink-0">
-        {match.live ? <span className="text-[9px] text-white bg-red-500 px-1.5 rounded font-bold">LIVE</span> : <span className="text-[9px] text-white/40">{formatDate(match.date)}</span>}
-        <div className="text-xl font-bold text-white tabular-nums leading-tight">{hs != null && as != null ? `${hs}  ${as}` : 'VS'}</div>
-      </div>
-      <div className="flex-1 flex items-center gap-2 min-w-0">
-        <TeamCrest badge={away?.badge} name={awayName} />
-        <div className="text-xs text-white truncate">{awayName}</div>
-      </div>
-    </button>
   )
 }
