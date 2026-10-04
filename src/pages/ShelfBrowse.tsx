@@ -61,7 +61,7 @@ export default function ShelfBrowse() {
       {loading && <p className="shelf-empty">Loading…</p>}
       {!loading && items.length === 0 && <p className="shelf-empty">Nothing in this shelf yet.</p>}
       <div className="shelf-grid">
-        {items.map((item) => {
+        {items.map((item, i) => {
           const pct = Math.max(0, ...((watchHistory || []).filter((h) => String(h.mediaId) === String(item.id)).map((h) => watchPercent(h))))
           const gid = item.genre_ids?.[0]
           return (
@@ -72,7 +72,10 @@ export default function ShelfBrowse() {
               genre={gid ? genres[gid] : ''}
               score={item.vote_average}
               year={String(item.release_date || item.first_air_date || '').slice(0, 4)}
+              mediaId={item.id}
+              item={item}
               pct={Number.isFinite(pct) ? pct : 0}
+              rank={query?.mode === 'trending' && i < 20 ? i + 1 : 0}
               onClick={() => open(item)}
             />
           )

@@ -54,33 +54,54 @@ export default function ProviderBrowse() {
         <ArrowLeft className="w-3.5 h-3.5" /> Home
       </button>
 
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-12 h-12 rounded-2xl bg-white/[0.06] border border-white/[0.08] flex items-center justify-center overflow-hidden p-2">
-          {service.logo ? <img src={service.logo} alt="" className="max-w-full max-h-full object-contain" /> : <span className="text-[10px] font-bold text-white text-center">{service.name}</span>}
-        </div>
+      <div className="prov-hero" style={{ background: service.color }}>
         <div>
-          <h2 className="text-lg font-semibold text-white tracking-tight">{service.name}</h2>
-          <p className="text-[11px] text-white/30">Popular titles · TMDB watch providers</p>
+          {service.logo
+            ? <img src={service.logo} alt="" />
+            : <h2>{service.name}</h2>}
+          <p className="text-[12px] text-white/70 mt-2 mb-0">Popular on {service.name}</p>
+        </div>
+        <div className="flex gap-2">
+          {(['movie', 'tv'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              className={cn(
+                'h-9 px-4 rounded-full text-sm font-semibold',
+                tab === t ? 'bg-white text-black' : 'bg-black/30 text-white'
+              )}
+            >
+              {t === 'movie' ? 'Movies' : 'Series'}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="flex gap-2 mb-5">
-        {(['movie', 'tv'] as const).map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setTab(t)}
-            className={cn(
-              'h-8 px-3 rounded-lg text-xs border transition-all',
-              tab === t
-                ? 'bg-[#e50914]/15 border-[#e50914]/35 text-[#e50914]'
-                : 'border-white/[0.06] text-white/35 hover:text-white/55'
-            )}
-          >
-            {t === 'movie' ? 'Movies' : 'TV Shows'}
-          </button>
-        ))}
-      </div>
+      {!loading && items.length > 0 && (
+        <section className="mb-8">
+          <h3 className="nv-kicker">{service.name} Top 10</h3>
+          <div className="bill-top">
+            {items.slice(0, 10).map((item, i) => (
+              <button
+                key={item.id}
+                type="button"
+                className="bill-rank"
+                onClick={() => {
+                  setSelectedMedia({ id: item.id, type: tab })
+                  setCurrentPage('detail')
+                }}
+              >
+                {item.poster_path
+                  ? <img src={`${POSTER_URL}${item.poster_path}`} alt={item.title || item.name} />
+                  : <img alt="" src="" style={{ background: '#222' }} />}
+                {item.vote_average > 0 && <em>★ {Number(item.vote_average).toFixed(1)}</em>}
+                <b>{i + 1}</b>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
@@ -90,7 +111,7 @@ export default function ProviderBrowse() {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 pb-10">
-          {items.map((item) => (
+          {items.slice(10).map((item) => (
             <div
               key={item.id}
               className="poster-card w-full"

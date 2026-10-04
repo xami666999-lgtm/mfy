@@ -124,6 +124,8 @@ export default function People() {
               <p className="text-sm text-white/60 mt-3 max-h-32 overflow-y-auto">{(source === 'tmdb' ? person.biography : String(person.description || '').replace(/<[^>]+>/g, ' ')) || 'No bio.'}</p>
             </div>
           </div>
+          {source === 'tmdb' && <FilmSpine person={person} onOpen={(w) => { setSelectedMedia({ id: w.id, type: w.media_type === 'tv' || w.first_air_date ? 'tv' : 'movie' }); setCurrentPage('detail') }} />}
+          {source === 'tmdb' && <CareerScatter person={person} onOpen={(w) => { setSelectedMedia({ id: w.id, type: w.media_type === 'tv' || w.first_air_date ? 'tv' : 'movie' }); setCurrentPage('detail') }} />}
           <h3 className="text-sm text-white/70 mt-5 mb-3">Works</h3>
           <div className="flex gap-3 overflow-x-auto pb-2">
             {source === 'tmdb' && worksTmdb.filter((x: any, i: number, a: any[]) => a.findIndex((y) => y.id === x.id) === i).slice(0, 20).map((w: any) => (
@@ -154,6 +156,81 @@ export default function People() {
           </button>
         ))}
       </div>
+    </div>
+  )
+}
+
+function yearOf(c: any) {
+  return Number(String(c.release_date || c.first_air_date || '').slice(0, 4)) || 0
+}
+
+function FilmSpine({ person, onOpen }: { person: any; onOpen: (w: any) => void }) {
+  const directed = [...(person?.movie_credits?.crew || []), ...(person?.tv_credits?.crew || [])]
+    .filter((c: any) => c.job === 'Director' && (c.poster_path || c.title || c.name))
+    .filter((c: any, i: number, a: any[]) => a.findIndex((y) => y.id === c.id) === i)
+    .sort((a: any, b: any) => yearOf(a) - yearOf(b))
+  if (!directed.length) return null
+  return (
+    <>
+      <h3 className="text-sm text-white/70 mt-5 mb-3">Filmography</h3>
+      <div className="dir-line">
+      {directed.slice(0, 24).map((w: any) => (
+        <button key={`${w.id}-${w.job}`} type="button" onClick={() => onOpen(w)}>
+          {w.poster_path ? <img src={`${POSTER_URL}${w.poster_path}`} alt="" /> : <div style={{ width: 110, height: 165, borderRadius: 10, background: '#14141c' }} />}
+          <small>{yearOf(w) || ''}</small>
+          <b style={{ display: 'block', fontSize: 12, marginTop: 2 }}>{w.title || w.name}</b>
+        </button>
+      ))}
+      </div>
+    </>
+  )
+}
+
+function CareerScatter({ person, onOpen }: { person: any; onOpen: (w: any) => void }) {
+  const crew = person?.combined_credits?.crew || []
+  const cast = person?.combined_credits?.cast || []
+  const lanes = [
+    { name: 'Directing', color: '#fff', items: crew.filter((c: any) => c.job === 'Director') },
+    { name: 'Writing', color: '#c4b5fd', items: crew.filter((c: any) => c.department === 'Writing') },
+    { name: 'Production', color: '#93c5fd', items: crew.filter((c: any) => c.department === 'Production') },
+    { name: 'Acting', color: '#fca5a5', items: cast },
+  ].map((lane) => ({
+    ...lane,
+    items: lane.items.filter((c: any, i: number, a: any[]) => yearOf(c) && a.findIndex((y) => y.id === c.id) === i),
+  }))
+  const years = lanes.flatMap((l) => l.items.map(yearOf)).filter(Boolean)
+  if (years.length < 2) return null
+  const min = Math.min(...years)
+  const max = Math.max(...years)
+  const span = Math.max(1, max - min)
+  const w = 640
+  const h = 168
+  const padL = 78
+  const padR = 12
+  return (
+    <div className="career">
+      <h3>Career</h3>
+      <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label="Career by year">
+        {lanes.map((lane, i) => {
+          const y = 28 + i * 34
+          return (
+            <g key={lane.name}>
+              <text x="0" y={y + 4} fill="#9aa4b2" fontSize="11">{lane.name}</text>
+              <line x1={padL} x2={w - padR} y1={y} y2={y} stroke="#ffffff18" />
+              {lane.items.map((c: any) => {
+                const x = padL + ((yearOf(c) - min) / span) * (w - padL - padR)
+                return (
+                  <circle key={`${lane.name}-${c.id}`} cx={x} cy={y} r="5" fill={lane.color} style={{ cursor: 'pointer' }} onClick={() => onOpen(c)}>
+                    <title>{`${yearOf(c)} · ${c.title || c.name || ''}`}</title>
+                  </circle>
+                )
+              })}
+            </g>
+          )
+        })}
+        <text x={padL} y={h - 6} fill="#8e8e93" fontSize="11">{min}</text>
+        <text x={w - padR} y={h - 6} fill="#8e8e93" fontSize="11" textAnchor="end">{max}</text>
+      </svg>
     </div>
   )
 }

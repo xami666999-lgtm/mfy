@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="8 24 504 90">
+  <defs>
+    <filter id="s" x="-15%" y="-40%" width="130%" height="180%">
+      <feDropShadow dx="0" dy="2" stdDeviation="1.6" flood-color="#000" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+  <text x="260" y="86" text-anchor="middle" fill="#fff" font-family="Times New Roman, Georgia, serif" font-size="72" letter-spacing="8" font-weight="700" filter="url(#s)">007</text>
+</svg>

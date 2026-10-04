@@ -3,7 +3,9 @@ import { useState } from 'react'
 import { useStore } from '../store'
 import { POSTER_URL } from '../api/tmdb'
 import { cn } from '../lib/utils'
-import { watchPercent } from '../lib/watchProgress'
+import { watchFace } from '../lib/watchProgress'
+import { PosterStatus, stateCaption } from '../components/PosterTile'
+import { genreOf, scoreOf } from '../components/PosterMarks'
 import { Achievements } from '../components/Achievements'
 import { viewingBadges } from '../lib/achievements'
 
@@ -63,22 +65,22 @@ export default function Library() {
           const type = item.mediaType || item.media_type || 'movie'
           const title = item.title || item.name || ''
           const poster = posterUrl(item.posterPath || item.poster_path)
-          const pct = watchPercent(item)
+          const face = watchFace(watchHistory, id, item)
           return (
             <div key={`${type}-${id}-${item.season || 0}-${item.episode || 0}`} className="group relative">
               <button type="button" className="poster-card w-full text-left" onClick={() => openItem(id, type, item)}>
                 {poster ? <img src={poster} alt="" loading="lazy" referrerPolicy="no-referrer" /> : <div className="poster-fallback">{title}</div>}
+                <PosterStatus
+                  genre={genreOf(item)}
+                  score={scoreOf(item)}
+                  state={face.state}
+                  pct={face.pct}
+                  label={face.label}
+                />
                 <div className="poster-play"><Play size={16} fill="#fff" /></div>
-                <div className="poster-overlay">
-                  <div className="poster-meta-title">{title}</div>
-                  <div className="poster-meta-sub capitalize">{type}{item.season ? ` · S${item.season}E${item.episode || 1}` : ''}{pct > 0 ? ` · ${pct}%` : ''}</div>
-                </div>
-                {pct > 0 && (
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/15">
-                    <div className="h-full bg-[#e50914]" style={{ width: `${pct}%` }} />
-                  </div>
-                )}
               </button>
+              <strong className="lib-title">{title}</strong>
+              <em className="nv-cap">{stateCaption(face.state)}</em>
               {onRemove && (
                 <button
                   type="button"

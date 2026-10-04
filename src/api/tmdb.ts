@@ -215,6 +215,12 @@ export const tmdb = {
       ttlMs: 60 * 60 * 1000,
     }),
 
+  getReviews: (mediaType: 'movie' | 'tv', id: number) =>
+    tmdbFetch(`/${mediaType}/${id}/reviews`, {}, {
+      cacheKey: `reviews:${mediaType}:${id}`,
+      ttlMs: 6 * 60 * 60 * 1000,
+    }),
+
   /** Popular titles available on a given watch provider (TMDB provider id) */
   discoverByProvider: (mediaType: 'movie' | 'tv', providerId: number, page = 1) =>
     tmdbFetch(`/discover/${mediaType}`, {

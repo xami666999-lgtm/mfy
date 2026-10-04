@@ -1,3 +1,16 @@
+import { PosterStatus } from './PosterTile'
+import { watchFace } from '../lib/watchProgress'
+import { useStore } from '../store'
+
+const GENRE: Record<number, string> = {
+  28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
+  99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy', 36: 'History',
+  27: 'Horror', 10402: 'Music', 9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi',
+  10770: 'Movie', 53: 'Thriller', 10752: 'War', 37: 'Western',
+  10759: 'Action', 10762: 'Kids', 10763: 'News', 10764: 'Reality',
+  10765: 'Sci-Fi', 10766: 'Soap', 10767: 'Talk', 10768: 'War',
+}
+
 export function posterYear(item: any) {
   return String(item.release_date || item.first_air_date || item.startDate?.year || '').slice(0, 4)
 }
@@ -12,20 +25,29 @@ export function scoreOf(item: any): number {
   return 0
 }
 
-export function PosterMarks({ item }: { item: any; rank?: number }) {
-  const pct = item.progressPct ?? (item.progress && item.duration ? Math.round((item.progress / Math.max(item.duration, 1)) * 100) : 0)
-  const score = scoreOf(item)
+export function genreOf(item: any): string {
+  if (Array.isArray(item?.genres) && item.genres.length) {
+    const g = item.genres[0]
+    if (typeof g === 'string') return g
+    if (g?.name) return String(g.name)
+  }
+  if (typeof item?.genre === 'string') return item.genre
+  const id = Number(item?.genre_ids?.[0])
+  return GENRE[id] || ''
+}
+
+export function PosterMarks({ item, rank }: { item: any; rank?: number }) {
+  const hist = useStore((s) => s.watchHistory)
+  const id = item.id ?? item.mediaId
+  const face = watchFace(hist, id, item)
   return (
-    <>
-      {score > 0 && <span className="mfy-score">★ {score.toFixed(1)}</span>}
-      {(item.completed || pct >= 90) && (
-        <div className="absolute top-1.5 right-1.5 z-20 h-6 w-6 rounded-full bg-[#e50914] text-white grid place-items-center text-[11px] font-black shadow">✓</div>
-      )}
-      {pct > 0 && pct < 90 && !item.completed && (
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 z-10">
-          <div className="h-full bg-[#e50914]" style={{ width: `${Math.min(100, pct)}%` }} />
-        </div>
-      )}
-    </>
+    <PosterStatus
+      genre={genreOf(item)}
+      score={scoreOf(item)}
+      state={face.state}
+      pct={face.pct}
+      label={face.label}
+      rank={rank}
+    />
   )
 }

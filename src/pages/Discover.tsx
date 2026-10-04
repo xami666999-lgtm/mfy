@@ -4,6 +4,7 @@ import { anilist } from '../api/anilist'
 import { openAnime } from '../api/animeOpen'
 import { useStore } from '../store'
 import { cn } from '../lib/utils'
+import StoryLenses from '../components/StoryLenses'
 
 const genres = [
   { id: 0, name: 'All' },
@@ -41,6 +42,7 @@ export default function Discover() {
   const [items, setItems] = useState<any[]>([])
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [lens, setLens] = useState<'scene' | 'looks' | 'stories'>('scene')
 
   useEffect(() => {
     load()
@@ -80,6 +82,14 @@ export default function Discover() {
 
   return (
     <div className="p-8 page-fade-enter">
+      <section style={{ marginBottom: 28 }}>
+        <div className="lens-bar">
+          {([['scene', 'Step into the scene'], ['looks', 'Other looks'], ['stories', 'Stories that connect']] as const).map(([id, label]) => (
+            <button key={id} type="button" className={lens === id ? 'on' : ''} onClick={() => setLens(id)}>{label}</button>
+          ))}
+        </div>
+        <StoryLenses mode={lens} />
+      </section>
       <div className="flex items-center gap-6 mb-6">
         <h2 className="text-lg font-semibold text-white tracking-tight">Discover</h2>
 

@@ -15,6 +15,7 @@ import { markLike, markDislike, isLiked, isDisliked } from '../lib/taste'
 import { sourceDot, reportBroken } from '../lib/playerStatus'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 import TitleLogo from '../components/TitleLogo'
+import { facesInCommon, rememberCast } from '../lib/faces'
 
 export default function MetaDetails() {
   const { selectedMedia, setCurrentPage, setSelectedMedia, tmdbApiKey, setCurrentStreamUrl, addToWatchlist, removeFromWatchlist, isInWatchlist, addFavorite, removeFavorite, isFavorite, aiostreamsUrl, externalPlayer, mdblistApiKey, customLists, addToCustomList, removeFromCustomList, isInCustomList, createCustomList, watchHistory } = useStore()
@@ -41,6 +42,24 @@ export default function MetaDetails() {
   const [listOpen, setListOpen] = useState(false)
   const [newListName, setNewListName] = useState('')
   const [tasteN, setTasteN] = useState(0)
+  const [known, setKnown] = useState<{ id: number; name: string; titles: string[]; profile_path?: string; role?: string }[]>([])
+  const [quotes, setQuotes] = useState<{ author: string; text: string; rating: number | null; date: string }[]>([])
+
+  useEffect(() => {
+    const cast = detail?.credits?.cast || []
+    const title = String(detail?.title || detail?.name || '')
+    if (!cast.length || !title) {
+      setKnown([])
+      return
+    }
+    const slim = cast.slice(0, 18).map((p: any) => ({ id: p.id, name: p.name }))
+    const hits = facesInCommon(slim, title)
+    setKnown(hits.map((h) => {
+      const p = cast.find((c: any) => c.id === h.id)
+      return { ...h, profile_path: p?.profile_path, role: p?.character || '' }
+    }))
+    rememberCast(slim, title)
+  }, [detail?.id, detail?.credits])
 
   useEffect(() => {
     if (!selectedMedia) return
@@ -60,6 +79,7 @@ export default function MetaDetails() {
   async function load() {
     if (!selectedMedia) return
     setLoading(true)
+    setQuotes([])
     try {
       // Handle IPTV
       if (selectedMedia.type === 'iptv') {
@@ -88,6 +108,19 @@ export default function MetaDetails() {
       }
       if (d) {
         setDetail(d)
+        const reviewKind = selectedMedia.type === 'movie' ? 'movie' : 'tv'
+        tmdb.getReviews(reviewKind, d.id).then((rev) => {
+          const list = (rev?.results || [])
+            .map((x: any) => ({
+              author: String(x.author || x.author_details?.username || '').trim(),
+              text: String(x.content || '').replace(/\s+/g, ' ').trim(),
+              rating: typeof x.author_details?.rating === 'number' ? x.author_details.rating : null,
+              date: x.created_at ? new Date(x.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+            }))
+            .filter((x: { author: string; text: string }) => x.author && x.text.length > 40)
+            .slice(0, 4)
+          setQuotes(list)
+        }).catch(() => setQuotes([]))
         const fromDetail = d?.videos?.results?.find((v: any) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'))?.key
         if (fromDetail) setTrailerKey(fromDetail)
         else {
@@ -787,6 +820,89 @@ onKeyDown={(e) => {
                 </div>
               </div>
             )}
+
+            {known.length > 0 && (
+              <div>
+                <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-1">Known faces</h3>
+                <p className="text-[12px] text-white/40 mb-3">{known.length} from here are already in your history</p>
+                <div className="known-row">
+                  <div className="known-const">
+                    <b>See the constellation</b>
+                    <small>{known.length} people, traced across what you watched</small>
+                  </div>
+                  {known.map((p) => (
+                    <button key={p.id} type="button" onClick={() => {
+                      try { sessionStorage.setItem('mfy-person', JSON.stringify({ source: 'tmdb', id: p.id, name: p.name })) } catch {}
+                      setCurrentPage('people')
+                    }}>
+                      {p.profile_path ? <img src={`${PROFILE_URL}${p.profile_path}`} alt="" /> : <i>{p.name[0]}</i>}
+                      <b>{p.name}</b>
+                      <small>{p.role ? `${p.role} · ` : ''}Seen in {p.titles[0]}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {(detail.production_companies || []).length > 0 && (
+              <div>
+                <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Production</h3>
+                <div className="house-row">
+                  {(detail.production_companies as any[]).slice(0, 8).map((c) => (
+                    <div className="house" key={c.id}>
+                      <div>
+                        {c.logo_path
+                          ? <img src={`https://image.tmdb.org/t/p/w185${c.logo_path}`} alt={c.name} />
+                          : <b style={{ color: '#111', fontSize: 12, textAlign: 'center', padding: '0 8px' }}>{c.name}</b>}
+                      </div>
+                      <span>{c.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {quotes.length > 0 && (
+              <div>
+                <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Reviews</h3>
+                <div className="quote-row">
+                  {quotes.map((q) => (
+                    <blockquote key={`${q.author}-${q.text.slice(0, 24)}`}>
+                      <b>{q.author}{q.rating != null ? <em>{q.rating}/10</em> : null}</b>
+                      <p>{q.text}</p>
+                      {q.date ? <small>{q.date}</small> : null}
+                    </blockquote>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedMedia?.type === 'tv' && detail.seasons && (() => {
+              const seasons = (detail.seasons || []).filter((s: any) => s.season_number > 0 && s.episode_count)
+              const rows = (watchHistory || []).filter((h: any) => String(h.mediaId) === String(selectedMedia?.id))
+              const bars = seasons.map((s: any) => {
+                const seen = new Set(rows.filter((h: any) => Number(h.season) === Number(s.season_number) && Number(h.episode) > 0).map((h: any) => Number(h.episode)))
+                return { n: s.season_number, seen: Math.min(seen.size, Number(s.episode_count)), total: Number(s.episode_count) }
+              })
+              const watched = bars.reduce((n: number, b: { seen: number }) => n + b.seen, 0)
+              const total = bars.reduce((n: number, b: { total: number }) => n + b.total, 0)
+              if (!watched || !total) return null
+              return (
+                <div>
+                  <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-1">Where you left off</h3>
+                  <p className="text-[13px] text-white/70 mb-2">{watched} of {total} watched · {Math.max(0, total - watched)} left</p>
+                  <div className="left-bars">
+                    {bars.map((b: { n: number; seen: number; total: number }) => (
+                      <div key={b.n}>
+                        <span>S{b.n}</span>
+                        <i><b style={{ width: `${Math.round((b.seen / b.total) * 100)}%` }} /></i>
+                        <span>{b.seen}/{b.total}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* Seasons (TV) */}
             {selectedMedia?.type === 'tv' && detail.seasons && (

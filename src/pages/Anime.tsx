@@ -7,23 +7,12 @@ import { MediaShelf } from '../components/MediaShelf'
 import PageHero from '../components/PageHero'
 import { TrailerRail } from '../components/TrailerRail'
 import TitleSheet from '../components/TitleSheet'
-import TitleLogo from '../components/TitleLogo'
 import { getPlayerUrl } from '../api/vidy'
 import { OFFLINE_ANIME } from '../data/offlineCatalog'
 import { openAnime } from '../api/animeOpen'
 import { addonCatalog } from '../api/stremioAddons'
-
-const FRANCHISES = [
-  { id: 37854, name: 'One Piece', tint: '#e11d2e' },
-  { id: 46260, name: 'Naruto', tint: '#f59e0b' },
-  { id: 85937, name: 'Demon Slayer', tint: '#16a34a' },
-  { id: 95479, name: 'Jujutsu Kaisen', tint: '#7c3aed' },
-  { id: 1429, name: 'Attack on Titan', tint: '#b45309' },
-  { id: 60572, name: 'Pokémon', tint: '#eab308' },
-  { id: 12609, name: 'Dragon Ball', tint: '#f97316' },
-  { id: 30984, name: 'Bleach', tint: '#111827' },
-  { id: 73223, name: 'Black Clover', tint: '#14532d' },
-]
+import { ArtLogo } from '../components/BrandCard'
+import { ANIME_FRANCHISES, ANIME_STUDIOS } from '../data/brands'
 
 export default function Anime() {
   const { setSelectedMedia, setCurrentPage, setCurrentStreamUrl } = useStore()
@@ -105,7 +94,7 @@ export default function Anime() {
     addonCatalog('animeworld').then((list) => { if (list.length) setRows((r) => ({ ...r, AnimeWorld: list })) }).catch(() => {})
     addonCatalog('animecatalogs').then((list) => { if (list.length) setRows((r) => ({ ...r, 'Anime catalogs': list })) }).catch(() => {})
     addonCatalog('onepace').then((list) => { if (list.length) setRows((r) => ({ ...r, 'One Pace': list })) }).catch(() => {})
-    FRANCHISES.forEach((f) => {
+    ANIME_FRANCHISES.forEach((f) => {
       tmdb.getTVDetail(f.id).then((d) => {
         const path = d?.backdrop_path || d?.poster_path
         if (path) setFrArt((prev) => ({ ...prev, [f.id]: path }))
@@ -124,12 +113,33 @@ export default function Anime() {
         </div>
         <section className="media-row">
           <div className="media-row-header"><h2 className="media-row-title">Anime franchises</h2></div>
-          <div className="fr-row">
-            {FRANCHISES.map((f) => (
-              <button key={f.id} type="button" className="banner short fr" style={{ background: f.tint }} onClick={() => setSheet({ id: f.id, name: f.name, first_air_date: '2000-01-01', media_type: 'tv', isAnime: true, backdrop_path: frArt[f.id] })}>
-                {frArt[f.id] && <img src={`${BACKDROP_URL}${frArt[f.id]}`} alt="" />}
-                <TitleLogo id={f.id} type="tv" title={f.name} className="fr-logo" />
-              </button>
+          <div className="svc-row">
+            {ANIME_FRANCHISES.map((f, i) => (
+              <ArtLogo
+                key={f.id}
+                name={f.name}
+                color={f.color}
+                logo={f.logo}
+                delay={i * 0.28}
+                art={frArt[f.id] ? `${BACKDROP_URL}${frArt[f.id]}` : undefined}
+                onClick={() => setSheet({ id: f.id, name: f.name, first_air_date: '2000-01-01', media_type: 'tv', isAnime: true, backdrop_path: frArt[f.id] })}
+              />
+            ))}
+          </div>
+        </section>
+        <section className="media-row">
+          <div className="media-row-header"><h2 className="media-row-title">Studios</h2></div>
+          <div className="house-row">
+            {ANIME_STUDIOS.map((s) => (
+              <div className="house" key={s.id}>
+                <button type="button" onClick={() => {
+                  try { sessionStorage.setItem('mfy-shelf', JSON.stringify({ title: s.name, media: 'tv', params: { with_companies: s.company, with_genres: '16', sort_by: 'popularity.desc' }, mode: 'discover' })) } catch {}
+                  setCurrentPage('shelf')
+                }}>
+                  <img src={s.logo} alt={s.name} />
+                </button>
+                <span>{s.name}</span>
+              </div>
             ))}
           </div>
         </section>

@@ -1,7 +1,8 @@
 import { POSTER_URL } from '../api/tmdb'
-import { PosterMarks, posterYear, scoreOf } from './PosterMarks'
+import { genreOf, scoreOf } from './PosterMarks'
+import { PosterStatus, stateCaption } from './PosterTile'
 import { useStore } from '../store'
-import { watchPercent } from '../lib/watchProgress'
+import { watchFace } from '../lib/watchProgress'
 
 function proxy(url: string) {
   if (!url) return ''
@@ -44,7 +45,7 @@ export function MediaShelf({
 }) {
   const hist = useStore((s) => s.watchHistory)
   if (!items?.length) return null
-  const ranked = /popular|top\s*10|trending|now playing/i.test(title)
+  const ranked = /top\s*10|today/i.test(title)
   return (
     <section className="media-row">
       <div className="media-row-header">
@@ -57,9 +58,9 @@ export function MediaShelf({
       </div>
       <div className="scroll-row">
         {items.filter(Boolean).map((item: any, i: number) => {
-          const year = posterYear(item)
           const score = scoreOf(item)
-          const genre = Array.isArray(item.genres) ? (item.genres[0]?.name || item.genres[0]) : (item.media_type === 'tv' ? 'Series' : item.media_type === 'manga' ? 'Manga' : '')
+          const genre = genreOf(item)
+          const face = watchFace(hist, item.id, item)
           return (
           <div key={`${title}-${item.id || titleOf(item)}-${i}`} className="poster-wrap">
           <button
@@ -83,9 +84,13 @@ export function MediaShelf({
             ) : (
               <div className="poster-fallback">{titleOf(item)}</div>
             )}
-            <PosterMarks
+            <PosterStatus
+              genre={genre}
+              score={score}
+              state={face.state}
+              pct={face.pct}
+              label={face.label}
               rank={ranked && i < 10 ? i + 1 : 0}
-              item={{ ...item, progressPct: item.progressPct ?? watchPercent(hist.find((h) => String(h.mediaId) === String(item.id))), completed: item.completed ?? hist.some((h) => String(h.mediaId) === String(item.id) && !!(h as any).completed) }}
             />
             <div className="poster-overlay">
               <div className="poster-meta-title">{titleOf(item)}</div>
@@ -93,9 +98,7 @@ export function MediaShelf({
           </button>
           <div className="poster-caption">
             <div className="poster-caption-title">{titleOf(item)}</div>
-            <div className="poster-caption-sub">
-              {[year, genre, score ? `★ ${score.toFixed(1)}` : ''].filter(Boolean).join(' · ')}
-            </div>
+            <div className="poster-caption-sub nv-cap">{stateCaption(face.state)}</div>
           </div>
           </div>
           )

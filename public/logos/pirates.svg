@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="8 40 504 68">
+  <defs>
+    <filter id="s" x="-15%" y="-40%" width="130%" height="180%">
+      <feDropShadow dx="0" dy="2" stdDeviation="1.6" flood-color="#000" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+  <text x="260" y="86" text-anchor="middle" fill="#f3d48a" font-family="Georgia, Times New Roman, serif" font-size="52" letter-spacing="3" font-weight="700" filter="url(#s)">PIRATES</text>
+</svg>
