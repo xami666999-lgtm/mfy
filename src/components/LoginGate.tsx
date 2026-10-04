@@ -3,6 +3,7 @@ import { useStore } from '../store'
 import { GoogleUser, googleClientId, renderGoogleButton } from '../auth/google'
 import ProfileManage from './ProfileManage'
 import { sendVerificationEmail } from '../lib/verifyEmail'
+import TrackerConnect from './TrackerConnect'
 
 const AVATARS = Array.from({ length: 8 }, (_, i) => `https://api.dicebear.com/9.x/adventurer/svg?seed=mfy${i + 1}`)
 
@@ -165,27 +166,15 @@ export default function LoginGate() {
         <div className="w-full max-w-md">
           <p className="text-white/50 text-xs tracking-[0.35em] font-bold mb-2">MFY</p>
           <h1 className="text-2xl font-bold mb-2">Connect trackers</h1>
-          <p className="text-sm text-white/50 mb-5">Simkl is required. AniList, Letterboxd and Discord are extra.</p>
-          <input className={field + ' mb-2'} placeholder="Simkl client / token (required)" value={simkl} onChange={(e) => setSimkl(e.target.value)} />
-          <input className={field + ' mb-2'} placeholder="AniList token" value={anilistTok} onChange={(e) => setAnilistTok(e.target.value)} />
-          <input className={field + ' mb-2'} placeholder="Letterboxd username" value={letterboxd} onChange={(e) => setLetterboxd(e.target.value)} />
-          <input className={field + ' mb-2'} placeholder="Serializd email" value={serializdMail} onChange={(e) => setSerializdMail(e.target.value)} />
-          <input className={field + ' mb-2'} type="password" placeholder="Serializd password" value={serializdPass} onChange={(e) => setSerializdPass(e.target.value)} />
-          <input className={field + ' mb-4'} placeholder="Discord username (optional login label)" value={discord} onChange={(e) => setDiscord(e.target.value)} />
-          {err && <p className="text-red-400 text-xs mb-2">{err}</p>}
-          <button type="button" className="w-full h-11 rounded-xl bg-white text-black font-semibold" onClick={() => {
-            if (!simkl.trim()) return setErr('Simkl login is required to continue.')
-            try {
-              localStorage.setItem('mfy-simkl', simkl.trim())
-              if (anilistTok) localStorage.setItem('mfy-anilist-token', anilistTok)
-              if (letterboxd) localStorage.setItem('mfy-letterboxd-user', letterboxd)
-              if (discord) localStorage.setItem('mfy-discord', discord)
-              if (serializdMail) useStore.getState().setSerializdEmail(serializdMail)
-            } catch {}
+          <p className="text-sm text-white/50 mb-5">Sign in inside MFY. Finished episodes sync to the accounts you connect.</p>
+          <TrackerConnect onDone={() => { setPicked(''); setPinTry(''); setStep('who') }} />
+          <input className={field + ' mt-3'} placeholder="Letterboxd username (optional)" value={letterboxd} onChange={(e) => setLetterboxd(e.target.value)} />
+          <button type="button" className="w-full h-10 mt-2 rounded-xl bg-white/10 text-white text-sm" onClick={() => {
+            try { if (letterboxd) localStorage.setItem('mfy-letterboxd-user', letterboxd) } catch {}
             setPicked('')
             setPinTry('')
             setStep('who')
-          }}>Continue</button>
+          }}>Skip for now</button>
         </div>
       </div>
     )
@@ -265,7 +254,7 @@ export default function LoginGate() {
             <input className={field} placeholder="6-digit code" value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" />
             {err && <p className="text-red-400 text-xs">{err}</p>}
             <button type="button" className="w-full h-11 rounded-xl bg-white text-black font-semibold" disabled={busy} onClick={confirmCode}>Verify</button>
-            <button type="button" className="w-full h-11 rounded-xl bg-white/10 text-white text-sm" disabled={busy} onClick={() => void deliver(email, verifyPurpose)}>{busy ? 'Sending…' : 'Resend code'}</button>
+            <button type="button" className="w-full h-11 rounded-xl bg-white/10 text-white text-sm" disabled={busy} onClick={() => void deliver(email, verifyPurpose)}>{busy ? 'Sending\u2026' : 'Resend code'}</button>
             <button type="button" className="w-full text-[11px] text-white/40" onClick={() => { setMode(verifyPurpose === 'reset' ? 'reset' : 'create'); setErr('') }}>Back</button>
           </div>
         </div>
@@ -299,7 +288,7 @@ export default function LoginGate() {
           <input className={field} placeholder="Gmail" value={email} onChange={(e) => setEmail(e.target.value)} />
           {mode !== 'reset' && <input className={field} type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />}
           {mode === 'create' && <input className={field} type="password" placeholder="Confirm password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />}
-          {mode === 'reset' && !sent && <button type="button" className="w-full h-11 rounded-xl bg-white/10 text-white text-sm" disabled={busy} onClick={sendReset}>{busy ? 'Sending…' : 'Email me a code'}</button>}
+          {mode === 'reset' && !sent && <button type="button" className="w-full h-11 rounded-xl bg-white/10 text-white text-sm" disabled={busy} onClick={sendReset}>{busy ? 'Sending\u2026' : 'Email me a code'}</button>}
           {mode === 'reset' && sent === 'ok' && (
             <>
               <input className={field} type="password" placeholder="New password" value={password} onChange={(e) => setPassword(e.target.value)} />
@@ -308,10 +297,11 @@ export default function LoginGate() {
             </>
           )}
           {err && <p className="text-red-400 text-xs">{err}</p>}
-          {mode === 'create' && <button type="button" className="w-full h-11 rounded-xl bg-white text-black font-semibold" disabled={busy} onClick={create}>{busy ? 'Sending email…' : 'Continue'}</button>}
+          {mode === 'create' && <button type="button" className="w-full h-11 rounded-xl bg-white text-black font-semibold" disabled={busy} onClick={create}>{busy ? 'Sending email\u2026' : 'Continue'}</button>}
           {mode === 'signin' && <button type="button" className="w-full h-11 rounded-xl bg-white text-black font-semibold" onClick={signin}>Sign in</button>}
         </div>
         <div className="mt-4 text-center text-[11px] text-white/35 space-y-1">
+          {mode === 'signin' && <div><button type="button" onClick={() => { setMode('reset'); setSent(''); setErr(''); setPassword(''); setConfirm('') }}>Reset password</button></div>}
           {mode !== 'signin' && <button type="button" onClick={() => setMode('signin')}>Sign in</button>}
           {mode !== 'create' && <div><button type="button" onClick={() => setMode('create')}>Create profile</button></div>}
         </div>
