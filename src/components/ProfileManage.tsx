@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../store'
-import { tmdb, POSTER_URL } from '../api/tmdb'
+import { loadProfileIcons } from '../lib/profileIcons'
 
 type Face = { id: number; name: string; src: string }
 type Group = { name: string; faces: Face[] }
@@ -28,21 +28,9 @@ export default function ProfileManage({ id, onClose }: { id: string; onClose: ()
   useEffect(() => {
     if (!faces || groups.length) return
     let dead = false
-    Promise.all([
-      tmdb.getPopular('movie'),
-      tmdb.getPopular('tv'),
-      tmdb.discoverTV({ with_genres: '16', with_origin_country: 'JP', sort_by: 'popularity.desc' }),
-    ]).then(([movies, shows, anime]) => {
+    loadProfileIcons().then((shelves) => {
       if (dead) return
-      const pack = (label: string, data: any): Group => ({
-        name: label,
-        faces: (data?.results || []).filter((r: any) => r.poster_path).slice(0, 16).map((r: any) => ({
-          id: r.id,
-          name: r.title || r.name || 'Title',
-          src: `${POSTER_URL}${r.poster_path}`,
-        })),
-      })
-      setGroups([pack('Movies', movies), pack('TV Shows', shows), pack('Anime', anime)].filter((g) => g.faces.length))
+      setGroups(shelves.flatMap((shelf) => shelf.rows.map((row) => ({ name: `${shelf.label} · ${row.title}`, faces: row.items }))))
     }).catch(() => {})
     return () => { dead = true }
   }, [faces, groups.length])

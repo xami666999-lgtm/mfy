@@ -4,26 +4,17 @@ import { GoogleUser, googleClientId, renderGoogleButton } from '../auth/google'
 import ProfileManage from './ProfileManage'
 import { sendVerificationEmail } from '../lib/verifyEmail'
 import TrackerConnect from './TrackerConnect'
-import { tmdb, POSTER_URL } from '../api/tmdb'
-
-type Poster = { id: number; name: string; src: string }
+import { loadProfileIcons, type IconShelf } from '../lib/profileIcons'
 
 function validEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
-}
-
-function postersOf(data: any): Poster[] {
-  return (data?.results || [])
-    .filter((r: any) => r.poster_path)
-    .slice(0, 14)
-    .map((r: any) => ({ id: r.id, name: r.title || r.name || 'Title', src: `${POSTER_URL}${r.poster_path}` }))
 }
 
 export default function LoginGate() {
   const { profiles, addProfile, setProfilePin, setProfileAvatar, switchProfile, setAuthenticated, setCurrentPage } = useStore()
   const hasAccount = profiles.length > 0
   const [step, setStep] = useState<'auth' | 'trackers' | 'who'>(hasAccount ? 'who' : 'auth')
-  const [posters, setPosters] = useState<{ title: string; items: Poster[] }[]>([])
+  const [posters, setPosters] = useState<IconShelf[]>([])
   const [avatar, setAvatar] = useState('')
   const [simkl, setSimkl] = useState('')
   const [discord, setDiscord] = useState('')
@@ -55,19 +46,10 @@ export default function LoginGate() {
 
   useEffect(() => {
     let dead = false
-    Promise.all([
-      tmdb.getPopular('movie'),
-      tmdb.getPopular('tv'),
-      tmdb.discoverTV({ with_genres: '16', with_origin_country: 'JP', sort_by: 'popularity.desc' }),
-    ]).then(([movies, shows, anime]) => {
+    loadProfileIcons().then((next) => {
       if (dead) return
-      const next = [
-        { title: 'Movies', items: postersOf(movies) },
-        { title: 'TV Shows', items: postersOf(shows) },
-        { title: 'Anime', items: postersOf(anime) },
-      ].filter((g) => g.items.length)
       setPosters(next)
-      setAvatar((cur) => cur || next[0]?.items[0]?.src || '')
+      setAvatar((cur) => cur || next[0]?.rows[0]?.items[0]?.src || '')
     }).catch(() => {})
     return () => { dead = true }
   }, [])
@@ -310,18 +292,23 @@ export default function LoginGate() {
         )}
         {mode === 'create' && (
           <div className="nf-pick">
-            <p>Choose a profile</p>
-            {posters.map((group) => (
-              <section key={group.title}>
-                <h3>{group.title}</h3>
-                <div>
-                  {group.items.map((item) => (
-                    <button key={`${group.title}-${item.id}`} type="button" className={avatar === item.src ? 'on' : ''} onClick={() => setAvatar(item.src)} title={item.name}>
-                      <img src={item.src} alt={item.name} />
-                    </button>
-                  ))}
-                </div>
-              </section>
+            <p>Choose a profile icon</p>
+            {posters.map((shelf) => (
+              <div key={shelf.label}>
+                <h2>{shelf.label}</h2>
+                {shelf.rows.map((group) => (
+                  <section key={`${shelf.label}-${group.title}`}>
+                    <h3>{group.title}</h3>
+                    <div>
+                      {group.items.map((item) => (
+                        <button key={`${group.title}-${item.id}`} type="button" className={avatar === item.src ? 'on' : ''} onClick={() => setAvatar(item.src)} title={item.name}>
+                          <img src={item.src} alt={item.name} />
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
             ))}
           </div>
         )}

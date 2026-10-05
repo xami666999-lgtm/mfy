@@ -213,9 +213,10 @@ html[data-rail="1"] .mfy-phone-main > main{padding-left:248px}
 .nf-guest:hover{background:#fff;color:#000}
 .nf-pick{margin:4px 0 22px;text-align:left}
 .nf-pick>p{color:#b3b3b3;font-size:14px;margin:0 0 4px}
-.nf-pick h3{font-size:13px;font-weight:600;margin:16px 0 8px}
-.nf-pick section div{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
-.nf-pick button{flex:none;width:74px;height:104px;border-radius:6px;overflow:hidden;border:2px solid transparent;padding:0;background:#222;cursor:pointer}
+.nf-pick h2{font-size:18px;font-weight:600;margin:22px 0 4px;text-align:left}
+.nf-pick h3{font-size:13px;font-weight:500;color:#b3b3b3;margin:12px 0 8px}
+.nf-pick section div{display:flex;flex-wrap:wrap;gap:12px}
+.nf-pick button{width:76px;height:76px;border-radius:50%;overflow:hidden;border:3px solid transparent;padding:0;background:#222;cursor:pointer}
 .nf-pick button.on,.nf-pick button:hover{border-color:#fff}
 .nf-pick img{width:100%;height:100%;object-fit:cover;display:block}
 .nf-profiles{display:flex;gap:32px;flex-wrap:wrap;justify-content:center}
@@ -258,7 +259,7 @@ html[data-rail="1"] .mfy-phone-main > main{padding-left:248px}
 .nf-faces{width:min(960px,100%);margin:28px auto 80px}
 .nf-faces h3{font-size:14px;font-weight:500;color:#b3b3b3;margin:22px 0 10px}
 .nf-faces section div{display:flex;flex-wrap:wrap;gap:14px}
-.nf-faces button{width:74px;height:104px;border-radius:6px;overflow:hidden;border:2px solid transparent;padding:0;background:#222;cursor:pointer}
+.nf-faces button{width:76px;height:76px;border-radius:50%;overflow:hidden;border:3px solid transparent;padding:0;background:#222;cursor:pointer}
 .nf-faces button:hover{border-color:#e50914}
 .nf-faces img{width:100%;height:100%;object-fit:cover}
 .nf-intro-logo{width:min(280px,48vw);height:auto;animation:slam .55s cubic-bezier(.2,.8,.2,1) both;filter:drop-shadow(0 0 32px rgba(255,45,150,.55))}
