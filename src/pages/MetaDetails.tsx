@@ -16,7 +16,7 @@ import { sourceDot, reportBroken } from '../lib/playerStatus'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 import TitleLogo from '../components/TitleLogo'
 import { facesInCommon, rememberCast } from '../lib/faces'
-import { absoluteEpisode, ensureFiller, episodeIsFiller, fillerFor, hideFillerOn, setHideFiller } from '../lib/filler'
+import { absoluteEpisode, ensureFiller, episodeIsFiller, fillerFor, fillerMode, hideFillerOn, setFillerMode, setHideFiller } from '../lib/filler'
 
 function clock(sec: number) {
   const s = Math.max(0, Math.floor(Number(sec) || 0))
@@ -70,14 +70,32 @@ export default function MetaDetails() {
   const [quotes, setQuotes] = useState<{ author: string; text: string; rating: number | null; date: string }[]>([])
   const [hideFiller, setHideFillerState] = useState(hideFillerOn)
   const [fillerOn, setFillerOn] = useState(false)
+  const [fillerAsk, setFillerAsk] = useState(false)
+  const [fillerCount, setFillerCount] = useState(0)
 
   useEffect(() => {
     const title = String(detail?.name || detail?.title || '')
-    if (!title) { setFillerOn(false); return }
+    if (!title) { setFillerOn(false); setFillerAsk(false); return }
     let dead = false
-    ensureFiller().then(() => { if (!dead) setFillerOn(!!fillerFor(title)) })
+    ensureFiller().then(() => {
+      if (dead) return
+      const hit = fillerFor(title)
+      setFillerOn(!!hit)
+      setFillerCount(hit?.count || 0)
+      const mode = fillerMode(title)
+      setFillerAsk(!!hit && !mode)
+      if (mode === 'canon') setHideFillerState(true)
+      if (mode === 'all') setHideFillerState(false)
+    })
     return () => { dead = true }
   }, [detail?.id, detail?.name, detail?.title])
+
+  function pickFiller(mode: 'all' | 'canon') {
+    const title = String(detail?.name || detail?.title || '')
+    setFillerMode(title, mode)
+    setHideFillerState(mode === 'canon')
+    setFillerAsk(false)
+  }
 
   useEffect(() => {
     const cast = detail?.credits?.cast || []
@@ -737,7 +755,19 @@ onKeyDown={(e) => {
         </div>
       </div>
 
-      {/* Trailer Modal */}
+      {fillerAsk && (
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-black/80 px-5">
+          <div className="w-full max-w-md bg-[#141414] border border-white/10 rounded-md px-6 py-7 text-center">
+            <p className="text-white/50 text-sm mb-2">{detail?.name || detail?.title}</p>
+            <h2 className="text-[28px] font-medium text-white mb-3">How do you want to watch?</h2>
+            <p className="text-sm text-white/55 mb-6">{fillerCount} filler episodes can be left out. The list comes from Anime Filler List.</p>
+            <div className="flex flex-col gap-2">
+              <button type="button" className="h-12 rounded bg-white text-black font-semibold" onClick={() => pickFiller('canon')}>Without fillers</button>
+              <button type="button" className="h-12 rounded bg-[#333] text-white font-semibold" onClick={() => pickFiller('all')}>Watch whole show</button>
+            </div>
+          </div>
+        </div>
+      )}
       {showTrailer && trailerKey && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowTrailer(false)}>
           <div className="w-[800px] aspect-video rounded-xl overflow-hidden border border-white/[0.1]" onClick={(e) => e.stopPropagation()}>
@@ -882,17 +912,10 @@ onKeyDown={(e) => {
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest">Seasons</h3>
                   {fillerOn && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = !hideFiller
-                        setHideFillerState(next)
-                        setHideFiller(next)
-                      }}
-                      className={cn('h-8 px-3 rounded-full text-[11px] font-semibold border', hideFiller ? 'bg-white text-black border-white' : 'bg-transparent text-white border-white/30')}
-                    >
-                      {hideFiller ? 'Filler hidden' : 'Hide filler'}
-                    </button>
+                    <div className="flex gap-1.5">
+                      <button type="button" onClick={() => pickFiller('all')} className={cn('h-8 px-3 rounded text-[12px] font-semibold border', !hideFiller ? 'bg-white text-black border-white' : 'bg-transparent text-white border-white/40')}>Whole show</button>
+                      <button type="button" onClick={() => pickFiller('canon')} className={cn('h-8 px-3 rounded text-[12px] font-semibold border', hideFiller ? 'bg-white text-black border-white' : 'bg-transparent text-white border-white/40')}>Without fillers</button>
+                    </div>
                   )}
                 </div>
                 <div className="flex gap-1.5 mb-4 flex-wrap">

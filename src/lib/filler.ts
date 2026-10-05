@@ -47,6 +47,20 @@ export function fillerFor(title: string): FillerHit | null {
   return byTitle.get(key) || byTitle.get(ALIAS[key] || '') || null
 }
 
+export function fillerMode(title: string): 'all' | 'canon' | '' {
+  try {
+    const v = localStorage.getItem('mfy-filler-mode:' + norm(title))
+    return v === 'all' || v === 'canon' ? v : ''
+  } catch {
+    return ''
+  }
+}
+
+export function setFillerMode(title: string, mode: 'all' | 'canon') {
+  try { localStorage.setItem('mfy-filler-mode:' + norm(title), mode) } catch {}
+  setHideFiller(mode === 'canon')
+}
+
 export function hideFillerOn() {
   try { return localStorage.getItem('mfy-hide-filler') !== '0' } catch { return true }
 }
@@ -66,20 +80,20 @@ export function absoluteEpisode(seasons: { season_number: number; episode_count?
 
 export function episodeIsFiller(show: FillerHit | null, airDate?: string, absolute?: number) {
   if (!show) return false
+  if (absolute && show.nums.has(absolute)) return true
   const day = String(airDate || '').slice(0, 10)
-  if (day) return show.dates.has(day)
-  return !!(absolute && show.nums.has(absolute))
+  return !!(day && show.dates.has(day))
 }
 
 export async function nextCanonEpisode(id: number, season: number, episode: number, title: string) {
   await ensureFiller()
   const show = fillerFor(title)
-  const hide = hideFillerOn() && !!show
+  const hide = fillerMode(title) === 'canon' || (fillerMode(title) === '' && hideFillerOn() && !!show)
   const detail = await tmdb.getTVDetail(id).catch(() => null)
   const seasons = detail?.seasons || []
   let seasonNumber = season
   let after = episode
-  for (let guard = 0; guard < 12; guard++) {
+  for (let guard = 0; guard < 40; guard++) {
     const seasonData = await tmdb.getSeasonDetail(id, seasonNumber).catch(() => null)
     const later = (seasonData?.episodes || []).filter((ep: any) => ep.episode_number > after)
     for (const ep of later) {
