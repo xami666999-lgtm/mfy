@@ -110,6 +110,7 @@ export async function importAnilistWatchlist() {
         watchedAt: new Date().toISOString(),
         profileId: store.currentProfile?.id || 'default',
         completed: done,
+        seriesCompleted: done,
       }
       store.upsertHistory(row)
     } else {
@@ -194,6 +195,7 @@ export async function importAnilistPublic(username: string) {
           watchedAt: new Date().toISOString(),
           profileId: store.currentProfile?.id || 'default',
           completed: done,
+        seriesCompleted: done,
         })
       } else {
         const key = `${match.mediaType}:${match.mediaId}`

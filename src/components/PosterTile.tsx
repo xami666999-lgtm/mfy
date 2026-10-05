@@ -6,7 +6,7 @@ import { watchFace } from '../lib/watchProgress'
 export type PosterFace = 'fresh' | 'progress' | 'watched' | 'started'
 
 export function stateCaption(state: PosterFace) {
-  if (state === 'watched') return 'Watched'
+  if (state === 'watched') return 'Finished'
   if (state === 'started') return 'Watching'
   if (state === 'progress') return 'In progress'
   return 'Not watched'
@@ -47,7 +47,7 @@ export function PosterStatus({
       {state === 'watched' && <i className="nv-corner ok" aria-label="Up to date">✓</i>}
       {!!pending && pending > 0 && <span className="nv-pending">{pending} left</span>}
       {state === 'watched' && (
-        <span className="nv-status watched"><i className="ok" aria-hidden>✓</i> Watched</span>
+        <span className="nv-status watched"><i className="ok" aria-hidden>✓</i> Finished</span>
       )}
       {state === 'started' && (
         <span className="nv-status started">

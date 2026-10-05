@@ -36,6 +36,7 @@ import { youtubeEmbedUrl } from './api/youtubio'
 import { consumeTrackerReturn } from './lib/trackerLogin'
 import { pullProgress } from './lib/githubProgress'
 import { isPhoneShell } from './lib/device'
+import { useSeriesTotals } from './lib/watchProgress'
 
 function PhoneBattery() {
   const [pct, setPct] = useState<number | null>(null)
@@ -105,7 +106,10 @@ export default function App() {
     setExternalPlayer,
     setLocalFolders,
     theme,
+    watchHistory,
   } = useStore()
+
+  useSeriesTotals(watchHistory)
 
   useKeyboardNav()
 

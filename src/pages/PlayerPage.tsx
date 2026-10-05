@@ -96,6 +96,7 @@ export default function PlayerPage() {
   const [gate, setGate] = useState(false)
   const [together, setTogether] = useState(false)
   const [meta, setMeta] = useState<{ title: string; overview: string; poster: string; backdrop: string } | null>(null)
+  const finale = useRef(false)
   const [nextUp, setNextUp] = useState<{ season: number; episode: number; name: string; still?: string; overview?: string } | null>(null)
   const [epName, setEpName] = useState('')
   const [segments, setSegments] = useState<IntroSeg[]>([])
@@ -627,6 +628,7 @@ export default function PlayerPage() {
   useEffect(() => {
     setShowNext(false)
     setNextUp(null)
+    finale.current = false
     if (!selectedMedia || selectedMedia.type === 'movie' || selectedMedia.type === 'iptv') return
     const id = Number(selectedMedia.id)
     const season = selectedMedia.season || 1
@@ -634,6 +636,7 @@ export default function PlayerPage() {
     ;(async () => {
       const title = String((selectedMedia as any).title || (selectedMedia as any).name || '')
       const hit = await nextCanonEpisode(id, season, ep, title).catch(() => null)
+      finale.current = !hit
       if (hit) setNextUp({ season: hit.season, episode: hit.episode, name: hit.name, still: hit.still, overview: hit.overview || '' })
     })()
   }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
@@ -1090,6 +1093,7 @@ export default function PlayerPage() {
       watchedAt: new Date().toISOString(),
       profileId: useStore.getState().currentProfile?.id || 'default',
       completed: reallyDone,
+      seriesCompleted: !!(reallyDone && finale.current && selectedMedia.type !== 'movie'),
     })
     try { localStorage.setItem(`mfy-ep-${selectedMedia.id}-${selectedMedia.season || 0}-${selectedMedia.episode || 0}`, JSON.stringify({ p, d, completed: reallyDone, at: Date.now() })) } catch {}
     try {
