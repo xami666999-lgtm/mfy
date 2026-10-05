@@ -1,35 +1,19 @@
 # MFY on iPhone
 
-Phone UI is on. Bottom tabs: Home / Movies / Shows / Anime / More.
-Windows title bar and the desktop sidebar stay off on iPhone.
+The phone app is a small WKWebView shell around the live MFY site, so playback, sign-in data in the WebView, and updates stay the same as the site. You sign the IPA yourself.
 
-You do **not** need a Mac on your desk if you use **Sideloadly** on Windows.
-You still cannot use official TestFlight without Apple’s paid developer program.
+## Install from Windows or a Mac
 
-## Install on your iPhone from Windows
+1. Download [MFY.ipa](https://xami666999-lgtm.github.io/mfy/MFY.ipa). It is **unsigned**.
+2. Install [Sideloadly](https://sideloadly.io/).
+3. Plug the iPhone in and trust the computer.
+4. Sideloadly → drop `MFY.ipa` → your Apple ID → Start.
+5. On the iPhone: Settings → General → VPN & Device Management → trust that Apple ID.
 
-1. Wait for the GitHub Action **Release iOS IPA** on `restore-168-intro`.
-2. Download `MFY.ipa` from the run Artifacts.
-3. On the PC install [Sideloadly](https://sideloadly.io/).
-4. Plug the iPhone in, trust the PC.
-5. Sideloadly → drop `MFY.ipa` → Apple ID → Start.
-6. On the iPhone: Settings → General → VPN & Device Management → trust the Apple ID.
+A free Apple ID install lasts about **7 days**, then sideload again. That is Apple, not MFY.
 
-Free Apple ID installs last about **7 days**, then you sideload again. That is Apple, not MFY.
-
-## If you have a Mac
-
-```bash
-git checkout restore-168-intro
-npm install
-npm run build:web
-npx cap add ios
-npx cap sync ios
-npx cap open ios
-```
-
-Xcode → your Team → Run on the iPhone.
+Xcode works too: open the IPA after Sideloadly, or sign `ios-shell` with your own Team. Bundle id is `com.mfystream.app`.
 
 ## What the phone wrap includes
 
-Same catalogs and player UI. Progress is stored in the phone WebView (not the Windows disk file). No VLC/mpv, no `.exe` auto-update.
+Same catalogs, home, and player. Progress stays in the phone WebView. No extra camera, photos, or location permissions. The home hero shows the date, genres, quoted title, synopsis, and IMDb / TMDB / Rotten Tomatoes / Metacritic when those scores exist.

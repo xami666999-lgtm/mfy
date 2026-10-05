@@ -10,6 +10,7 @@ import { sourceBadge, BadgeImg } from '../components/QualityBadges'
 import BrandCard, { ArtLogo } from '../components/BrandCard'
 import { ANIME_FRANCHISES, ANIME_STUDIOS, FILM_FRANCHISES } from '../data/brands'
 import { getPlayerUrl } from '../api/vidy'
+import { fetchOmdbByImdbId } from '../api/omdb'
 import { isFinished, watchFace, watchPercent } from '../lib/watchProgress'
 import { skippedIds, skipTitle } from '../lib/skip'
 import '../nuvio-home.css'
@@ -208,6 +209,7 @@ export default function NuvioHome() {
   const [heroPool, setHeroPool] = useState<any[]>([])
   const [idx, setIdx] = useState(0)
   const [heroDetail, setHeroDetail] = useState<any>(null)
+  const [heroScores, setHeroScores] = useState<{ imdb: string; rt: string; meta: string }>({ imdb: '', rt: '', meta: '' })
   const [genreNames, setGenreNames] = useState<Record<number, string>>({})
   const [popularM, setPopularM] = useState<any[]>([])
   const [trendTv, setTrendTv] = useState<any[]>([])
@@ -398,8 +400,39 @@ export default function NuvioHome() {
 
   useEffect(() => {
     if (!hero?.id) return
-    const fn = kindOf(hero) === 'tv' ? tmdb.getTVDetail : tmdb.getMovieDetail
-    fn(hero.id).then(setHeroDetail).catch(() => setHeroDetail(null))
+    let dead = false
+    const kind = kindOf(hero) === 'tv' ? 'tv' : 'movie'
+    const fn = kind === 'tv' ? tmdb.getTVDetail : tmdb.getMovieDetail
+    setHeroScores({ imdb: '', rt: '', meta: '' })
+    fn(hero.id).then(async (d) => {
+      if (dead) return
+      setHeroDetail(d)
+      let imdb = String(d?.imdb_id || '')
+      if (!imdb.startsWith('tt')) {
+        try {
+          const ext = await tmdb.getExternalIds(kind, hero.id)
+          imdb = String(ext?.imdb_id || '')
+        } catch {}
+      }
+      if (!imdb.startsWith('tt')) return
+      const o = await fetchOmdbByImdbId(imdb)
+      let imdbScore = o?.imdbRating || ''
+      const rt = o?.rottenTomatoes || ''
+      const meta = o?.metascore || ''
+      if (!imdbScore) {
+        try {
+          const type = kind === 'tv' ? 'series' : 'movie'
+          const res = await fetch(`https://v3-cinemeta.strem.io/meta/${type}/${encodeURIComponent(imdb)}.json`)
+          if (res.ok) {
+            const j = await res.json()
+            const r = j?.meta?.imdbRating
+            if (r && r !== 'N/A') imdbScore = String(r)
+          }
+        } catch {}
+      }
+      if (!dead) setHeroScores({ imdb: imdbScore, rt, meta })
+    }).catch(() => { if (!dead) setHeroDetail(null) })
+    return () => { dead = true }
   }, [hero?.id])
 
   useEffect(() => {
@@ -504,7 +537,6 @@ export default function NuvioHome() {
 
   const cw = (watchHistory || []).slice(0, 12)
   const genreLine = (heroDetail?.genres?.length ? heroDetail.genres.slice(0, 2).map((g: any) => g.name) : (hero?.genre_ids || []).slice(0, 2).map((id: number) => genreNames[id]).filter(Boolean))
-  const seasons = heroDetail?.number_of_seasons
   const match = hero?.vote_average ? Math.round(hero.vote_average * 10) : 0
 
   const meId = currentProfile?.id || 'default'
@@ -541,10 +573,16 @@ export default function NuvioHome() {
           <div className="nv-hero-copy">
             <TitleLogo id={hero.id} type={kindOf(hero)} title={titleOf(hero)} />
             {idx === 0 && <p className="nv-rankline">No. 1 in Trending</p>}
-            <p className="nv-genre">
-              {[genreLine[0], yearOf(hero), kindOf(hero) === 'tv' && seasons ? `${seasons} Season${seasons === 1 ? '' : 's'}` : kindOf(hero) === 'movie' ? 'Movie' : 'Series'].filter(Boolean).join('  ·  ')}
+            <p className="nv-date">
+              {[String(hero.release_date || hero.first_air_date || heroDetail?.release_date || heroDetail?.first_air_date || '').slice(0, 10), genreLine.join(', ')].filter(Boolean).join(' · ')}
             </p>
-            <p className="nv-syn">{hero.overview}</p>
+            <p className="nv-quote">「{titleOf(hero)}」 {hero.overview}</p>
+            <div className="nv-scores">
+              {heroScores.imdb && <span className="nv-score"><i className="imdb">IMDb</i>{heroScores.imdb}</span>}
+              {hero?.vote_average > 0 && <span className="nv-score"><i className="tmdb">TMDB</i>{Number(hero.vote_average).toFixed(1)}</span>}
+              {heroScores.rt && <span className="nv-score"><i className="rt">RT</i>{heroScores.rt}</span>}
+              {heroScores.meta && <span className="nv-score"><i className="meta">MC</i>{heroScores.meta}{String(heroScores.meta).includes('%') ? '' : '%'}</span>}
+            </div>
             <div className="nf-actions">
               <button type="button" className="nf-play" onClick={() => play(hero)}><Play size={18} fill="currentColor" /> Play</button>
               <button type="button" className="nf-info" onClick={() => open(hero)}><Info size={18} /> More Info</button>

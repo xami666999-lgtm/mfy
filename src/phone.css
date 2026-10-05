@@ -63,9 +63,30 @@ html.mfy-phone .mfy-tabbar {
   font-size: 11px;
 }
 @media (max-width: 900px) {
-  .nv-hero { min-height: 58vh; }
-  .nv-hero-copy { padding: 56px 16px 16px; max-width: none; }
-  .nv-row { padding: 8px 16px 6px; }
-  .nv-syn { -webkit-line-clamp: 4; }
-  .title-logo { max-height: 86px !important; }
+  .nv-hero {
+    margin: 0;
+    min-height: 78vh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .nv-hero-bg { background-position: center 18%; }
+  .nv-hero-fade {
+    background:
+      linear-gradient(180deg, rgba(0,0,0,.28) 0%, rgba(0,0,0,.05) 28%, rgba(0,0,0,.15) 52%, rgba(8,8,8,.94) 100%);
+  }
+  .nv-hero-copy { left: 0; right: 0; bottom: 6px; padding: 0 16px 14px; max-width: none; }
+  .nv-date { font-size: 13px; }
+  .nv-quote { font-size: 13px; max-width: none; -webkit-line-clamp: 3; }
+  .nv-scores { gap: 8px; margin-bottom: 10px; }
+  .nv-hero .nf-actions { margin-top: 8px; }
+  .nv-dots { left: auto; right: 14px; bottom: 22px; }
+  .nv-row { padding: 14px 16px 4px; }
+  .title-logo { max-height: 72px !important; }
+}
+html.mfy-phone .nv-hero {
+  margin: 0;
+  margin-top: calc(-1 * env(safe-area-inset-top, 12px));
+  min-height: calc(78vh + env(safe-area-inset-top, 0px));
+  border-radius: 0;
+  box-shadow: none;
 }
