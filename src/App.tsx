@@ -35,6 +35,7 @@ import { youtubeEmbedUrl } from './api/youtubio'
 import { consumeTrackerReturn } from './lib/trackerLogin'
 import { pullProgress } from './lib/githubProgress'
 import { importAnilistPublic } from './lib/importLists'
+import { importStremioLibrary, savedStremioKey } from './lib/stremioLibrary'
 import { isPhoneShell } from './lib/device'
 import { useSeriesTotals } from './lib/watchProgress'
 
@@ -101,6 +102,7 @@ export default function App() {
       try { localStorage.setItem('mfy-anilist-keep', anilist) } catch {}
       void importAnilistPublic(anilist).catch(() => {})
     }
+    if (savedStremioKey()) void importStremioLibrary().catch(() => {})
   }, [])
 
   useEffect(() => {

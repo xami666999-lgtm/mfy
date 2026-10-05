@@ -9,6 +9,8 @@ import { setRuntimeSubtitleKey } from '../api/subtitles'
 import { loadPlaybackPrefs, savePlaybackPrefs, type UpscaleMode } from '../lib/playbackPrefs'
 import { githubToken, pullProgress, pushProgress, saveGithubToken } from '../lib/githubProgress'
 import { importAnilistPublic } from '../lib/importLists'
+import { importStremioLibrary, stremioLogin } from '../lib/stremioLibrary'
+import { crunchyLoginUrl, saveCrunchyLogin } from '../lib/crunchyroll'
 import { installAddon, installedAddons, removeAddon, type InstalledAddon } from '../lib/stremioImport'
 
 export default function Settings() {
@@ -34,6 +36,11 @@ export default function Settings() {
   const [addons, setAddons] = useState<InstalledAddon[]>(() => installedAddons())
   const [addonNote, setAddonNote] = useState('')
   const [addonBusy, setAddonBusy] = useState(false)
+  const [stremioEmail, setStremioEmail] = useState('')
+  const [stremioPass, setStremioPass] = useState('')
+  const [stremioKey, setStremioKey] = useState('')
+  const [stremioNote, setStremioNote] = useState('')
+  const [stremioBusy, setStremioBusy] = useState(false)
 
   async function addAddon() {
     setAddonBusy(true)
@@ -157,6 +164,26 @@ export default function Settings() {
           {syncing ? 'Saving…' : 'Save progress to GitHub'}
         </button>
         {syncNote && <p className="set-hint">{syncNote}</p>}
+      </Section>
+
+      <Section title="Stremio / Nuvio library">
+        <p className="set-hint">This imports the library, not an addon. Sign in with the Stremio account Nuvio uses, or paste the auth key. Titles are saved in MFY and kept across updates.</p>
+        <Field label="Stremio email" value={stremioEmail} onChange={setStremioEmail} placeholder="Email used by Stremio or Nuvio" />
+        <Field label="Password" value={stremioPass} onChange={setStremioPass} placeholder="Only used to read the library" secret />
+        <Field label="Auth key" value={stremioKey} onChange={setStremioKey} placeholder="Optional, if you already have the key" />
+        <button type="button" className="set-btn" disabled={stremioBusy} onClick={() => {
+          setStremioBusy(true)
+          setStremioNote('')
+          const run = stremioKey.trim()
+            ? importStremioLibrary(stremioKey.trim())
+            : stremioLogin(stremioEmail, stremioPass).then((key) => importStremioLibrary(key))
+          void run.then((n) => setStremioNote(`Imported ${n} library titles.`)).catch((error) => {
+            setStremioNote(error instanceof Error ? error.message : 'Library import failed.')
+          }).finally(() => setStremioBusy(false))
+        }}>{stremioBusy ? 'Importing…' : 'Import library'}</button>
+        {stremioNote && <p className="set-hint">{stremioNote}</p>}
+        <button type="button" className="set-btn ghost" onClick={() => { saveCrunchyLogin(); window.open(crunchyLoginUrl(), 'mfy-crunchy', 'width=480,height=760') }}>Sign in to Crunchyroll</button>
+        <p className="set-hint">Crunchyroll uses your subscription. After sign-in, anime can open the Crunchyroll player inside MFY and the play is saved here.</p>
       </Section>
 
       <Section title="Library">

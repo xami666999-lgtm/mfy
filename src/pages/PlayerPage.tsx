@@ -16,6 +16,7 @@ import { nextCanonEpisode } from '../lib/filler'
 import { markSource } from '../lib/playerStatus'
 import { searchStremioSubtitles } from '../api/subtitles'
 import { streamsFromInstalled } from '../lib/stremioImport'
+import { crunchyWatchUrl, crunchySignedIn } from '../lib/crunchyroll'
 import { fetchIntroSegments, type IntroSeg } from '../api/introdb'
 import { loadPlaybackPrefs, savePlaybackPrefs } from '../lib/playbackPrefs'
 import { resolveFromTorrentio } from '../api/streams'
@@ -1460,6 +1461,31 @@ export default function PlayerPage() {
                       {picks.filter((row) => /^https?:/i.test(row.url)).slice(0, 8).map((row) => (
                         <button key={row.url} type="button" onClick={() => { setCurrentStreamUrl(row.url); setStreamUrl(row.url); setLoaded(true); setSrcOpen(false) }}>{row.quality || row.title}</button>
                       ))}
+                      {isAnimeItem(selectedMedia) && (
+                        <button type="button" onClick={() => {
+                          if (!crunchySignedIn()) window.open('https://www.crunchyroll.com/login', 'mfy-crunchy', 'width=480,height=760')
+                          const url = crunchyWatchUrl(title)
+                          setCurrentStreamUrl(url)
+                          setStreamUrl(url)
+                          setLoaded(true)
+                          setSrcOpen(false)
+                          const store = useStore.getState()
+                          store.upsertHistory({
+                            id: `crunchy-${selectedMedia.id}`,
+                            mediaId: selectedMedia.id,
+                            mediaType: 'tv',
+                            title,
+                            posterPath: meta?.poster || null,
+                            progress: 1,
+                            duration: 2400,
+                            season: selectedMedia.season,
+                            episode: selectedMedia.episode,
+                            watchedAt: new Date().toISOString(),
+                            profileId: store.currentProfile?.id || 'default',
+                            completed: false,
+                          })
+                        }}>Crunchyroll</button>
+                      )}
                       <p>Subtitles</p>
                       <button type="button" onClick={() => { setSubtitleEnabled(false); setCueText(''); setSrcOpen(false) }}>Off</button>
                       {subList.map((s) => (
