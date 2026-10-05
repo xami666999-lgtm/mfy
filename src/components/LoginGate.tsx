@@ -30,7 +30,6 @@ export default function LoginGate() {
   const [code, setCode] = useState('')
   const [sent, setSent] = useState('')
   const [picked, setPicked] = useState('')
-  const [pinTry, setPinTry] = useState('')
   const [editing, setEditing] = useState(false)
   const [manageId, setManageId] = useState('')
   const [err, setErr] = useState('')
@@ -179,12 +178,11 @@ export default function LoginGate() {
           <p className="text-white/50 text-xs tracking-[0.35em] font-bold mb-2">MFY</p>
           <h1 className="text-2xl font-bold mb-2">Connect trackers</h1>
           <p className="text-sm text-white/50 mb-5">Sign in inside MFY. Finished episodes sync to the accounts you connect.</p>
-          <TrackerConnect onDone={() => { setPicked(''); setPinTry(''); setStep('who') }} />
+          <TrackerConnect onDone={() => { setPicked(''); setStep('who') }} />
           <input className={field + ' mt-3'} placeholder="Letterboxd username (optional)" value={letterboxd} onChange={(e) => setLetterboxd(e.target.value)} />
           <button type="button" className="w-full h-10 mt-2 rounded-xl bg-white/10 text-white text-sm" onClick={() => {
             try { if (letterboxd) localStorage.setItem('mfy-letterboxd-user', letterboxd) } catch {}
             setPicked('')
-            setPinTry('')
             setStep('who')
           }}>Skip for now</button>
         </div>
@@ -204,7 +202,6 @@ export default function LoginGate() {
         </div>
       )
     }
-    const pickedProfile = profiles.find((p) => p.id === picked)
     return (
       <div className="nf-gate">
         {guest}
@@ -213,7 +210,6 @@ export default function LoginGate() {
           {profiles.map((p) => (
             <button key={p.id} type="button" className="nf-profile" onClick={() => {
               if (editing) { setManageId(p.id); return }
-              if (p.pin) { setPicked(p.id); setPinTry(''); setErr(''); return }
               enter(p.id)
             }}>
               <span className={picked === p.id ? 'ring' : ''}>
@@ -238,17 +234,6 @@ export default function LoginGate() {
             <small>Add Profile</small>
           </button>
         </div>
-        {pickedProfile?.pin && !editing && (
-          <form className="nf-pin-form" onSubmit={(e) => {
-            e.preventDefault()
-            if (pickedProfile.pin === pinTry) enter(pickedProfile.id)
-            else setErr('Wrong PIN.')
-          }}>
-            <p>PIN for {pickedProfile.name}</p>
-            <input className="nf-pin" type="password" placeholder="PIN" value={pinTry} autoFocus onChange={(e) => setPinTry(e.target.value)} />
-            <button type="submit" className="nf-edit">Continue</button>
-          </form>
-        )}
         {err && <p className="nf-err">{err}</p>}
         <div className="nf-gate-actions">
           <button type="button" className="nf-edit" onClick={() => { setEditing((v) => !v); setErr(''); setPicked('') }}>{editing ? 'Done' : 'Manage Profiles'}</button>
