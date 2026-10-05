@@ -1131,5 +1131,5 @@ html.mfy-eps-open .player-stage { width: 100% !important; }
 .rating-skip:hover { color: rgba(255,255,255,0.8); }
 .rating-note { margin-top: 14px; font-size: 11px; color: rgba(255,255,255,0.35); }
 
-.lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
-.lib-grid .poster-card { width: 100%; max-width: 118px; }
+.lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 10px; }
+.lib-grid .poster-card { width: 100%; max-width: 142px; }
