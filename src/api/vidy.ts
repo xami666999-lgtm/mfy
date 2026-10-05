@@ -54,6 +54,18 @@ export function isDeadEmbed(url: string) {
   return /videasy\.|vidsrc\.xyz|vidsrc\.cc|vidsrc\.me\/|embed\.su|vixsrc\.to|moviesapi\.club|vidsrc\.(icu|in|net|rip|wtf)/i.test(url || '')
 }
 
+export function withAudioLang(url: string, lang: 'ja' | 'en' | 'orig') {
+  if (!url || lang === 'orig') return url
+  const code = lang === 'en' ? 'en' : 'ja'
+  const base = url.split('#')[0]
+  const hash = url.includes('#') ? url.slice(url.indexOf('#')) : ''
+  const [path, query = ''] = base.split('?')
+  const params = new URLSearchParams(query)
+  for (const key of ['audio', 'al', 'audio_lang', 'alang', 'dub']) params.set(key, code)
+  if (!params.get('sub_lang')) params.set('sub_lang', 'en')
+  return `${path}?${params.toString()}${hash}`
+}
+
 function withEnglishSubs(url: string) {
   if (!url || /[?&](sub_lang|ds_lang|lang)=/i.test(url)) return url
   const sep = url.includes('?') ? '&' : '?'

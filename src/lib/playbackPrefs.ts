@@ -4,6 +4,7 @@ export type PlaybackPrefs = {
   seekBack: number
   seekFwd: number
   subDelay: number
+  audioLang: 'ja' | 'en' | 'orig'
   subHold: number
   upscale: UpscaleMode
 }
@@ -14,6 +15,7 @@ const DEFAULTS: PlaybackPrefs = {
   seekBack: 15,
   seekFwd: 15,
   subDelay: 0,
+  audioLang: 'ja',
   subHold: 0,
   upscale: 'off',
 }
@@ -31,6 +33,7 @@ export function loadPlaybackPrefs(): PlaybackPrefs {
       seekBack: clamp(Number(raw.seekBack ?? DEFAULTS.seekBack), 1, 120),
       seekFwd: clamp(Number(raw.seekFwd ?? DEFAULTS.seekFwd), 1, 120),
       subDelay: clamp(Number(raw.subDelay ?? DEFAULTS.subDelay), -15, 15),
+      audioLang: raw.audioLang === 'en' || raw.audioLang === 'orig' ? raw.audioLang : 'ja',
       subHold: clamp(Number(raw.subHold ?? DEFAULTS.subHold), 0, 8),
       upscale: up === 'sharpen' || up === 'anime' ? up : 'off',
     }

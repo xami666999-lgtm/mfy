@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, createElement } from 'react'
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Settings2, Maximize, Minimize, Subtitles, ArrowLeft, Cast, RefreshCw, Zap } from 'lucide-react'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 import { tmdb, POSTER_URL, BACKDROP_URL, STILL_URL } from '../api/tmdb'
-import { vidyUrl, getPlayerUrl, isPlayerEmbed, getFallbackSources, isDeadEmbed, PlayerSource } from '../api/vidy'
+import { vidyUrl, getPlayerUrl, isPlayerEmbed, getFallbackSources, isDeadEmbed, withAudioLang, PlayerSource } from '../api/vidy'
 import { mediafusionStreams } from '../api/mediafusion'
 import { aggregateStreams, bestPlayable } from '../api/stremioAgg'
 import { addonStreams, isOnePiece, STREAM_HOST, onePaceStreams } from '../api/stremioAddons'
@@ -1459,6 +1459,16 @@ export default function PlayerPage() {
                       ))}
                       {picks.filter((row) => /^https?:/i.test(row.url)).slice(0, 8).map((row) => (
                         <button key={row.url} type="button" onClick={() => { setCurrentStreamUrl(row.url); setStreamUrl(row.url); setLoaded(true); setSrcOpen(false) }}>{row.quality || row.title}</button>
+                      ))}
+                      <p>Audio</p>
+                      {(['ja', 'en', 'orig'] as const).map((lang) => (
+                        <button key={lang} type="button" className={loadPlaybackPrefs().audioLang === lang ? 'on' : ''} onClick={() => {
+                          savePlaybackPrefs({ audioLang: lang })
+                          const next = withAudioLang(streamUrl, lang)
+                          setCurrentStreamUrl(next)
+                          setStreamUrl(next)
+                          setSrcOpen(false)
+                        }}>{lang === 'ja' ? 'Japanese' : lang === 'en' ? 'English' : 'Original'}</button>
                       ))}
                       <p>Subtitles</p>
                       <button type="button" onClick={() => { setSubtitleEnabled(false); setCueText(''); setSrcOpen(false) }}>Off</button>
