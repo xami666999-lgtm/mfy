@@ -95,18 +95,34 @@ export const serializdApi = {
   accessToken: null as string | null,
 
   async login(email: string, password: string): Promise<LoginResponse> {
-    const res = await fetch(`${SERIALIZD_BASE}/login`, {
-      method: 'POST',
-      headers: SERIALIZD_HEADERS,
-      body: JSON.stringify({ email, password }),
-    })
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      throw new SerializdError(err.detail || err.message || 'Login failed', res.status)
+    const body = JSON.stringify({ email, password })
+    const api = typeof window !== 'undefined' ? (window as any).electronAPI : null
+    let data: any
+    if (api?.fetchJson) {
+      const r = await api.fetchJson(`${SERIALIZD_BASE}/login`, {
+        method: 'POST',
+        headers: SERIALIZD_HEADERS,
+        body,
+        timeoutMs: 25000,
+      })
+      if (!r?.ok) {
+        let message = 'Login failed'
+        try { message = JSON.parse(r?.text || '{}').message || r?.error || message } catch { message = r?.error || message }
+        throw new SerializdError(message)
+      }
+      data = r.json
+    } else {
+      const res = await fetch(`${SERIALIZD_BASE}/login`, {
+        method: 'POST',
+        headers: SERIALIZD_HEADERS,
+        body,
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new SerializdError(err.detail || err.message || 'Login failed', res.status)
+      }
+      data = await res.json()
     }
-
-    const data = await res.json()
     this.accessToken = data.token || data.access_token
     return {
       access_token: this.accessToken || '',
