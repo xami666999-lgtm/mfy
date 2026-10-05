@@ -153,9 +153,21 @@ interface AppState {
   setPartyCode: (code: string | null) => void
 }
 
+function keepLibrary() {
+  try {
+    const snap = {
+      watchlist: JSON.parse(localStorage.getItem('mfy-watchlist') || '[]'),
+      watchHistory: JSON.parse(localStorage.getItem('mfy-watchHistory') || '[]'),
+      favorites: JSON.parse(localStorage.getItem('mfy-favorites') || '[]'),
+    }
+    localStorage.setItem('mfy-library-keep', JSON.stringify(snap))
+  } catch {}
+}
+
 function persist(key: string, value: unknown) {
   try {
     localStorage.setItem('mfy-' + key, JSON.stringify(value))
+    if (key === 'watchlist' || key === 'watchHistory' || key === 'favorites') keepLibrary()
   } catch { /* ignore */ }
   try {
     const api = (window as any).electronAPI
@@ -585,10 +597,25 @@ export const useStore = create<AppState>((set, get) => ({
   // Initialize store from persisted storage
   init: () => {
     const api = (window as any).electronAPI
+    const localList = (key: string) => {
+      try {
+        const direct = JSON.parse(localStorage.getItem('mfy-' + key) || 'null')
+        const keep = JSON.parse(localStorage.getItem('mfy-library-keep') || '{}')
+        const saved = keep?.[key]
+        const a = Array.isArray(direct) ? direct : []
+        const b = Array.isArray(saved) ? saved : []
+        return b.length > a.length ? b : a
+      } catch { return [] }
+    }
     const loadKey = (key: string, setter: (v: unknown) => void) => {
+      const local = localList(key)
+      if (local.length) setter(local)
       if (api?.get) {
-        api.get(key).then((v: unknown) => { if (v !== undefined && v !== null) setter(v) }).catch(() => {})
-      } else {
+        api.get(key).then((v: unknown) => {
+          const remote = Array.isArray(v) ? v : []
+          setter(remote.length > local.length ? remote : (local.length ? local : v))
+        }).catch(() => {})
+      } else if (!local.length) {
         try {
           const v = JSON.parse(localStorage.getItem('mfy-' + key) || 'null')
           if (v !== null) setter(v)
