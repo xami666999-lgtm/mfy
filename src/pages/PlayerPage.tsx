@@ -1319,7 +1319,7 @@ export default function PlayerPage() {
           </div>
         )}
         {error && <div className="player-error" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'red', padding: 24, textAlign: 'center' }}>{error}</div>}
-        {loaded && !error && isPlayerEmbedUrl(streamUrl) && !isRealElectron() && (
+        {loaded && !error && (isPlayerEmbedUrl(streamUrl) || selectedMedia?.type === 'iptv') && !isRealElectron() && (
           <iframe
             ref={iframeRef}
             key={streamUrl}
@@ -1332,7 +1332,7 @@ export default function PlayerPage() {
             style={{ width: '100%', height: '100%', border: 0, background: '#000', filter: `brightness(${bright})` }}
           />
         )}
-        {loaded && !error && isPlayerEmbedUrl(streamUrl) && isRealElectron() && createElement('webview', {
+        {loaded && !error && (isPlayerEmbedUrl(streamUrl) || selectedMedia?.type === 'iptv') && isRealElectron() && createElement('webview', {
           key: streamUrl,
           src: streamUrl,
           partition: 'persist:mfy',
@@ -1340,7 +1340,7 @@ export default function PlayerPage() {
           allowpopups: 'false',
           useragent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         })}
-        {loaded && !error && !isPlayerEmbedUrl(streamUrl) && (
+        {loaded && !error && !(isPlayerEmbedUrl(streamUrl) || selectedMedia?.type === 'iptv') && (
           <video ref={videoRef} playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: fit === 'full' ? 'contain' : fit, background: '#000', filter: `${loadPlaybackPrefs().upscale === 'anime' ? 'url(#mfy-anime) contrast(1.08) saturate(1.12) ' : loadPlaybackPrefs().upscale === 'sharpen' ? 'url(#mfy-sharpen) contrast(1.05) ' : ''}brightness(${bright})` }} />
         )}
         {cueText && (

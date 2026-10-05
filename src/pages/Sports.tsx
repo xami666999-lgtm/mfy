@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
-import { sportsApi, badgeFallbacks, watchfootyApi, wfSport, type SportMatch } from '../api/sports'
-import { addonCatalog, addonStreams, ADDONS } from '../api/stremioAddons'
+import { sportsApi, badgeFallbacks, type SportMatch } from '../api/sports'
 import { useStore } from '../store'
 
 const ROWS = [
@@ -24,21 +23,6 @@ const WASH = [
   'linear-gradient(115deg,#1e2a4a 0%,#24324a 100%)',
 ]
 
-const ESPN = [
-  ['football', 'nfl'],
-  ['football', 'college-football'],
-  ['basketball', 'nba'],
-  ['basketball', 'wnba'],
-  ['baseball', 'mlb'],
-  ['hockey', 'nhl'],
-]
-
-type Book = { score?: string; logo?: string }
-
-function norm(s: string) {
-  return String(s || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
-}
-
 function stamp(n: number) {
   if (!n) return 0
   return String(n).length < 13 ? n * 1000 : n
@@ -54,18 +38,12 @@ function dayLabel(n: number) {
 export default function Sports() {
   const { setCurrentStreamUrl, setCurrentPage, setSelectedMedia } = useStore()
   const [rows, setRows] = useState<Record<string, SportMatch[]>>({})
-  const [book, setBook] = useState<Record<string, Book>>({})
-  const [feeds, setFeeds] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState('')
   const [err, setErr] = useState('')
 
   useEffect(() => {
     let stop = false
-    const catalogs = ['sports_live', 'sports_american_football', 'sports_basketball', 'sports_baseball', 'sports_football', 'sports_hockey']
-    Promise.all(catalogs.map((id) => addonCatalog('sportsstreams', 'sport', id).catch(() => [])))
-      .then((bags) => { if (!stop) setFeeds(bags.flat()) })
-      .catch(() => {})
     Promise.all(ROWS.map(async (row) => {
       const [pop, all] = await Promise.all([
         sportsApi.getMatchesPopular(row.id).catch(() => [] as SportMatch[]),
@@ -85,39 +63,6 @@ export default function Sports() {
       pairs.forEach(([id, list]) => { next[id] = list })
       setRows(next)
     }).finally(() => { if (!stop) setLoading(false) })
-
-    const next: Record<string, Book> = {}
-    const put = (name: string, score?: string, logo?: string) => {
-      const k = norm(name)
-      if (!k) return
-      next[k] = { score: score ?? next[k]?.score, logo: logo || next[k]?.logo }
-    }
-    Promise.all([
-      ...ESPN.map(([sport, league]) => fetch(`https://site.api.espn.com/apis/site/v2/sports/${sport}/${league}/scoreboard`).then((r) => r.json()).catch(() => null)),
-      ...ROWS.map((row) => watchfootyApi.matches(wfSport(row.id)).catch(() => [])),
-    ]).then((bags) => {
-      if (stop) return
-      bags.forEach((bag: any) => {
-        const events = bag?.events
-        if (Array.isArray(events)) {
-          events.forEach((ev: any) => {
-            const comps = ev?.competitions?.[0]?.competitors || []
-            comps.forEach((c: any) => put(c?.team?.displayName || c?.team?.name, c?.score, c?.team?.logo))
-          })
-          return
-        }
-        const list = Array.isArray(bag) ? bag : []
-        list.forEach((m: any) => {
-          const home = m?.teams?.home
-          const away = m?.teams?.away
-          const hs = m?.scores?.home
-          const as = m?.scores?.away
-          if (home?.name) put(home.name, hs != null ? String(hs) : undefined, home.logoUrl ? `https://api.watchfooty.st${home.logoUrl}` : undefined)
-          if (away?.name) put(away.name, as != null ? String(as) : undefined, away.logoUrl ? `https://api.watchfooty.st${away.logoUrl}` : undefined)
-        })
-      })
-      setBook(next)
-    }).catch(() => {})
     return () => { stop = true }
   }, [])
 
@@ -125,34 +70,13 @@ export default function Sports() {
     setErr('')
     setBusy(match.id)
     try {
-      const home = norm(match.teams?.home?.name || match.title.split(/\s+vs\s+/i)[0] || '')
-      const away = norm(match.teams?.away?.name || match.title.split(/\s+vs\s+/i)[1] || '')
-      const words = (s: string) => s.split(' ').filter((w) => w.length > 3)
-      const hit = feeds.find((e) => {
-        const n = norm(e.title || e.name || '')
-        const hw = words(home)
-        const aw = words(away)
-        return (hw.length ? hw.some((w) => n.includes(w)) : n.includes(home)) && (!aw.length || aw.some((w) => n.includes(w)))
-      })
       let url = ''
-      if (hit) {
-        const list = await addonStreams(ADDONS.sportsstreams.base, 'sport', String(hit.stremioId || hit.id)).catch(() => [])
-        const direct = list.find((r) => /^https?:/i.test(r.url) && /\.m3u8(\?|$)/i.test(r.url))
-        const any = list.find((r) => /^https?:/i.test(r.url) && !/^magnet:/i.test(r.url))
-        url = direct?.url || any?.url || ''
+      for (const s of match.sources || []) {
+        const list = await sportsApi.getStreams(s.source, s.id).catch(() => [])
+        const pick = list.find((x) => x.hd && /^https?:/i.test(x.embedUrl || '')) || list.find((x) => /^https?:/i.test(x.embedUrl || ''))
+        if (pick?.embedUrl) { url = pick.embedUrl; break }
       }
-      if (!url) {
-        for (const s of match.sources || []) {
-          const list = await sportsApi.getStreams(s.source, s.id).catch(() => [])
-          const pick = list.find((x) => x.hd && x.embedUrl) || list.find((x) => x.embedUrl)
-          if (pick?.embedUrl) { url = pick.embedUrl; break }
-        }
-      }
-      if (!url && match.sources?.[0]) {
-        const s = match.sources[0]
-        url = `https://embed.st/embed/${s.source}/${s.id}/1`
-      }
-      if (!url) { setErr('No feed for this game yet.'); return }
+      if (!url) { setErr('No Streamed feed for this game yet.'); return }
       setSelectedMedia({ id: match.id, type: 'iptv', title: match.title, name: match.title } as any)
       setCurrentStreamUrl(url)
       setCurrentPage('player')
@@ -176,7 +100,7 @@ export default function Sports() {
             <h2 className="text-[15px] font-semibold mb-3">{row.label}</h2>
             <div className="flex gap-3 overflow-x-auto pb-2">
               {list.map((m, i) => (
-                <GameCard key={m.id} match={m} wash={WASH[i % WASH.length]} book={book} busy={busy === m.id} onPlay={() => play(m)} />
+                <GameCard key={m.id} match={m} wash={WASH[i % WASH.length]} busy={busy === m.id} onPlay={() => play(m)} />
               ))}
             </div>
           </section>
@@ -186,16 +110,12 @@ export default function Sports() {
   )
 }
 
-function GameCard({ match, wash, book, busy, onPlay }: { match: SportMatch; wash: string; book: Record<string, Book>; busy: boolean; onPlay: () => void }) {
+function GameCard({ match, wash, busy, onPlay }: { match: SportMatch; wash: string; busy: boolean; onPlay: () => void }) {
   const homeName = match.teams?.home?.name || match.title.split(/\s+vs\s+/i)[0] || match.title
   const awayName = match.teams?.away?.name || match.title.split(/\s+vs\s+/i)[1] || ''
-  const home = book[norm(homeName)]
-  const away = book[norm(awayName)]
   const when = stamp(match.date)
   const live = !!match.live || (when > 0 && when <= Date.now() + 15 * 60 * 1000 && Date.now() - when < 4 * 60 * 60 * 1000)
   const upcoming = !live && when > Date.now()
-  const hs = home?.score
-  const as = away?.score
   const league = (match.category || '').replace(/-/g, ' ')
   return (
     <button type="button" onClick={onPlay} className="shrink-0 w-[248px] text-left">
@@ -205,9 +125,9 @@ function GameCard({ match, wash, book, busy, onPlay }: { match: SportMatch; wash
           <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${live ? 'bg-red-600 text-white' : 'bg-white/15 text-white'}`}>{live ? 'LIVE' : upcoming ? 'UPCOMING' : 'TODAY'}</span>
         </div>
         <div className="grid grid-cols-[1fr_auto_1fr] items-center px-3 pt-2 gap-1">
-          <Side name={homeName} badge={match.teams?.home?.badge} extra={home?.logo} />
-          <div className="text-white font-semibold text-[15px] tabular-nums px-1">{hs != null && as != null ? `${hs} - ${as}` : 'VS'}</div>
-          <Side name={awayName} badge={match.teams?.away?.badge} extra={away?.logo} />
+          <Side name={homeName} badge={match.teams?.home?.badge} />
+          <div className="text-white font-semibold text-[15px] tabular-nums px-1">VS</div>
+          <Side name={awayName} badge={match.teams?.away?.badge} />
         </div>
         {busy && <div className="absolute inset-0 grid place-items-center bg-black/45 text-xs">Starting…</div>}
       </div>
@@ -220,8 +140,8 @@ function GameCard({ match, wash, book, busy, onPlay }: { match: SportMatch; wash
   )
 }
 
-function Side({ name, badge, extra }: { name: string; badge?: string; extra?: string }) {
-  const sources = [...badgeFallbacks(badge), extra || ''].filter(Boolean)
+function Side({ name, badge }: { name: string; badge?: string }) {
+  const sources = badgeFallbacks(badge)
   return (
     <div className="min-w-0 text-center">
       <Crest sources={sources} name={name} />

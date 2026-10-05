@@ -676,7 +676,7 @@ export default function NuvioHome() {
             {top.map((item, i) => {
               const face = faceOf(item.id, item)
               return (
-              <button key={`${item.id}-${i}`} type="button" className="nf-rank" onClick={() => setSheet(item)}>
+              <button key={`${item.id}-${i}`} type="button" className={`nf-rank${i === 9 ? ' ten' : ''}`} onClick={() => setSheet(item)}>
                 <b>{i + 1}</b>
                 <span className="nf-shot">
                   <img src={`${POSTER_URL}${item.poster_path}`} alt={titleOf(item)} />
@@ -687,8 +687,8 @@ export default function NuvioHome() {
                     pct={face.pct}
                     label={face.label}
                   />
+                  {sources[String(item.id)] && <BadgeImg className="nv-badge" src={sources[String(item.id)]} alt="" />}
                 </span>
-                {sources[String(item.id)] && <BadgeImg className="nv-badge" src={sources[String(item.id)]} alt="" />}
               </button>
               )
             })}

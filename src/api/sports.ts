@@ -59,7 +59,6 @@ export function badgeFallbacks(badge?: string) {
     badgeUrl(badge),
     `${BASE}/api/images/proxy/${encodeURIComponent(id)}.webp`,
     `${BASE}/api/images/badge/${encodeURIComponent(id)}.png`,
-    `https://api.watchfooty.st/badges/${encodeURIComponent(id)}`,
   ].filter((u, i, a) => u && a.indexOf(u) === i)
 }
 
