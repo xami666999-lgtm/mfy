@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Home, Film, Tv, Sparkles, CalendarDays, Trophy, Bookmark, Search, Settings } from 'lucide-react'
+import { Home, Film, Tv, Sparkles, Music, CalendarDays, Trophy, Bookmark, Search, Settings } from 'lucide-react'
 import { useStore } from '../store'
 import BugReport from './BugReport'
 import InstallButton from './InstallButton'
@@ -10,6 +10,7 @@ const tabs = [
   { id: 'movies', label: 'Movies', icon: Film },
   { id: 'tv', label: 'TV Shows', icon: Tv },
   { id: 'anime', label: 'Anime', icon: Sparkles },
+  { id: 'music', label: 'Music', icon: Music },
   { id: 'calendar', label: 'Calendar', icon: CalendarDays },
   { id: 'sports', label: 'Sports', icon: Trophy },
   { id: 'library', label: 'Library', icon: Bookmark },

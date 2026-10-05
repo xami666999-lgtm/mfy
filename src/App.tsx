@@ -24,6 +24,7 @@ import Intro from './components/Intro'
 import Movies from './pages/Movies'
 import TvShows from './pages/TvShows'
 import Anime from './pages/Anime'
+import MusicPage from './pages/MusicPage'
 import Sports from './pages/Sports'
 import LoginGate from './components/LoginGate'
 import RemoteHelp from './components/RemoteHelp'
@@ -224,7 +225,7 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (currentPage === 'iptv' || currentPage === 'manga' || currentPage === 'comics' || currentPage === 'books' || currentPage === 'manga-detail' || currentPage === 'youtube' || currentPage === 'music') {
+    if (currentPage === 'iptv' || currentPage === 'manga' || currentPage === 'comics' || currentPage === 'books' || currentPage === 'manga-detail' || currentPage === 'youtube') {
       setCurrentPage('home')
     }
   }, [currentPage, setCurrentPage])
@@ -302,6 +303,7 @@ export default function App() {
         {currentPage === 'movies' && <Movies />}
         {currentPage === 'tv' && <TvShows />}
         {currentPage === 'anime' && <Anime />}
+        {currentPage === 'music' && <MusicPage />}
         {currentPage === 'sports' && <Sports />}
         {currentPage === 'calendar' && <CalendarPage />}
         {currentPage === 'shelf' && <ShelfBrowse />}

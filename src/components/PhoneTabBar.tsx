@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Home, Film, Tv, Sparkles, LayoutGrid, Trophy, Bookmark, Settings, CalendarDays, Search } from 'lucide-react'
+import { Home, Film, Tv, Sparkles, LayoutGrid, Trophy, Bookmark, Settings, CalendarDays, Search, Music } from 'lucide-react'
 import { useStore } from '../store'
 
 const TABS: [string, string, any][] = [
@@ -11,6 +11,7 @@ const TABS: [string, string, any][] = [
 
 const MORE: [string, string, any][] = [
   ['search', 'Search', Search],
+  ['music', 'Music', Music],
   ['calendar', 'Calendar', CalendarDays],
   ['sports', 'Sport', Trophy],
   ['library', 'Library', Bookmark],
