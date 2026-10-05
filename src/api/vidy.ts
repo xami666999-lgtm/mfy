@@ -72,7 +72,7 @@ export function isPlayerEmbed(url: string): boolean {
   if (/127\.0\.0\.1|localhost|magnet:/i.test(url)) return false
   if (/\.(mp4|m3u8|mkv|webm|avi)(\?|$)/i.test(url)) return false
   if (/pengu\.uk\/signin|signin\.mp4/i.test(url)) return false
-  return /vidsrc|vidlink|vidfast|2embed|moviebox\.ph|youtube|youtu\.be|invidious|nadeko|vidnest|videasy|epiembeds|embed\/|embedtv|\/player\.|streamed\.pk|embedme|poocloud|strmd|crunchyroll\.com/i.test(url)
+  return /vidsrc|vidlink|vidfast|2embed|moviebox\.ph|youtube|youtu\.be|invidious|nadeko|vidnest|videasy|epiembeds|embed\/|embedtv|\/player\.|streamed\.pk|embedme|poocloud|strmd/i.test(url)
 }
 
 export function getFallbackSources(type: 'movie' | 'tv', tmdbId: number | string | undefined, season?: number, episode?: number): { source: PlayerSource; url: string }[] {

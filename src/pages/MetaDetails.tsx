@@ -8,7 +8,6 @@ import QualityBadges from '../components/QualityBadges'
 import { fetchMdblistRatings, type MdblistRating } from '../api/mdblist'
 import { vidyUrl, getPlayerUrl } from '../api/vidy'
 import { isAnimeItem } from '../lib/trackers'
-import { crunchySignedIn, crunchyWatchUrl } from '../lib/crunchyroll'
 import { isEpisodeWatched } from '../lib/watchProgress'
 import { useStore } from '../store'
 import { trailerUrl, isOnePiece, pearioWatchUrl, pearioUserUrl } from '../api/stremioAddons'
@@ -464,14 +463,7 @@ export default function MetaDetails() {
             <div className="src-copy max-w-xl">
               <TitleLogo id={preview.id} type={preview.type === 'movie' ? 'movie' : 'tv'} title={previewTitle} />
               <div className="nv-hero-actions">
-                <button type="button" className="nv-play" onClick={() => void handlePlay()}><Play size={18} fill="currentColor" /> Watch on MFY</button>
-                {(isAnimeItem(preview) || isAnimeItem(detail)) && (
-                  <button type="button" className="nv-play" onClick={() => {
-                    const name = previewTitle || (detail as any)?.title || (detail as any)?.name || ''
-                    setCurrentStreamUrl(crunchySignedIn() ? crunchyWatchUrl(name) : 'https://www.crunchyroll.com/login')
-                    setCurrentPage('player')
-                  }}>Watch on Crunchyroll</button>
-                )}
+                <button type="button" className="nv-play" onClick={() => void handlePlay()}><Play size={18} fill="currentColor" /> Play</button>
               </div>
             </div>
           </div>
