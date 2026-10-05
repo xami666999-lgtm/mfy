@@ -6,8 +6,8 @@ import { setRuntimeTmdbKey, DEFAULT_TMDB_API_KEY } from '../api/tmdb'
 import { setRuntimeOmdbKey } from '../api/omdb'
 import { setRuntimeMdblistKey } from '../api/mdblist'
 import { setRuntimeSubtitleKey } from '../api/subtitles'
-import TrackerConnect from '../components/TrackerConnect'
 import { loadPlaybackPrefs, savePlaybackPrefs, type UpscaleMode } from '../lib/playbackPrefs'
+import { githubToken, pullProgress, pushProgress, saveGithubToken } from '../lib/githubProgress'
 
 export default function Settings() {
   const store = useStore()
@@ -15,11 +15,10 @@ export default function Settings() {
   const [omdbKey, setOmdbKey] = useState(store.omdbApiKey || '')
   const [mdblistKey, setMdblistKey] = useState(store.mdblistApiKey || '')
   const [subtitleKey, setSubtitleKey] = useState(store.opensubtitlesKey || '')
-  const [traktTok, setTraktTok] = useState(store.traktToken || '')
   const [saved, setSaved] = useState(false)
-  const [letterboxd, setLetterboxd] = useState(() => {
-    try { return localStorage.getItem('mfy-letterboxd-user') || '' } catch { return '' }
-  })
+  const [gh, setGh] = useState(() => githubToken())
+  const [syncNote, setSyncNote] = useState('')
+  const [syncing, setSyncing] = useState(false)
   const [hideGlobalCal, setHideGlobalCal] = useState(() => {
     try { return localStorage.getItem('mfy-cal-hide-global') === '1' } catch { return false }
   })
@@ -35,15 +34,12 @@ export default function Settings() {
     setRuntimeMdblistKey(mdblistKey.trim())
     store.setOpensubtitlesKey(subtitleKey.trim())
     setRuntimeSubtitleKey(subtitleKey.trim())
-    store.setTraktToken(traktTok.trim())
-    try { localStorage.setItem('mfy-letterboxd-user', letterboxd.trim()) } catch {}
     const api = (window as any).electronAPI
     if (api?.set) {
       await api.set('tmdbApiKey', key)
       await api.set('omdbApiKey', omdbKey.trim())
       await api.set('mdblistApiKey', mdblistKey.trim())
       await api.set('opensubtitlesKey', subtitleKey.trim())
-      await api.set('traktToken', traktTok.trim())
     }
     setSaved(true)
     setTimeout(() => setSaved(false), 1600)
@@ -88,6 +84,36 @@ export default function Settings() {
         />
       </Section>
 
+      <Section title="Watch progress">
+        <p className="set-hint">Progress already saves on this device while you watch. A GitHub token keeps that list if you switch browsers. Create one with only the gist permission.</p>
+        <Field label="GitHub token" value={gh} onChange={setGh} placeholder="ghp_…" link="https://github.com/settings/tokens/new?scopes=gist&description=MFY" secret />
+        <button
+          type="button"
+          className="set-btn"
+          disabled={syncing}
+          onClick={() => {
+            setSyncing(true)
+            setSyncNote('')
+            saveGithubToken(gh)
+            void (async () => {
+              try {
+                const remote = await pullProgress()
+                if (remote?.length) store.setWatchHistory(remote)
+                await pushProgress(useStore.getState().watchHistory)
+                setSyncNote('Progress is saved to a private GitHub gist.')
+              } catch (error) {
+                setSyncNote(error instanceof Error ? error.message : 'GitHub sync failed.')
+              } finally {
+                setSyncing(false)
+              }
+            })()
+          }}
+        >
+          {syncing ? 'Saving…' : 'Save progress to GitHub'}
+        </button>
+        {syncNote && <p className="set-hint">{syncNote}</p>}
+      </Section>
+
       <Section title="Playback">
         <label className="set-label">Player</label>
         <select
@@ -117,17 +143,10 @@ export default function Settings() {
         <p className="set-hint">Sharpen runs on direct video. Embed players ignore it, so pick VLC or mpv above if you want that file enhanced outside the page.</p>
       </Section>
 
-      <Section title="Trackers">
-        <TrackerConnect />
-      </Section>
-
       <Section title="Ratings">
         <Field label="TMDB API key" value={tmdbKey} onChange={setTmdbKey} placeholder="Leave blank to use the built-in key" link="https://www.themoviedb.org/settings/api" />
         <Field label="OMDb API key" value={omdbKey} onChange={setOmdbKey} placeholder="IMDb and Rotten Tomatoes" link="https://www.omdbapi.com/apikey.aspx" />
-        <Field label="MDBList API key" value={mdblistKey} onChange={setMdblistKey} placeholder="Optional extra scores" link="https://mdblist.com/apikey" />
         <Field label="OpenSubtitles API key" value={subtitleKey} onChange={setSubtitleKey} placeholder="Optional subtitles" link="https://www.opensubtitles.com/en/consumers" />
-        <Field label="Trakt token" value={traktTok} onChange={setTraktTok} placeholder="Optional" secret />
-        <Field label="Letterboxd username" value={letterboxd} onChange={setLetterboxd} placeholder="Movies only" link="https://letterboxd.com" />
       </Section>
     </div>
   )

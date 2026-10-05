@@ -36,6 +36,7 @@ import DetailExtras from './components/DetailExtras'
 import EpisodePanel from './components/EpisodePanel'
 import { youtubeEmbedUrl } from './api/youtubio'
 import { consumeTrackerReturn } from './lib/trackerLogin'
+import { pullProgress } from './lib/githubProgress'
 import { isPhoneShell } from './lib/device'
 
 void Board
@@ -121,6 +122,9 @@ export default function App() {
   useEffect(() => {
     const { init } = useStore.getState()
     init()
+    void pullProgress().then((rows) => {
+      if (Array.isArray(rows) && rows.length) useStore.getState().setWatchHistory(rows)
+    }).catch(() => {})
   }, [])
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { Page, UserProfile, WatchHistoryItem, CustomList } from '../types'
 import type { SerializdUser } from '../api/serializd'
+import { scheduleProgressPush } from '../lib/githubProgress'
 
 export interface WatchlistItem {
   mediaId: number
@@ -168,6 +169,7 @@ function persist(key: string, value: unknown) {
         tx.objectStore('kv').put(value, 'watchHistory')
       }
     } catch {}
+    scheduleProgressPush(Array.isArray(value) ? value : [])
   }
 }
 
