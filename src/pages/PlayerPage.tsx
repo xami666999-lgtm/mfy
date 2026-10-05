@@ -36,7 +36,7 @@ export default function PlayerPage() {
     autoplayNext,
     externalPlayer,
   } = useStore()
-  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const posterAsked = useRef<Set<string>>(new Set())
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [streamUrl, setStreamUrl] = useState('')
@@ -1070,7 +1070,7 @@ export default function PlayerPage() {
       mediaId: selectedMedia.id,
       mediaType: selectedMedia.type === 'movie' ? 'movie' : 'tv',
       title: String((selectedMedia as any).title || (selectedMedia as any).name || prev?.title || selectedMedia.id),
-      posterPath: (selectedMedia as any).poster_path || prev?.posterPath || null,
+      posterPath: (selectedMedia as any).poster_path || (selectedMedia as any).poster || prev?.posterPath || null,
       progress: p,
       duration: d,
       season: selectedMedia.season,
@@ -1100,11 +1100,49 @@ export default function PlayerPage() {
         progress: p,
         duration: d,
         title: String((selectedMedia as any).title || (selectedMedia as any).name || selectedMedia.id),
-        posterPath: (selectedMedia as any).poster_path || prev?.posterPath || null,
+        posterPath: (selectedMedia as any).poster_path || (selectedMedia as any).poster || prev?.posterPath || null,
         watchedAt: new Date().toISOString(),
         completed: reallyDone,
       })
     } catch {}
+    const posterNow = (selectedMedia as any).poster_path || (selectedMedia as any).poster || prev?.posterPath
+    const askKey = String(selectedMedia.id)
+    if (!posterNow && !posterAsked.current.has(askKey)) {
+      posterAsked.current.add(askKey)
+      const movie = selectedMedia.type === 'movie'
+      const title = String((selectedMedia as any).title || (selectedMedia as any).name || prev?.title || '')
+      void (async () => {
+        let path = ''
+        try {
+          const id = Number(selectedMedia.id)
+          if (id) {
+            const d = movie ? await tmdb.getMovieDetail(id) : await tmdb.getTVDetail(id)
+            path = d?.poster_path || ''
+          }
+        } catch {}
+        if (!path && title) {
+          try {
+            const found = movie ? await tmdb.searchMovies(title) : await tmdb.searchTV(title)
+            path = (found?.results || []).find((r: any) => r.poster_path)?.poster_path || ''
+          } catch {}
+        }
+        if (!path) return
+        upsertHistory({
+          id: `${selectedMedia.id}-${selectedMedia.type}-${selectedMedia.season || 0}-${selectedMedia.episode || 0}`,
+          mediaId: selectedMedia.id,
+          mediaType: movie ? 'movie' : 'tv',
+          title: title || String(selectedMedia.id),
+          posterPath: path,
+          progress: p,
+          duration: d,
+          season: selectedMedia.season,
+          episode: selectedMedia.episode,
+          watchedAt: new Date().toISOString(),
+          profileId: useStore.getState().currentProfile?.id || 'default',
+          completed: reallyDone,
+        })
+      })()
+    }
   }
 
   const ratedRef = useRef(false)

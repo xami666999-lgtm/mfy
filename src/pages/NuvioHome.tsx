@@ -39,6 +39,19 @@ function leftLabel(progress: number, duration: number) {
   if (m < 60) return `${m}m left`
   return `${Math.floor(m / 60)}h ${m % 60}m left`
 }
+function artSrc(path?: string | null) {
+  const raw = String(path || '')
+  if (!raw) return ''
+  if (raw.startsWith('http')) return raw
+  return `${POSTER_URL}${raw.startsWith('/') ? raw : `/${raw}`}`
+}
+
+function wideSrc(path?: string | null) {
+  const raw = String(path || '')
+  if (!raw) return ''
+  if (raw.startsWith('http')) return raw
+  return `${BACKDROP_URL}${raw.startsWith('/') ? raw : `/${raw}`}`
+}
 function stopLine(h: any) {
   const sec = Number(h?.progress) || 0
   const m = Math.round(sec / 60)
@@ -205,7 +218,8 @@ function Flag({ code }: { code: string }) {
 }
 
 export default function NuvioHome() {
-  const { setSelectedMedia, setCurrentPage, watchHistory, setCurrentStreamUrl, setSelectedProviderId, setSelectedFranchiseId, profiles, currentProfile, addToWatchlist, removeHistory } = useStore() as any
+  const { setSelectedMedia, setCurrentPage, watchHistory, setCurrentStreamUrl, setSelectedProviderId, setSelectedFranchiseId, profiles, currentProfile, addToWatchlist, removeHistory, upsertHistory } = useStore() as any
+  const [cwArt, setCwArt] = useState<Record<string, { poster?: string; backdrop?: string; tried?: boolean }>>({})
   const [heroPool, setHeroPool] = useState<any[]>([])
   const [idx, setIdx] = useState(0)
   const [heroDetail, setHeroDetail] = useState<any>(null)
@@ -500,13 +514,13 @@ export default function NuvioHome() {
 
   function open(item: any, type?: string) {
     const t = type || kindOf(item)
-    setSelectedMedia({ id: item.id, type: t, title: titleOf(item) })
+    setSelectedMedia({ id: item.id, type: t, title: titleOf(item), poster_path: item.poster_path || null, backdrop_path: item.backdrop_path || null })
     setCurrentPage('detail')
   }
 
   function play(item: any) {
     const t = kindOf(item)
-    setSelectedMedia({ id: item.id, type: t, title: titleOf(item) })
+    setSelectedMedia({ id: item.id, type: t, title: titleOf(item), poster_path: item.poster_path || null, backdrop_path: item.backdrop_path || null })
     setCurrentStreamUrl(getPlayerUrl(t === 'tv' && /anime|jp/i.test(String(item.original_language || '')) ? 'zangetsu' : 'playtorrio', t, item.id, 1, 1))
     setCurrentPage('player')
   }
@@ -542,6 +556,42 @@ export default function NuvioHome() {
     return rows.reduce((n: number, h: any) => Math.max(n, watchPercent(h)), 0)
   }
 
+  useEffect(() => {
+    const rows = (watchHistory || []).slice(0, 12)
+    const need = rows.filter((h: any) => !cwArt[String(h.mediaId)]?.tried)
+    if (!need.length) return
+    let dead = false
+    need.forEach(async (h: any) => {
+      const key = String(h.mediaId)
+      const movie = h.mediaType === 'movie'
+      let poster = ''
+      let backdrop = ''
+      const direct = String(h.posterPath || '')
+      if (direct.startsWith('http') || direct.startsWith('/')) poster = direct
+      try {
+        const id = Number(h.mediaId)
+        if (id) {
+          const d = movie ? await tmdb.getMovieDetail(id) : await tmdb.getTVDetail(id)
+          poster = poster || d?.poster_path || ''
+          backdrop = d?.backdrop_path || ''
+        }
+      } catch {}
+      if (!poster && h.title) {
+        try {
+          const found = movie ? await tmdb.searchMovies(h.title) : await tmdb.searchTV(h.title)
+          const hit = (found?.results || []).find((r: any) => r.poster_path || r.backdrop_path)
+          poster = hit?.poster_path || ''
+          backdrop = backdrop || hit?.backdrop_path || ''
+        } catch {}
+      }
+      if (dead) return
+      setCwArt((prev) => ({ ...prev, [key]: { poster, backdrop, tried: true } }))
+      if (poster && poster !== h.posterPath) {
+        upsertHistory({ ...h, posterPath: poster })
+      }
+    })
+    return () => { dead = true }
+  }, [watchHistory])
   const cw = (watchHistory || []).slice(0, 12)
   const genreLine = (heroDetail?.genres?.length ? heroDetail.genres.slice(0, 2).map((g: any) => g.name) : (hero?.genre_ids || []).slice(0, 2).map((id: number) => genreNames[id]).filter(Boolean))
   const match = hero?.vote_average ? Math.round(hero.vote_average * 10) : 0
@@ -614,9 +664,11 @@ export default function NuvioHome() {
                 <div key={`${h.mediaId}-${h.season}-${h.episode}`} className="nv-cw">
                   <button type="button" className="nv-cw-open" onClick={() => open({ id: h.mediaId, title: h.title, media_type: h.mediaType }, h.mediaType || 'movie')}>
                     <div className="nv-shot">
-                      {h.backdropPath || h.posterPath
-                        ? <img src={`${h.backdropPath ? BACKDROP_URL : POSTER_URL}${h.backdropPath || h.posterPath}`} alt="" />
-                        : <div className="ph" />}
+                      {(() => {
+                        const art = cwArt[String(h.mediaId)]
+                        const src = wideSrc(art?.backdrop) || artSrc(art?.poster || h.posterPath)
+                        return src ? <img src={src} alt="" referrerPolicy="no-referrer" /> : <div className="ph" />
+                      })()}
                       <PosterStatus
                         state={face.state === 'fresh' ? 'progress' : face.state}
                         pct={Math.max(8, face.pct)}
