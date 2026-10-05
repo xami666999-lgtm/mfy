@@ -5,6 +5,7 @@ import type { WatchHistoryItem } from '../types'
 const BASE = 'https://api.nuvio.tv'
 const KEY = 'sb_publishable_1Clq8rlTVACkdcZuqr6_AD__xUUC_EN'
 const SAVE = 'mfy-nuvio-session'
+const REFRESH = 'mfy-nuvio-refresh'
 
 async function nuvio(path: string, body: unknown, token?: string) {
   const res = await fetch(`${BASE}${path}`, {
@@ -25,8 +26,41 @@ export async function nuvioLogin(email: string, password: string) {
   const data = await nuvio('/auth/v1/token?grant_type=password', { email: email.trim(), password })
   const token = String(data?.access_token || '')
   if (!token) throw new Error('Nuvio login did not return a session.')
-  try { localStorage.setItem(SAVE, token) } catch {}
+  try {
+    localStorage.setItem(SAVE, token)
+    if (data?.refresh_token) localStorage.setItem(REFRESH, String(data.refresh_token))
+  } catch {}
   return token
+}
+
+async function nuvioToken() {
+  let token = ''
+  let refresh = ''
+  try {
+    token = localStorage.getItem(SAVE) || ''
+    refresh = localStorage.getItem(REFRESH) || ''
+  } catch {}
+  if (refresh) {
+    const data = await nuvio('/auth/v1/token?grant_type=refresh_token', { refresh_token: refresh }).catch(() => null)
+    if (data?.access_token) {
+      token = String(data.access_token)
+      try {
+        localStorage.setItem(SAVE, token)
+        if (data.refresh_token) localStorage.setItem(REFRESH, String(data.refresh_token))
+      } catch {}
+    }
+  }
+  if (!token) throw new Error('Sign in to Nuvio once so new titles can copy over.')
+  return token
+}
+
+export async function syncNuvioLibrary() {
+  const token = await nuvioToken()
+  const profiles = await nuvio('/rest/v1/rpc/sync_pull_profiles', {}, token).catch(() => [])
+  const profileId = Number(profiles?.[0]?.profile_index || profiles?.[0]?.id || 1)
+  const rows = await nuvio('/rest/v1/rpc/sync_pull_library', { p_profile_id: profileId, p_limit: 500, p_offset: 0 }, token)
+  const items = Array.isArray(rows) ? rows : rows?.items || []
+  return addNuvioItems(items)
 }
 
 function tmdbId(contentId: string) {
@@ -42,6 +76,12 @@ export async function importNuvioLibrary(email: string, password: string) {
   const rows = await nuvio('/rest/v1/rpc/sync_pull_library', { p_profile_id: profileId, p_limit: 500, p_offset: 0 }, token)
   const items = Array.isArray(rows) ? rows : rows?.items || []
   if (!items.length) throw new Error('That Nuvio library is empty.')
+  const added = await addNuvioItems(items)
+  try { localStorage.setItem('mfy-nuvio-email', email.trim()) } catch {}
+  return added
+}
+
+async function addNuvioItems(items: any[]) {
   const store = useStore.getState()
   let added = 0
   for (const item of items.slice(0, 400)) {
@@ -77,7 +117,5 @@ export async function importNuvioLibrary(email: string, password: string) {
     }
     added += 1
   }
-  if (!added) throw new Error('Nuvio answered, but none of those titles matched here.')
-  try { localStorage.setItem('mfy-nuvio-email', email.trim()) } catch {}
   return added
 }
