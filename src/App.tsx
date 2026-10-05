@@ -268,8 +268,8 @@ export default function App() {
         </div>
       )}
       {electron && !phone && <TitleBar />}
-      {currentPage !== 'player' && !phone && <Navbar />}
-      {phone && currentPage !== 'player' && <PhoneTabBar />}
+      {currentPage !== 'player' && currentPage !== 'music' && !phone && <Navbar />}
+      {phone && currentPage !== 'player' && currentPage !== 'music' && <PhoneTabBar />}
       <PhoneBattery />
       <div className="flex-1 min-h-0 relative mfy-phone-main">
       <main className="h-full overflow-y-auto overflow-x-hidden">
