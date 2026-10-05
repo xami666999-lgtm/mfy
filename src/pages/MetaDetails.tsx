@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Play, Star, Clock, Calendar, Heart, Plus, Share2, List, Check, Cast } from 'lucide-react'
-import { tmdb, POSTER_URL, BACKDROP_URL, PROFILE_URL, STILL_URL, pickTrailer, trailerEmbed } from '../api/tmdb'
+import { tmdb, POSTER_URL, BACKDROP_URL, PROFILE_URL, STILL_URL, pickTrailer } from '../api/tmdb'
 import { fetchOmdbByImdbId } from '../api/omdb'
 import { fetchRottenTomatoes } from '../api/rottentomatoes'
 import { fetchAggregatedRatings, type AggRating } from '../api/ratingsAggregator'
@@ -49,7 +49,6 @@ export default function MetaDetails() {
   const [seasonData, setSeasonData] = useState<any>(null)
   const [activeSeason, setActiveSeason] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [showTrailer, setShowTrailer] = useState(false)
   const [trailerKey, setTrailerKey] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'details' | 'streams'>('details')
   const [streamOptions, setStreamOptions] = useState<any[]>([])
@@ -649,91 +648,6 @@ className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/8 bord
                 <Plus className="w-4 h-4" />
                 {selectedMedia && selectedMedia.type !== 'iptv' && isInWatchlist(selectedMedia.id as number, selectedMedia.type) ? 'In Library' : 'Library'}
               </button>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setListOpen((v) => !v)}
-                  className={cn(
-                    'inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/8 border text-sm transition-all',
-                    listOpen ? 'text-white border-white/25 bg-white/12' : 'text-white/70 border-white/12 hover:text-white'
-                  )}
-                >
-                  <List className="w-4 h-4" />
-                  Add to library
-                </button>
-                {listOpen && (
-                  <div className="absolute z-50 right-0 top-full mt-2 w-56 rounded-xl bg-[#1a1a1f] border border-white/10 shadow-2xl p-2 page-fade-enter">
-                    {customLists.length > 0 && (
-                      <div className="max-h-48 overflow-y-auto space-y-0.5 mb-1">
-                        {customLists.map((l) => {
-                          const mediaId = selectedMedia?.id
-                          const inList = selectedMedia && mediaId && selectedMedia.type !== 'iptv' && isInCustomList(l.id, mediaId as number, selectedMedia.type)
-                          return (
-                            <button
-                              key={l.id}
-                              type="button"
-                              onClick={() => {
-                                if (!selectedMedia || !mediaId || selectedMedia.type === 'iptv') return
-                                if (inList) {
-                                  removeFromCustomList(l.id, mediaId as number, selectedMedia.type)
-                                } else {
-                                  addToCustomList(l.id, mediaId as number, selectedMedia.type, { title, posterPath: detail?.poster_path || null })
-                                }
-                                setListOpen(false)
-                              }}
-                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-white/70 hover:bg-white/[0.06] hover:text-white text-left transition-all"
-                            >
-                              <span className={cn('w-2 h-2 rounded-full flex-shrink-0', inList ? 'bg-[#e50914]' : 'bg-white/15')} />
-                              <span className="flex-1 truncate">{l.name}</span>
-                              {inList && <Check className="w-3.5 h-3.5 text-[#e50914] flex-shrink-0" />}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    )}
-                    <div className="flex gap-1.5">
-                      <input
-                        value={newListName}
-                        onChange={(e) => setNewListName(e.target.value)}
-onKeyDown={(e) => {
-                          if (e.key === 'Enter' && newListName.trim()) {
-                            const id = createCustomList(newListName.trim())
-                            const mediaId = selectedMedia?.id
-                            if (selectedMedia && mediaId && selectedMedia.type !== 'iptv') addToCustomList(id, mediaId as number, selectedMedia.type, { title, posterPath: detail?.poster_path || null })
-                            setNewListName('')
-                            setListOpen(false)
-                          }
-                        }}
-                        placeholder="New list name…"
-                        className="flex-1 min-w-0 h-8 px-2.5 rounded-lg bg-white/[0.06] border border-white/[0.08] text-[11px] text-white placeholder-white/20 focus:outline-none focus:border-[#e50914]/40"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!newListName.trim()) return
-                          const id = createCustomList(newListName.trim())
-                          const mediaId = selectedMedia?.id
-                          if (selectedMedia && mediaId && selectedMedia.type !== 'iptv') addToCustomList(id, mediaId as number, selectedMedia.type, { title, posterPath: detail?.poster_path || null })
-                          setNewListName('')
-                          setListOpen(false)
-                        }}
-                        className="h-8 px-2.5 rounded-lg bg-[#e50914]/20 text-[#e50914] hover:bg-[#e50914]/30 text-xs flex items-center gap-1"
-                      >
-                        <Plus size={12} /> New
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-              {trailerKey && (
-                <button
-                  type="button"
-                  onClick={() => setShowTrailer(true)}
-                  className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/8 border border-white/12 text-sm text-white/70 hover:text-white transition-all"
-                >
-                  Trailer
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -768,39 +682,6 @@ onKeyDown={(e) => {
             <div className="flex flex-col gap-2">
               <button type="button" className="h-12 rounded bg-white text-black font-semibold" onClick={() => pickFiller('canon')}>Without fillers</button>
               <button type="button" className="h-12 rounded bg-[#333] text-white font-semibold" onClick={() => pickFiller('all')}>Watch whole show</button>
-            </div>
-          </div>
-        </div>
-      )}
-      {showTrailer && trailerKey && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowTrailer(false)}>
-          <div className="w-[800px] aspect-video rounded-xl overflow-hidden border border-white/[0.1]" onClick={(e) => e.stopPropagation()}>
-            <iframe
-              id="mfy-trailer-frame"
-              width="100%"
-              height="100%"
-              src={trailerEmbed(trailerKey)}
-              referrerPolicy="no-referrer"
-              frameBorder="0"
-              allow="autoplay; encrypted-media; picture-in-picture"
-              allowFullScreen
-              onLoad={(e) => {
-                const frame = e.currentTarget.contentWindow
-                const unmute = () => {
-                  frame?.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), '*')
-                  frame?.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*')
-                }
-                unmute()
-                window.setTimeout(unmute, 400)
-              }}
-            />
-            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2">
-              <a className="h-8 px-3 rounded-full bg-white text-black text-xs font-semibold flex items-center" href={`https://www.youtube.com/watch?v=${trailerKey}`} target="_blank" rel="noreferrer">Open on YouTube</a>
-              <button type="button" className="h-8 px-3 rounded-full bg-white/15 text-white text-xs" onClick={() => {
-                setTrailerKey(trailerKey)
-                const el = document.querySelector('#mfy-trailer-frame') as HTMLIFrameElement | null
-                if (el) el.src = trailerEmbed(trailerKey)
-              }}>Try other player</button>
             </div>
           </div>
         </div>
