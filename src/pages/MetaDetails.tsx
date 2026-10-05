@@ -17,6 +17,7 @@ import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 import TitleLogo from '../components/TitleLogo'
 import { facesInCommon, rememberCast } from '../lib/faces'
 import { absoluteEpisode, ensureFiller, episodeIsFiller, fillerFor, fillerMode, hideFillerOn, setFillerMode, setHideFiller } from '../lib/filler'
+import { letterboxdScore } from '../lib/letterboxd'
 
 function clock(sec: number) {
   const s = Math.max(0, Math.floor(Number(sec) || 0))
@@ -61,6 +62,7 @@ export default function MetaDetails() {
   const [watchLogos, setWatchLogos] = useState<{ name: string; logo: string }[]>([])
   const [aniScore, setAniScore] = useState('')
   const [serScore, setSerScore] = useState('')
+  const [lbScore, setLbScore] = useState('')
   const [simklScore, setSimklScore] = useState('')
   const [badgeHay, setBadgeHay] = useState('')
   const [listOpen, setListOpen] = useState(false)
@@ -89,6 +91,14 @@ export default function MetaDetails() {
     })
     return () => { dead = true }
   }, [detail?.id, detail?.name, detail?.title])
+
+  useEffect(() => {
+    if (selectedMedia?.type !== 'movie' || !detail?.title) { setLbScore(''); return }
+    let dead = false
+    const year = String(detail.release_date || '').slice(0, 4)
+    letterboxdScore(detail.id, detail.title, year).then((score) => { if (!dead && score) setLbScore(score) })
+    return () => { dead = true }
+  }, [detail?.id, detail?.title, detail?.release_date, selectedMedia?.type])
 
   function pickFiller(mode: 'all' | 'canon') {
     const title = String(detail?.name || detail?.title || '')
@@ -567,6 +577,12 @@ export default function MetaDetails() {
                 <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
                   <span className="bg-[#fa320a] text-white text-[9px] font-black px-1 rounded">RT</span>
                   {rtExtra.critics || rtExtra.audience}
+                </span>
+              )}
+              {selectedMedia?.type === 'movie' && lbScore && (
+                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
+                  <span className="bg-[#00e054] text-black text-[9px] font-black px-1 rounded">LB</span>
+                  {lbScore}
                 </span>
               )}
               {selectedMedia?.type === 'tv' && !isAnimeItem(selectedMedia) && serScore && (

@@ -8,6 +8,7 @@ import { PosterStatus, stateCaption } from '../components/PosterTile'
 import { genreOf, scoreOf } from '../components/PosterMarks'
 import { Achievements } from '../components/Achievements'
 import { viewingBadges } from '../lib/achievements'
+import { importAnilistWatchlist, importSerializdWatchlist } from '../lib/importLists'
 
 type Tab = 'status' | 'watchlist' | 'favorites' | 'history' | 'lists' | 'badges'
 
@@ -36,6 +37,21 @@ export default function Library() {
   const [newListName, setNewListName] = useState('')
   const [editingList, setEditingList] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
+  const [importNote, setImportNote] = useState('')
+  const [importing, setImporting] = useState('')
+
+  async function runImport(kind: 'anilist' | 'serializd') {
+    setImporting(kind)
+    setImportNote('')
+    try {
+      const n = kind === 'anilist' ? await importAnilistWatchlist() : await importSerializdWatchlist()
+      setImportNote(n ? `Added ${n} from ${kind === 'anilist' ? 'AniList' : 'Serializd'}.` : 'Nothing new to add. Sign in on that account first, or the list is empty.')
+    } catch (error) {
+      setImportNote(error instanceof Error ? error.message : 'Import failed.')
+    } finally {
+      setImporting('')
+    }
+  }
 
   function openItem(mediaId: number | string, mediaType: 'movie' | 'tv' | 'iptv', extra?: any) {
     setSelectedMedia({ id: mediaId, type: mediaType, season: extra?.season, episode: extra?.episode, title: extra?.title } as any)
@@ -121,6 +137,15 @@ export default function Library() {
             )
           })}
         </div>
+        <div className="flex gap-2 flex-wrap mt-4">
+          <button type="button" disabled={!!importing} onClick={() => void runImport('anilist')} className="h-9 px-4 rounded-full text-xs font-semibold border border-white/15 bg-white/5 text-white">
+            {importing === 'anilist' ? 'Importing AniList…' : 'Add AniList watchlist'}
+          </button>
+          <button type="button" disabled={!!importing} onClick={() => void runImport('serializd')} className="h-9 px-4 rounded-full text-xs font-semibold border border-white/15 bg-white/5 text-white">
+            {importing === 'serializd' ? 'Importing Serializd…' : 'Add Serializd watchlist'}
+          </button>
+        </div>
+        {importNote && <p className="text-sm text-white/55 mt-3">{importNote}</p>}
       </div>
       <div className="px-8 pb-12">
         {tab === 'status' && (
