@@ -24,6 +24,15 @@ function titleOf(item: any) {
 function yearOf(item: any) {
   return String(item?.release_date || item?.first_air_date || '').slice(0, 4)
 }
+function heroMeta(item: any, detail: any, genres: string[]) {
+  const raw = String(item?.release_date || item?.first_air_date || detail?.release_date || detail?.first_air_date || '').slice(0, 10)
+  let when = raw.slice(0, 4)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    const d = new Date(`${raw}T00:00:00`)
+    if (!Number.isNaN(d.getTime())) when = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
+  return [when, ...genres.slice(0, 2)].filter(Boolean).join(' · ')
+}
 function cleanParams(p: object): Record<string, string> {
   const out: Record<string, string> = {}
   for (const [k, v] of Object.entries(p as Record<string, unknown>)) {
@@ -629,11 +638,8 @@ export default function NuvioHome() {
           <div className="nv-hero-fade" />
           <div className="nv-hero-copy">
             <TitleLogo id={hero.id} type={kindOf(hero)} title={titleOf(hero)} />
-            {idx === 0 && <p className="nv-rankline">No. 1 in Trending</p>}
-            <p className="nv-date">
-              {[String(hero.release_date || hero.first_air_date || heroDetail?.release_date || heroDetail?.first_air_date || '').slice(0, 10), genreLine.join(', ')].filter(Boolean).join(' · ')}
-            </p>
-            <p className="nv-quote">「{titleOf(hero)}」 {hero.overview}</p>
+            <p className="nv-date">{heroMeta(hero, heroDetail, genreLine)}</p>
+            {hero.overview && <p className="nv-quote">{hero.overview}</p>}
             <div className="nv-scores">
               {heroScores.imdb && <span className="nv-score"><i className="imdb">IMDb</i>{heroScores.imdb}</span>}
               {hero?.vote_average > 0 && <span className="nv-score"><i className="tmdb">TMDB</i>{Number(hero.vote_average).toFixed(1)}</span>}
@@ -650,6 +656,33 @@ export default function NuvioHome() {
             {heroPool.map((_, i) => (
               <button key={i} type="button" className={`nv-dot${i === idx ? ' on' : ''}`} onClick={() => setIdx(i)} aria-label={`Featured ${i + 1}`} />
             ))}
+          </div>
+        </section>
+      )}
+
+      {top.length > 0 && (
+        <section className="nv-row">
+          <h2 className="nv-h">Top 10 Today</h2>
+          <div className="nv-top10">
+            {top.map((item, i) => {
+              const face = faceOf(item.id, item)
+              return (
+              <button key={`${item.id}-${i}`} type="button" className="nf-rank" onClick={() => setSheet(item)}>
+                <b>{i + 1}</b>
+                <span className="nf-shot">
+                  <img src={`${POSTER_URL}${item.poster_path}`} alt={titleOf(item)} />
+                  <PosterStatus
+                    genre={genreNames[item.genre_ids?.[0]]}
+                    score={item.vote_average}
+                    state={face.state}
+                    pct={face.pct}
+                    label={face.label}
+                  />
+                </span>
+                {sources[String(item.id)] && <BadgeImg className="nv-badge" src={sources[String(item.id)]} alt="" />}
+              </button>
+              )
+            })}
           </div>
         </section>
       )}
@@ -820,33 +853,6 @@ export default function NuvioHome() {
           ))}
         </div>
       </section>
-
-      {top.length > 0 && (
-        <section className="nv-row">
-          <h2 className="nv-h">Top 10 Today</h2>
-          <div className="nf-top">
-            {top.map((item, i) => {
-              const face = faceOf(item.id, item)
-              return (
-              <button key={`${item.id}-${i}`} type="button" className="nf-rank" onClick={() => setSheet(item)}>
-                <b>{i + 1}</b>
-                <span className="nf-shot">
-                  <img src={`${POSTER_URL}${item.poster_path}`} alt={titleOf(item)} />
-                  <PosterStatus
-                    genre={genreNames[item.genre_ids?.[0]]}
-                    score={item.vote_average}
-                    state={face.state}
-                    pct={face.pct}
-                    label={face.label}
-                  />
-                </span>
-                {sources[String(item.id)] && <BadgeImg className="nv-badge" src={sources[String(item.id)]} alt="" />}
-              </button>
-              )
-            })}
-          </div>
-        </section>
-      )}
 
       <section className="nv-row">
         <h2 className="nv-kicker">Studios</h2>
