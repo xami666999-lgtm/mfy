@@ -39,8 +39,7 @@ export default function LoginGate() {
   const [verifyNote, setVerifyNote] = useState('')
   const [verifyPurpose, setVerifyPurpose] = useState<'create' | 'reset'>('create')
 
-  function enter(id: string) {
-    switchProfile(id)
+  function watchWithoutAccount() {
     setAuthenticated(true)
     setCurrentPage('home')
   }
@@ -187,6 +186,7 @@ export default function LoginGate() {
         <div className="nf-gate">
           <h1>Who's watching?</h1>
           <button type="button" className="nf-edit" onClick={() => { setMode('create'); setStep('auth') }}>Add Profile</button>
+          <button type="button" className="nf-edit" onClick={watchWithoutAccount}>Watch without logging in</button>
         </div>
       )
     }
@@ -238,6 +238,7 @@ export default function LoginGate() {
         <div className="nf-gate-actions">
           <button type="button" className="nf-edit" onClick={() => { setEditing((v) => !v); setErr(''); setPicked('') }}>{editing ? 'Done' : 'Manage Profiles'}</button>
           <button type="button" className="nf-edit" onClick={() => { setMode('signin'); setStep('auth'); setErr(''); setPassword(''); setEmail(''); setUsername('') }}>Use another account</button>
+          <button type="button" className="nf-edit" onClick={watchWithoutAccount}>Watch without logging in</button>
         </div>
       </div>
     )
@@ -305,6 +306,7 @@ export default function LoginGate() {
           {mode !== 'signin' && <button type="button" onClick={() => setMode('signin')}>Sign in</button>}
           {mode !== 'create' && <div><button type="button" onClick={() => setMode('create')}>Create profile</button></div>}
         </div>
+        <button type="button" className="w-full h-11 mt-4 rounded-xl bg-white/10 text-white text-sm font-semibold" onClick={watchWithoutAccount}>Watch without logging in</button>
       </div>
     </div>
   )
