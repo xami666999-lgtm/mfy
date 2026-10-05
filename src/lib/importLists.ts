@@ -119,3 +119,65 @@ export async function importAnilistWatchlist() {
   }
   return added
 }
+
+/** Public AniList list. No app login — AniList only allows a registered redirect, and this site cannot complete that. */
+export async function importAnilistPublic(username: string) {
+  const name = username.trim()
+  if (!name) throw new Error('Type your AniList username.')
+  const data = await anilistFetch<{ MediaListCollection: { lists: { entries: any[] }[] } | null }>(
+    `query ($user: String) {
+      MediaListCollection(userName: $user, type: ANIME) {
+        lists {
+          entries {
+            status
+            progress
+            media { id format title { english romaji } }
+          }
+        }
+      }
+    }`,
+    { user: name },
+  ).catch((error: Error) => {
+    const msg = error?.message || ''
+    if (/private/i.test(msg)) throw new Error('That AniList is private. Open anilist.co settings and make the list public, then import again.')
+    if (/not found/i.test(msg)) throw new Error('No AniList user with that name.')
+    throw error
+  })
+  const entries = (data?.MediaListCollection?.lists || []).flatMap((list) => list.entries || []).slice(0, 40)
+  if (!entries.length) throw new Error('That public AniList has no anime to import.')
+  let added = 0
+  const store = useStore.getState()
+  for (const entry of entries) {
+    const media = entry?.media
+    const title = media?.title?.english || media?.title?.romaji
+    if (!title) continue
+    const movie = media?.format === 'MOVIE'
+    const match = await tmdbMatch(title, movie).catch(() => null)
+    if (!match) continue
+    const status = String(entry.status || '')
+    if (status === 'DROPPED') continue
+    if (status === 'COMPLETED' || status === 'CURRENT' || status === 'REPEATING') {
+      const done = status === 'COMPLETED'
+      store.upsertHistory({
+        id: `al-${match.mediaType}-${match.mediaId}`,
+        mediaId: match.mediaId,
+        mediaType: match.mediaType,
+        title: match.title,
+        posterPath: match.posterPath,
+        progress: done ? 2400 : 120,
+        duration: 2400,
+        season: movie ? undefined : 1,
+        episode: movie ? undefined : Math.max(1, Number(entry.progress) || 1),
+        watchedAt: new Date().toISOString(),
+        profileId: store.currentProfile?.id || 'default',
+        completed: done,
+      })
+    } else {
+      store.addToWatchlist({ ...match, addedAt: new Date().toISOString() })
+    }
+    added += 1
+  }
+  if (!added) throw new Error('AniList answered, but none of those titles matched a movie or show here.')
+  try { localStorage.setItem('mfy-anilist-username', name) } catch {}
+  return added
+}

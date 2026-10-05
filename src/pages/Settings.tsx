@@ -8,6 +8,7 @@ import { setRuntimeMdblistKey } from '../api/mdblist'
 import { setRuntimeSubtitleKey } from '../api/subtitles'
 import { loadPlaybackPrefs, savePlaybackPrefs, type UpscaleMode } from '../lib/playbackPrefs'
 import { githubToken, pullProgress, pushProgress, saveGithubToken } from '../lib/githubProgress'
+import { importAnilistPublic } from '../lib/importLists'
 
 export default function Settings() {
   const store = useStore()
@@ -23,6 +24,11 @@ export default function Settings() {
     try { return localStorage.getItem('mfy-cal-hide-global') === '1' } catch { return false }
   })
   const [play, setPlay] = useState(() => loadPlaybackPrefs())
+  const [aniUser, setAniUser] = useState(() => {
+    try { return localStorage.getItem('mfy-anilist-username') || '' } catch { return '' }
+  })
+  const [aniNote, setAniNote] = useState('')
+  const [aniBusy, setAniBusy] = useState(false)
 
   async function save() {
     const key = tmdbKey.trim() || DEFAULT_TMDB_API_KEY
@@ -112,6 +118,28 @@ export default function Settings() {
           {syncing ? 'Saving…' : 'Save progress to GitHub'}
         </button>
         {syncNote && <p className="set-hint">{syncNote}</p>}
+      </Section>
+
+      <Section title="Library">
+        <p className="set-hint">AniList is the tracker that answers from the browser. Type the public username and MFY copies that anime list into Continue Watching and your watchlist. WeTrakr has no public sign-in yet, and Trakt will not issue a login without a secret this site cannot keep, so those are not listed.</p>
+        <Field label="AniList username" value={aniUser} onChange={setAniUser} placeholder="Your AniList name" />
+        <button
+          type="button"
+          className="set-btn"
+          disabled={aniBusy}
+          onClick={() => {
+            setAniBusy(true)
+            setAniNote('')
+            void importAnilistPublic(aniUser).then((n) => {
+              setAniNote(`Imported ${n} titles from AniList.`)
+            }).catch((error) => {
+              setAniNote(error instanceof Error ? error.message : 'AniList import failed.')
+            }).finally(() => setAniBusy(false))
+          }}
+        >
+          {aniBusy ? 'Importing…' : 'Import AniList library'}
+        </button>
+        {aniNote && <p className="set-hint">{aniNote}</p>}
       </Section>
 
       <Section title="Playback">
