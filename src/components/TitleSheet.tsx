@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Play } from 'lucide-react'
-import { tmdb, BACKDROP_URL, STILL_URL } from '../api/tmdb'
+import { tmdb, BACKDROP_URL, STILL_URL, pickTrailer, trailerEmbed } from '../api/tmdb'
 import { useStore } from '../store'
 import TitleLogo from './TitleLogo'
 import { getPlayerUrl } from '../api/vidy'
@@ -32,23 +32,29 @@ export default function TitleSheet({ item, onClose }: { item: any; onClose: () =
   const { setSelectedMedia, setCurrentPage, setCurrentStreamUrl } = useStore()
   const [extra, setExtra] = useState<any>(null)
   const [eps, setEps] = useState<any[]>([])
+  const [trailer, setTrailer] = useState<string | null>(null)
+  const [playBg, setPlayBg] = useState(false)
   const kind = kindOf(item)
 
   useEffect(() => {
     let dead = false
     setExtra(null)
     setEps([])
+    setTrailer(null)
+    setPlayBg(false)
     const fn = kind === 'movie' ? tmdb.getMovieDetail : tmdb.getTVDetail
     fn(Number(item.id)).then((d) => {
       if (dead) return
       setExtra(d)
+      setTrailer(pickTrailer(d?.videos?.results))
       if (kind !== 'tv') return
       const sn = (d?.seasons || []).find((s: any) => s.season_number > 0)?.season_number || 1
       tmdb.getSeasonDetail(Number(item.id), sn).then((s) => {
         if (!dead) setEps((s?.episodes || []).slice(0, 8))
       }).catch(() => {})
     }).catch(() => {})
-    return () => { dead = true }
+    const wait = window.setTimeout(() => { if (!dead) setPlayBg(true) }, 5000)
+    return () => { dead = true; window.clearTimeout(wait) }
   }, [item?.id, kind])
 
   function play(ep?: { season_number?: number; episode_number?: number }) {
@@ -82,6 +88,9 @@ export default function TitleSheet({ item, onClose }: { item: any; onClose: () =
       <div className="nf-sheet" role="dialog" aria-label={titleOf(item)} onClick={(e) => e.stopPropagation()}>
         <button type="button" className="nf-x" onClick={onClose} aria-label="Close">×</button>
         <div className="nf-sheet-hero" style={{ backgroundImage: backdrop ? `url(${backdrop})` : undefined }}>
+          {playBg && trailer && (
+            <iframe title="Trailer" className="bg-trailer" src={trailerEmbed(trailer, true)} allow="autoplay; encrypted-media" />
+          )}
           <div>
             <TitleLogo id={item.id} type={kind} title={titleOf(item)} />
             <div className="nv-hero-actions">

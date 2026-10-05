@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Play, Star, Clock, Calendar, Heart, Plus, Share2, List, Check, Cast } from 'lucide-react'
-import { tmdb, POSTER_URL, BACKDROP_URL, PROFILE_URL, STILL_URL } from '../api/tmdb'
+import { tmdb, POSTER_URL, BACKDROP_URL, PROFILE_URL, STILL_URL, pickTrailer, trailerEmbed } from '../api/tmdb'
 import { fetchOmdbByImdbId } from '../api/omdb'
 import { fetchRottenTomatoes } from '../api/rottentomatoes'
 import { fetchAggregatedRatings, type AggRating } from '../api/ratingsAggregator'
@@ -51,6 +51,14 @@ export default function MetaDetails() {
   const [loading, setLoading] = useState(true)
   const [showTrailer, setShowTrailer] = useState(false)
   const [trailerKey, setTrailerKey] = useState<string | null>(null)
+  const [bgTrailer, setBgTrailer] = useState(false)
+
+  useEffect(() => {
+    setBgTrailer(false)
+    if (!trailerKey) return
+    const t = window.setTimeout(() => setBgTrailer(true), 5000)
+    return () => window.clearTimeout(t)
+  }, [trailerKey, detail?.id])
   const [activeTab, setActiveTab] = useState<'details' | 'streams'>('details')
   const [streamOptions, setStreamOptions] = useState<any[]>([])
   const [resolving, setResolving] = useState(false)
@@ -184,15 +192,11 @@ export default function MetaDetails() {
             .slice(0, 4)
           setQuotes(list)
         }).catch(() => setQuotes([]))
-        const fromDetail = d?.videos?.results?.find((v: any) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'))?.key
-        if (fromDetail) setTrailerKey(fromDetail)
-        else {
+        const key = pickTrailer(d?.videos?.results)
+        setTrailerKey(key)
+        if (!key) {
           const kind = selectedMedia.type === 'movie' ? 'movie' : 'tv'
-          tmdb.getVideos(kind, d.id).then((v) => {
-            const key = (v?.results || []).find((x: any) => x.site === 'YouTube' && (x.type === 'Trailer' || x.type === 'Teaser'))?.key
-              || (v?.results || []).find((x: any) => x.site === 'YouTube')?.key
-            setTrailerKey(key || null)
-          }).catch(() => setTrailerKey(null))
+          tmdb.getVideos(kind, d.id).then((v) => setTrailerKey(pickTrailer(v?.results))).catch(() => setTrailerKey(null))
         }
         tmdb.getWatchProviders(selectedMedia.type === 'movie' ? 'movie' : 'tv', d.id).then((w) => {
           const us = w?.results?.US || w?.results?.GB || Object.values(w?.results || {})[0] as any
@@ -500,7 +504,7 @@ export default function MetaDetails() {
   return (
     <div className="page-fade-enter">
       {/* Cinematic full-bleed hero */}
-      <div className="src-hero relative min-h-[640px] h-[680px] max-h-[86vh]">
+      <div className="src-hero relative min-h-[640px] h-[680px] max-h-[86vh] overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
@@ -508,9 +512,17 @@ export default function MetaDetails() {
             backgroundColor: '#0a0a10',
           }}
         />
+        {bgTrailer && trailerKey && (
+          <iframe
+            title="Trailer"
+            className="bg-trailer"
+            src={trailerEmbed(trailerKey, true)}
+            allow="autoplay; encrypted-media"
+          />
+        )}
         {/* Soft vignette — readable text, keep face/scene visible */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 z-[1]"
           style={{
             background: `
               linear-gradient(90deg, rgba(6,5,10,0.92) 0%, rgba(6,5,10,0.55) 38%, rgba(6,5,10,0.15) 62%, transparent 78%),
@@ -775,7 +787,7 @@ onKeyDown={(e) => {
               id="mfy-trailer-frame"
               width="100%"
               height="100%"
-              src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&rel=0`}
+              src={trailerEmbed(trailerKey)}
               referrerPolicy="no-referrer"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -786,7 +798,7 @@ onKeyDown={(e) => {
               <button type="button" className="h-8 px-3 rounded-full bg-white/15 text-white text-xs" onClick={() => {
                 setTrailerKey(trailerKey)
                 const el = document.querySelector('#mfy-trailer-frame') as HTMLIFrameElement | null
-                if (el) el.src = `https://www.youtube.com/embed/${trailerKey}?autoplay=1&rel=0`
+                if (el) el.src = trailerEmbed(trailerKey)
               }}>Try other player</button>
             </div>
           </div>

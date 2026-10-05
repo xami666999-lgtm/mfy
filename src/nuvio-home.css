@@ -143,9 +143,10 @@
 .nf-spot button:last-child{background:rgba(109,109,110,.75);color:#fff}
 .nf-modal{position:fixed;inset:0;z-index:200;background:#000;display:grid;place-items:center;padding:28px 16px}
 .nf-sheet{width:min(1080px,100%);max-height:min(92vh,980px);overflow:auto;border-radius:14px;background:#141414;position:relative;box-shadow:0 30px 80px #000}
-.nf-sheet-hero{min-height:400px;background-size:cover;background-position:center 18%;display:flex;align-items:flex-end;padding:32px 36px 28px;position:relative}
-.nf-sheet-hero:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.15),#141414 96%)}
-.nf-sheet-hero>div{position:relative;z-index:1;max-width:640px}
+.bg-trailer{position:absolute;inset:-12%;width:124%;height:124%;border:0;pointer-events:none;z-index:0}
+.nf-sheet-hero{min-height:400px;background-size:cover;background-position:center 18%;display:flex;align-items:flex-end;padding:32px 36px 28px;position:relative;overflow:hidden}
+.nf-sheet-hero:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.15),#141414 96%);z-index:1}
+.nf-sheet-hero>div{position:relative;z-index:2;max-width:640px}
 .nf-sheet-hero .title-logo{max-height:120px!important;max-width:min(480px,70%)!important}
 .nf-x{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;background:#181818ee;color:#fff;border:0;font-size:22px;z-index:3;cursor:pointer}
 .nf-sheet-body{padding:4px 28px 28px}

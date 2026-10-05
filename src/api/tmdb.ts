@@ -316,3 +316,32 @@ export function backdropSrc(path: string | null | undefined): string {
   if (!path) return ''
   return `${TMDB_IMAGE_BASE}/original${path}`
 }
+
+/** Official full trailer, not a 20-second scene clip. */
+export function pickTrailer(results: any[] | undefined): string | null {
+  const rows = (results || []).filter((v) => v?.site === 'YouTube' && v.key)
+  if (!rows.length) return null
+  const skip = /clip|scene|tv spot|spot\b|featurette|behind the scenes|promo|recap|interview/i
+  const score = (v: any) => {
+    const name = String(v.name || '')
+    let n = 0
+    if (v.type === 'Trailer') n += 60
+    else if (v.type === 'Teaser') n += 8
+    else n -= 40
+    if (v.official) n += 24
+    if (/official trailer/i.test(name)) n += 40
+    if (/final trailer|main trailer/i.test(name)) n += 12
+    if (skip.test(name) || v.type === 'Clip') n -= 80
+    if (Number(v.size) >= 1080) n += 4
+    return n
+  }
+  const best = [...rows].sort((a, b) => score(b) - score(a))[0]
+  return best && score(best) > 0 ? best.key : (rows.find((v) => v.type === 'Trailer')?.key || null)
+}
+
+export function trailerEmbed(key: string, muted = false) {
+  const q = muted
+    ? 'autoplay=1&mute=1&controls=0&rel=0&modestbranding=1&playsinline=1&loop=1&playlist=' + key
+    : 'autoplay=1&rel=0&modestbranding=1'
+  return `https://www.youtube-nocookie.com/embed/${key}?${q}`
+}

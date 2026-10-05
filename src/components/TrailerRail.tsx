@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { tmdb, BACKDROP_URL } from '../api/tmdb'
+import { tmdb, BACKDROP_URL, pickTrailer, trailerEmbed } from '../api/tmdb'
 
 type Item = { id: number; type: 'movie' | 'tv'; title: string; backdrop?: string | null }
 
@@ -14,8 +14,7 @@ export function TrailerRail({ title, items }: { title: string; items: Item[] }) 
     Promise.all(list.map(async (item) => {
       try {
         const v = await tmdb.getVideos(item.type, item.id)
-        const key = (v?.results || []).find((x: any) => x.site === 'YouTube' && /trailer|teaser/i.test(x.type || ''))?.key
-          || (v?.results || []).find((x: any) => x.site === 'YouTube')?.key
+        const key = pickTrailer(v?.results)
         return key ? { ...item, key } : null
       } catch { return null }
     })).then((rows) => { if (!dead) setClips(rows.filter(Boolean) as any) })
@@ -40,7 +39,7 @@ export function TrailerRail({ title, items }: { title: string; items: Item[] }) 
           <div onClick={(e) => e.stopPropagation()}>
             <iframe
               title="Trailer"
-              src={`https://www.youtube.com/embed/${play}?autoplay=1&rel=0`}
+              src={trailerEmbed(play)}
               allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
               allowFullScreen
             />
