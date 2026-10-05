@@ -37,6 +37,7 @@ export default function PlayerPage() {
     externalPlayer,
   } = useStore()
   const posterAsked = useRef<Set<string>>(new Set())
+  const videoRef = useRef<HTMLVideoElement | null>(null)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [streamUrl, setStreamUrl] = useState('')
