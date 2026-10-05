@@ -613,12 +613,12 @@ export const useStore = create<AppState>((set, get) => ({
       if (api?.get) {
         api.get(key).then((v: unknown) => {
           const remote = Array.isArray(v) ? v : []
-          setter(remote.length > local.length ? remote : (local.length ? local : v))
+          setter(remote.length ? remote : local)
         }).catch(() => {})
       } else if (!local.length) {
         try {
           const v = JSON.parse(localStorage.getItem('mfy-' + key) || 'null')
-          if (v !== null) setter(v)
+          if (Array.isArray(v)) setter(v)
         } catch {}
       }
     }

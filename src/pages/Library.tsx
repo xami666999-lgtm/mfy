@@ -91,7 +91,9 @@ export default function Library() {
   }
 
   const watched = watchedRows(watchHistory)
-  const libraryRows = collectLibrary([watchlist, favorites, watchHistory])
+  const lists = [watchlist, favorites, watchHistory].map((rows) => Array.isArray(rows) ? rows : [])
+  const [watchRows, favoriteRows, historyRows] = lists
+  const libraryRows = collectLibrary(lists)
   const filters: { id: LibFilter; label: string }[] = [
     { id: 'all', label: 'All' },
     { id: 'recent', label: 'Recently added' },
@@ -118,13 +120,13 @@ export default function Library() {
     return rows
   }
   const tabs = [
-    { id: 'status' as const, label: 'Library', icon: Bookmark, count: watchlist.length + watchHistory.length },
+    { id: 'status' as const, label: 'Library', icon: Bookmark, count: watchRows.length + historyRows.length },
     { id: 'watched' as const, label: 'Watched', icon: Check, count: watched.length },
-    { id: 'watchlist' as const, label: 'Saved', icon: Bookmark, count: watchlist.length },
-    { id: 'favorites' as const, label: 'Favorites', icon: Heart, count: favorites.length },
-    { id: 'history' as const, label: 'History', icon: Star, count: watchHistory.length },
+    { id: 'watchlist' as const, label: 'Saved', icon: Bookmark, count: watchRows.length },
+    { id: 'favorites' as const, label: 'Favorites', icon: Heart, count: favoriteRows.length },
+    { id: 'history' as const, label: 'History', icon: Star, count: historyRows.length },
     { id: 'lists' as const, label: 'Collections', icon: List, count: customLists.length },
-    { id: 'badges' as const, label: 'Badges', icon: Award, count: viewingBadges(watchHistory).filter((b) => b.earned).length },
+    { id: 'badges' as const, label: 'Badges', icon: Award, count: viewingBadges(historyRows).filter((b) => b.earned).length },
   ]
 
   function Grid({ items, onRemove, keep }: { items: any[]; onRemove?: (item: any) => void; keep?: boolean }) {
@@ -222,11 +224,11 @@ export default function Library() {
           <div className="space-y-8">
             <section>
               <h3 className="text-white text-lg font-semibold mb-3">Watching</h3>
-              <Grid items={watchHistory.filter((h) => !h.completed && Number(h.progress) > 0)} />
+              <Grid items={historyRows.filter((h) => !h.completed && Number(h.progress) > 0)} />
             </section>
             <section>
               <h3 className="text-white text-lg font-semibold mb-3">Plan to watch</h3>
-              <Grid items={watchlist} onRemove={(item) => removeFromWatchlist(item.mediaId, item.mediaType)} />
+              <Grid items={watchRows} onRemove={(item) => removeFromWatchlist(item.mediaId, item.mediaType)} />
             </section>
             <section>
               <h3 className="text-white text-lg font-semibold mb-3">Watched</h3>
@@ -248,12 +250,12 @@ export default function Library() {
         )}
         {tab === 'watched' && <Grid items={watched} />}
         {tab === 'watchlist' && (
-          <Grid items={watchlist} onRemove={(i) => removeFromWatchlist(i.mediaId, i.mediaType)} />
+          <Grid items={watchRows} onRemove={(i) => removeFromWatchlist(i.mediaId, i.mediaType)} />
         )}
         {tab === 'favorites' && (
-          <Grid items={favorites} onRemove={(i) => removeFavorite(i.mediaId, i.mediaType)} />
+          <Grid items={favoriteRows} onRemove={(i) => removeFavorite(i.mediaId, i.mediaType)} />
         )}
-        {tab === 'history' && <Grid items={watchHistory} />}
+        {tab === 'history' && <Grid items={historyRows} />}
         {tab === 'badges' && <Achievements history={watchHistory} />}
         {tab === 'lists' && (
           <div className="space-y-6">
