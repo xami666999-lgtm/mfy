@@ -35,18 +35,18 @@ export function embedChain(type: 'movie' | 'tv', tmdbId: number | string, season
   if (type === 'movie') {
     return [
       `https://vidsrc.sh/embed/movie/${tmdbId}`,
-      `https://vidlink.pro/movie/${tmdbId}?autoPlay=true&autoplay=1`,
-      `https://vidfast.pro/movie/${tmdbId}`,
-      `https://vidsrc.su/embed/movie/${tmdbId}`,
-      `https://www.2embed.cc/embed/${tmdbId}`,
+      `https://vidsrc2.ru/embed/movie/${tmdbId}`,
+      `https://vidsrc.ir/embed/movie/${tmdbId}`,
+      `https://vidlink.pro/movie/${tmdbId}?autoplay=1`,
+      `https://vidcore.org/embed/movie/${tmdbId}`,
     ]
   }
   return [
     `https://vidsrc.sh/embed/tv/${tmdbId}/${s}/${e}`,
-    `https://vidlink.pro/tv/${tmdbId}/${s}/${e}?autoPlay=true&autoplay=1`,
-    `https://vidfast.pro/tv/${tmdbId}/${s}/${e}`,
-    `https://vidsrc.su/embed/tv/${tmdbId}/${s}/${e}`,
-    `https://www.2embed.cc/embedtv/${tmdbId}&s=${s}&e=${e}`,
+    `https://vidsrc2.ru/embed/tv/${tmdbId}/${s}/${e}`,
+    `https://vidsrc.ir/embed/tv/${tmdbId}/${s}/${e}`,
+    `https://vidlink.pro/tv/${tmdbId}/${s}/${e}?autoplay=1`,
+    `https://vidcore.org/embed/tv/${tmdbId}/${s}/${e}`,
   ]
 }
 

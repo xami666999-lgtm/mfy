@@ -1263,6 +1263,9 @@ export default function PlayerPage() {
         {selectedMedia && selectedMedia.type !== 'movie' && selectedMedia.type !== 'iptv' && isPlayerEmbedUrl(streamUrl) && (
           <button type="button" onClick={() => window.dispatchEvent(new Event('mfy-episodes'))}>Episodes</button>
         )}
+        {isPlayerEmbedUrl(streamUrl) && (
+          <button type="button" onClick={() => tryNextSource()}>Next source</button>
+        )}
       </div>
       <div className="player-stage" style={{ position: 'relative', flex: '1 1 auto', minHeight: 0, width: '100%', overflow: 'hidden' }}
         onMouseMove={onMouseMove}
@@ -1329,7 +1332,7 @@ export default function PlayerPage() {
             title={title || 'Player'}
             allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
             allowFullScreen
-            referrerPolicy="origin"
+            referrerPolicy="no-referrer"
             onError={() => tryNextSource()}
             style={{ width: '100%', height: '100%', border: 0, background: '#000', filter: `brightness(${bright})` }}
           />
