@@ -1,7 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Home, Film, Tv, Sparkles, Music, CalendarDays, Trophy, Bookmark, Search, Settings } from 'lucide-react'
 import { useStore } from '../store'
-import BugReport from './BugReport'
 import InstallButton from './InstallButton'
 import { cn } from '../lib/utils'
 import { tmdb, POSTER_URL } from '../api/tmdb'
@@ -18,8 +17,7 @@ const tabs = [
 ]
 
 export default function Navbar() {
-  const { currentPage, setCurrentPage, setSelectedMedia, setSearchQuery } = useStore()
-  const [bug, setBug] = useState(false)
+  const { currentPage, setCurrentPage, currentProfile, setAuthenticated, setSelectedMedia, setSearchQuery } = useStore()
   const [q, setQ] = useState('')
   const [hits, setHits] = useState<any[]>([])
 
@@ -87,9 +85,10 @@ export default function Navbar() {
         <Settings />
         <span>Settings</span>
       </button>
-      <button type="button" className="nav-bug" onClick={() => setBug(true)}>Bug</button>
+      <button type="button" className="nav-who" onClick={() => setAuthenticated(false)} title="Switch profile">
+        {currentProfile?.avatar ? <img src={currentProfile.avatar} alt="" /> : <b>{(currentProfile?.name || 'M')[0]}</b>}
+      </button>
       </div>
-      {bug && <BugReport onClose={() => setBug(false)} />}
     </header>
   )
 }

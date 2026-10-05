@@ -613,7 +613,13 @@ export default function NuvioHome() {
     })
     return () => { dead = true }
   }, [watchHistory])
-  const cw = (watchHistory || []).slice(0, 12)
+  const cwSeen = new Map<string, any>()
+  for (const h of watchHistory || []) {
+    const key = String(h.mediaId)
+    const prev = cwSeen.get(key)
+    if (!prev || String(h.watchedAt || '') > String(prev.watchedAt || '')) cwSeen.set(key, h)
+  }
+  const cw = [...cwSeen.values()].filter((h) => watchFace(watchHistory, h.mediaId, h).state !== 'watched').slice(0, 12)
   const genreLine = (heroDetail?.genres?.length ? heroDetail.genres.slice(0, 2).map((g: any) => g.name) : (hero?.genre_ids || []).slice(0, 2).map((id: number) => genreNames[id]).filter(Boolean))
   const match = hero?.vote_average ? Math.round(hero.vote_average * 10) : 0
 

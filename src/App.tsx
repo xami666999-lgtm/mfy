@@ -38,34 +38,6 @@ import { pullProgress } from './lib/githubProgress'
 import { isPhoneShell } from './lib/device'
 import { useSeriesTotals } from './lib/watchProgress'
 
-function PhoneBattery() {
-  const [pct, setPct] = useState<number | null>(null)
-  useEffect(() => {
-    const apply = (level: number) => {
-      if (!Number.isFinite(level) || level < 0) return
-      const n = level <= 1 ? Math.round(level * 100) : Math.round(level)
-      setPct(Math.max(0, Math.min(100, n)))
-    }
-    const fromNative = () => {
-      const n = (window as any).__mfyBattery
-      if (typeof n === 'number') apply(n)
-    }
-    fromNative()
-    window.addEventListener('mfy-battery', fromNative)
-    const nav = navigator as any
-    if (nav.getBattery) {
-      nav.getBattery().then((b: any) => {
-        apply(b.level)
-        const on = () => apply(b.level)
-        b.addEventListener?.('levelchange', on)
-      }).catch(() => {})
-    }
-    return () => window.removeEventListener('mfy-battery', fromNative)
-  }, [])
-  if (pct == null) return null
-  return <div className="mfy-batt" aria-label={`Battery ${pct} percent`}>{pct}%</div>
-}
-
 export default function App() {
   useEffect(() => { consumeTrackerReturn().catch(() => {}) }, [])
   const [showIntro, setShowIntro] = useState(true)
@@ -267,7 +239,6 @@ export default function App() {
       {electron && !phone && <TitleBar />}
       {currentPage !== 'player' && currentPage !== 'music' && !phone && <Navbar />}
       {phone && currentPage !== 'player' && currentPage !== 'music' && <PhoneTabBar />}
-      <PhoneBattery />
       <div className="flex-1 min-h-0 relative mfy-phone-main">
       <main className="h-full overflow-y-auto overflow-x-hidden">
         <Suspense fallback={null}>
