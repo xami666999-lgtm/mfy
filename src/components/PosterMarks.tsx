@@ -47,6 +47,7 @@ export function PosterMarks({ item, rank }: { item: any; rank?: number }) {
       state={face.state}
       pct={face.pct}
       label={face.label}
+      pending={face.pending}
       rank={rank}
     />
   )

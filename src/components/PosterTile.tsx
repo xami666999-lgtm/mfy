@@ -3,10 +3,11 @@ import { BadgeImg } from './QualityBadges'
 import { useStore } from '../store'
 import { watchFace } from '../lib/watchProgress'
 
-export type PosterFace = 'fresh' | 'progress' | 'watched'
+export type PosterFace = 'fresh' | 'progress' | 'watched' | 'started'
 
 export function stateCaption(state: PosterFace) {
   if (state === 'watched') return 'Watched'
+  if (state === 'started') return 'Watching'
   if (state === 'progress') return 'In progress'
   return 'Not watched'
 }
@@ -26,6 +27,7 @@ export function PosterStatus({
   pct = 0,
   label,
   rank,
+  pending,
 }: {
   genre?: string
   score?: number
@@ -33,16 +35,23 @@ export function PosterStatus({
   pct?: number
   label?: string
   rank?: number
+  pending?: number
 }) {
   const star = score && score > 0 ? Number(score).toFixed(1) : ''
   const freshLine = [shortGenre(genre), star ? `★ ${star}` : ''].filter(Boolean).join(' • ')
-  const show = state === 'watched' || state === 'progress' || !!freshLine || !!rank
+  const show = state === 'watched' || state === 'progress' || state === 'started' || !!freshLine || !!rank
   if (!show) return null
   return (
     <>
       {rank ? <em className="nv-today">#{rank} Today</em> : null}
+      {state === 'watched' && <i className="nv-corner ok" aria-label="Up to date">✓</i>}
+      {(state === 'started' || state === 'progress') && <i className="nv-corner play" aria-label="Started" />}
+      {!!pending && pending > 0 && <span className="nv-pending">{pending} left</span>}
       {state === 'watched' && (
         <span className="nv-status watched"><i className="ok" aria-hidden>✓</i> Watched</span>
+      )}
+      {state === 'started' && (
+        <span className="nv-status started"><i className="tri" aria-hidden /> {label || 'Watching'}</span>
       )}
       {state === 'progress' && (
         <span className="nv-status progress">
@@ -95,7 +104,7 @@ export function PosterTile({
       <span className="nv-poster">
         {src ? <img src={src} alt="" loading="lazy" referrerPolicy="no-referrer" /> : <div className="ph">{title}</div>}
         {badge ? <BadgeImg className="nv-badge" src={badge} alt="" /> : null}
-        <PosterStatus genre={genre} score={score} state={face} pct={bar} label={label} rank={rank} />
+        <PosterStatus genre={genre} score={score} state={face} pct={bar} label={label} rank={rank} pending={looked?.pending} />
       </span>
       <strong>{title}</strong>
       <em className="nv-cap">{stateCaption(face)}</em>

@@ -17,6 +17,7 @@ import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 import TitleLogo from '../components/TitleLogo'
 import { facesInCommon, rememberCast } from '../lib/faces'
 import { absoluteEpisode, ensureFiller, episodeIsFiller, fillerFor, fillerMode, hideFillerOn, setFillerMode, setHideFiller } from '../lib/filler'
+import TasteBar from '../components/TasteBar'
 import { letterboxdScore } from '../lib/letterboxd'
 
 function clock(sec: number) {
@@ -603,9 +604,12 @@ export default function MetaDetails() {
             </div>
 
             {detail.overview && (
-              <p className="text-[13px] text-white/70 leading-relaxed line-clamp-4 max-w-lg mb-6 drop-shadow-sm">
+              <p className="text-[13px] text-white/70 leading-relaxed line-clamp-4 max-w-lg mb-4 drop-shadow-sm">
                 {detail.overview}
               </p>
+            )}
+            {selectedMedia && selectedMedia.type !== 'iptv' && (
+              <TasteBar id={selectedMedia.id} type={selectedMedia.type} title={title} />
             )}
 
             <div className="flex flex-wrap items-center gap-2.5">

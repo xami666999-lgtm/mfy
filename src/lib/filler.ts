@@ -99,7 +99,7 @@ export async function nextCanonEpisode(id: number, season: number, episode: numb
     for (const ep of later) {
       const absolute = absoluteEpisode(seasons, seasonNumber, ep.episode_number)
       if (!hide || !episodeIsFiller(show, ep.air_date, absolute)) {
-        return { season: seasonNumber, episode: ep.episode_number, name: ep.name, still: ep.still_path }
+        return { season: seasonNumber, episode: ep.episode_number, name: ep.name, still: ep.still_path, overview: ep.overview || '' }
       }
     }
     const next = seasons.find((row: any) => row.season_number === seasonNumber + 1 && row.episode_count > 0)

@@ -481,9 +481,16 @@ export default function NuvioHome() {
         const next: Record<string, string> = {}
         for (const h of rows) {
           if (String(h.mediaId) !== id) continue
-          const season = (d.seasons || []).find((x: any) => Number(x.season_number) === Number(h.season))
-          const left = season ? Number(season.episode_count) - Number(h.episode) : 0
-          if (left > 0) next[`${id}-${h.season}`] = left === 1 ? '1 left this season' : `${left} left this season`
+          let left = 0
+          for (const s of d.seasons || []) {
+            const n = Number(s.season_number) || 0
+            const count = Number(s.episode_count) || 0
+            if (n <= 0 || !count) continue
+            if (n < Number(h.season)) continue
+            if (n === Number(h.season)) left += Math.max(0, count - Number(h.episode || 0))
+            else left += count
+          }
+          if (left > 0) next[`${id}-${h.season}`] = left === 1 ? '1 left' : `${left} left`
         }
         setLeftMap((prev) => ({ ...prev, ...next }))
       }).catch(() => {})
@@ -616,6 +623,9 @@ export default function NuvioHome() {
                         label={face.label || leftLabel(h.progress, h.duration)}
                       />
                       <TitleLogo id={h.mediaId} type={h.mediaType === 'movie' ? 'movie' : 'tv'} title={h.title || ''} className="cw-logo" />
+                      {leftMap[`${h.mediaId}-${h.season}`] && (
+                        <span className="nv-pending">{leftMap[`${h.mediaId}-${h.season}`]}</span>
+                      )}
                     </div>
                     <p>{h.title || 'Title'}</p>
                     {[stopLine(h), leftMap[`${h.mediaId}-${h.season}`]].filter(Boolean).length > 0 && (

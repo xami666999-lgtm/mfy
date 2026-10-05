@@ -7,6 +7,7 @@ import { setRuntimeOmdbKey } from '../api/omdb'
 import { setRuntimeMdblistKey } from '../api/mdblist'
 import { setRuntimeSubtitleKey } from '../api/subtitles'
 import TrackerConnect from '../components/TrackerConnect'
+import { loadPlaybackPrefs, savePlaybackPrefs, type UpscaleMode } from '../lib/playbackPrefs'
 
 export default function Settings() {
   const store = useStore()
@@ -22,6 +23,7 @@ export default function Settings() {
   const [hideGlobalCal, setHideGlobalCal] = useState(() => {
     try { return localStorage.getItem('mfy-cal-hide-global') === '1' } catch { return false }
   })
+  const [play, setPlay] = useState(() => loadPlaybackPrefs())
 
   async function save() {
     const key = tmdbKey.trim() || DEFAULT_TMDB_API_KEY
@@ -97,6 +99,22 @@ export default function Settings() {
           <option value="vlc">VLC</option>
           <option value="mpv">mpv</option>
         </select>
+        <p className="set-hint">VLC and mpv open the stream outside MFY from the desktop app. Use them when you want a heavier upscaler than the built-in sharpen.</p>
+        <div className="set-pair">
+          <Num label="Rewind seconds" value={play.seekBack} min={1} max={120} onChange={(n) => setPlay(savePlaybackPrefs({ seekBack: n }))} />
+          <Num label="Forward seconds" value={play.seekFwd} min={1} max={120} onChange={(n) => setPlay(savePlaybackPrefs({ seekFwd: n }))} />
+        </div>
+        <div className="set-pair">
+          <Num label="Subtitle delay (sec)" value={play.subDelay} min={-15} max={15} step={0.5} onChange={(n) => setPlay(savePlaybackPrefs({ subDelay: n }))} />
+          <Num label="Subtitle hold (sec)" value={play.subHold} min={0} max={8} step={0.5} onChange={(n) => setPlay(savePlaybackPrefs({ subHold: n }))} />
+        </div>
+        <label className="set-label">Picture</label>
+        <select value={play.upscale} onChange={(e) => setPlay(savePlaybackPrefs({ upscale: e.target.value as UpscaleMode }))}>
+          <option value="off">Normal</option>
+          <option value="sharpen">Sharpen older video</option>
+          <option value="anime">Anime sharpen</option>
+        </select>
+        <p className="set-hint">Sharpen runs on direct video. Embed players ignore it, so pick VLC or mpv above if you want that file enhanced outside the page.</p>
       </Section>
 
       <Section title="Trackers">
@@ -141,6 +159,15 @@ function Field({ label, value, onChange, placeholder, link, secret }: {
         )}
       </span>
       <input type={secret ? 'password' : 'text'} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} autoComplete="off" />
+    </label>
+  )
+}
+
+function Num({ label, value, min, max, step = 1, onChange }: { label: string; value: number; min: number; max: number; step?: number; onChange: (n: number) => void }) {
+  return (
+    <label className="set-field">
+      <span>{label}</span>
+      <input type="number" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
     </label>
   )
 }

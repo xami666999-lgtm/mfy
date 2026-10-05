@@ -11,6 +11,7 @@ import { viewingBadges } from '../lib/achievements'
 import { importAnilistWatchlist, importSerializdWatchlist } from '../lib/importLists'
 
 type Tab = 'status' | 'watched' | 'watchlist' | 'favorites' | 'history' | 'lists' | 'badges'
+type LibFilter = 'all' | 'recent' | 'watching' | 'planned' | 'done' | 'movies' | 'shows'
 
 function watchedRows(rows: { completed?: boolean; seriesCompleted?: boolean; progress?: number; duration?: number; mediaId?: number | string; mediaType?: string; watchedAt?: string }[]) {
   const map = new Map<string, (typeof rows)[number]>()
@@ -53,6 +54,7 @@ export default function Library() {
   const [editName, setEditName] = useState('')
   const [importNote, setImportNote] = useState('')
   const [importing, setImporting] = useState('')
+  const [filter, setFilter] = useState<LibFilter>('all')
 
   async function runImport(kind: 'anilist' | 'serializd') {
     setImporting(kind)
@@ -73,6 +75,27 @@ export default function Library() {
   }
 
   const watched = watchedRows(watchHistory)
+  const filters: { id: LibFilter; label: string }[] = [
+    { id: 'all', label: 'All' },
+    { id: 'recent', label: 'Recently added' },
+    { id: 'watching', label: 'Watching' },
+    { id: 'planned', label: 'Plan to watch' },
+    { id: 'done', label: 'Completed' },
+    { id: 'movies', label: 'Movies' },
+    { id: 'shows', label: 'Shows' },
+  ]
+
+  function narrow(items: any[]) {
+    let rows = [...items]
+    const kind = (i: any) => i.mediaType || i.media_type || 'movie'
+    if (filter === 'movies') rows = rows.filter((i) => kind(i) === 'movie')
+    if (filter === 'shows') rows = rows.filter((i) => kind(i) !== 'movie' && kind(i) !== 'iptv')
+    if (filter === 'watching') rows = rows.filter((i) => !i.completed && !i.seriesCompleted && Number(i.progress) > 0)
+    if (filter === 'planned') rows = rows.filter((i) => !(Number(i.progress) > 0) && !i.completed)
+    if (filter === 'done') rows = rows.filter((i) => i.completed || i.seriesCompleted)
+    if (filter === 'recent') rows.sort((a, b) => String(b.addedAt || b.watchedAt || '').localeCompare(String(a.addedAt || a.watchedAt || '')))
+    return rows
+  }
   const tabs = [
     { id: 'status' as const, label: 'Library', icon: Bookmark, count: watchlist.length + watchHistory.length },
     { id: 'watched' as const, label: 'Watched', icon: Check, count: watched.length },
@@ -84,7 +107,8 @@ export default function Library() {
   ]
 
   function Grid({ items, onRemove }: { items: any[]; onRemove?: (item: any) => void }) {
-    if (!items.length) {
+    const shown = narrow(items)
+    if (!shown.length) {
       return (
         <div className="rounded-3xl border border-white/10 bg-white/[0.03] py-20 text-center text-white/35">
           Nothing here yet
@@ -93,7 +117,7 @@ export default function Library() {
     }
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-4">
-        {items.map((item) => {
+        {shown.map((item) => {
           const id = item.mediaId ?? item.id
           const type = item.mediaType || item.media_type || 'movie'
           const title = item.title || item.name || ''
@@ -109,6 +133,7 @@ export default function Library() {
                   state={face.state}
                   pct={face.pct}
                   label={face.label}
+                  pending={face.pending}
                 />
                 <div className="poster-play"><Play size={16} fill="#fff" /></div>
               </button>
@@ -162,6 +187,23 @@ export default function Library() {
           </button>
         </div>
         {importNote && <p className="text-sm text-white/55 mt-3">{importNote}</p>}
+        {tab !== 'badges' && (
+          <div className="flex gap-2 flex-wrap mt-3">
+            {filters.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setFilter(f.id)}
+                className={cn(
+                  'h-8 px-3 rounded-full text-[11px] font-semibold border',
+                  filter === f.id ? 'bg-white text-black border-white' : 'bg-transparent border-white/15 text-white/55'
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <div className="px-8 pb-12">
         {tab === 'status' && (
