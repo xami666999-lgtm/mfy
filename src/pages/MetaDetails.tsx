@@ -989,34 +989,38 @@ onKeyDown={(e) => {
 
             {/* What to Watch — similar / recommendations */}
             {(() => {
-              const similar = (detail.similar?.results || detail.recommendations?.results || []).filter(Boolean)
+              const pool = [
+                ...(detail.recommendations?.results || []),
+                ...(detail.similar?.results || []),
+              ]
+              const seen = new Set<number>()
+              const similar = pool.filter((s: any) => {
+                if (!s?.id || !s.poster_path || seen.has(s.id) || s.id === detail.id) return false
+                seen.add(s.id)
+                return true
+              }).slice(0, 16)
               if (!similar.length) return null
+              const finished = title || 'this'
               return (
                 <div>
-                  <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">What to Watch</h3>
-                  <div className="flex gap-3 overflow-x-auto pb-2 scroll-row">
-                    {similar.slice(0, 12).map((s: any) => (
-                      <div
+                  <h3 className="text-[15px] font-semibold text-white mb-1">More like this</h3>
+                  <p className="text-[12px] text-white/45 mb-3">Watch this if you finished {finished}</p>
+                  <div className="nv-sc">
+                    {similar.map((s: any) => (
+                      <button
                         key={s.id}
-                        className="flex-shrink-0 w-[110px] poster-card"
-                        role="button"
-                        tabIndex={0}
+                        type="button"
+                        className="nv-card"
                         onClick={() => {
-                          setSelectedMedia({ id: s.id, type: s.media_type === 'movie' ? 'movie' : 'tv' })
+                          setSelectedMedia({ id: s.id, type: s.media_type === 'movie' || selectedMedia?.type === 'movie' ? 'movie' : 'tv', title: s.title || s.name, name: s.name || s.title, poster_path: s.poster_path, backdrop_path: s.backdrop_path })
                           setCurrentPage('detail')
                         }}
-                        onKeyDown={(e) => e.key === 'Enter' && setSelectedMedia({ id: s.id, type: s.media_type === 'movie' ? 'movie' : 'tv' })}
                       >
-                        {s.poster_path ? (
-                          <img src={`${POSTER_URL}${s.poster_path}`} alt={s.title || s.name} loading="lazy" />
-                        ) : (
-                          <div className="poster-fallback">{s.title || s.name}</div>
-                        )}
-                        <div className="poster-play"><Play size={18} fill="#fff" /></div>
-                        <div className="poster-overlay">
-                          <div className="poster-meta-title">{s.title || s.name}</div>
-                        </div>
-                      </div>
+                        <span className="nv-poster">
+                          <img src={`${POSTER_URL}${s.poster_path}`} alt="" />
+                        </span>
+                        <strong>{s.title || s.name}</strong>
+                      </button>
                     ))}
                   </div>
                 </div>
