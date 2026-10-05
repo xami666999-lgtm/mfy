@@ -638,20 +638,17 @@ export default function NuvioHome() {
           <div className="nv-hero-fade" />
           <div className="nv-hero-copy">
             <TitleLogo id={hero.id} type={kindOf(hero)} title={titleOf(hero)} />
-            <p className="nv-date">{heroMeta(hero, heroDetail, genreLine)}</p>
+            <div className="nv-hero-actions">
+              <button type="button" className="nv-play" onClick={() => play(hero)}><Play size={18} fill="currentColor" /> Play</button>
+              <button type="button" className="nv-more" onClick={() => open(hero)}>More Info</button>
+            </div>
+            <p className="nv-meta">
+              {match > 0 && <b>{match}% Match</b>}
+              {yearOf(hero) && <span>{yearOf(hero)}</span>}
+              {genreLine.slice(0, 3).map((name: string) => <span key={name}>{name}</span>)}
+            </p>
             {hero.overview && <p className="nv-quote">{hero.overview}</p>}
-            <div className="nv-scores">
-              {heroScores.imdb && <span className="nv-score"><i className="imdb">IMDb</i>{heroScores.imdb}</span>}
-              {hero?.vote_average > 0 && <span className="nv-score"><i className="tmdb">TMDB</i>{Number(hero.vote_average).toFixed(1)}</span>}
-              {heroScores.rt && <span className="nv-score"><i className="rt">RT</i>{heroScores.rt}</span>}
-              {heroScores.meta && <span className="nv-score"><i className="meta">MC</i>{heroScores.meta}{String(heroScores.meta).includes('%') ? '' : '%'}</span>}
-            </div>
-            <div className="nf-actions">
-              <button type="button" className="nf-play" onClick={() => play(hero)}><Play size={18} fill="currentColor" /> Play</button>
-              <button type="button" className="nf-info" onClick={() => open(hero)}><Info size={18} /> More Info</button>
-            </div>
           </div>
-          {match >= 70 && <div className="nf-hero-badges"><span>{match}% match</span></div>}
           <div className="nv-dots">
             {heroPool.map((_, i) => (
               <button key={i} type="button" className={`nv-dot${i === idx ? ' on' : ''}`} onClick={() => setIdx(i)} aria-label={`Featured ${i + 1}`} />

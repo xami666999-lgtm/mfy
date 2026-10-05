@@ -84,16 +84,15 @@ export default function TitleSheet({ item, onClose }: { item: any; onClose: () =
         <div className="nf-sheet-hero" style={{ backgroundImage: backdrop ? `url(${backdrop})` : undefined }}>
           <div>
             <TitleLogo id={item.id} type={kind} title={titleOf(item)} />
-            <div className="nf-actions">
-              <button type="button" className="nf-play" onClick={() => play()}><Play size={16} fill="currentColor" /> Play</button>
-              <button type="button" className="nf-info" onClick={more}>More Info</button>
+            <div className="nv-hero-actions">
+              <button type="button" className="nv-play" onClick={() => play()}><Play size={16} fill="currentColor" /> Play</button>
+              <button type="button" className="nv-more" onClick={more}>More Info</button>
             </div>
           </div>
         </div>
         <div className="nf-sheet-body">
           <div className="nf-match">
             {match > 0 && <b>{match}% Match</b>}
-            {score > 0 && <span className="nf-rate">★ {score.toFixed(1)}</span>}
             <span>{yearOf(extra || item)}</span>
             {extra?.number_of_seasons ? <span>{extra.number_of_seasons} Season{extra.number_of_seasons === 1 ? '' : 's'}</span> : null}
             {kind === 'movie' && extra?.runtime ? <span>{extra.runtime}m</span> : null}
