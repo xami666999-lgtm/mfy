@@ -540,7 +540,8 @@ html[data-pack] .nv-page{background:radial-gradient(1200px 680px at 82% -8%, #1c
 .set-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .set-hint{margin:0 0 12px;color:#9aa4b2;font-size:12px;line-height:1.4}
 .nv-corner{position:absolute;top:8px;right:8px;z-index:6;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:800;color:#fff;border:1.5px solid #fff;background:rgba(0,0,0,.45)}
-.nv-corner.play{background:#e50914;border-color:#e50914}
+.nv-corner.play{display:none}
+.nf-shot .nv-status.started .nv-track{width:46px}
 .nv-corner.play:before{content:"";width:0;height:0;border-style:solid;border-width:4px 0 4px 7px;border-color:transparent transparent transparent #fff;margin-left:2px}
 .nv-pending{position:absolute;top:8px;left:8px;z-index:6;background:rgba(0,0,0,.78);color:#fff;font-size:11px;font-weight:800;padding:3px 7px;border-radius:6px}
 .nv-shot,.nv-poster,.poster-card{position:relative}

@@ -45,13 +45,16 @@ export function PosterStatus({
     <>
       {rank ? <em className="nv-today">#{rank} Today</em> : null}
       {state === 'watched' && <i className="nv-corner ok" aria-label="Up to date">✓</i>}
-      {(state === 'started' || state === 'progress') && <i className="nv-corner play" aria-label="Started" />}
       {!!pending && pending > 0 && <span className="nv-pending">{pending} left</span>}
       {state === 'watched' && (
         <span className="nv-status watched"><i className="ok" aria-hidden>✓</i> Watched</span>
       )}
       {state === 'started' && (
-        <span className="nv-status started"><i className="tri" aria-hidden /> {label || 'Watching'}</span>
+        <span className="nv-status started">
+          <i className="tri" aria-hidden />
+          <span className="nv-track"><b style={{ width: `${Math.max(6, Math.min(100, pct || 0))}%` }} /></span>
+          <em>{label || 'Watching'}</em>
+        </span>
       )}
       {state === 'progress' && (
         <span className="nv-status progress">
