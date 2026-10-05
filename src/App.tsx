@@ -20,7 +20,6 @@ import Intro from './components/Intro'
 const Movies = lazy(() => import('./pages/Movies'))
 const TvShows = lazy(() => import('./pages/TvShows'))
 const Anime = lazy(() => import('./pages/Anime'))
-const MusicPage = lazy(() => import('./pages/MusicPage'))
 const Sports = lazy(() => import('./pages/Sports'))
 import LoginGate from './components/LoginGate'
 import IdleWall from './components/IdleWall'
@@ -194,7 +193,7 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (currentPage === 'iptv' || currentPage === 'manga' || currentPage === 'comics' || currentPage === 'books' || currentPage === 'manga-detail' || currentPage === 'youtube') {
+    if (currentPage === 'iptv' || currentPage === 'manga' || currentPage === 'comics' || currentPage === 'books' || currentPage === 'manga-detail' || currentPage === 'youtube' || currentPage === 'music') {
       setCurrentPage('home')
     }
   }, [currentPage, setCurrentPage])
@@ -272,7 +271,6 @@ export default function App() {
         {currentPage === 'movies' && <Movies />}
         {currentPage === 'tv' && <TvShows />}
         {currentPage === 'anime' && <Anime />}
-        {currentPage === 'music' && <MusicPage />}
         {currentPage === 'sports' && <Sports />}
         {currentPage === 'calendar' && <CalendarPage />}
         {currentPage === 'shelf' && <ShelfBrowse />}
