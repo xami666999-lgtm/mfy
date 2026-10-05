@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, createElement } from 'react'
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Settings2, Maximize, Minimize, Subtitles, ArrowLeft, Cast, RefreshCw, Zap } from 'lucide-react'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 import { tmdb, POSTER_URL, BACKDROP_URL } from '../api/tmdb'
-import { vidyUrl, getPlayerUrl, isPlayerEmbed, getFallbackSources, PlayerSource } from '../api/vidy'
+import { vidyUrl, getPlayerUrl, isPlayerEmbed, getFallbackSources, isDeadEmbed, PlayerSource } from '../api/vidy'
 import { mediafusionStreams } from '../api/mediafusion'
 import { aggregateStreams, bestPlayable } from '../api/stremioAgg'
 import { addonStreams, isOnePiece, STREAM_HOST, onePaceStreams } from '../api/stremioAddons'
@@ -116,7 +116,7 @@ export default function PlayerPage() {
     }
     const anime = isAnimeItem(selectedMedia)
     const title = String((selectedMedia as any).title || (selectedMedia as any).name || '')
-    if (currentStreamUrl && /^https?:/i.test(currentStreamUrl)) {
+    if (currentStreamUrl && /^https?:/i.test(currentStreamUrl) && !isDeadEmbed(currentStreamUrl)) {
       setStreamUrl(currentStreamUrl)
       setLoaded(true)
       setLoading(false)
@@ -1259,10 +1259,10 @@ export default function PlayerPage() {
             src={streamUrl}
             title={title || 'Player'}
             allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-            style={{ filter: `brightness(${bright})` }}
             allowFullScreen
-            referrerPolicy="no-referrer"
-            style={{ width: '100%', height: '100%', border: 0, background: '#000' }}
+            referrerPolicy="origin"
+            onError={() => tryNextSource()}
+            style={{ width: '100%', height: '100%', border: 0, background: '#000', filter: `brightness(${bright})` }}
           />
         )}
         {loaded && !error && isPlayerEmbedUrl(streamUrl) && (window as any).electronAPI && createElement('webview', {

@@ -29,53 +29,38 @@ export const ANIME_SOURCES: PlayerSource[] = ['zangetsu', 'miruro', 'animepahe',
 export const MOVIE_TV_SOURCES: PlayerSource[] = ['pipe', 'torrentio', 'comet', 'playtorrio', 'simplstream', 'vidy', 'moviebox', 'vixsrc', 'vidnest', 'pengu']
 export const ALL_PLAY_SOURCES: PlayerSource[] = ['vlc', 'pipe', 'torrentio', 'comet', 'playtorrio', 'simplstream', 'vidy', 'moviebox', 'vixsrc', 'vidnest', 'pengu', 'zangetsu', 'miruro', 'animepahe', 'webtorrent']
 
-export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId: number | string, season?: number, episode?: number, anime = false): string {
+export function embedChain(type: 'movie' | 'tv', tmdbId: number | string, season?: number, episode?: number): string[] {
   const s = season ?? 1
   const e = episode ?? 1
-  const movie = type === 'movie'
-  const dub = anime ? 'dub=true&' : ''
-  if (source === 'zangetsu') {
-    return movie
-      ? `https://player.videasy.net/movie/${tmdbId}?${dub}color=E50914`
-      : `https://player.videasy.net/tv/${tmdbId}/${s}/${e}?${dub}color=E50914`
+  if (type === 'movie') {
+    return [
+      `https://vidsrc.sh/embed/movie/${tmdbId}`,
+      `https://vidlink.pro/movie/${tmdbId}?autoPlay=true&autoplay=1`,
+      `https://vidfast.pro/movie/${tmdbId}`,
+      `https://vidsrc.su/embed/movie/${tmdbId}`,
+      `https://www.2embed.cc/embed/${tmdbId}`,
+    ]
   }
-  if (source === 'miruro') {
-    return movie
-      ? `https://vidsrc.cc/v2/embed/movie/${tmdbId}?autoPlay=true`
-      : `https://vidsrc.cc/v2/embed/tv/${tmdbId}/${s}/${e}?autoPlay=true`
-  }
-  if (source === 'animepahe' || source === 'mangayomi') {
-    return movie
-      ? `https://vidsrc.xyz/embed/movie/${tmdbId}`
-      : (anime ? `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}` : `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}`)
-  }
-  if (source === 'moviebox') {
-    return movie ? `https://embed.su/embed/movie/${tmdbId}` : `https://embed.su/embed/tv/${tmdbId}/${s}/${e}`
-  }
-  if (source === 'pengu') {
-    return movie ? `https://vidsrc.cc/v2/embed/movie/${tmdbId}` : `https://vidsrc.cc/v2/embed/tv/${tmdbId}/${s}/${e}`
-  }
-  if (source === 'vixsrc') {
-    return movie ? `https://vixsrc.to/movie/${tmdbId}` : `https://vixsrc.to/tv/${tmdbId}/${s}/${e}`
-  }
-  if (source === 'vidnest') {
-    return movie ? `https://vidnest.fun/movie/${tmdbId}` : `https://vidnest.fun/tv/${tmdbId}/${s}/${e}`
-  }
-  if (source === 'mediafusion') {
-    return `mfusion:${type}:${tmdbId}:${s}:${e}`
-  }
-  if (source === 'playtorrio') {
-    return movie ? `https://vidsrc.me/embed/movie/${tmdbId}` : `https://vidsrc.me/embed/tv/${tmdbId}/${s}/${e}`
-  }
-  if (source === 'simplstream') {
-    const extra = `${dub}autoPlay=true&muted=false&autoplay=1`
-    return movie ? `https://vidlink.pro/movie/${tmdbId}?${extra}` : `https://vidlink.pro/tv/${tmdbId}/${s}/${e}?${extra}`
-  }
-  if (source === 'vidy') {
-    return movie ? `https://vidsrc.xyz/embed/movie/${tmdbId}` : `https://vidsrc.xyz/embed/tv/${tmdbId}/${s}/${e}`
-  }
-  if (movie) return `https://vidsrc.me/embed/movie/${tmdbId}`
-  return `https://vidsrc.me/embed/tv/${tmdbId}/${s}/${e}`
+  return [
+    `https://vidsrc.sh/embed/tv/${tmdbId}/${s}/${e}`,
+    `https://vidlink.pro/tv/${tmdbId}/${s}/${e}?autoPlay=true&autoplay=1`,
+    `https://vidfast.pro/tv/${tmdbId}/${s}/${e}`,
+    `https://vidsrc.su/embed/tv/${tmdbId}/${s}/${e}`,
+    `https://www.2embed.cc/embedtv/${tmdbId}&s=${s}&e=${e}`,
+  ]
+}
+
+export function isDeadEmbed(url: string) {
+  return /videasy\.|vidsrc\.xyz|vidsrc\.cc|vidsrc\.me\/|embed\.su|vixsrc\.to|moviesapi\.club|vidsrc\.(icu|in|net|rip|wtf)/i.test(url || '')
+}
+
+export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId: number | string, season?: number, episode?: number, anime = false): string {
+  const chain = embedChain(type, tmdbId, season, episode)
+  const order: PlayerSource[] = ['playtorrio', 'simplstream', 'vidy', 'zangetsu', 'miruro', 'moviebox', 'pengu', 'vixsrc', 'vidnest', 'animepahe', 'mangayomi']
+  const at = Math.max(0, order.indexOf(source))
+  const pick = chain[at % chain.length]
+  if (anime && (source === 'zangetsu' || source === 'miruro' || source === 'animepahe')) return chain[3] || pick
+  return pick
 }
 
 export function isPlayerEmbed(url: string): boolean {
@@ -83,11 +68,12 @@ export function isPlayerEmbed(url: string): boolean {
   if (/127\.0\.0\.1|localhost|magnet:/i.test(url)) return false
   if (/\.(mp4|m3u8|mkv|webm|avi)(\?|$)/i.test(url)) return false
   if (/pengu\.uk\/signin|signin\.mp4/i.test(url)) return false
-  return /vidsrc|vidlink|vidfast|moviebox\.ph|youtube|youtu\.be|invidious|nadeko|vixsrc|vidnest|videasy|epiembeds|embed\/|\/player\./i.test(url)
+  return /vidsrc|vidlink|vidfast|2embed|moviebox\.ph|youtube|youtu\.be|invidious|nadeko|vidnest|videasy|epiembeds|embed\/|embedtv|\/player\./i.test(url)
 }
 
 export function getFallbackSources(type: 'movie' | 'tv', tmdbId: number | string | undefined, season?: number, episode?: number): { source: PlayerSource; url: string }[] {
   if (!tmdbId) return []
-  const sources: PlayerSource[] = ['playtorrio', 'simplstream', 'vidy', 'zangetsu', 'miruro', 'mediafusion']
-  return sources.map((source) => ({ source, url: getPlayerUrl(source, type, tmdbId, season, episode) }))
+  const urls = embedChain(type, tmdbId, season, episode)
+  const names: PlayerSource[] = ['playtorrio', 'simplstream', 'vidy', 'zangetsu', 'miruro']
+  return names.map((source, i) => ({ source, url: urls[i] || urls[0] }))
 }
