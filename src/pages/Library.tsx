@@ -8,9 +8,10 @@ import { PosterStatus, stateCaption } from '../components/PosterTile'
 import { genreOf, scoreOf } from '../components/PosterMarks'
 import { Achievements } from '../components/Achievements'
 import { viewingBadges } from '../lib/achievements'
+import { isAnimeItem } from '../lib/trackers'
 
 type Tab = 'status' | 'watched' | 'watchlist' | 'favorites' | 'history' | 'lists' | 'badges'
-type LibFilter = 'all' | 'recent' | 'watching' | 'planned' | 'done' | 'movies' | 'shows'
+type LibFilter = 'all' | 'recent' | 'watching' | 'planned' | 'done' | 'movies' | 'shows' | 'anime'
 
 function watchedRows(rows: { completed?: boolean; seriesCompleted?: boolean; progress?: number; duration?: number; mediaId?: number | string; mediaType?: string; watchedAt?: string }[]) {
   const map = new Map<string, (typeof rows)[number]>()
@@ -22,6 +23,37 @@ function watchedRows(rows: { completed?: boolean; seriesCompleted?: boolean; pro
     const key = `${row.mediaType || 'tv'}|${row.mediaId}`
     const prev = map.get(key)
     if (!prev || Date.parse(row.watchedAt || '') >= Date.parse(prev.watchedAt || '')) map.set(key, row)
+  }
+  return [...map.values()]
+}
+
+function isAnimeLib(item: any) {
+  if (isAnimeItem(item)) return true
+  return String(item?.id || '').startsWith('al-')
+}
+
+function collectLibrary(groups: any[][]) {
+  const animeIds = new Set<string>()
+  for (const group of groups) {
+    for (const item of group || []) {
+      if (isAnimeLib(item)) animeIds.add(String(item.mediaId ?? item.id))
+    }
+  }
+  const map = new Map<string, any>()
+  for (const group of groups) {
+    for (const item of group) {
+      if (!item) continue
+      const id = item.mediaId ?? item.id
+      if (id == null) continue
+      const type = item.mediaType || item.media_type || 'tv'
+      if (type === 'iptv') continue
+      const anime = isAnimeLib(item) || animeIds.has(String(id))
+      const key = `${anime ? 'anime' : type}|${id}`
+      const prev = map.get(key)
+      const poster = item.posterPath || item.poster_path
+      const next = anime ? { ...item, isAnime: true } : item
+      if (!prev || (!(prev.posterPath || prev.poster_path) && poster)) map.set(key, next)
+    }
   }
   return [...map.values()]
 }
@@ -59,6 +91,7 @@ export default function Library() {
   }
 
   const watched = watchedRows(watchHistory)
+  const libraryRows = collectLibrary([watchlist, favorites, watchHistory])
   const filters: { id: LibFilter; label: string }[] = [
     { id: 'all', label: 'All' },
     { id: 'recent', label: 'Recently added' },
@@ -66,14 +99,18 @@ export default function Library() {
     { id: 'planned', label: 'Plan to watch' },
     { id: 'done', label: 'Completed' },
     { id: 'movies', label: 'Movies' },
-    { id: 'shows', label: 'Shows' },
+    { id: 'shows', label: 'TV Shows' },
+    { id: 'anime', label: 'Anime' },
   ]
 
   function narrow(items: any[]) {
     let rows = [...items]
     const kind = (i: any) => i.mediaType || i.media_type || 'movie'
-    if (filter === 'movies') rows = rows.filter((i) => kind(i) === 'movie')
-    if (filter === 'shows') rows = rows.filter((i) => kind(i) !== 'movie' && kind(i) !== 'iptv')
+    const animeIds = new Set(libraryRows.filter((i) => i.isAnime || isAnimeLib(i)).map((i) => String(i.mediaId ?? i.id)))
+    const rowAnime = (i: any) => isAnimeLib(i) || animeIds.has(String(i.mediaId ?? i.id))
+    if (filter === 'movies') rows = rows.filter((i) => kind(i) === 'movie' && !rowAnime(i))
+    if (filter === 'shows') rows = rows.filter((i) => kind(i) !== 'movie' && kind(i) !== 'iptv' && !rowAnime(i))
+    if (filter === 'anime') rows = rows.filter((i) => rowAnime(i))
     if (filter === 'watching') rows = rows.filter((i) => !i.completed && !i.seriesCompleted && Number(i.progress) > 0)
     if (filter === 'planned') rows = rows.filter((i) => !(Number(i.progress) > 0) && !i.completed)
     if (filter === 'done') rows = rows.filter((i) => i.completed || i.seriesCompleted)
@@ -90,8 +127,8 @@ export default function Library() {
     { id: 'badges' as const, label: 'Badges', icon: Award, count: viewingBadges(watchHistory).filter((b) => b.earned).length },
   ]
 
-  function Grid({ items, onRemove }: { items: any[]; onRemove?: (item: any) => void }) {
-    const shown = narrow(items)
+  function Grid({ items, onRemove, keep }: { items: any[]; onRemove?: (item: any) => void; keep?: boolean }) {
+    const shown = keep ? items : narrow(items)
     if (!shown.length) {
       return (
         <div className="rounded-3xl border border-white/10 bg-white/[0.03] py-20 text-center text-white/35">
@@ -194,6 +231,18 @@ export default function Library() {
             <section>
               <h3 className="text-white text-lg font-semibold mb-3">Watched</h3>
               <Grid items={watched} />
+            </section>
+            <section>
+              <h3 className="text-white text-lg font-semibold mb-3">Movies</h3>
+              <Grid keep items={libraryRows.filter((item) => !isAnimeLib(item) && (item.mediaType || item.media_type) === 'movie')} />
+            </section>
+            <section>
+              <h3 className="text-white text-lg font-semibold mb-3">TV Shows</h3>
+              <Grid keep items={libraryRows.filter((item) => !isAnimeLib(item) && (item.mediaType || item.media_type) !== 'movie')} />
+            </section>
+            <section>
+              <h3 className="text-white text-lg font-semibold mb-3">Anime</h3>
+              <Grid keep items={libraryRows.filter((item) => isAnimeLib(item))} />
             </section>
           </div>
         )}

@@ -9,6 +9,7 @@ export interface WatchlistItem {
   title: string
   posterPath: string | null
   addedAt: string
+  isAnime?: boolean
 }
 
 export type ThemeId = 'pink' | 'cyan' | 'emerald' | 'amber' | 'pure' | 'violet' | 'rose' | 'blue' | 'orange' | 'red' | 'lime' | 'purple'

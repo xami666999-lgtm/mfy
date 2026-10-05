@@ -120,6 +120,7 @@ export interface WatchHistoryItem {
   profileId: string
   completed?: boolean
   seriesCompleted?: boolean
+  isAnime?: boolean
 }
 
 export interface CustomList {

@@ -1094,6 +1094,7 @@ export default function PlayerPage() {
       profileId: useStore.getState().currentProfile?.id || 'default',
       completed: reallyDone,
       seriesCompleted: !!(reallyDone && finale.current && selectedMedia.type !== 'movie'),
+      isAnime: isAnimeItem(selectedMedia),
     })
     try { localStorage.setItem(`mfy-ep-${selectedMedia.id}-${selectedMedia.season || 0}-${selectedMedia.episode || 0}`, JSON.stringify({ p, d, completed: reallyDone, at: Date.now() })) } catch {}
     try {

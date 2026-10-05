@@ -114,7 +114,7 @@ export async function importAnilistWatchlist() {
       }
       store.upsertHistory(row)
     } else {
-      store.addToWatchlist({ ...match, addedAt: new Date().toISOString() })
+      store.addToWatchlist({ ...match, addedAt: new Date().toISOString(), isAnime: true })
     }
     added += 1
   }
@@ -201,7 +201,7 @@ export async function importAnilistPublic(username: string) {
         const key = `${match.mediaType}:${match.mediaId}`
         if (!seen.has(key)) {
           seen.add(key)
-          planned.push({ ...match, addedAt: new Date().toISOString() })
+          planned.push({ ...match, addedAt: new Date().toISOString(), isAnime: true })
         }
       }
       added += 1

@@ -636,6 +636,7 @@ export default function MetaDetails() {
                     title,
                     posterPath: detail.poster_path || null,
                     addedAt: new Date().toISOString(),
+                    isAnime: isAnimeItem(selectedMedia) || isAnimeItem(detail),
                   }
                   if (isInWatchlist(mediaId, selectedMedia.type)) {
                     removeFromWatchlist(mediaId, selectedMedia.type)
