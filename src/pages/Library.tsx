@@ -9,7 +9,7 @@ import { genreOf, scoreOf } from '../components/PosterMarks'
 import { Achievements } from '../components/Achievements'
 import { viewingBadges } from '../lib/achievements'
 
-type Tab = 'watchlist' | 'favorites' | 'history' | 'lists' | 'badges'
+type Tab = 'status' | 'watchlist' | 'favorites' | 'history' | 'lists' | 'badges'
 
 function posterUrl(path?: string | null) {
   if (!path) return ''
@@ -32,7 +32,7 @@ export default function Library() {
     deleteCustomList,
     removeFromCustomList,
   } = useStore()
-  const [tab, setTab] = useState<Tab>('watchlist')
+  const [tab, setTab] = useState<Tab>('status')
   const [newListName, setNewListName] = useState('')
   const [editingList, setEditingList] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
@@ -43,6 +43,7 @@ export default function Library() {
   }
 
   const tabs = [
+    { id: 'status' as const, label: 'Library', icon: Bookmark, count: watchlist.length + watchHistory.length },
     { id: 'watchlist' as const, label: 'Saved', icon: Bookmark, count: watchlist.length },
     { id: 'favorites' as const, label: 'Favorites', icon: Heart, count: favorites.length },
     { id: 'history' as const, label: 'History', icon: Star, count: watchHistory.length },
@@ -122,6 +123,22 @@ export default function Library() {
         </div>
       </div>
       <div className="px-8 pb-12">
+        {tab === 'status' && (
+          <div className="space-y-8">
+            <section>
+              <h3 className="text-white text-lg font-semibold mb-3">Watching</h3>
+              <Grid items={watchHistory.filter((h) => !h.completed && Number(h.progress) > 0)} />
+            </section>
+            <section>
+              <h3 className="text-white text-lg font-semibold mb-3">Plan to watch</h3>
+              <Grid items={watchlist} onRemove={(item) => removeFromWatchlist(item.mediaId, item.mediaType)} />
+            </section>
+            <section>
+              <h3 className="text-white text-lg font-semibold mb-3">Watched</h3>
+              <Grid items={watchHistory.filter((h) => h.completed)} />
+            </section>
+          </div>
+        )}
         {tab === 'watchlist' && (
           <Grid items={watchlist} onRemove={(i) => removeFromWatchlist(i.mediaId, i.mediaType)} />
         )}

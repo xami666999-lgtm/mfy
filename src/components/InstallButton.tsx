@@ -10,6 +10,9 @@ export default function InstallButton() {
     return false
   })
 
+  const [iosTip, setIosTip] = useState(false)
+  const ios = typeof navigator !== 'undefined' && /iPhone|iPad/i.test(navigator.userAgent)
+
   useEffect(() => {
     const onPrompt = (e: Event) => {
       e.preventDefault()
@@ -24,7 +27,16 @@ export default function InstallButton() {
     }
   }, [])
 
-  if (hide || !prompt) return null
+  if (hide) return null
+  if (ios) {
+    return (
+      <span style={{ position: 'relative' }}>
+        <button type="button" className="nav-install" onClick={() => setIosTip((v) => !v)}>Add to Home Screen</button>
+        {iosTip && <span className="nav-install-tip">Tap Share, then Add to Home Screen.</span>}
+      </span>
+    )
+  }
+  if (!prompt) return null
 
   return (
     <button

@@ -468,6 +468,14 @@ export default function MetaDetails() {
             backgroundColor: '#0a0a10',
           }}
         />
+        {trailerKey && (
+          <iframe
+            title="Trailer"
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            src={`https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&mute=1&controls=0&rel=0&modestbranding=1&playsinline=1&loop=1&playlist=${trailerKey}`}
+            allow="autoplay; encrypted-media"
+          />
+        )}
         {/* Soft vignette — readable text, keep face/scene visible */}
         <div
           className="absolute inset-0"
@@ -524,6 +532,12 @@ export default function MetaDetails() {
                 <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
                   <span className="bg-[#f5c518] text-black text-[9px] font-black px-1 rounded">IMDb</span>
                   {omdb.imdbRating}
+                </span>
+              )}
+              {(rtExtra?.critics || rtExtra?.audience) && (
+                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
+                  <span className="bg-[#fa320a] text-white text-[9px] font-black px-1 rounded">RT</span>
+                  {rtExtra.critics || rtExtra.audience}
                 </span>
               )}
               {selectedMedia?.type === 'tv' && !isAnimeItem(selectedMedia) && serScore && (

@@ -101,6 +101,7 @@ html.mfy-electron .mfy-navbar { margin-top: 36px; }
 .brand { display: flex; align-items: center; gap: 10px; background: transparent; color: #fff; min-width: 72px; }
 .brand img { width: 34px; height: 34px; border-radius: 8px; object-fit: contain; }
 .nav-install { height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: #fff; color: #111; font-size: 12px; font-weight: 700; cursor: pointer; }
+.nav-install-tip { position: absolute; right: 0; top: 38px; width: 220px; padding: 8px 10px; border-radius: 8px; background: #fff; color: #111; font-size: 12px; font-weight: 600; z-index: 40; }
 .brand span { font-size: 20px; font-weight: 800; letter-spacing: .08em; color: #e50914; }
 .nav-tabs { display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: nowrap; height: 64px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
 .nav-tabs::-webkit-scrollbar { display: none; }

@@ -10,11 +10,11 @@ function norm(value: string) {
 
 async function anilistRows(format: string): Promise<IconRow[]> {
   const query = `query ($format: MediaFormat) {
-    Page(perPage: 6) {
+    Page(perPage: 8) {
       media(type: ANIME, format: $format, sort: POPULARITY_DESC, isAdult: false) {
         id
         title { english romaji }
-        characters(perPage: 8, sort: [ROLE]) {
+        characters(perPage: 12, sort: [ROLE]) {
           nodes { id name { full } image { large } }
         }
       }

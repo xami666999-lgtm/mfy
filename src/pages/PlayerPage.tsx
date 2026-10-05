@@ -53,6 +53,8 @@ export default function PlayerPage() {
   const [subtitleLabel, setSubtitleLabel] = useState('')
   const [subtitleOffset, setSubtitleOffset] = useState(0)
   const [subSize, setSubSize] = useState(0.65)
+  const [subColor, setSubColor] = useState('#ffffff')
+  const [bright, setBright] = useState(1)
   const [subBg, setSubBg] = useState(false)
   const [subList, setSubList] = useState<{ url: string; name: string; lang: string; format: string }[]>([])
   const [subOpen, setSubOpen] = useState(false)
@@ -1281,6 +1283,7 @@ export default function PlayerPage() {
             src={streamUrl}
             title={title || 'Player'}
             allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+            style={{ filter: `brightness(${bright})` }}
             allowFullScreen
             referrerPolicy="no-referrer"
             style={{ width: '100%', height: '100%', border: 0, background: '#000' }}
@@ -1295,10 +1298,10 @@ export default function PlayerPage() {
           useragent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         })}
         {loaded && !error && !isPlayerEmbedUrl(streamUrl) && (
-          <video ref={videoRef} playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: fit === 'full' ? 'contain' : fit, background: '#000' }} />
+          <video ref={videoRef} playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: fit === 'full' ? 'contain' : fit, background: '#000', filter: `brightness(${bright})` }} />
         )}
         {cueText && (
-          <div style={{ position: 'absolute', left: '8%', right: '8%', bottom: 96, zIndex: 30, textAlign: 'center', pointerEvents: 'none', fontSize: Math.round(22 * subSize + 10), fontWeight: 700, color: '#fff', lineHeight: 1.35, textShadow: '0 2px 8px #000', background: subBg ? 'rgba(0,0,0,0.55)' : 'transparent', padding: '4px 8px', whiteSpace: 'pre-wrap' }}>
+          <div style={{ position: 'absolute', left: '8%', right: '8%', bottom: 96, zIndex: 30, textAlign: 'center', pointerEvents: 'none', fontSize: Math.round(22 * subSize + 10), fontWeight: 700, color: subColor, lineHeight: 1.35, textShadow: '0 2px 8px #000', background: subBg ? 'rgba(0,0,0,0.55)' : 'transparent', padding: '4px 8px', whiteSpace: 'pre-wrap' }}>
             {cueText}
           </div>
         )}
@@ -1325,11 +1328,16 @@ export default function PlayerPage() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <button type="button" onClick={() => seekBy(selectedMedia?.type === 'iptv' ? -10 : -5)} title={selectedMedia?.type === 'iptv' ? '-10s' : '-5s'} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, color: '#fff', cursor: 'pointer' }}><SkipBack size={18} /></button>
+                      <button type="button" onClick={() => seekBy(-10)} title="-10s" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, color: '#fff', cursor: 'pointer' }}><SkipBack size={18} /></button>
                       <button type="button" onClick={togglePlay} style={{ background: '#e50914', border: 'none', borderRadius: '50%', padding: 10, color: '#fff', cursor: 'pointer' }}>{playing ? <Pause size={22} /> : <Play size={22} />}</button>
-                      <button type="button" onClick={() => seekBy(selectedMedia?.type === 'iptv' ? 10 : 5)} title={selectedMedia?.type === 'iptv' ? '+10s' : '+5s'} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, color: '#fff', cursor: 'pointer' }}><SkipForward size={18} /></button>
+                      <button type="button" onClick={() => seekBy(10)} title="+10s" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, color: '#fff', cursor: 'pointer' }}><SkipForward size={18} /></button>
                       <button type="button" onClick={toggleMute} title={muted ? 'Sound on' : 'Mute'} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, padding: 8, color: '#fff', cursor: 'pointer' }}>{muted ? <VolumeX size={18} /> : <Volume2 size={18} />}</button>
                       <button type="button" onClick={() => seekBy(90)} title="Skip intro" style={{ background: '#e50914', border: 'none', borderRadius: 8, padding: '8px 10px', color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>Skip intro</button>
+                      {selectedMedia && selectedMedia.type !== 'movie' && selectedMedia.type !== 'iptv' && (
+                        <button type="button" onClick={playNextEpisode} title="Skip credits" style={{ background: '#e50914', border: 'none', borderRadius: 8, padding: '8px 10px', color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>Skip credits</button>
+                      )}
+                      <button type="button" onClick={() => setBright((n) => Math.max(0.6, +(n - 0.15).toFixed(2)))} title="Dimmer" style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>Dim</button>
+                      <button type="button" onClick={() => setBright((n) => Math.min(1.5, +(n + 0.15).toFixed(2)))} title="Brighter" style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>Bright</button>
                       <span style={{ color: '#fff', fontSize: 13, fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
                         {fmt(progress)} / {fmt(total || dur)}
                       </span>
@@ -1341,6 +1349,7 @@ export default function PlayerPage() {
                       <button type="button" onClick={() => { setSubOpen((v) => !v); setSrcOpen(false) }} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Subtitles{subtitleOffset ? ` ${subtitleOffset > 0 ? '+' : ''}${subtitleOffset.toFixed(1)}s` : ''}</button>
                       <button type="button" onClick={() => setSubSize((n) => Math.max(0.4, +(n - 0.1).toFixed(2)))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>A−</button>
                       <button type="button" onClick={() => setSubSize((n) => Math.min(1.6, +(n + 0.1).toFixed(2)))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>A+</button>
+                      <button type="button" onClick={() => setSubColor((c) => c === '#ffffff' ? '#ffe14a' : c === '#ffe14a' ? '#7ee0ff' : '#ffffff')} style={{ background: 'transparent', border: 'none', color: subColor, cursor: 'pointer', fontSize: 12, fontWeight: 800 }}>Color</button>
                       <button type="button" onClick={() => setSubtitleOffset((n) => +(n - 0.5).toFixed(1))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>Sync −</button>
                       <button type="button" onClick={() => setSubtitleOffset((n) => +(n + 0.5).toFixed(1))} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12 }}>Sync +</button>
                       <button type="button" onClick={() => setFit((f) => f === 'contain' ? 'cover' : f === 'cover' ? 'fill' : 'contain')} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{fit === 'cover' ? 'Crop' : fit === 'fill' ? 'Fill' : 'Fit'}</button>
