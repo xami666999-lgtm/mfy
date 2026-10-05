@@ -37,7 +37,7 @@ export default function LoginGate() {
   const [busy, setBusy] = useState(false)
   const [pendingCode, setPendingCode] = useState('')
   const [verifyNote, setVerifyNote] = useState('')
-  const [verifyPurpose, setVerifyPurpose] = useState<'create' | 'reset'>('create')
+  const [picking, setPicking] = useState(false)
 
   function watchWithoutAccount() {
     setAuthenticated(true)
@@ -257,6 +257,33 @@ export default function LoginGate() {
     )
   }
 
+  if (mode === 'create' && picking) {
+    return (
+      <div className="nf-gate nf-icons">
+        {guest}
+        <button type="button" className="nf-back" onClick={() => setPicking(false)} aria-label="Back">←</button>
+        <h1>Choose your icon</h1>
+        {posters.map((shelf) => (
+          <div key={shelf.label} className="nf-icon-shelf">
+            {shelf.rows.map((group) => (
+              <section key={`${shelf.label}-${group.title}`} className="nf-icon-row">
+                <h3>{group.title}</h3>
+                <div>
+                  {group.items.map((item) => (
+                    <button key={`${group.title}-${item.id}`} type="button" className={avatar === item.src ? 'on' : ''} title={item.name} onClick={() => { setAvatar(item.src); setPicking(false) }}>
+                      <img src={item.src} alt={item.name} />
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        ))}
+        {!posters.length && <p className="text-white/50">Loading characters…</p>}
+      </div>
+    )
+  }
+
   if (mode === 'verify') {
     return (
       <div className="nf-gate">
@@ -291,17 +318,21 @@ export default function LoginGate() {
           </div>
         )}
         {mode === 'create' && (
-          <div className="nf-pick">
-            <p>Choose a profile icon</p>
+          <div className="nf-icons nf-icons-inline">
+            <div className="nf-chosen-wrap">
+              <button type="button" className="nf-chosen" onClick={() => setPicking(true)}>
+                {avatar ? <img src={avatar} alt="" /> : <b>+</b>}
+              </button>
+            </div>
+            <h2>Choose your icon</h2>
             {posters.map((shelf) => (
               <div key={shelf.label}>
-                <h2>{shelf.label}</h2>
                 {shelf.rows.map((group) => (
-                  <section key={`${shelf.label}-${group.title}`}>
+                  <section key={`${shelf.label}-${group.title}`} className="nf-icon-row">
                     <h3>{group.title}</h3>
                     <div>
                       {group.items.map((item) => (
-                        <button key={`${group.title}-${item.id}`} type="button" className={avatar === item.src ? 'on' : ''} onClick={() => setAvatar(item.src)} title={item.name}>
+                        <button key={`${group.title}-${item.id}`} type="button" className={avatar === item.src ? 'on' : ''} title={item.name} onClick={() => setAvatar(item.src)}>
                           <img src={item.src} alt={item.name} />
                         </button>
                       ))}
@@ -310,6 +341,7 @@ export default function LoginGate() {
                 ))}
               </div>
             ))}
+            {!posters.length && <p className="text-white/50 text-sm">Loading characters…</p>}
           </div>
         )}
         <div className="space-y-3">
