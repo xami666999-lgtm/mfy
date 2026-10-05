@@ -1,0 +1,50 @@
+name: Prefer English subs
+
+on: workflow_dispatch
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stop China plus English stacking
+        run: |
+          python3 - << 'PY'
+          from pathlib import Path
+          vidy = Path("src/api/vidy.ts")
+          text = vidy.read_text()
+          if "withEnglishSubs" not in text:
+              text = text.replace(
+                  "export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId: number | string, season?: number, episode?: number, _anime = false): string {\n  const chain = embedChain(type, tmdbId, season, episode)\n  const order: PlayerSource[] = ['playtorrio', 'simplstream', 'vidy', 'zangetsu', 'miruro', 'moviebox', 'pengu', 'vixsrc', 'vidnest', 'animepahe', 'mangayomi']\n  const at = Math.max(0, order.indexOf(source))\n  return chain[at % chain.length]\n}",
+                  "function withEnglishSubs(url: string) {\n  if (!url || /[?&](sub_lang|ds_lang|lang)=/i.test(url)) return url\n  const sep = url.includes('?') ? '&' : '?'\n  return `${url}${sep}sub_lang=en&lang=en&ds_lang=en`\n}\n\nexport function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId: number | string, season?: number, episode?: number, _anime = false): string {\n  const chain = embedChain(type, tmdbId, season, episode)\n  const order: PlayerSource[] = ['playtorrio', 'simplstream', 'vidy', 'zangetsu', 'miruro', 'moviebox', 'pengu', 'vixsrc', 'vidnest', 'animepahe', 'mangayomi']\n  const at = Math.max(0, order.indexOf(source))\n  return withEnglishSubs(chain[at % chain.length])\n}",
+              )
+              vidy.write_text(text)
+          page = Path("src/pages/PlayerPage.tsx")
+          src = page.read_text()
+          old = """      setSubList(rows)
+      const en = rows.find((s) => /^(eng|en|english)$/i.test(s.lang)) || rows[0]
+      if (en) applySub(en)"""
+          new = """      const english = rows.filter((s) => /^(eng|en|english)$/i.test(s.lang) || /english/i.test(s.name))
+      const clean = (english.length ? english : rows).filter((s) => !/\\b(zh|chi|zho|cn|chinese|china)\\b/i.test(`${s.lang} ${s.name}`))
+      setSubList(clean)
+      const en = clean.find((s) => /^(eng|en|english)$/i.test(s.lang) || /english/i.test(s.name))
+      const embed = isPlayerEmbed(getPlayerUrl(playerSource, selectedMedia.type === 'movie' ? 'movie' : 'tv', selectedMedia.id, selectedMedia.season, selectedMedia.episode, isAnimeItem(selectedMedia)))
+      if (en && !embed) applySub(en)"""
+          if old not in src:
+              raise SystemExit('subtitle block missing')
+          src = src.replace(old, new, 1)
+          src = src.replace(
+              "{(s.lang || '').toUpperCase()} \u00b7 {s.name}",
+              "English \u00b7 MFY",
+          )
+          page.write_text(src)
+          print('patched')
+          PY
+          git config user.name xami666999-lgtm
+          git config user.email 308808809+xami666999-lgtm@users.noreply.github.com
+          git add src/api/vidy.ts src/pages/PlayerPage.tsx
+          git commit -m "fix: do not stack source China subs with MFY English"
+          git push
