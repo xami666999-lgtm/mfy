@@ -187,15 +187,10 @@ function resetSavedAccounts() {
     localStorage.setItem('mfy-epoch', ACCOUNT_EPOCH)
     localStorage.setItem('mfy-authenticated', 'false')
     localStorage.setItem('mfy-profiles', '[]')
-    localStorage.setItem('mfy-watchHistory', '[]')
-    localStorage.setItem('mfy-watchlist', '[]')
-    localStorage.setItem('mfy-favorites', '[]')
-    localStorage.setItem('mfy-customLists', '[]')
     localStorage.removeItem('mfy-currentProfileId')
     localStorage.removeItem('mfy-taste')
     ;[
       'mfy-simkl', 'mfy-simkl-token', 'mfy-simkl-client',
-      'mfy-anilist-token', 'mfy-anilist-username', 'mfy-anilist-client',
       'mfy-letterboxd-user', 'mfy-traktToken',
     ].forEach((key) => localStorage.removeItem(key))
     const drop: string[] = []
@@ -214,10 +209,6 @@ function resetSavedAccounts() {
     api?.set?.('profiles', [])
     api?.set?.('currentProfileId', '')
     api?.set?.('authenticated', false)
-    api?.set?.('watchHistory', [])
-    api?.set?.('watchlist', [])
-    api?.set?.('favorites', [])
-    api?.saveProgressAll?.([])
   } catch { /* ignore */ }
 }
 
@@ -233,7 +224,7 @@ function resetSavedSettings() {
       'mfy-tmdbApiKey', 'mfy-omdbApiKey', 'mfy-mdblistApiKey', 'mfy-opensubtitlesKey',
       'mfy-traktToken', 'mfy-realDebridKey', 'mfy-aiostreamsUrl', 'mfy-jellyfinUrl', 'mfy-jellyfinApiKey',
       'mfy-theme', 'mfy-externalPlayer', 'mfy-localFolders', 'mfy-cal-hide-global', 'mfy-rail-hidden',
-      'mfy-simkl-client', 'mfy-simkl-token', 'mfy-anilist-username', 'mfy-anilist-token',
+      'mfy-simkl-client', 'mfy-simkl-token',
       'mfy-letterboxd-user', 'mfy-rt-rapid-key', 'mfy-theme-pack', 'mfy-player-engine',
     ]
     named.forEach((key) => localStorage.removeItem(key))

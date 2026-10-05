@@ -34,6 +34,7 @@ import EpisodePanel from './components/EpisodePanel'
 import { youtubeEmbedUrl } from './api/youtubio'
 import { consumeTrackerReturn } from './lib/trackerLogin'
 import { pullProgress } from './lib/githubProgress'
+import { importAnilistPublic } from './lib/importLists'
 import { isPhoneShell } from './lib/device'
 import { useSeriesTotals } from './lib/watchProgress'
 
@@ -94,6 +95,12 @@ export default function App() {
     void pullProgress().then((rows) => {
       if (Array.isArray(rows) && rows.length) useStore.getState().setWatchHistory(rows)
     }).catch(() => {})
+    let anilist = ''
+    try { anilist = localStorage.getItem('mfy-anilist-keep') || localStorage.getItem('mfy-anilist-username') || '' } catch {}
+    if (anilist) {
+      try { localStorage.setItem('mfy-anilist-keep', anilist) } catch {}
+      void importAnilistPublic(anilist).catch(() => {})
+    }
   }, [])
 
   useEffect(() => {

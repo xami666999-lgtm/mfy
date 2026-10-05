@@ -210,6 +210,9 @@ export async function importAnilistPublic(username: string) {
   await Promise.all([worker(), worker(), worker()])
   if (planned.length) store.setWatchlist([...planned, ...store.watchlist])
   if (!added) throw new Error('AniList answered, but none of those titles matched a movie or show here.')
-  try { localStorage.setItem('mfy-anilist-username', name) } catch {}
+  try {
+    localStorage.setItem('mfy-anilist-username', name)
+    localStorage.setItem('mfy-anilist-keep', name)
+  } catch {}
   return added
 }
