@@ -1230,23 +1230,6 @@ export default function PlayerPage() {
     {together && (
       <TogetherPanel streamUrl={streamUrl} imdbOrId={String((selectedMedia as any)?.imdb || selectedMedia?.id || '')} type={selectedMedia?.type === 'movie' ? 'movie' : 'series'} onClose={() => setTogether(false)} onSplitSports={() => { setTogether(false); setCurrentPage('sports') }} />
     )}
-    {showNext && nextUp && (
-      <div className="nf-next">
-        {nextUp.still
-          ? <img src={`${STILL_URL || POSTER_URL}${nextUp.still}`} alt="" />
-          : <div className="ph" />}
-        <div>
-          <p className="kicker">Next episode</p>
-          <p className="name">{nextUp.name || `Episode ${nextUp.episode}`}</p>
-          <p className="meta">S{nextUp.season} E{nextUp.episode}</p>
-          {nextUp.overview && <p className="ov">{nextUp.overview}</p>}
-          <div className="row">
-            <button type="button" onClick={() => setShowNext(false)}>Not now</button>
-            <button type="button" className="go" onClick={playNextEpisode}>Play next</button>
-          </div>
-        </div>
-      </div>
-    )}
     {stillWatching && (
       <div className="fixed inset-0 z-[80] bg-black/70 flex items-center justify-center">
         <div className="rounded-3xl bg-[#120a12] border border-white/15 px-10 py-8 text-center max-w-md">
@@ -1269,8 +1252,11 @@ export default function PlayerPage() {
     {showRate && (
         <RateModal title={title} kind={isAnimeItem(selectedMedia) ? 'anime' : (selectedMedia?.type === 'movie' ? 'movie' : 'tv')} onSubmit={(s, n) => finishRate(s, n)} onSkip={() => finishRate()} />
       )}
-        <div className="mfy-player" onMouseMove={onMouseMove} style={{ background: '#000', minHeight: '100vh', cursor: showUI ? 'default' : 'none' }}>
-      <div className="player-stage" style={{ position: 'relative', width: '100%', height: '100vh', minHeight: '100vh', overflow: 'hidden' }}
+        <div className="mfy-player" onMouseMove={onMouseMove} style={{ background: '#000', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div className="player-exit">
+        <button type="button" onClick={goBack}>← Exit</button>
+      </div>
+      <div className="player-stage" style={{ position: 'relative', flex: '1 1 auto', minHeight: 0, width: '100%', overflow: 'hidden' }}
         onMouseMove={onMouseMove}
         onClick={(e) => { if ((e.target as HTMLElement).closest('button, input, a, .mfy-bar')) return; togglePlay() }}
       >
@@ -1352,18 +1338,32 @@ export default function PlayerPage() {
           <video ref={videoRef} playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: fit === 'full' ? 'contain' : fit, background: '#000', filter: `${loadPlaybackPrefs().upscale === 'anime' ? 'url(#mfy-anime) contrast(1.08) saturate(1.12) ' : loadPlaybackPrefs().upscale === 'sharpen' ? 'url(#mfy-sharpen) contrast(1.05) ' : ''}brightness(${bright})` }} />
         )}
         {cueText && (
-          <div style={{ position: 'absolute', left: '8%', right: '8%', bottom: 96, zIndex: 30, textAlign: 'center', pointerEvents: 'none', fontSize: Math.round(22 * subSize + 10), fontWeight: 700, color: subColor, lineHeight: 1.35, textShadow: '0 2px 8px #000', background: subBg ? 'rgba(0,0,0,0.55)' : 'transparent', padding: '4px 8px', whiteSpace: 'pre-wrap' }}>
+          <div style={{ position: 'absolute', left: '8%', right: '8%', bottom: 28, zIndex: 4, textAlign: 'center', pointerEvents: 'none', fontSize: Math.round(22 * subSize + 10), fontWeight: 700, color: subColor, lineHeight: 1.35, textShadow: '0 2px 8px #000', background: subBg ? 'rgba(0,0,0,0.55)' : 'transparent', padding: '4px 8px', whiteSpace: 'pre-wrap' }}>
             {cueText}
           </div>
         )}
         <IntroSkip />
-        {showUI && loaded && !error && (
-          <div className="nf-top">
-            <button type="button" onClick={goBack}>←</button>
+        </div>
+
+        {showNext && nextUp && (
+          <div className="nf-next">
+            {nextUp.still
+              ? <img src={`${STILL_URL || POSTER_URL}${nextUp.still}`} alt="" />
+              : <div className="ph" />}
+            <div>
+              <p className="kicker">Next episode</p>
+              <p className="name">{nextUp.name || `Episode ${nextUp.episode}`}</p>
+              <p className="meta">S{nextUp.season} E{nextUp.episode}</p>
+              {nextUp.overview && <p className="ov">{nextUp.overview}</p>}
+              <div className="row">
+                <button type="button" onClick={() => setShowNext(false)}>Not now</button>
+                <button type="button" className="go" onClick={playNextEpisode}>Play next</button>
+              </div>
+            </div>
           </div>
         )}
 
-        {showUI && loaded && !error && (
+        {loaded && !error && (
           <div className="mfy-bar nf-chrome" onClick={(e) => e.stopPropagation()}>
             {(() => {
               const prefs = loadPlaybackPrefs()
@@ -1434,7 +1434,6 @@ export default function PlayerPage() {
             })()}
           </div>
         )}
-      </div>
     </div>
     </>
   )

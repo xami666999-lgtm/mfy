@@ -471,7 +471,8 @@ html.mfy-electron .mfy-navbar { margin-top: 36px; }
   background: radial-gradient(900px 520px at 50% 35%, rgba(65, 8, 45, .18), transparent 70%), #020205;
 }
 .player-stage video { width: 100%; height: 100%; object-fit: contain; background: #000; }
-html.mfy-eps-open .player-stage { width: calc(100vw - 380px) !important; }
+html.mfy-eps-open .mfy-player { width: calc(100vw - 380px); }
+html.mfy-eps-open .player-stage { width: 100% !important; }
 .player-topbar {
   position: absolute; top: 0; left: 0; right: 0; height: 72px; z-index: 20;
   padding: 14px 20px; display: flex; align-items: center; gap: 12px;
