@@ -1463,12 +1463,12 @@ export default function PlayerPage() {
                       ))}
                       {isAnimeItem(selectedMedia) && (
                         <button type="button" onClick={() => {
-                          if (!crunchySignedIn()) window.open('https://www.crunchyroll.com/login', 'mfy-crunchy', 'width=480,height=760')
-                          const url = crunchyWatchUrl(title)
+                          const url = crunchySignedIn() ? crunchyWatchUrl(title) : 'https://www.crunchyroll.com/login'
                           setCurrentStreamUrl(url)
                           setStreamUrl(url)
                           setLoaded(true)
                           setSrcOpen(false)
+                          if (!crunchySignedIn()) return
                           const store = useStore.getState()
                           store.upsertHistory({
                             id: `crunchy-${selectedMedia.id}`,

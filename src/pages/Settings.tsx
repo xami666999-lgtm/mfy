@@ -182,7 +182,7 @@ export default function Settings() {
           }).finally(() => setStremioBusy(false))
         }}>{stremioBusy ? 'Importing…' : 'Import library'}</button>
         {stremioNote && <p className="set-hint">{stremioNote}</p>}
-        <button type="button" className="set-btn ghost" onClick={() => { saveCrunchyLogin(); window.open(crunchyLoginUrl(), 'mfy-crunchy', 'width=480,height=760') }}>Sign in to Crunchyroll</button>
+        <button type="button" className="set-btn ghost" onClick={() => { saveCrunchyLogin(); useStore.getState().setCurrentStreamUrl(crunchyLoginUrl()); useStore.getState().setCurrentPage('player') }}>Sign in to Crunchyroll</button>
         <p className="set-hint">Crunchyroll uses your subscription. After sign-in, anime can open the Crunchyroll player inside MFY and the play is saved here.</p>
       </Section>
 
