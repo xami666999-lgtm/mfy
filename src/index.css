@@ -122,7 +122,12 @@ html.mfy-electron .mfy-navbar { margin-top: 36px; }
   height: 2px; border-radius: 99px; background: #e50914;
 }
 .nav-search { display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; border-radius: 6px; background: rgba(255,255,255,.08); color: rgba(255,255,255,.55); }
-.nav-search input { width: 120px; background: transparent; border: 0; outline: none; color: #fff; font-size: 13px; font-family: inherit; }
+.nav-search input { width: 160px; background: transparent; border: 0; outline: none; color: #fff; font-size: 13px; font-family: inherit; }
+.nav-hits { position: absolute; top: 42px; right: 0; width: 320px; background: #12161c; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 6px; z-index: 80; box-shadow: 0 16px 40px rgba(0,0,0,.45); }
+.nav-hits button { width: 100%; display: flex; align-items: center; gap: 10px; height: 52px; border: 0; background: transparent; color: #fff; text-align: left; cursor: pointer; border-radius: 8px; padding: 0 8px; }
+.nav-hits button:hover { background: rgba(255,255,255,.06); }
+.nav-hits img, .nav-hits i { width: 32px; height: 44px; object-fit: cover; border-radius: 4px; background: #222; flex: none; }
+.nav-hits span { font-size: 13px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nav-who { width: 32px; height: 32px; border-radius: 6px; border: 0; padding: 0; overflow: hidden; background: #e50914; color: #fff; cursor: pointer; flex: none; }
 .nav-who img { width: 100%; height: 100%; object-fit: cover; }
 .nav-who b { font-size: 14px; }

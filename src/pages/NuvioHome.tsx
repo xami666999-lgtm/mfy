@@ -70,7 +70,7 @@ function stopLine(h: any) {
 }
 
 const STUDIOS = [
-  { id: 'marvel', name: 'MARVEL', color: '#c8102e', accent: '#fff', logo: './logos/marvel-word.svg', franchise: 'marvel' },
+  { id: 'marvel', name: 'MARVEL', color: '#141414', accent: '#fff', logo: './logos/marvel.svg', franchise: 'marvel' },
   { id: 'dc', name: 'DC', color: '#0476c0', accent: '#fff', logo: './logos/dc-white.svg', franchise: 'dc' },
   { id: 'a24', name: 'A24', color: '#111111', accent: '#fff', logo: './logos/a24.svg', company: '41077' },
   { id: 'pixar', name: 'PIXAR', color: '#222222', accent: '#f5c518', logo: './logos/pixar.svg', company: '3' },
@@ -242,6 +242,7 @@ export default function NuvioHome() {
   const [comedy, setComedy] = useState<any[]>([])
   const [because, setBecause] = useState<{ title: string; items: any[] } | null>(null)
   const [genreArt, setGenreArt] = useState<Record<string, string>>({})
+  const [discArt, setDiscArt] = useState<Record<string, string>>({})
   const [themeArt, setThemeArt] = useState<Record<string, string>>({})
   const [netArt, setNetArt] = useState<Record<string, string[]>>({})
   const [showArt, setShowArt] = useState<Record<number, string>>({})
@@ -285,6 +286,17 @@ export default function NuvioHome() {
       const map: Record<string, string> = {}
       for (const [id, path] of rows) if (path) map[id as string] = path as string
       setGenreArt(map)
+    })
+    Promise.all(DISCOVER.map((d) => {
+      const run = d.mode === 'trending'
+        ? tmdb.getTrending(d.media, 'week')
+        : tmdb.discoverMovies(d.params || { sort_by: 'popularity.desc' })
+      return run.then((res) => [d.id, res?.results?.find((x: any) => x.backdrop_path)?.backdrop_path || '']).catch(() => [d.id, ''])
+    })).then((rows) => {
+      if (dead) return
+      const map: Record<string, string> = {}
+      for (const [id, path] of rows) if (path) map[id as string] = path as string
+      setDiscArt(map)
     })
     Promise.all(THEMES.map((g) => tmdb.discoverMovies({ with_keywords: g.id, sort_by: 'popularity.desc', 'vote_count.gte': '80' }).then((d) => [g.id, d?.results?.find((x: any) => x.backdrop_path)?.backdrop_path || '']).catch(() => [g.id, '']))).then((rows) => {
       if (dead) return
@@ -889,8 +901,9 @@ export default function NuvioHome() {
         <h2 className="nv-h">Discover</h2>
         <div className="disc-row">
           {DISCOVER.map((d) => (
-            <button key={d.id} type="button" className="disc" style={{ background: d.gradient }} onClick={() => openShelf(d.name, d.media, d.params ? cleanParams(d.params) : undefined, d.mode)}>
-              {d.name}
+            <button key={d.id} type="button" className="disc" onClick={() => openShelf(d.name, d.media, d.params ? cleanParams(d.params) : undefined, d.mode)}>
+              {discArt[d.id] && <img src={`${BACKDROP_URL}${discArt[d.id]}`} alt="" />}
+              <b>{d.name}</b>
             </button>
           ))}
         </div>

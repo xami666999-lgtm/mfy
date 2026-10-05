@@ -93,7 +93,7 @@ export default function PlayerPage() {
   const progressKey = useRef('')
   const [showRate, setShowRate] = useState(false)
   const [countdown, setCountdown] = useState(5)
-  const [gate, setGate] = useState(true)
+  const [gate, setGate] = useState(false)
   const [together, setTogether] = useState(false)
   const [meta, setMeta] = useState<{ title: string; overview: string; poster: string; backdrop: string } | null>(null)
   const [nextUp, setNextUp] = useState<{ season: number; episode: number; name: string; still?: string; overview?: string } | null>(null)
@@ -1274,7 +1274,7 @@ export default function PlayerPage() {
             <feConvolveMatrix order="3" preserveAlpha="true" kernelMatrix="0 -1 0 -1 5 -1 0 -1 0" />
           </filter>
         </svg>
-        {(gate || (!loaded && !error)) && (
+        {(false && (gate || (!loaded && !error))) && (
           <div style={{
             position: 'absolute', inset: 0, zIndex: 40,
             background: meta?.backdrop

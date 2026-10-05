@@ -20,14 +20,7 @@ export default function BrandCard({
       style={{ background: color, ['--d' as string]: `${delay}s` }}
       onClick={onClick}
     >
-      {logo ? (
-        <span className="svc-swap">
-          <img src={logo} alt="" />
-          <em>{name}</em>
-        </span>
-      ) : (
-        <b>{name}</b>
-      )}
+      {logo ? <img src={logo} alt={name} /> : <b>{name}</b>}
     </button>
   )
 }

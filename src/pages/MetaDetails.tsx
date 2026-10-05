@@ -502,20 +502,12 @@ export default function MetaDetails() {
       {/* Cinematic full-bleed hero */}
       <div className="src-hero relative min-h-[640px] h-[680px] max-h-[86vh]">
         <div
-          className="absolute inset-0 bg-cover bg-center scale-105"
+          className="absolute inset-0 bg-cover bg-center"
           style={{
             backgroundImage: detail.backdrop_path ? `url(${BACKDROP_URL}${detail.backdrop_path})` : undefined,
             backgroundColor: '#0a0a10',
           }}
         />
-        {trailerKey && (
-          <iframe
-            title="Trailer"
-            className="absolute inset-0 w-full h-full pointer-events-none"
-            src={`https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&mute=1&controls=0&rel=0&modestbranding=1&playsinline=1&loop=1&playlist=${trailerKey}`}
-            allow="autoplay; encrypted-media"
-          />
-        )}
         {/* Soft vignette — readable text, keep face/scene visible */}
         <div
           className="absolute inset-0"
@@ -604,12 +596,9 @@ export default function MetaDetails() {
             </div>
 
             {detail.overview && (
-              <p className="text-[13px] text-white/70 leading-relaxed line-clamp-4 max-w-lg mb-4 drop-shadow-sm">
+              <p className="text-[15px] text-white/80 leading-relaxed line-clamp-3 max-w-lg mb-5">
                 {detail.overview}
               </p>
-            )}
-            {selectedMedia && selectedMedia.type !== 'iptv' && (
-              <TasteBar id={selectedMedia.id} type={selectedMedia.type} title={title} />
             )}
 
             <div className="flex flex-wrap items-center gap-2.5">
@@ -655,15 +644,6 @@ className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/8 bord
                 >
                 <Plus className="w-4 h-4" />
                 {selectedMedia && selectedMedia.type !== 'iptv' && isInWatchlist(selectedMedia.id as number, selectedMedia.type) ? 'In Library' : 'Library'}
-              </button>
-              <button
-                type="button"
-                onClick={() => window.open('https://google.com/cast', '_blank')}
-                className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-[#e50914]/15 border border-[#e50914]/30 text-sm text-[#e50914] hover:bg-[#e50914]/25 transition-all"
-                title="Cast to TV"
-              >
-                <Cast className="w-4 h-4" />
-                Cast
               </button>
               <div className="relative">
                 <button
