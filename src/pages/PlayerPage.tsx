@@ -683,9 +683,12 @@ export default function PlayerPage() {
         selectedMedia.season,
         selectedMedia.episode,
       )
-      setSubList(rows)
-      const en = rows.find((s) => /^(eng|en|english)$/i.test(s.lang)) || rows[0]
-      if (en) applySub(en)
+      const english = rows.filter((s) => /^(eng|en|english)$/i.test(s.lang) || /english/i.test(s.name))
+      const clean = (english.length ? english : rows).filter((s) => !/\b(zh|chi|zho|cn|chinese|china)\b/i.test(`${s.lang} ${s.name}`))
+      setSubList(clean)
+      const en = clean.find((s) => /^(eng|en|english)$/i.test(s.lang) || /english/i.test(s.name))
+      const embed = isPlayerEmbed(getPlayerUrl(playerSource, selectedMedia.type === 'movie' ? 'movie' : 'tv', selectedMedia.id, selectedMedia.season, selectedMedia.episode, isAnimeItem(selectedMedia)))
+      if (en && !embed) applySub(en)
     })()
   }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode, selectedMedia?.type])
 
@@ -1429,7 +1432,7 @@ export default function PlayerPage() {
                       <p>Subtitles</p>
                       <button type="button" onClick={() => { setSubtitleEnabled(false); setCueText(''); setSrcOpen(false) }}>Off</button>
                       {subList.map((s) => (
-                        <button key={s.url} type="button" onClick={() => applySub(s)}>{(s.lang || '').toUpperCase()} · {s.name}</button>
+                        <button key={s.url} type="button" onClick={() => applySub(s)}>English · MFY</button>
                       ))}
                       <div className="nf-tools">
                         <button type="button" onClick={() => { const n = +((subtitleOffset || 0) - 0.5).toFixed(1); setSubtitleOffset(n); savePlaybackPrefs({ subDelay: n }) }}>Delay −</button>

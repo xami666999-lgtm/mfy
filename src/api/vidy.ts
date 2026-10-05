@@ -54,11 +54,17 @@ export function isDeadEmbed(url: string) {
   return /videasy\.|vidsrc\.xyz|vidsrc\.cc|vidsrc\.me\/|embed\.su|vixsrc\.to|moviesapi\.club|vidsrc\.(icu|in|net|rip|wtf)/i.test(url || '')
 }
 
+function withEnglishSubs(url: string) {
+  if (!url || /[?&](sub_lang|ds_lang|lang)=/i.test(url)) return url
+  const sep = url.includes('?') ? '&' : '?'
+  return `${url}${sep}sub_lang=en&lang=en&ds_lang=en`
+}
+
 export function getPlayerUrl(source: PlayerSource, type: 'movie' | 'tv', tmdbId: number | string, season?: number, episode?: number, _anime = false): string {
   const chain = embedChain(type, tmdbId, season, episode)
   const order: PlayerSource[] = ['playtorrio', 'simplstream', 'vidy', 'zangetsu', 'miruro', 'moviebox', 'pengu', 'vixsrc', 'vidnest', 'animepahe', 'mangayomi']
   const at = Math.max(0, order.indexOf(source))
-  return chain[at % chain.length]
+  return withEnglishSubs(chain[at % chain.length])
 }
 
 export function isPlayerEmbed(url: string): boolean {
