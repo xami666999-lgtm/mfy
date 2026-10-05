@@ -44,6 +44,12 @@ export default function LoginGate() {
     setCurrentPage('home')
   }
 
+  function enter(id: string) {
+    switchProfile(id)
+    setAuthenticated(true)
+    setCurrentPage('home')
+  }
+
   useEffect(() => {
     let dead = false
     loadProfileIcons().then((next) => {
