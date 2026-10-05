@@ -1,48 +1,41 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { useStore, applyTheme } from './store'
-import { setRuntimeTmdbKey, DEFAULT_TMDB_API_KEY, isTmdbKeyValid, tmdb } from './api/tmdb'
+import { setRuntimeTmdbKey, DEFAULT_TMDB_API_KEY, isTmdbKeyValid } from './api/tmdb'
 import { setRuntimeMdblistKey } from './api/mdblist'
 import { useKeyboardNav } from './hooks/useKeyboardNav'
 import TitleBar from './components/TitleBar'
 import Navbar from './components/Navbar'
 import PhoneTabBar from './components/PhoneTabBar'
-import Board from './pages/Board'
 import NuvioHome from './pages/NuvioHome'
-import Discover from './pages/Discover'
-import Search from './pages/Search'
-import SearchResults from './pages/SearchResults'
-import Library from './pages/Library'
-import Settings from './pages/Settings'
-import MetaDetails from './pages/MetaDetails'
-import PlayerPage from './pages/PlayerPage'
+const Discover = lazy(() => import('./pages/Discover'))
+const Search = lazy(() => import('./pages/Search'))
+const SearchResults = lazy(() => import('./pages/SearchResults'))
+const Library = lazy(() => import('./pages/Library'))
+const Settings = lazy(() => import('./pages/Settings'))
+const MetaDetails = lazy(() => import('./pages/MetaDetails'))
+const PlayerPage = lazy(() => import('./pages/PlayerPage'))
 import Wizard from './pages/Wizard'
-import Guide from './pages/Guide'
-import ProviderBrowse from './pages/ProviderBrowse'
-import Franchise from './pages/Franchise'
 import Intro from './components/Intro'
-import Movies from './pages/Movies'
-import TvShows from './pages/TvShows'
-import Anime from './pages/Anime'
-import MusicPage from './pages/MusicPage'
-import Sports from './pages/Sports'
+const Movies = lazy(() => import('./pages/Movies'))
+const TvShows = lazy(() => import('./pages/TvShows'))
+const Anime = lazy(() => import('./pages/Anime'))
+const MusicPage = lazy(() => import('./pages/MusicPage'))
+const Sports = lazy(() => import('./pages/Sports'))
 import LoginGate from './components/LoginGate'
-import RemoteHelp from './components/RemoteHelp'
-import CatalogSection from './pages/CatalogSection'
-import People from './pages/People'
 import IdleWall from './components/IdleWall'
 import CalendarPage from './pages/CalendarPage'
-import ShelfBrowse from './pages/ShelfBrowse'
+const ShelfBrowse = lazy(() => import('./pages/ShelfBrowse'))
+const Guide = lazy(() => import('./pages/Guide'))
+const ProviderBrowse = lazy(() => import('./pages/ProviderBrowse'))
+const Franchise = lazy(() => import('./pages/Franchise'))
+const People = lazy(() => import('./pages/People'))
 import DetailExtras from './components/DetailExtras'
 import EpisodePanel from './components/EpisodePanel'
 import { youtubeEmbedUrl } from './api/youtubio'
 import { consumeTrackerReturn } from './lib/trackerLogin'
 import { pullProgress } from './lib/githubProgress'
 import { isPhoneShell } from './lib/device'
-
-void Board
-void CatalogSection
-void tmdb
 
 function PhoneBattery() {
   const [pct, setPct] = useState<number | null>(null)
@@ -273,6 +266,7 @@ export default function App() {
       <PhoneBattery />
       <div className="flex-1 min-h-0 relative mfy-phone-main">
       <main className="h-full overflow-y-auto overflow-x-hidden">
+        <Suspense fallback={null}>
         {currentPage === 'home' && <NuvioHome />}
         {currentPage === 'discover' && <Discover />}
         {currentPage === 'search' && <Search />}
@@ -308,6 +302,7 @@ export default function App() {
         {currentPage === 'calendar' && <CalendarPage />}
         {currentPage === 'shelf' && <ShelfBrowse />}
         {currentPage === 'people' && <People />}
+        </Suspense>
       </main>
       </div>
     </div>

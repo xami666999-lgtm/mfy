@@ -545,6 +545,7 @@ html[data-pack] .nv-page{background:radial-gradient(1200px 680px at 82% -8%, #1c
 .nv-corner.play:before{content:"";width:0;height:0;border-style:solid;border-width:4px 0 4px 7px;border-color:transparent transparent transparent #fff;margin-left:2px}
 .nv-pending{position:absolute;top:8px;left:8px;z-index:6;background:rgba(0,0,0,.78);color:#fff;font-size:11px;font-weight:800;padding:3px 7px;border-radius:6px}
 .nv-shot,.nv-poster,.poster-card{position:relative}
+.nv-card,.poster-card,.nv-cw{content-visibility:auto;contain-intrinsic-size:180px 270px}
 .mfy-batt{position:fixed;top:calc(env(safe-area-inset-top, 0px) + 6px);right:12px;z-index:120;font-size:12px;font-weight:700;color:#fff;text-shadow:0 1px 4px #000;pointer-events:none;font-variant-numeric:tabular-nums}
 .mfy-taste{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 16px}
 .mfy-stars{display:flex;gap:2px}

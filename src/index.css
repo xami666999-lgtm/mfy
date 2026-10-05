@@ -336,17 +336,16 @@ html.mfy-electron .mfy-navbar { margin-top: 36px; }
   width: 100%; cursor: pointer;
   position: relative; border-radius: 12px; overflow: hidden;
   border: 1px solid rgba(255, 35, 151, 0.18); background: var(--mfy-surface);
-  transition: transform var(--transition-spring), box-shadow var(--transition-fast), border-color var(--transition-fast);
-  will-change: transform;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
 .poster-card:hover, .poster-card:focus-visible {
-  transform: scale(1.05) translateY(-4px);
+  transform: scale(1.03) translateY(-2px);
   border-color: rgba(255, 44, 155, 0.7);
-  box-shadow: 0 16px 40px rgba(0,0,0,.55), 0 0 24px var(--mfy-pink-soft);
+  box-shadow: 0 12px 28px rgba(0,0,0,.45);
   z-index: 5;
 }
-.poster-card img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; display: block; background: var(--mfy-surface-2); transition: transform 4s ease; }
-.poster-card:hover img { transform: scale(1.12); }
+.poster-card img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; display: block; background: var(--mfy-surface-2); }
+.poster-card:hover img { transform: none; }
 @keyframes mfy-float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }

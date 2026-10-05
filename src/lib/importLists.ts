@@ -120,63 +120,93 @@ export async function importAnilistWatchlist() {
   return added
 }
 
+async function anilistPublicEntries(username: string) {
+  const statuses = ['PLANNING', 'CURRENT', 'COMPLETED', 'PAUSED', 'REPEATING']
+  const all: any[] = []
+  for (const status of statuses) {
+    for (let page = 1; page <= 40; page++) {
+      const data = await anilistFetch<{ Page: { pageInfo: { hasNextPage: boolean }; mediaList: any[] } }>(
+        `query ($user: String, $page: Int, $status: MediaListStatus) {
+          Page(page: $page, perPage: 50) {
+            pageInfo { hasNextPage }
+            mediaList(userName: $user, type: ANIME, status: $status) {
+              status
+              progress
+              media { id format title { english romaji } }
+            }
+          }
+        }`,
+        { user: username, page, status },
+      )
+      const rows = data?.Page?.mediaList || []
+      all.push(...rows)
+      if (!data?.Page?.pageInfo?.hasNextPage || rows.length === 0) break
+    }
+  }
+  return all
+}
+
 /** Public AniList list. No app login — AniList only allows a registered redirect, and this site cannot complete that. */
 export async function importAnilistPublic(username: string) {
   const name = username.trim()
   if (!name) throw new Error('Type your AniList username.')
-  const data = await anilistFetch<{ MediaListCollection: { lists: { entries: any[] }[] } | null }>(
-    `query ($user: String) {
-      MediaListCollection(userName: $user, type: ANIME) {
-        lists {
-          entries {
-            status
-            progress
-            media { id format title { english romaji } }
-          }
-        }
-      }
-    }`,
-    { user: name },
-  ).catch((error: Error) => {
+  const entries = await anilistPublicEntries(name).catch((error: Error) => {
     const msg = error?.message || ''
-    if (/private/i.test(msg)) throw new Error('That AniList is private. Open anilist.co settings and make the list public, then import again.')
-    if (/not found/i.test(msg)) throw new Error('No AniList user with that name.')
+    if (/private/i.test(msg)) throw new Error('That AniList is private. Only public lists can be copied.')
+    if (/not found/i.test(msg)) throw new Error('No public AniList user with that name.')
     throw error
   })
-  const entries = (data?.MediaListCollection?.lists || []).flatMap((list) => list.entries || []).slice(0, 40)
   if (!entries.length) throw new Error('That public AniList has no anime to import.')
   let added = 0
   const store = useStore.getState()
-  for (const entry of entries) {
-    const media = entry?.media
-    const title = media?.title?.english || media?.title?.romaji
-    if (!title) continue
-    const movie = media?.format === 'MOVIE'
-    const match = await tmdbMatch(title, movie).catch(() => null)
-    if (!match) continue
-    const status = String(entry.status || '')
-    if (status === 'DROPPED') continue
-    if (status === 'COMPLETED' || status === 'CURRENT' || status === 'REPEATING') {
-      const done = status === 'COMPLETED'
-      store.upsertHistory({
-        id: `al-${match.mediaType}-${match.mediaId}`,
-        mediaId: match.mediaId,
-        mediaType: match.mediaType,
-        title: match.title,
-        posterPath: match.posterPath,
-        progress: done ? 2400 : 120,
-        duration: 2400,
-        season: movie ? undefined : 1,
-        episode: movie ? undefined : Math.max(1, Number(entry.progress) || 1),
-        watchedAt: new Date().toISOString(),
-        profileId: store.currentProfile?.id || 'default',
-        completed: done,
-      })
-    } else {
-      store.addToWatchlist({ ...match, addedAt: new Date().toISOString() })
+  const planned: WatchlistItem[] = []
+  const seen = new Set(store.watchlist.map((item) => `${item.mediaType}:${item.mediaId}`))
+  const queue = entries.filter((entry) => entry?.media && String(entry.status || '') !== 'DROPPED')
+  let cursor = 0
+  async function worker() {
+    while (cursor < queue.length) {
+      const entry = queue[cursor++]
+      const media = entry.media
+      const titles = [media?.title?.english, media?.title?.romaji].filter(Boolean).map((title: string) => String(title))
+      if (!titles.length) continue
+      const movie = media?.format === 'MOVIE'
+      let match: Awaited<ReturnType<typeof tmdbMatch>> = null
+      for (const title of titles) {
+        match = await tmdbMatch(title, movie).catch(() => null)
+        if (match) break
+        if (!movie) match = await tmdbMatch(title, true).catch(() => null)
+        if (match) break
+      }
+      if (!match) continue
+      const status = String(entry.status || '')
+      if (status === 'COMPLETED' || status === 'CURRENT' || status === 'REPEATING') {
+        const done = status === 'COMPLETED'
+        store.upsertHistory({
+          id: `al-${match.mediaType}-${match.mediaId}`,
+          mediaId: match.mediaId,
+          mediaType: match.mediaType,
+          title: match.title,
+          posterPath: match.posterPath,
+          progress: done ? 2400 : 120,
+          duration: 2400,
+          season: movie ? undefined : 1,
+          episode: movie ? undefined : Math.max(1, Number(entry.progress) || 1),
+          watchedAt: new Date().toISOString(),
+          profileId: store.currentProfile?.id || 'default',
+          completed: done,
+        })
+      } else {
+        const key = `${match.mediaType}:${match.mediaId}`
+        if (!seen.has(key)) {
+          seen.add(key)
+          planned.push({ ...match, addedAt: new Date().toISOString() })
+        }
+      }
+      added += 1
     }
-    added += 1
   }
+  await Promise.all([worker(), worker(), worker()])
+  if (planned.length) store.setWatchlist([...planned, ...store.watchlist])
   if (!added) throw new Error('AniList answered, but none of those titles matched a movie or show here.')
   try { localStorage.setItem('mfy-anilist-username', name) } catch {}
   return added

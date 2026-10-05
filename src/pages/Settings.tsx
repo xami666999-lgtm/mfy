@@ -121,7 +121,7 @@ export default function Settings() {
       </Section>
 
       <Section title="Library">
-        <p className="set-hint">AniList is the tracker that answers from the browser. Type the public username and MFY copies that anime list into Continue Watching and your watchlist. WeTrakr has no public sign-in yet, and Trakt will not issue a login without a secret this site cannot keep, so those are not listed.</p>
+        <p className="set-hint">Public AniList accounts only. Type the username and MFY copies the whole public anime list, including every Plan to Watch title.</p>
         <Field label="AniList username" value={aniUser} onChange={setAniUser} placeholder="Your AniList name" />
         <button
           type="button"

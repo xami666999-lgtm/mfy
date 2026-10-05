@@ -18,7 +18,7 @@ const tabs = [
 ]
 
 export default function Navbar() {
-  const { currentPage, setCurrentPage, currentProfile, setAuthenticated, setSelectedMedia, setSearchQuery } = useStore()
+  const { currentPage, setCurrentPage, setSelectedMedia, setSearchQuery } = useStore()
   const [bug, setBug] = useState(false)
   const [q, setQ] = useState('')
   const [hits, setHits] = useState<any[]>([])
@@ -86,9 +86,6 @@ export default function Navbar() {
       <button type="button" className={cn('nav-tab', currentPage === 'settings' && 'active')} onClick={() => setCurrentPage('settings')} title="Settings">
         <Settings />
         <span>Settings</span>
-      </button>
-      <button type="button" className="nav-who" onClick={() => setAuthenticated(false)} title="Switch profile">
-        {currentProfile?.avatar ? <img src={currentProfile.avatar} alt="" /> : <b>{(currentProfile?.name || 'M')[0]}</b>}
       </button>
       <button type="button" className="nav-bug" onClick={() => setBug(true)}>Bug</button>
       </div>
