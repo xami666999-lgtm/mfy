@@ -12,6 +12,7 @@ import RateModal from '../components/RateModal'
 import IntroSkip from '../components/IntroSkip'
 import TogetherPanel from '../components/TogetherPanel'
 import { syncRating, isAnimeItem } from '../lib/trackers'
+import { nextCanonEpisode } from '../lib/filler'
 import { syncFinished } from '../lib/syncWatch'
 import { markSource } from '../lib/playerStatus'
 import { searchStremioSubtitles } from '../api/subtitles'
@@ -612,18 +613,9 @@ export default function PlayerPage() {
     const season = selectedMedia.season || 1
     const ep = selectedMedia.episode || 1
     ;(async () => {
-      const s = await tmdb.getSeasonDetail(id, season).catch(() => null)
-      const hit = (s?.episodes || []).find((e: any) => e.episode_number === ep + 1)
-      if (hit) {
-        setNextUp({ season, episode: hit.episode_number, name: hit.name, still: hit.still_path })
-        return
-      }
-      const d = await tmdb.getTVDetail(id).catch(() => null)
-      const ns = (d?.seasons || []).find((x: any) => x.season_number === season + 1 && x.episode_count > 0)
-      if (!ns) return
-      const s2 = await tmdb.getSeasonDetail(id, ns.season_number).catch(() => null)
-      const first = s2?.episodes?.[0]
-      if (first) setNextUp({ season: ns.season_number, episode: first.episode_number, name: first.name, still: first.still_path })
+      const title = String((selectedMedia as any).title || (selectedMedia as any).name || '')
+      const hit = await nextCanonEpisode(id, season, ep, title).catch(() => null)
+      if (hit) setNextUp({ season: hit.season, episode: hit.episode, name: hit.name, still: hit.still })
     })()
   }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
 
@@ -855,32 +847,16 @@ export default function PlayerPage() {
       try {
         const curSeason = selectedMedia.season || 1
         const curEpisode = selectedMedia.episode || 1
-        const season = await tmdb.getSeasonDetail(selectedMedia.id as number, curSeason).catch(() => null)
-        const eps = season?.episodes || []
-        const next = eps.find((e: any) => e.episode_number === curEpisode + 1)
+        const title = String((selectedMedia as any).title || (selectedMedia as any).name || '')
+        const next = await nextCanonEpisode(selectedMedia.id as number, curSeason, curEpisode, title)
         if (next) {
           setGate(true)
-          setSelectedMedia({ id: selectedMedia.id, type: 'tv', season: curSeason, episode: next.episode_number })
-          const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, curSeason, next.episode_number, isAnimeItem(selectedMedia))
+          setSelectedMedia({ id: selectedMedia.id, type: 'tv', season: next.season, episode: next.episode })
+          const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, next.season, next.episode, isAnimeItem(selectedMedia))
           setCurrentStreamUrl(url)
           setLoaded(true)
           setAutoNextBusy(false)
           return
-        }
-        const d = await tmdb.getTVDetail(selectedMedia.id as number).catch(() => null)
-        const seasons = d?.seasons || []
-        const nextSeason = seasons.find((s: any) => s.season_number === curSeason + 1 && s.episode_count > 0)
-        if (nextSeason) {
-          const s = await tmdb.getSeasonDetail(selectedMedia.id as number, nextSeason.season_number).catch(() => null)
-          const first = s?.episodes?.[0]
-          if (first) {
-            setSelectedMedia({ id: selectedMedia.id, type: 'tv', season: nextSeason.season_number, episode: first.episode_number })
-            const url = getPlayerUrl(playerSource, 'tv', selectedMedia.id, nextSeason.season_number, first.episode_number, isAnimeItem(selectedMedia))
-            setCurrentStreamUrl(url)
-            setLoaded(true)
-            setAutoNextBusy(false)
-            return
-          }
         }
         setShowRate(true)
       } catch {

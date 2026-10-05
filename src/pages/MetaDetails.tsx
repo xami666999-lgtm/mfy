@@ -16,6 +16,7 @@ import { sourceDot, reportBroken } from '../lib/playerStatus'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
 import TitleLogo from '../components/TitleLogo'
 import { facesInCommon, rememberCast } from '../lib/faces'
+import { absoluteEpisode, ensureFiller, episodeIsFiller, fillerFor, hideFillerOn, setHideFiller } from '../lib/filler'
 
 function clock(sec: number) {
   const s = Math.max(0, Math.floor(Number(sec) || 0))
@@ -67,6 +68,16 @@ export default function MetaDetails() {
   const [tasteN, setTasteN] = useState(0)
   const [known, setKnown] = useState<{ id: number; name: string; titles: string[]; profile_path?: string; role?: string }[]>([])
   const [quotes, setQuotes] = useState<{ author: string; text: string; rating: number | null; date: string }[]>([])
+  const [hideFiller, setHideFillerState] = useState(hideFillerOn)
+  const [fillerOn, setFillerOn] = useState(false)
+
+  useEffect(() => {
+    const title = String(detail?.name || detail?.title || '')
+    if (!title) { setFillerOn(false); return }
+    let dead = false
+    ensureFiller().then(() => { if (!dead) setFillerOn(!!fillerFor(title)) })
+    return () => { dead = true }
+  }, [detail?.id, detail?.name, detail?.title])
 
   useEffect(() => {
     const cast = detail?.credits?.cast || []
@@ -868,7 +879,22 @@ onKeyDown={(e) => {
             {/* Seasons (TV) */}
             {selectedMedia?.type === 'tv' && detail.seasons && (
               <div>
-                <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Seasons</h3>
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <h3 className="text-[11px] font-semibold text-white/30 uppercase tracking-widest">Seasons</h3>
+                  {fillerOn && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = !hideFiller
+                        setHideFillerState(next)
+                        setHideFiller(next)
+                      }}
+                      className={cn('h-8 px-3 rounded-full text-[11px] font-semibold border', hideFiller ? 'bg-white text-black border-white' : 'bg-transparent text-white border-white/30')}
+                    >
+                      {hideFiller ? 'Filler hidden' : 'Hide filler'}
+                    </button>
+                  )}
+                </div>
                 <div className="flex gap-1.5 mb-4 flex-wrap">
                   {detail.seasons.filter((s: any) => s.season_number >= 0).map((s: any) => (
                     <button key={s.id} onClick={() => changeSeason(s.season_number)} className={cn('px-3 py-1.5 rounded-md text-[11px] font-medium transition-all border', activeSeason === s.season_number ? 'bg-[#c8c8c8]/10 text-[#c8c8c8] border-[#c8c8c8]/20' : 'bg-white/[0.03] text-white/30 border-transparent hover:text-white/50')}>
@@ -878,7 +904,15 @@ onKeyDown={(e) => {
                 </div>
                 {seasonData?.episodes && (
                   <div className="space-y-1.5">
-                    {seasonData.episodes.map((ep: any) => (
+                    {seasonData.episodes.filter((ep: any) => {
+                      if (!hideFiller || !fillerOn) return true
+                      const show = fillerFor(detail.name || detail.title || '')
+                      const absolute = absoluteEpisode(detail.seasons, activeSeason, ep.episode_number)
+                      return !episodeIsFiller(show, ep.air_date, absolute)
+                    }).map((ep: any) => {
+                      const show = fillerFor(detail.name || detail.title || '')
+                      const filler = episodeIsFiller(show, ep.air_date, absoluteEpisode(detail.seasons, activeSeason, ep.episode_number))
+                      return (
                       <div key={ep.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.04] cursor-pointer transition-all group" onClick={() => {
                         const kind = selectedMedia?.type === 'movie' ? 'movie' : 'tv'
                         const anime = isAnimeItem(selectedMedia) || /anime/i.test(String((detail as any)?.genres?.map((g: any) => g.name).join(' ') || ''))
@@ -898,7 +932,7 @@ onKeyDown={(e) => {
                           {ep.still_path && <img src={`${STILL_URL}${ep.still_path}`} alt={ep.name} className="w-full h-full object-cover" />}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[10px] text-[#c8c8c8] font-medium">E{ep.episode_number}</p>
+                          <p className="text-[10px] text-[#c8c8c8] font-medium">E{ep.episode_number}{filler ? ' · Filler' : ''}</p>
                           <p className="text-xs text-white/70 truncate group-hover:text-white transition-colors">{ep.name}</p>
                           <p className="text-[10px] text-white/20 line-clamp-1">{ep.overview}</p>
                         </div>
@@ -910,7 +944,8 @@ onKeyDown={(e) => {
                           {ep.runtime && <span className="text-[10px] text-white/15">{ep.runtime}m</span>}
                         </div>
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
