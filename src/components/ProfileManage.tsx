@@ -1,15 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../store'
-import { tmdb, PROFILE_URL } from '../api/tmdb'
-
-const SHOWS = [
-  { kind: 'tv' as const, id: 66732, name: 'Stranger Things' },
-  { kind: 'tv' as const, id: 100088, name: 'The Last of Us' },
-  { kind: 'movie' as const, id: 438631, name: 'Dune' },
-  { kind: 'tv' as const, id: 60574, name: 'Peaky Blinders' },
-  { kind: 'tv' as const, id: 1398, name: 'The Sopranos' },
-  { kind: 'movie' as const, id: 671, name: 'Harry Potter' },
-]
+import { tmdb, POSTER_URL } from '../api/tmdb'
 
 type Face = { id: number; name: string; src: string }
 type Group = { name: string; faces: Face[] }
@@ -37,14 +28,22 @@ export default function ProfileManage({ id, onClose }: { id: string; onClose: ()
   useEffect(() => {
     if (!faces || groups.length) return
     let dead = false
-    Promise.all(SHOWS.map(async (show) => {
-      const detail = show.kind === 'tv' ? await tmdb.getTVDetail(show.id) : await tmdb.getMovieDetail(show.id)
-      const cast = (detail?.credits?.cast || []).filter((c: any) => c.profile_path).slice(0, 8)
-      return {
-        name: show.name,
-        faces: cast.map((c: any) => ({ id: c.id, name: c.name, src: `${PROFILE_URL}${c.profile_path}` })),
-      }
-    })).then((rows) => { if (!dead) setGroups(rows.filter((g) => g.faces.length)) })
+    Promise.all([
+      tmdb.getPopular('movie'),
+      tmdb.getPopular('tv'),
+      tmdb.discoverTV({ with_genres: '16', with_origin_country: 'JP', sort_by: 'popularity.desc' }),
+    ]).then(([movies, shows, anime]) => {
+      if (dead) return
+      const pack = (label: string, data: any): Group => ({
+        name: label,
+        faces: (data?.results || []).filter((r: any) => r.poster_path).slice(0, 16).map((r: any) => ({
+          id: r.id,
+          name: r.title || r.name || 'Title',
+          src: `${POSTER_URL}${r.poster_path}`,
+        })),
+      })
+      setGroups([pack('Movies', movies), pack('TV Shows', shows), pack('Anime', anime)].filter((g) => g.faces.length))
+    }).catch(() => {})
     return () => { dead = true }
   }, [faces, groups.length])
 

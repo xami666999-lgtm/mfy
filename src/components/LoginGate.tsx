@@ -1,21 +1,30 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from '../store'
 import { GoogleUser, googleClientId, renderGoogleButton } from '../auth/google'
 import ProfileManage from './ProfileManage'
 import { sendVerificationEmail } from '../lib/verifyEmail'
 import TrackerConnect from './TrackerConnect'
+import { tmdb, POSTER_URL } from '../api/tmdb'
 
-const AVATARS = Array.from({ length: 8 }, (_, i) => `https://api.dicebear.com/9.x/adventurer/svg?seed=mfy${i + 1}`)
+type Poster = { id: number; name: string; src: string }
 
 function validEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
+}
+
+function postersOf(data: any): Poster[] {
+  return (data?.results || [])
+    .filter((r: any) => r.poster_path)
+    .slice(0, 14)
+    .map((r: any) => ({ id: r.id, name: r.title || r.name || 'Title', src: `${POSTER_URL}${r.poster_path}` }))
 }
 
 export default function LoginGate() {
   const { profiles, addProfile, setProfilePin, setProfileAvatar, switchProfile, setAuthenticated, setCurrentPage } = useStore()
   const hasAccount = profiles.length > 0
   const [step, setStep] = useState<'auth' | 'trackers' | 'who'>(hasAccount ? 'who' : 'auth')
-  const [avatar, setAvatar] = useState(AVATARS[0])
+  const [posters, setPosters] = useState<{ title: string; items: Poster[] }[]>([])
+  const [avatar, setAvatar] = useState('')
   const [simkl, setSimkl] = useState('')
   const [discord, setDiscord] = useState('')
   const [anilistTok, setAnilistTok] = useState('')
@@ -43,6 +52,25 @@ export default function LoginGate() {
     setAuthenticated(true)
     setCurrentPage('home')
   }
+
+  useEffect(() => {
+    let dead = false
+    Promise.all([
+      tmdb.getPopular('movie'),
+      tmdb.getPopular('tv'),
+      tmdb.discoverTV({ with_genres: '16', with_origin_country: 'JP', sort_by: 'popularity.desc' }),
+    ]).then(([movies, shows, anime]) => {
+      if (dead) return
+      const next = [
+        { title: 'Movies', items: postersOf(movies) },
+        { title: 'TV Shows', items: postersOf(shows) },
+        { title: 'Anime', items: postersOf(anime) },
+      ].filter((g) => g.items.length)
+      setPosters(next)
+      setAvatar((cur) => cur || next[0]?.items[0]?.src || '')
+    }).catch(() => {})
+    return () => { dead = true }
+  }, [])
 
   function acceptGoogle(user: GoogleUser) {
     const existing = useStore.getState().profiles.find((p) => (p.email || '').toLowerCase() === user.email.toLowerCase())
@@ -157,12 +185,14 @@ export default function LoginGate() {
     setErr('Password saved. Sign in.')
   }
 
-  const field = 'w-full h-11 px-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder-white/30 outline-none focus:border-white/40'
+  const field = 'w-full h-12 px-3 rounded bg-[#141414] border border-[#444] text-[16px] text-white placeholder-white/35 outline-none focus:border-white'
+  const guest = <button type="button" className="nf-guest" onClick={watchWithoutAccount}>Watch without logging in</button>
 
   if (step === 'trackers') {
     return (
-      <div className="h-screen grid place-items-center bg-black text-white px-6">
-        <div className="w-full max-w-md">
+      <div className="h-screen overflow-auto bg-black text-white px-6 py-16">
+        {guest}
+        <div className="w-full max-w-md mx-auto">
           <p className="text-white/50 text-xs tracking-[0.35em] font-bold mb-2">MFY</p>
           <h1 className="text-2xl font-bold mb-2">Connect trackers</h1>
           <p className="text-sm text-white/50 mb-5">Sign in inside MFY. Finished episodes sync to the accounts you connect.</p>
@@ -184,6 +214,7 @@ export default function LoginGate() {
     if (!profiles.length) {
       return (
         <div className="nf-gate">
+          {guest}
           <h1>Who's watching?</h1>
           <button type="button" className="nf-edit" onClick={() => { setMode('create'); setStep('auth') }}>Add Profile</button>
           <button type="button" className="nf-edit" onClick={watchWithoutAccount}>Watch without logging in</button>
@@ -193,6 +224,7 @@ export default function LoginGate() {
     const pickedProfile = profiles.find((p) => p.id === picked)
     return (
       <div className="nf-gate">
+        {guest}
         <h1>{editing ? 'Manage Profiles' : "Who's watching?"}</h1>
         <div className="nf-profiles">
           {profiles.map((p) => (
@@ -238,7 +270,6 @@ export default function LoginGate() {
         <div className="nf-gate-actions">
           <button type="button" className="nf-edit" onClick={() => { setEditing((v) => !v); setErr(''); setPicked('') }}>{editing ? 'Done' : 'Manage Profiles'}</button>
           <button type="button" className="nf-edit" onClick={() => { setMode('signin'); setStep('auth'); setErr(''); setPassword(''); setEmail(''); setUsername('') }}>Use another account</button>
-          <button type="button" className="nf-edit" onClick={watchWithoutAccount}>Watch without logging in</button>
         </div>
       </div>
     )
@@ -246,7 +277,8 @@ export default function LoginGate() {
 
   if (mode === 'verify') {
     return (
-      <div className="nf-gate" style={{ justifyContent: 'flex-start', paddingTop: 72 }}>
+      <div className="nf-gate">
+        {guest}
         <div className="w-full max-w-sm">
           <p className="text-center text-white/40 text-xs tracking-[0.35em] font-bold mb-2">MFY</p>
           <h1 className="text-center text-2xl font-bold text-white mb-3">Check your email</h1>
@@ -264,23 +296,32 @@ export default function LoginGate() {
   }
 
   return (
-    <div className="nf-gate" style={{ justifyContent: 'flex-start', paddingTop: 72 }}>
-      <div className="w-full max-w-sm">
-        <p className="text-center text-white/40 text-xs tracking-[0.35em] font-bold mb-2">MFY</p>
-        <h1 className="text-center text-2xl font-bold text-white mb-6">{mode === 'create' ? 'Create profile' : mode === 'reset' ? 'Reset password' : 'Sign in'}</h1>
+    <div className="nf-gate">
+      {guest}
+      <div className="w-full max-w-[720px]">
+        <img src="./logo-mark.png" alt="" className="nf-gate-logo" />
+        <h1>{mode === 'create' ? 'Create a profile' : mode === 'reset' ? 'Reset password' : 'Sign in'}</h1>
         {mode !== 'reset' && (
           <div className="mb-4">
-            <button type="button" className="w-full h-11 rounded-xl bg-white text-black font-semibold" onClick={() => void onGoogle()}>Continue with Google</button>
+            <button type="button" className="w-full h-12 rounded bg-white text-black font-semibold" onClick={() => void onGoogle()}>Continue with Google</button>
             <div id="mfy-google-btn" className="flex justify-center mt-3" />
-            <p className="text-center text-[11px] text-white/30 mt-3">or use your profile</p>
+            <p className="text-center text-[13px] text-white/45 mt-4">or use email</p>
           </div>
         )}
         {mode === 'create' && (
-          <div className="flex flex-wrap gap-2 justify-center mb-4">
-            {AVATARS.map((src) => (
-              <button key={src} type="button" onClick={() => setAvatar(src)} className={`w-12 h-12 rounded-md overflow-hidden border ${avatar === src ? 'border-white' : 'border-white/15'}`}>
-                <img src={src} alt="" className="w-full h-full object-cover" />
-              </button>
+          <div className="nf-pick">
+            <p>Choose a profile</p>
+            {posters.map((group) => (
+              <section key={group.title}>
+                <h3>{group.title}</h3>
+                <div>
+                  {group.items.map((item) => (
+                    <button key={`${group.title}-${item.id}`} type="button" className={avatar === item.src ? 'on' : ''} onClick={() => setAvatar(item.src)} title={item.name}>
+                      <img src={item.src} alt={item.name} />
+                    </button>
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         )}
@@ -289,24 +330,23 @@ export default function LoginGate() {
           <input className={field} placeholder="Gmail" value={email} onChange={(e) => setEmail(e.target.value)} />
           {mode !== 'reset' && <input className={field} type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />}
           {mode === 'create' && <input className={field} type="password" placeholder="Confirm password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />}
-          {mode === 'reset' && !sent && <button type="button" className="w-full h-11 rounded-xl bg-white/10 text-white text-sm" disabled={busy} onClick={sendReset}>{busy ? 'Sending\u2026' : 'Email me a code'}</button>}
+          {mode === 'reset' && !sent && <button type="button" className="w-full h-12 rounded bg-[#333] text-white" disabled={busy} onClick={sendReset}>{busy ? 'Sending…' : 'Email me a code'}</button>}
           {mode === 'reset' && sent === 'ok' && (
             <>
               <input className={field} type="password" placeholder="New password" value={password} onChange={(e) => setPassword(e.target.value)} />
               <input className={field} type="password" placeholder="Confirm" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
-              <button type="button" className="w-full h-11 rounded-xl bg-white text-black font-semibold" onClick={applyReset}>Save password</button>
+              <button type="button" className="w-full h-12 rounded bg-white text-black font-semibold" onClick={applyReset}>Save password</button>
             </>
           )}
           {err && <p className="text-red-400 text-xs">{err}</p>}
-          {mode === 'create' && <button type="button" className="w-full h-11 rounded-xl bg-white text-black font-semibold" disabled={busy} onClick={create}>{busy ? 'Sending email\u2026' : 'Continue'}</button>}
-          {mode === 'signin' && <button type="button" className="w-full h-11 rounded-xl bg-white text-black font-semibold" onClick={signin}>Sign in</button>}
+          {mode === 'create' && <button type="button" className="w-full h-12 rounded bg-[#e50914] text-white font-semibold" disabled={busy} onClick={create}>{busy ? 'Sending email…' : 'Continue'}</button>}
+          {mode === 'signin' && <button type="button" className="w-full h-12 rounded bg-[#e50914] text-white font-semibold" onClick={signin}>Sign in</button>}
         </div>
-        <div className="mt-4 text-center text-[11px] text-white/35 space-y-1">
+        <div className="mt-5 text-center text-[14px] text-[#b3b3b3] space-y-2">
           {mode === 'signin' && <div><button type="button" onClick={() => { setMode('reset'); setSent(''); setErr(''); setPassword(''); setConfirm('') }}>Reset password</button></div>}
           {mode !== 'signin' && <button type="button" onClick={() => setMode('signin')}>Sign in</button>}
           {mode !== 'create' && <div><button type="button" onClick={() => setMode('create')}>Create profile</button></div>}
         </div>
-        <button type="button" className="w-full h-11 mt-4 rounded-xl bg-white/10 text-white text-sm font-semibold" onClick={watchWithoutAccount}>Watch without logging in</button>
       </div>
     </div>
   )
