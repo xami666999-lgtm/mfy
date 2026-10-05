@@ -15,6 +15,7 @@ import { syncRating, isAnimeItem } from '../lib/trackers'
 import { nextCanonEpisode } from '../lib/filler'
 import { markSource } from '../lib/playerStatus'
 import { searchStremioSubtitles } from '../api/subtitles'
+import { streamsFromInstalled } from '../lib/stremioImport'
 import { fetchIntroSegments, type IntroSeg } from '../api/introdb'
 import { loadPlaybackPrefs, savePlaybackPrefs } from '../lib/playbackPrefs'
 import { resolveFromTorrentio } from '../api/streams'
@@ -139,13 +140,40 @@ export default function PlayerPage() {
     else if (anime && !(ANIME_SOURCES as string[]).includes(src) && src !== 'onepace' && src !== 'webtorrent') src = 'zangetsu'
     else if (!anime && !(MOVIE_TV_SOURCES as string[]).includes(src) && src !== 'webtorrent') src = 'playtorrio'
     const embed = getPlayerUrl(src, selectedMedia.type === 'movie' ? 'movie' : 'tv', selectedMedia.id, selectedMedia.season, selectedMedia.episode, anime)
-    if (embed && /^https?:/i.test(embed)) {
-      setStreamUrl(embed)
-      setLoaded(true)
-      setLoading(false)
-      setError('')
-      return
-    }
+    let cancelled = false
+    ;(async () => {
+      let imdb = String((selectedMedia as any).imdb || '')
+      if (!imdb.startsWith('tt')) {
+        try {
+          const ids = await tmdb.getExternalIds(selectedMedia.type === 'movie' ? 'movie' : 'tv', Number(selectedMedia.id))
+          imdb = ids?.imdb_id || imdb
+        } catch {}
+      }
+      const imported = await streamsFromInstalled({
+        type: selectedMedia.type === 'movie' ? 'movie' : 'tv',
+        tmdbId: selectedMedia.id,
+        imdb,
+        season: selectedMedia.season,
+        episode: selectedMedia.episode,
+      }).catch(() => [])
+      if (cancelled) return
+      const playable = imported.find((row) => /^https?:/i.test(row.url) && !/signin\.mp4|attachment|download/i.test(row.url))
+      if (playable) {
+        setPicks(imported)
+        setStreamUrl(playable.url)
+        setLoaded(true)
+        setLoading(false)
+        setError('')
+        return
+      }
+      if (embed && /^https?:/i.test(embed)) {
+        setStreamUrl(embed)
+        setLoaded(true)
+        setLoading(false)
+        setError('')
+      }
+    })()
+    return () => { cancelled = true }
     if (src === 'webtorrent') {
       setLoaded(true)
       setLoading(false)
@@ -1428,6 +1456,9 @@ export default function PlayerPage() {
                       <p>Sources</p>
                       {sources.map((s) => (
                         <button key={s.source} type="button" className={s.source === playerSource ? 'on' : ''} onClick={() => { setPlayerSource(s.source); setCurrentStreamUrl(s.url); setStreamUrl(s.url); setLoaded(true); setSrcOpen(false) }}>{sourceNames[s.source] || s.source}</button>
+                      ))}
+                      {picks.filter((row) => /^https?:/i.test(row.url)).slice(0, 8).map((row) => (
+                        <button key={row.url} type="button" onClick={() => { setCurrentStreamUrl(row.url); setStreamUrl(row.url); setLoaded(true); setSrcOpen(false) }}>{row.quality || row.title}</button>
                       ))}
                       <p>Subtitles</p>
                       <button type="button" onClick={() => { setSubtitleEnabled(false); setCueText(''); setSrcOpen(false) }}>Off</button>

@@ -9,6 +9,7 @@ import { setRuntimeSubtitleKey } from '../api/subtitles'
 import { loadPlaybackPrefs, savePlaybackPrefs, type UpscaleMode } from '../lib/playbackPrefs'
 import { githubToken, pullProgress, pushProgress, saveGithubToken } from '../lib/githubProgress'
 import { importAnilistPublic } from '../lib/importLists'
+import { installAddon, installedAddons, removeAddon, type InstalledAddon } from '../lib/stremioImport'
 
 export default function Settings() {
   const store = useStore()
@@ -29,6 +30,25 @@ export default function Settings() {
   })
   const [aniNote, setAniNote] = useState('')
   const [aniBusy, setAniBusy] = useState(false)
+  const [addonUrl, setAddonUrl] = useState('')
+  const [addons, setAddons] = useState<InstalledAddon[]>(() => installedAddons())
+  const [addonNote, setAddonNote] = useState('')
+  const [addonBusy, setAddonBusy] = useState(false)
+
+  async function addAddon() {
+    setAddonBusy(true)
+    setAddonNote('')
+    try {
+      const row = await installAddon(addonUrl)
+      setAddons(installedAddons())
+      setAddonUrl('')
+      setAddonNote(`${row.name} installed.`)
+    } catch (err) {
+      setAddonNote(err instanceof Error ? err.message : 'Could not install that addon.')
+    } finally {
+      setAddonBusy(false)
+    }
+  }
 
   async function save() {
     const key = tmdbKey.trim() || DEFAULT_TMDB_API_KEY
@@ -76,6 +96,25 @@ export default function Settings() {
         <button type="button" className="set-btn ghost" onClick={() => { store.setAuthenticated(false); store.setCurrentPage('home') }}>
           <LogOut size={14} /> Sign out
         </button>
+      </Section>
+
+      <Section title="Nuvio / Stremio addons">
+        <p className="set-note">Paste a Stremio or Nuvio addon link. It is checked against the addon manifest, then used when you play.</p>
+        <label className="set-field">
+          <span>Addon link</span>
+          <input value={addonUrl} placeholder="stremio:// or https://…/manifest.json" onChange={(e) => setAddonUrl(e.target.value)} />
+        </label>
+        <button type="button" className="set-btn" disabled={addonBusy || !addonUrl.trim()} onClick={addAddon}>{addonBusy ? 'Checking…' : 'Install addon'}</button>
+        {addonNote && <p className="set-note">{addonNote}</p>}
+        {addons.map((row) => (
+          <div className="set-toggle" key={row.id}>
+            <div>
+              <strong>{row.name}</strong>
+              <p>{row.description || row.manifestUrl}</p>
+            </div>
+            <button type="button" className="set-btn ghost" onClick={() => { removeAddon(row.id); setAddons(installedAddons()) }}>Remove</button>
+          </div>
+        ))}
       </Section>
 
       <Section title="Calendar">
