@@ -1,8 +1,5 @@
 .nv-page{
-  background:
-    radial-gradient(1200px 680px at 82% -8%, #1c4578 0%, transparent 56%),
-    radial-gradient(900px 560px at 0% 22%, #123056 0%, transparent 52%),
-    linear-gradient(180deg, #081422 0%, #0b1b30 38%, #08111c 100%);
+  background:#07080c;
   color:#fff;
   min-height:100%;
   font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
@@ -188,7 +185,7 @@ html[data-rail="1"] .mfy-phone-main > main{padding-left:248px}
 .svc{flex:none;width:196px;height:112px;border:0;border-radius:18px;display:grid;place-items:center;cursor:pointer;padding:16px}
 .svc img{max-width:78%;max-height:42px;object-fit:contain;filter:brightness(0) invert(1)}
 .svc b{color:#fff;font-size:18px;letter-spacing:-.03em}
-.studio{flex:none;width:148px;height:210px;border:0;border-radius:16px;display:grid;place-items:center;cursor:pointer;padding:16px}
+.studio{flex:none;width:148px;height:210px;border:0;border-radius:16px;display:grid;place-items:center;cursor:pointer;padding:16px;background:#12161e!important}
 .studio img{max-width:70%;max-height:86px;object-fit:contain;filter:none}
 .studio b{color:#fff;font-size:18px;letter-spacing:.04em}
 .net{flex:none;width:220px;height:124px;border:0;border-radius:16px;overflow:hidden;position:relative;background:#1c1c1e;cursor:pointer;padding:0}
@@ -471,9 +468,10 @@ html[data-pack] .nv-page{background:radial-gradient(1200px 680px at 82% -8%, #1c
 .house-row{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
 .house-row::-webkit-scrollbar{display:none}
 .house{flex:none;width:156px;text-align:center;color:#c5ced8;font-size:12px}
-.house button{position:relative;overflow:hidden;width:156px;height:96px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:#f4f5f7;display:grid;place-items:center;padding:14px;cursor:pointer}
-.house button:after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.28) 50%,transparent 70%);transform:translateX(-140%);animation:svcSheen 7.2s ease-in-out infinite;pointer-events:none}
-.house img{max-width:88%;max-height:52px;object-fit:contain;position:relative;z-index:1;animation:logoFloat 4.8s ease-in-out infinite}
+.house > div{width:156px;height:72px;display:grid;place-items:center;background:transparent}
+.house button{position:relative;overflow:hidden;width:156px;height:96px;border:0;border-radius:14px;background:transparent;display:grid;place-items:center;padding:14px;cursor:pointer}
+.house button:after{content:none}
+.house img{max-width:88%;max-height:40px;object-fit:contain;position:relative;z-index:1;filter:brightness(0) invert(1);opacity:.92;animation:none}
 .house span{display:block;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 .plate{width:168px;overflow:hidden}

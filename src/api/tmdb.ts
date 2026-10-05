@@ -342,6 +342,6 @@ export function pickTrailer(results: any[] | undefined): string | null {
 export function trailerEmbed(key: string, muted = false) {
   const q = muted
     ? 'autoplay=1&mute=1&controls=0&rel=0&modestbranding=1&playsinline=1&loop=1&playlist=' + key
-    : 'autoplay=1&rel=0&modestbranding=1'
-  return `https://www.youtube-nocookie.com/embed/${key}?${q}`
+    : 'autoplay=1&mute=0&rel=0&modestbranding=1&enablejsapi=1&playsinline=1'
+  return `https://www.youtube.com/embed/${key}?${q}`
 }

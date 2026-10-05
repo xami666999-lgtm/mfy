@@ -17,7 +17,7 @@ export default function BrandCard({
     <button
       type="button"
       className={`svc live${ink ? ' ink' : ''}`}
-      style={{ background: color, ['--d' as string]: `${delay}s` }}
+      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', ['--d' as string]: `${delay}s` }}
       onClick={onClick}
     >
       {logo ? <img src={logo} alt={name} /> : <b>{name}</b>}

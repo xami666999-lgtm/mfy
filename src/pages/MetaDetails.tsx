@@ -51,14 +51,6 @@ export default function MetaDetails() {
   const [loading, setLoading] = useState(true)
   const [showTrailer, setShowTrailer] = useState(false)
   const [trailerKey, setTrailerKey] = useState<string | null>(null)
-  const [bgTrailer, setBgTrailer] = useState(false)
-
-  useEffect(() => {
-    setBgTrailer(false)
-    if (!trailerKey) return
-    const t = window.setTimeout(() => setBgTrailer(true), 5000)
-    return () => window.clearTimeout(t)
-  }, [trailerKey, detail?.id])
   const [activeTab, setActiveTab] = useState<'details' | 'streams'>('details')
   const [streamOptions, setStreamOptions] = useState<any[]>([])
   const [resolving, setResolving] = useState(false)
@@ -456,22 +448,30 @@ export default function MetaDetails() {
     setCurrentPage(anime ? 'anime' : selectedMedia?.type === 'movie' ? 'movies' : selectedMedia?.type === 'tv' ? 'tv' : 'home')
   }
 
-  if (loading) return (
-    <div className="h-full">
-      <div className="skeleton" style={{ height: 420, borderRadius: 0 }} />
-      <div className="p-8 space-y-3">
-        <div className="skeleton skeleton-text w-40" />
-        <div className="skeleton skeleton-text w-80" />
-        <div className="skeleton skeleton-text w-60" />
+  if (loading || !detail) {
+    const preview = (selectedMedia || {}) as any
+    const previewTitle = preview.title || preview.name || ''
+    const backdrop = preview.backdrop_path
+    return (
+      <div className="page-fade-enter">
+        <div className="src-hero relative min-h-[640px] h-[680px] max-h-[86vh] overflow-hidden">
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: backdrop ? `url(${BACKDROP_URL}${backdrop})` : undefined, backgroundColor: '#0a0a10' }}
+          />
+          <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(90deg, rgba(6,5,10,0.92) 0%, rgba(6,5,10,0.45) 46%, transparent 78%), linear-gradient(0deg, rgba(6,5,10,1) 0%, rgba(6,5,10,0.35) 42%, transparent 70%)' }} />
+          <div className="relative z-10 h-full flex items-end px-8 md:px-12 pb-14">
+            <div className="src-copy max-w-xl">
+              <TitleLogo id={preview.id} type={preview.type === 'movie' ? 'movie' : 'tv'} title={previewTitle} />
+              <div className="nv-hero-actions">
+                <button type="button" className="nv-play" onClick={() => void handlePlay()}><Play size={18} fill="currentColor" /> Play</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  )
-  if (!detail) return (
-    <div className="p-10 text-white">
-      <button type="button" className="text-[#e50914] mb-4" onClick={() => setCurrentPage('home')}>← Home</button>
-      <p className="text-white/60">Couldn’t open this title. Go home and try again.</p>
-    </div>
-  )
+    )
+  }
 
   const title = detail.title || detail.name || ''
   const year = (detail.release_date || detail.first_air_date || '').slice(0, 4)
@@ -512,14 +512,6 @@ export default function MetaDetails() {
             backgroundColor: '#0a0a10',
           }}
         />
-        {bgTrailer && trailerKey && (
-          <iframe
-            title="Trailer"
-            className="bg-trailer"
-            src={trailerEmbed(trailerKey, true)}
-            allow="autoplay; encrypted-media"
-          />
-        )}
         {/* Soft vignette — readable text, keep face/scene visible */}
         <div
           className="absolute inset-0 z-[1]"
@@ -790,8 +782,17 @@ onKeyDown={(e) => {
               src={trailerEmbed(trailerKey)}
               referrerPolicy="no-referrer"
               frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allow="autoplay; encrypted-media; picture-in-picture"
               allowFullScreen
+              onLoad={(e) => {
+                const frame = e.currentTarget.contentWindow
+                const unmute = () => {
+                  frame?.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), '*')
+                  frame?.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*')
+                }
+                unmute()
+                window.setTimeout(unmute, 400)
+              }}
             />
             <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2">
               <a className="h-8 px-3 rounded-full bg-white text-black text-xs font-semibold flex items-center" href={`https://www.youtube.com/watch?v=${trailerKey}`} target="_blank" rel="noreferrer">Open on YouTube</a>
