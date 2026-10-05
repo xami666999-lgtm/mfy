@@ -36,6 +36,7 @@ export default function LoginGate() {
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const [pendingCode, setPendingCode] = useState('')
+  const [verifyPurpose, setVerifyPurpose] = useState<'create' | 'reset'>('create')
   const [verifyNote, setVerifyNote] = useState('')
   const [picking, setPicking] = useState(false)
 
