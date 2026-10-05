@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Home, Film, Tv, Sparkles, CalendarDays, Trophy, Bookmark, Search, Settings } from 'lucide-react'
 import { useStore } from '../store'
 import BugReport from './BugReport'
+import InstallButton from './InstallButton'
 import { cn } from '../lib/utils'
 
 const tabs = [
@@ -29,7 +30,7 @@ export default function Navbar() {
   return (
     <header className="mfy-navbar select-none">
       <button onClick={() => setCurrentPage('home')} className="brand" aria-label="MFY" type="button">
-        <img src="./icon.png" alt="MFY" />
+        <img src="./logo-mark.png" alt="MFY" />
       </button>
       <nav className="nav-tabs">
         {tabs.map((tab) => {
@@ -44,6 +45,7 @@ export default function Navbar() {
         })}
       </nav>
       <div className="nav-tools">
+      <InstallButton />
       <form className="nav-search" onSubmit={submit}>
         <Search size={14} />
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" aria-label="Search" />

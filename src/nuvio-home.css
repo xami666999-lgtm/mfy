@@ -251,10 +251,7 @@ html[data-rail="1"] .mfy-phone-main > main{padding-left:248px}
 .nf-faces button{width:84px;height:84px;border-radius:50%;overflow:hidden;border:3px solid transparent;padding:0;background:#222}
 .nf-faces button:hover{border-color:#e50914}
 .nf-faces img{width:100%;height:100%;object-fit:cover}
-.nf-intro{display:flex;gap:0}
-.nf-intro span{color:#e50914;font-size:clamp(72px,14vw,128px);font-weight:800;letter-spacing:-.07em;line-height:1;animation:slam .5s cubic-bezier(.2,.8,.2,1) both;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif}
-.nf-intro span:nth-child(2){animation-delay:.08s}
-.nf-intro span:nth-child(3){animation-delay:.16s}
+.nf-intro-logo{width:min(280px,48vw);height:auto;animation:slam .55s cubic-bezier(.2,.8,.2,1) both;filter:drop-shadow(0 0 32px rgba(255,45,150,.55))}
 @keyframes slam{from{opacity:0;transform:scale(1.55);filter:blur(10px)}to{opacity:1;transform:none;filter:none}}
 html[data-pack] .nv-page{background:radial-gradient(1200px 680px at 82% -8%, #1c4578 0%, transparent 56%),radial-gradient(900px 560px at 0% 22%, #123056 0%, transparent 52%),linear-gradient(180deg,#081422 0%,#0b1b30 38%,#08111c 100%)!important}
 @media (max-width:800px){
