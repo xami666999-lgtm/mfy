@@ -585,8 +585,9 @@ html[data-pack] .nv-page{background:radial-gradient(1200px 680px at 82% -8%, #1c
 .trk-body button,.trk-done{background:#fff;color:#111;font-weight:700;cursor:pointer}
 .trk-ok{color:#86efac;font-size:12px;margin:0}
 .trk-err{color:#fca5a5;font-size:12px;margin:0}
-.player-exit{flex:none;height:52px;display:flex;align-items:center;padding:0 16px;background:#000}
+.player-exit{flex:none;height:52px;display:flex;align-items:center;gap:8px;padding:0 16px;background:#000}
 .player-exit button{height:36px;padding:0 14px;border:0;border-radius:8px;background:#fff;color:#111;font-weight:700;font-size:14px;cursor:pointer}
+.player-exit button + button{background:#222;color:#fff}
 .player-stage .nf-top{display:none}
 .nf-chrome{position:relative;left:auto;right:auto;bottom:auto;flex:none;z-index:5;padding:10px 4vw 16px;background:#0a0a0a;color:#fff}
 .nf-scrub{display:flex;align-items:center;gap:12px}

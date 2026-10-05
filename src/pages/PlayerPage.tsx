@@ -133,7 +133,7 @@ export default function PlayerPage() {
       setError('')
       return
     }
-    let src: PlayerSource = anime ? 'zangetsu' : 'playtorrio'
+    let src: PlayerSource = 'playtorrio'
     if (isOnePiece(title)) src = 'onepace'
     else if (src === 'webtorrent') src = 'webtorrent'
     else if (anime && !(ANIME_SOURCES as string[]).includes(src) && src !== 'onepace' && src !== 'webtorrent') src = 'zangetsu'
@@ -1260,6 +1260,9 @@ export default function PlayerPage() {
         <div className="mfy-player" onMouseMove={onMouseMove} style={{ background: '#000', height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div className="player-exit">
         <button type="button" onClick={goBack}>← Exit</button>
+        {selectedMedia && selectedMedia.type !== 'movie' && selectedMedia.type !== 'iptv' && isPlayerEmbedUrl(streamUrl) && (
+          <button type="button" onClick={() => window.dispatchEvent(new Event('mfy-episodes'))}>Episodes</button>
+        )}
       </div>
       <div className="player-stage" style={{ position: 'relative', flex: '1 1 auto', minHeight: 0, width: '100%', overflow: 'hidden' }}
         onMouseMove={onMouseMove}
@@ -1368,7 +1371,7 @@ export default function PlayerPage() {
           </div>
         )}
 
-        {loaded && !error && (
+        {loaded && !error && !isPlayerEmbedUrl(streamUrl) && (
           <div className="mfy-bar nf-chrome" onClick={(e) => e.stopPropagation()}>
             {(() => {
               const prefs = loadPlaybackPrefs()

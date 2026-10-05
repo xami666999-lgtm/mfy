@@ -542,7 +542,7 @@ export default function NuvioHome() {
   function play(item: any) {
     const t = kindOf(item)
     setSelectedMedia({ id: item.id, type: t, title: titleOf(item), poster_path: item.poster_path || null, backdrop_path: item.backdrop_path || null })
-    setCurrentStreamUrl(getPlayerUrl(t === 'tv' && /anime|jp/i.test(String(item.original_language || '')) ? 'zangetsu' : 'playtorrio', t, item.id, 1, 1))
+    setCurrentStreamUrl(getPlayerUrl('playtorrio', t, item.id, 1, 1))
     setCurrentPage('player')
   }
 

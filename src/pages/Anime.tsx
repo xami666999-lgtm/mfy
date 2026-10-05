@@ -45,7 +45,7 @@ export default function Anime() {
     const title = typeof item.title === 'string' ? item.title : (item.title?.english || item.title?.romaji || item.name)
     const type = item.media_type === 'movie' ? 'movie' : 'tv'
     setSelectedMedia({ id: item.id, type, isAnime: true, title, poster_path: item.poster_path || null } as any)
-    setCurrentStreamUrl(getPlayerUrl('zangetsu', type, item.id, 1, 1, true))
+    setCurrentStreamUrl(getPlayerUrl('playtorrio', type, item.id, 1, 1, true))
     setCurrentPage('player')
   }
 

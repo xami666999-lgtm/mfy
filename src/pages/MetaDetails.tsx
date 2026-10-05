@@ -402,7 +402,7 @@ export default function MetaDetails() {
     const kind = selectedMedia.type === 'movie' ? 'movie' : 'tv'
     const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
     const op = isOnePiece((detail as any)?.title || (detail as any)?.name || (selectedMedia as any)?.title)
-    const pick = op ? 'onepace' : (anime ? 'zangetsu' : 'playtorrio')
+    const pick = op ? 'onepace' : 'playtorrio'
     const url = getPlayerUrl(pick as any, kind, selectedMedia.id as number, activeSeason, selectedMedia.episode || 1, anime)
     const saved = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia.id) && Number(h.season || 0) === Number(activeSeason || 0) && Number(h.episode || 0) === Number(selectedMedia.episode || 0))
     setSelectedMedia({

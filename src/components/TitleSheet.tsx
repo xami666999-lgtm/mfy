@@ -68,7 +68,7 @@ export default function TitleSheet({ item, onClose }: { item: any; onClose: () =
       episode,
       isAnime: !!item.isAnime,
     } as any)
-    setCurrentStreamUrl(getPlayerUrl(item.isAnime ? 'zangetsu' : 'playtorrio', kind, item.id, season, episode, !!item.isAnime))
+    setCurrentStreamUrl(getPlayerUrl('playtorrio', kind, item.id, season, episode, !!item.isAnime))
     setCurrentPage('player')
     onClose()
   }
