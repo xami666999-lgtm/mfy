@@ -16,12 +16,31 @@ async function stremio(method: string, body: Record<string, unknown>) {
     body: JSON.stringify(body),
   })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok || data?.error) throw new Error(data?.error?.message || data?.error || 'Stremio did not answer.')
+  if (!res.ok || data?.error) {
+    const raw = data?.error?.message || data?.error || 'Stremio did not answer.'
+    const message = /passphrase/i.test(String(raw)) ? 'Stremio rejected that password. Use the Stremio password, or paste the auth key from Stremio.' : String(raw)
+    throw new Error(message)
+  }
   return data?.result ?? data
 }
 
+async function sha256(text: string) {
+  const data = new TextEncoder().encode(text)
+  const buf = await crypto.subtle.digest('SHA-256', data)
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
 export async function stremioLogin(email: string, password: string) {
-  const result = await stremio('login', { email: email.trim(), password })
+  const plain = password
+  const hashed = await sha256(plain)
+  let result: any
+  try {
+    result = await stremio('login', { email: email.trim(), password: hashed })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    if (!/passphrase|password/i.test(message)) throw err
+    result = await stremio('login', { email: email.trim(), password: plain })
+  }
   const authKey = String(result?.authKey || '')
   if (!authKey) throw new Error('Stremio login did not return a library key.')
   try { localStorage.setItem(KEY, authKey) } catch {}
