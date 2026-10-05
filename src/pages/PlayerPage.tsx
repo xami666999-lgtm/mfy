@@ -25,6 +25,10 @@ function isPlayerEmbedUrl(url: string) {
   return isPlayerEmbed(url)
 }
 
+function isRealElectron() {
+  return typeof navigator !== 'undefined' && /Electron/i.test(navigator.userAgent)
+}
+
 export default function PlayerPage() {
   const {
     selectedMedia,
@@ -1327,7 +1331,7 @@ export default function PlayerPage() {
           </div>
         )}
         {error && <div className="player-error" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'red', padding: 24, textAlign: 'center' }}>{error}</div>}
-        {loaded && !error && isPlayerEmbedUrl(streamUrl) && !(window as any).electronAPI && (
+        {loaded && !error && isPlayerEmbedUrl(streamUrl) && !isRealElectron() && (
           <iframe
             ref={iframeRef}
             key={streamUrl}
@@ -1340,7 +1344,7 @@ export default function PlayerPage() {
             style={{ width: '100%', height: '100%', border: 0, background: '#000', filter: `brightness(${bright})` }}
           />
         )}
-        {loaded && !error && isPlayerEmbedUrl(streamUrl) && (window as any).electronAPI && createElement('webview', {
+        {loaded && !error && isPlayerEmbedUrl(streamUrl) && isRealElectron() && createElement('webview', {
           key: streamUrl,
           src: streamUrl,
           partition: 'persist:mfy',

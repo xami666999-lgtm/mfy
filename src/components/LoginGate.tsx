@@ -360,6 +360,7 @@ export default function LoginGate() {
           {err && <p className="text-red-400 text-xs">{err}</p>}
           {mode === 'create' && <button type="button" className="w-full h-12 rounded bg-[#e50914] text-white font-semibold" disabled={busy} onClick={create}>{busy ? 'Sending email…' : 'Continue'}</button>}
           {mode === 'signin' && <button type="button" className="w-full h-12 rounded bg-[#e50914] text-white font-semibold" onClick={signin}>Sign in</button>}
+          <button type="button" className="w-full h-12 rounded border border-white/50 text-white font-semibold" onClick={watchWithoutAccount}>Watch without logging in</button>
         </div>
         <div className="mt-5 text-center text-[14px] text-[#b3b3b3] space-y-2">
           {mode === 'signin' && <div><button type="button" onClick={() => { setMode('reset'); setSent(''); setErr(''); setPassword(''); setConfirm('') }}>Reset password</button></div>}

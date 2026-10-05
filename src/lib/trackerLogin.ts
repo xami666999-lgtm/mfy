@@ -57,12 +57,16 @@ export async function consumeTrackerReturn() {
   })
   const res = await fetch('https://api.simkl.com/oauth2/token', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'mfy/1.8' },
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body,
   })
-  const data = await res.json().catch(() => ({} as { access_token?: string }))
+  const data = await res.json().catch(() => ({} as { access_token?: string; error?: string }))
   sessionStorage.removeItem('mfy-simkl-verifier')
-  if (!res.ok || !data.access_token) return ''
+  history.replaceState(null, '', location.pathname)
+  if (!res.ok || !data.access_token) {
+    try { sessionStorage.setItem('mfy-tracker-error', 'Simkl refused the sign-in. The client ID has to allow this exact page as the redirect.') } catch {}
+    return ''
+  }
   try { localStorage.setItem('mfy-simkl-token', data.access_token) } catch {}
   history.replaceState(null, '', location.pathname)
   return 'simkl'

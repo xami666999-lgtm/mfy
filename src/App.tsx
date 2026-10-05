@@ -26,11 +26,13 @@ import TvShows from './pages/TvShows'
 import Anime from './pages/Anime'
 import Sports from './pages/Sports'
 import Iptv from './pages/Iptv'
+import YouTubePage from './pages/YouTubePage'
+import MusicPage from './pages/MusicPage'
+import PrintHome from './pages/PrintHome'
+import MangaReader from './pages/MangaReader'
 import LoginGate from './components/LoginGate'
 import RemoteHelp from './components/RemoteHelp'
 import CatalogSection from './pages/CatalogSection'
-import PrintHome from './pages/PrintHome'
-import MangaReader from './pages/MangaReader'
 import People from './pages/People'
 import IdleWall from './components/IdleWall'
 import CalendarPage from './pages/CalendarPage'
@@ -223,12 +225,6 @@ export default function App() {
     })
   }, [])
 
-  useEffect(() => {
-    if (currentPage === 'iptv' || currentPage === 'manga' || currentPage === 'comics' || currentPage === 'books' || currentPage === 'manga-detail' || currentPage === 'youtube' || currentPage === 'music') {
-      setCurrentPage('home')
-    }
-  }, [currentPage, setCurrentPage])
-
   if (showIntro) return <Intro onDone={() => setShowIntro(false)} />
   if (!isSetupComplete) return <Wizard />
   if (!authenticated) return <LoginGate />
@@ -306,6 +302,13 @@ export default function App() {
         {currentPage === 'calendar' && <CalendarPage />}
         {currentPage === 'shelf' && <ShelfBrowse />}
         {currentPage === 'people' && <People />}
+        {currentPage === 'iptv' && <Iptv />}
+        {currentPage === 'youtube' && <YouTubePage />}
+        {currentPage === 'music' && <MusicPage />}
+        {currentPage === 'manga' && <PrintHome kind="manga" />}
+        {currentPage === 'comics' && <PrintHome kind="comics" />}
+        {currentPage === 'books' && <PrintHome kind="novels" />}
+        {currentPage === 'manga-detail' && <MangaReader />}
       </main>
       </div>
     </div>

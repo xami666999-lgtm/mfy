@@ -37,10 +37,17 @@ export default function TrackerConnect({ onDone }: { onDone?: () => void }) {
   const [anilistOn, setAnilistOn] = useState(() => !!localStorage.getItem('mfy-anilist-token'))
 
   useEffect(() => {
+    try {
+      const fail = sessionStorage.getItem('mfy-tracker-error')
+      if (fail) {
+        setErr(fail)
+        sessionStorage.removeItem('mfy-tracker-error')
+      }
+    } catch {}
     consumeTrackerReturn().then((who) => {
       if (who === 'simkl') { setSimklOn(true); setNote('Simkl connected.') }
       if (who === 'anilist') { setAnilistOn(true); setNote('AniList connected.') }
-    }).catch(() => {})
+    }).catch((error) => setErr(error instanceof Error ? error.message : 'Tracker sign-in failed.'))
   }, [])
 
   function makePrimary(id: Who) {

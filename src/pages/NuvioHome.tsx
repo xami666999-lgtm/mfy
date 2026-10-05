@@ -8,6 +8,7 @@ import TitleSheet from '../components/TitleSheet'
 import { PosterTile, PosterStatus } from '../components/PosterTile'
 import { sourceBadge, BadgeImg } from '../components/QualityBadges'
 import BrandCard, { ArtLogo } from '../components/BrandCard'
+import HomeCatalogs from '../components/HomeCatalogs'
 import { ANIME_FRANCHISES, ANIME_STUDIOS, FILM_FRANCHISES } from '../data/brands'
 import { getPlayerUrl } from '../api/vidy'
 import { fetchOmdbByImdbId } from '../api/omdb'
@@ -697,7 +698,7 @@ export default function NuvioHome() {
                       {(() => {
                         const art = cwArt[String(h.mediaId)]
                         const src = wideSrc(art?.backdrop) || artSrc(art?.poster || h.posterPath)
-                        return src ? <img src={src} alt="" referrerPolicy="no-referrer" /> : <div className="ph" />
+                        return src ? <img src={src} alt="" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = 'none' }} /> : <div className="ph">{h.title || 'Title'}</div>
                       })()}
                       <PosterStatus
                         state={face.state === 'fresh' ? 'progress' : face.state}
@@ -1132,6 +1133,8 @@ export default function NuvioHome() {
       <PosterRow title="Trending TV" items={trendTv} genres={genreNames} pctOf={pctOf} badges={sources} onOpen={setSheet} />
       <PosterRow title="Action & Adventure" items={action} genres={genreNames} pctOf={pctOf} badges={sources} onOpen={setSheet} />
       <PosterRow title="Laugh Out Loud" items={comedy} genres={genreNames} pctOf={pctOf} badges={sources} onOpen={setSheet} />
+
+      <HomeCatalogs />
 
       {sheet && <TitleSheet item={sheet} onClose={() => setSheet(null)} />}
     </div>

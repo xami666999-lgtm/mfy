@@ -19,8 +19,9 @@ function Row({ title, items }: { title: string; items: Card[] }) {
       <div className="flex gap-3 overflow-x-auto pb-2 px-1">
         {items.map((it) => (
           <button key={`${title}-${it.id}`} type="button" className="w-[130px] flex-shrink-0 text-left" onClick={it.onOpen}>
-            <div className="w-[130px] h-[190px] rounded-lg overflow-hidden bg-[#14141c] border border-white/[0.06]">
-              {it.image ? <img src={it.image} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full grid place-items-center text-[11px] text-white/30 p-2 text-center">{it.title}</div>}
+            <div className="relative w-[130px] h-[190px] rounded-lg overflow-hidden bg-[#14141c] border border-white/[0.06]">
+              <div className="absolute inset-0 grid place-items-center text-[11px] text-white/40 p-2 text-center">{it.title}</div>
+              {it.image && <img src={it.image} alt="" className="absolute inset-0 w-full h-full object-cover" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = 'none' }} />}
             </div>
             <p className="text-[11px] text-white mt-1.5 truncate">{it.title}</p>
             {it.sub && <p className="text-[10px] text-white/40 truncate">{it.sub}</p>}
@@ -68,18 +69,21 @@ export default function HomeCatalogs() {
           loadJson('iptv-channels.json').catch(() => ({ channels: [] })),
         ])
         if (!alive) return
-        const readOpen = (m: any): Card => ({
+        const readOpen = (m: any, type = 'manga'): Card => ({
           id: String(m.id),
           title: m.title,
           image: m.coverImage,
           sub: `${m.averageScore || ''} ${m.status || ''}`.trim(),
-          onOpen: () => setCurrentPage('library'),
+          onOpen: () => {
+            setSelectedMedia({ id: m.id, type, title: m.title, poster_path: m.coverImage } as any)
+            setCurrentPage('manga-detail')
+          },
         })
         const listMg = (ym.manga || mg.manga || []) as any[]
-        setManga(listMg.slice(0, 8).map(readOpen))
-        setNovels(listMg.slice(8, 16).map(readOpen))
-        setComics(listMg.slice(0, 6).map((m: any) => ({ ...readOpen(m), id: `c-${m.id}` })))
-        setBooks(listMg.slice(6, 12).map((m: any) => ({ ...readOpen(m), id: `b-${m.id}` })))
+        setManga(listMg.slice(0, 8).map((m: any) => readOpen(m, 'manga')))
+        setNovels(listMg.slice(8, 16).map((m: any) => readOpen(m, 'novel')))
+        setComics(listMg.slice(0, 6).map((m: any) => ({ ...readOpen(m, 'comics'), id: `c-${m.id}` })))
+        setBooks(listMg.slice(6, 12).map((m: any) => ({ ...readOpen(m, 'novel'), id: `b-${m.id}` })))
 
         const mapAnime = (a: any): Card => ({
           id: String(a.id),
@@ -125,7 +129,11 @@ export default function HomeCatalogs() {
           image: t.artwork,
           sub: t.artist,
           onOpen: () => {
-            if (t.url) setCurrentStreamUrl(t.url)
+            if (t.url) {
+              const watch = String(t.url)
+              const id = watch.match(/[?&]v=([^&]+)/)?.[1] || watch.match(/youtu\.be\/([^?]+)/)?.[1]
+              setCurrentStreamUrl(id ? `https://www.youtube.com/embed/${id}` : watch)
+            }
             setCurrentPage('player')
           },
         })))
