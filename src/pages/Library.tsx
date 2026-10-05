@@ -10,7 +10,21 @@ import { Achievements } from '../components/Achievements'
 import { viewingBadges } from '../lib/achievements'
 import { importAnilistWatchlist, importSerializdWatchlist } from '../lib/importLists'
 
-type Tab = 'status' | 'watchlist' | 'favorites' | 'history' | 'lists' | 'badges'
+type Tab = 'status' | 'watched' | 'watchlist' | 'favorites' | 'history' | 'lists' | 'badges'
+
+function watchedRows(rows: { completed?: boolean; seriesCompleted?: boolean; progress?: number; duration?: number; mediaId?: number | string; mediaType?: string; watchedAt?: string }[]) {
+  const map = new Map<string, (typeof rows)[number]>()
+  for (const row of rows) {
+    const duration = Number(row.duration) || 0
+    const progress = Number(row.progress) || 0
+    const done = !!(row.completed || row.seriesCompleted || (duration >= 60 && progress / duration >= 0.9))
+    if (!done) continue
+    const key = `${row.mediaType || 'tv'}|${row.mediaId}`
+    const prev = map.get(key)
+    if (!prev || Date.parse(row.watchedAt || '') >= Date.parse(prev.watchedAt || '')) map.set(key, row)
+  }
+  return [...map.values()]
+}
 
 function posterUrl(path?: string | null) {
   if (!path) return ''
@@ -58,8 +72,10 @@ export default function Library() {
     setCurrentPage(mediaType === 'iptv' ? 'sports' : 'detail')
   }
 
+  const watched = watchedRows(watchHistory)
   const tabs = [
     { id: 'status' as const, label: 'Library', icon: Bookmark, count: watchlist.length + watchHistory.length },
+    { id: 'watched' as const, label: 'Watched', icon: Check, count: watched.length },
     { id: 'watchlist' as const, label: 'Saved', icon: Bookmark, count: watchlist.length },
     { id: 'favorites' as const, label: 'Favorites', icon: Heart, count: favorites.length },
     { id: 'history' as const, label: 'History', icon: Star, count: watchHistory.length },
@@ -160,10 +176,11 @@ export default function Library() {
             </section>
             <section>
               <h3 className="text-white text-lg font-semibold mb-3">Watched</h3>
-              <Grid items={watchHistory.filter((h) => h.completed)} />
+              <Grid items={watched} />
             </section>
           </div>
         )}
+        {tab === 'watched' && <Grid items={watched} />}
         {tab === 'watchlist' && (
           <Grid items={watchlist} onRemove={(i) => removeFromWatchlist(i.mediaId, i.mediaType)} />
         )}
