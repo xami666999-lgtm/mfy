@@ -601,6 +601,7 @@ html[data-pack] .nv-page{background:radial-gradient(1200px 680px at 82% -8%, #1c
 .nf-jump.fwd{transform:scaleX(-1)}
 .nf-jump.fwd span{transform:scaleX(-1)}
 .nf-ico{width:36px;height:36px;font-size:16px}
+.nf-eps-btn{height:34px;padding:0 12px;border:0;border-radius:6px;background:rgba(255,255,255,.14);color:#fff;font-size:13px;font-weight:700;cursor:pointer}
 .nf-pop{margin-top:10px;background:rgba(20,20,20,.94);border-radius:12px;padding:10px 12px;font-size:13px}
 .nf-more{max-height:240px;overflow:auto}
 .nf-more p{margin:8px 0 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#aaa}

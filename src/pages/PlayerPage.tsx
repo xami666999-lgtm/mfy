@@ -365,6 +365,10 @@ export default function PlayerPage() {
     if (!subtitleEnabled) { setCueText(''); return }
     let raf = 0
     const tick = () => {
+      if (!playing) {
+        raf = window.setTimeout(tick, 200)
+        return
+      }
       const hold = loadPlaybackPrefs().subHold
       const t = (progress || 0) + (Number(subtitleOffset) || 0)
       const list = cuesRef.current
@@ -377,7 +381,7 @@ export default function PlayerPage() {
     }
     tick()
     return () => clearTimeout(raf)
-  }, [subtitleEnabled, progress, subtitleOffset])
+  }, [subtitleEnabled, progress, subtitleOffset, playing])
 
   useEffect(() => {
     const v = videoRef.current
@@ -599,9 +603,13 @@ export default function PlayerPage() {
   }, [streamUrl, selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
 
   useEffect(() => {
-    if (!loaded || gate) return
+    if (!loaded || gate || !playing) {
+      if (!playing) startedAt.current = Date.now() - (progress || 0) * 1000
+      return
+    }
     const id = setInterval(() => {
       const v = videoRef.current
+      if (v?.paused) return
       if (v && v.currentTime > 1 && !isPlayerEmbedUrl(streamUrl)) return
       const wall = Math.max(0, (Date.now() - startedAt.current) / 1000)
       if (wall < 2) return
@@ -614,7 +622,7 @@ export default function PlayerPage() {
       }
     }, 1000)
     return () => clearInterval(id)
-  }, [loaded, gate, streamUrl, expectedSec])
+  }, [loaded, gate, streamUrl, expectedSec, playing])
 
   useEffect(() => {
     setShowNext(false)
@@ -1380,6 +1388,9 @@ export default function PlayerPage() {
                   <div className="nf-row">
                     <div className="nf-left">
                       <button type="button" className="nf-play" onClick={togglePlay} aria-label={playing ? 'Pause' : 'Play'}>{playing ? <Pause size={26} /> : <Play size={26} fill="currentColor" />}</button>
+                      {selectedMedia && selectedMedia.type !== 'movie' && selectedMedia.type !== 'iptv' && (
+                        <button type="button" className="nf-eps-btn" title="Episodes" onClick={() => window.dispatchEvent(new Event('mfy-episodes'))}>Episodes</button>
+                      )}
                       <button type="button" className="nf-jump" onClick={() => seekBy(-prefs.seekBack)} aria-label="Rewind"><span>{prefs.seekBack}</span></button>
                       <button type="button" className="nf-jump fwd" onClick={() => seekBy(prefs.seekFwd)} aria-label="Forward"><span>{prefs.seekFwd}</span></button>
                       <button type="button" className="nf-ico" onClick={toggleMute} aria-label={muted ? 'Unmute' : 'Mute'}>{muted ? <VolumeX size={22} /> : <Volume2 size={22} />}</button>

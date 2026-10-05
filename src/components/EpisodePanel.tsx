@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, ListVideo, Play, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Play, X } from 'lucide-react'
 import { tmdb, STILL_URL } from '../api/tmdb'
 import { useStore } from '../store'
 import { isEpisodeWatched } from '../lib/watchProgress'
@@ -38,21 +38,29 @@ export default function EpisodePanel() {
   useEffect(() => {
     if (!show) {
       setOpen(false)
+      document.documentElement.classList.remove('mfy-eps-open')
       return
     }
+    const toggle = () => setOpen((v) => !v)
+    window.addEventListener('mfy-episodes', toggle)
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
       if (e.key === 'e' || e.key === 'E' || e.key === 'i' || e.key === 'I') {
         e.preventDefault()
         setOpen((v) => !v)
       }
-      if (e.key === 'Escape' && open) {
-        e.preventDefault()
-        setOpen(false)
-      }
+      if (e.key === 'Escape') setOpen(false)
     }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('mfy-episodes', toggle)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [show])
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('mfy-eps-open', Boolean(show && open))
+    return () => document.documentElement.classList.remove('mfy-eps-open')
   }, [show, open])
 
   const seasons = useMemo(
@@ -81,21 +89,11 @@ export default function EpisodePanel() {
 
   return (
     <>
-      <button
-        type="button"
-        className="fixed z-[70] left-5 bottom-6 h-10 px-4 rounded-md bg-white text-black text-sm font-semibold shadow-lg"
-        onClick={() => setOpen(true)}
-        title="Episodes (E)"
-      >
-        <span className="inline-flex items-center gap-2"><ListVideo size={16} /> Episodes</span>
-      </button>
-
       {open && (
-        <div className="fixed inset-0 z-[90] flex justify-end bg-black/35" onClick={() => setOpen(false)}>
-          <aside
-            className="h-full w-[min(420px,92vw)] bg-[#121212]/97 border-l border-white/10 shadow-2xl flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <aside
+          className="mfy-eps"
+          style={{ position: 'fixed', top: 0, right: 0, zIndex: 85, height: '100vh', width: 380, background: '#141414', borderLeft: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column' }}
+        >
             <div className="flex items-center gap-3 px-4 pt-4 pb-2">
               <div className="min-w-0 flex-1">
                 <div className="text-[15px] font-semibold truncate font-display">{title}</div>
@@ -161,7 +159,6 @@ export default function EpisodePanel() {
               })}
             </div>
           </aside>
-        </div>
       )}
     </>
   )
