@@ -176,7 +176,7 @@ function uid() {
 }
 
 /** Bump to wipe every saved profile once. Old accounts cannot sign back in. */
-const ACCOUNT_EPOCH = '20261005-login'
+const ACCOUNT_EPOCH = '20261005-accounts-2'
 
 function resetSavedAccounts() {
   try {
@@ -184,23 +184,37 @@ function resetSavedAccounts() {
     localStorage.setItem('mfy-epoch', ACCOUNT_EPOCH)
     localStorage.setItem('mfy-authenticated', 'false')
     localStorage.setItem('mfy-profiles', '[]')
+    localStorage.setItem('mfy-watchHistory', '[]')
+    localStorage.setItem('mfy-watchlist', '[]')
+    localStorage.setItem('mfy-favorites', '[]')
+    localStorage.setItem('mfy-customLists', '[]')
     localStorage.removeItem('mfy-currentProfileId')
+    localStorage.removeItem('mfy-taste')
     ;[
       'mfy-simkl', 'mfy-simkl-token', 'mfy-simkl-client',
       'mfy-anilist-token', 'mfy-anilist-username', 'mfy-anilist-client',
+      'mfy-letterboxd-user', 'mfy-traktToken',
     ].forEach((key) => localStorage.removeItem(key))
     const drop: string[] = []
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)
-      if (key && (key.startsWith('mfy-profile') || key.startsWith('mfy-serializd'))) drop.push(key)
+      if (key && (key.startsWith('mfy-profile') || key.startsWith('mfy-serializd') || key.startsWith('mfy-ep-'))) drop.push(key)
     }
     drop.forEach((key) => localStorage.removeItem(key))
+  } catch { /* ignore */ }
+  try {
+    const req = indexedDB.deleteDatabase('mfy')
+    req.onerror = () => {}
   } catch { /* ignore */ }
   try {
     const api = (window as any).electronAPI
     api?.set?.('profiles', [])
     api?.set?.('currentProfileId', '')
     api?.set?.('authenticated', false)
+    api?.set?.('watchHistory', [])
+    api?.set?.('watchlist', [])
+    api?.set?.('favorites', [])
+    api?.saveProgressAll?.([])
   } catch { /* ignore */ }
 }
 
@@ -593,7 +607,13 @@ export const useStore = create<AppState>((set, get) => ({
       req.onsuccess = () => {
         const tx = req.result.transaction('kv', 'readonly')
         const g = tx.objectStore('kv').get('watchHistory')
-        g.onsuccess = () => { if (Array.isArray(g.result) && g.result.length) set({ watchHistory: g.result as WatchHistoryItem[] }) }
+        g.onsuccess = () => {
+          try {
+            const local = JSON.parse(localStorage.getItem('mfy-watchHistory') || 'null')
+            if (Array.isArray(local) && local.length === 0) return
+          } catch { /* ignore */ }
+          if (Array.isArray(g.result) && g.result.length) set({ watchHistory: g.result as WatchHistoryItem[] })
+        }
       }
     } catch {}
     loadKey('watchHistory', (v) => {
