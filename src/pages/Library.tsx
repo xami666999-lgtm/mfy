@@ -139,7 +139,7 @@ export default function Library() {
       )
     }
     return (
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
+      <div className="lib-grid">
         {shown.map((item) => {
           const id = item.mediaId ?? item.id
           const type = item.mediaType || item.media_type || 'movie'
