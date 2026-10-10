@@ -182,16 +182,21 @@ export async function importAnilistPublic(username: string) {
       const status = String(entry.status || '')
       if (status === 'COMPLETED' || status === 'CURRENT' || status === 'REPEATING') {
         const done = status === 'COMPLETED'
+        const local = store.watchHistory
+          .filter((h) => String(h.mediaId) === String(match.mediaId))
+          .sort((a, b) => Date.parse(b.watchedAt || '') - Date.parse(a.watchedAt || ''))[0]
+        const anilistEp = Math.max(1, Number(entry.progress) || 1)
+        const episode = Math.max(anilistEp, Number(local?.episode || 0) || anilistEp)
         store.upsertHistory({
-          id: `al-${match.mediaType}-${match.mediaId}`,
+          id: `al-${match.mediaType}-${match.mediaId}-${episode}`,
           mediaId: match.mediaId,
           mediaType: match.mediaType,
           title: match.title,
           posterPath: match.posterPath,
           progress: done ? 2400 : 120,
           duration: 2400,
-          season: movie ? undefined : 1,
-          episode: movie ? undefined : Math.max(1, Number(entry.progress) || 1),
+          season: movie ? undefined : Number(local?.season || 1),
+          episode: movie ? undefined : episode,
           watchedAt: new Date().toISOString(),
           profileId: store.currentProfile?.id || 'default',
           completed: done,

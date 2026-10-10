@@ -710,7 +710,7 @@ export default function NuvioHome() {
               const face = watchFace([h], h.mediaId, h)
               return (
                 <div key={`${h.mediaId}-${h.season}-${h.episode}`} className="nv-cw">
-                  <button type="button" className="nv-cw-open" onClick={() => open({ id: h.mediaId, title: h.title, media_type: h.mediaType }, h.mediaType || 'movie')}>
+                  <button type="button" className="nv-cw-open" onClick={() => { setSelectedMedia({ id: h.mediaId, type: h.mediaType || 'tv', title: h.title, poster_path: h.posterPath || null, season: h.season, episode: h.episode } as any); setCurrentPage('detail') }}>
                     <div className="nv-shot">
                       {(() => {
                         const art = cwArt[String(h.mediaId)]

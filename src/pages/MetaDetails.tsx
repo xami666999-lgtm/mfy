@@ -403,12 +403,17 @@ export default function MetaDetails() {
     const anime = isAnimeItem(selectedMedia) || isAnimeItem(detail)
     const op = isOnePiece((detail as any)?.title || (detail as any)?.name || (selectedMedia as any)?.title)
     const pick = op ? 'onepace' : 'playtorrio'
-    const url = getPlayerUrl(pick as any, kind, selectedMedia.id as number, activeSeason, selectedMedia.episode || 1, anime)
-    const saved = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia.id) && Number(h.season || 0) === Number(activeSeason || 0) && Number(h.episode || 0) === Number(selectedMedia.episode || 0))
+    const savedEp = useStore.getState().watchHistory
+      .filter((h) => String(h.mediaId) === String(selectedMedia.id) && Number(h.episode || 0) > 0)
+      .sort((a, b) => Date.parse(b.watchedAt || '') - Date.parse(a.watchedAt || ''))[0]
+    const episode = Number(selectedMedia.episode || savedEp?.episode || 1)
+    const season = Number(selectedMedia.season || savedEp?.season || activeSeason || 1)
+    const url = getPlayerUrl(pick as any, kind, selectedMedia.id as number, season, episode, anime)
+    const saved = useStore.getState().watchHistory.find((h) => String(h.mediaId) === String(selectedMedia.id) && Number(h.season || 0) === season && Number(h.episode || 0) === episode)
     setSelectedMedia({
       ...selectedMedia,
-      season: activeSeason,
-      episode: selectedMedia.episode,
+      season,
+      episode,
       title: (detail as any)?.title || (detail as any)?.name,
       poster_path: (detail as any)?.poster_path,
       resumeAt: Number((saved as any)?.progress || (selectedMedia as any)?.resumeAt || 0),

@@ -903,6 +903,25 @@ export default function PlayerPage() {
       return
     }
     saveProgress(true).catch(() => {})
+    if (selectedMedia?.type === 'tv') {
+      const nextEp = nextUp?.episode || (Number(selectedMedia.episode || 1) + 1)
+      const nextSeason = nextUp?.season || selectedMedia.season || 1
+      upsertHistory({
+        id: `${selectedMedia.id}-tv-${nextSeason}-${nextEp}`,
+        mediaId: selectedMedia.id,
+        mediaType: 'tv',
+        title: String((selectedMedia as any).title || (selectedMedia as any).name || ''),
+        posterPath: (selectedMedia as any).poster_path || (selectedMedia as any).poster || null,
+        progress: 1,
+        duration: 2400,
+        season: nextSeason,
+        episode: nextEp,
+        watchedAt: new Date().toISOString(),
+        profileId: useStore.getState().currentProfile?.id || 'default',
+        completed: false,
+        isAnime: isAnimeItem(selectedMedia),
+      })
+    }
     if (!ratedRef.current) {
       setShowRate(true)
       return
