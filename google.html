@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign in to MFY</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0a0a0a; color: #fff; font-family: system-ui, sans-serif; }
+    body { display: grid; place-items: center; }
+    p { color: rgba(255,255,255,.55); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div>
+    <p>Continue with Google</p>
+    <div id="btn"></div>
+    <p id="err"></p>
+  </div>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    function decode(credential) {
+      const part = credential.split('.')[1] || ''
+      const pad = part.replace(/-/g, '+').replace(/_/g, '/')
+      const json = decodeURIComponent(escape(atob(pad + '='.repeat((4 - (pad.length % 4)) % 4))))
+      const payload = JSON.parse(json)
+      if (!payload.email) throw new Error('Google did not return an email.')
+      return { sub: payload.sub || payload.email, email: payload.email, name: payload.name || payload.email, picture: payload.picture || '' }
+    }
+    function start() {
+      fetch('./google-client.json', { cache: 'no-store' }).then((r) => r.json()).then((cfg) => {
+        if (!cfg.clientId || !window.google) {
+          document.getElementById('err').textContent = 'Google sign-in is not configured yet.'
+          return
+        }
+        google.accounts.id.initialize({
+          client_id: cfg.clientId,
+          callback: (resp) => {
+            const user = decode(resp.credential)
+            document.title = 'mfy-auth:' + btoa(unescape(encodeURIComponent(JSON.stringify(user))))
+          },
+        })
+        google.accounts.id.renderButton(document.getElementById('btn'), {
+          type: 'standard', theme: 'filled_black', size: 'large', text: 'continue_with', shape: 'pill', width: 320,
+        })
+        google.accounts.id.prompt()
+      }).catch(() => {
+        document.getElementById('err').textContent = 'Could not reach Google.'
+      })
+    }
+    window.addEventListener('load', () => setTimeout(start, 300))
+  </script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="8 33 504 80">
+  <defs>
+    <filter id="s" x="-15%" y="-40%" width="130%" height="180%">
+      <feDropShadow dx="0" dy="2" stdDeviation="1.6" flood-color="#000" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+  <text x="260" y="88" text-anchor="middle" fill="#f3e6c8" font-family="Times New Roman, Georgia, serif" font-size="64" letter-spacing="16" font-weight="700" filter="url(#s)">DUNE</text>
+</svg>

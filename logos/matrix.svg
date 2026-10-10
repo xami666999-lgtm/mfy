@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="8 47 504 56">
+  <defs>
+    <filter id="s" x="-15%" y="-40%" width="130%" height="180%">
+      <feDropShadow dx="0" dy="2" stdDeviation="1.6" flood-color="#000" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+  <text x="260" y="84" text-anchor="middle" fill="#67f58a" font-family="Courier New, monospace" font-size="40" letter-spacing="3" font-weight="700" filter="url(#s)">THE MATRIX</text>
+</svg>

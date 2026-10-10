@@ -1,0 +1,133 @@
+{
+  "tracks": [
+    {
+      "id": "1",
+      "title": "Blinding Lights",
+      "artist": "The Weeknd",
+      "artistId": "1",
+      "album": "After Hours",
+      "albumId": "1",
+      "duration": 200,
+      "artwork": "https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36",
+      "url": "https://www.youtube.com/watch?v=4NRXx6U8ABQ",
+      "source": "youtube",
+      "quality": "high"
+    },
+    {
+      "id": "2",
+      "title": "Shape of You",
+      "artist": "Ed Sheeran",
+      "artistId": "2",
+      "album": "÷ (Divide)",
+      "albumId": "2",
+      "duration": 233,
+      "artwork": "https://i.scdn.co/image/ab67616d0000b273ba5db46f4b838e60e7a1e4f5",
+      "url": "https://www.youtube.com/watch?v=JGwWNGJdvx8",
+      "source": "youtube",
+      "quality": "high"
+    },
+    {
+      "id": "3",
+      "title": "Blinding Lights",
+      "artist": "The Weeknd",
+      "artistId": "1",
+      "album": "After Hours",
+      "albumId": "1",
+      "duration": 200,
+      "artwork": "https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36",
+      "url": "https://www.youtube.com/watch?v=4NRXx6U8ABQ",
+      "source": "youtube",
+      "quality": "high"
+    },
+    {
+      "id": "4",
+      "title": "Dance Monkey",
+      "artist": "Tones and I",
+      "artistId": "3",
+      "album": "The Kids Are Coming",
+      "albumId": "3",
+      "duration": 210,
+      "artwork": "https://i.scdn.co/image/ab67616d0000b273e6f407c7f3a0ec98a75f4e81",
+      "url": "https://www.youtube.com/watch?v=q0hyYWKXF0Q",
+      "source": "youtube",
+      "quality": "high"
+    },
+    {
+      "id": "5",
+      "title": "Someone You Loved",
+      "artist": "Lewis Capaldi",
+      "artistId": "4",
+      "album": "Divinely Uninspired to a Hellish Extent",
+      "albumId": "4",
+      "duration": 182,
+      "artwork": "https://i.scdn.co/image/ab67616d0000b27383a0d6b1b5f3b8f7b5c6e9f1",
+      "url": "https://www.youtube.com/watch?v=Z0zSP49dJo8",
+      "source": "youtube",
+      "quality": "high"
+    },
+    {
+      "id": "6",
+      "title": "Bad Guy",
+      "artist": "Billie Eilish",
+      "artistId": "5",
+      "album": "When We All Fall Asleep, Where Do We Go?",
+      "albumId": "5",
+      "duration": 194,
+      "artwork": "https://i.scdn.co/image/ab67616d0000b273d6f71734f4d0c3d1a6b8f7e1",
+      "url": "https://www.youtube.com/watch?v=DyDfgMOUjCI",
+      "source": "youtube",
+      "quality": "high"
+    },
+    {
+      "id": "7",
+      "title": "Old Town Road",
+      "artist": "Lil Nas X ft. Billy Ray Cyrus",
+      "artistId": "6",
+      "album": "7",
+      "duration": 113,
+      "artwork": "https://i.scdn.co/image/ab67616d0000b273b5f4c8e4c4d4f5d1a6b8c9d1",
+      "url": "https://www.youtube.com/watch?v=r7qovpFAGrQ",
+      "source": "youtube",
+      "quality": "high"
+    },
+    {
+      "id": "8",
+      "title": "Sunflower",
+      "artist": "Post Malone & Swae Lee",
+      "artistId": "7",
+      "album": "Spider-Man: Into the Spider-Verse",
+      "albumId": "6",
+      "duration": 158,
+      "artwork": "https://i.scdn.co/image/ab67616d0000b273c9f4c8e4c4d4f5d1a6b8c9d1",
+      "url": "https://www.youtube.com/watch?v=ApXoWvfEY1U",
+      "source": "youtube",
+      "quality": "high"
+    },
+    {
+      "id": "9",
+      "title": "Circles",
+      "artist": "Post Malone",
+      "artistId": "7",
+      "album": "Hollywood's Bleeding",
+      "albumId": "7",
+      "duration": 215,
+      "artwork": "https://i.scdn.co/image/ab67616d0000b273a6f4c8e4c4d4f5d1a6b8c9d1",
+      "url": "https://www.youtube.com/watch?v=Bn5U2vX1PnM",
+      "source": "youtube",
+      "quality": "high"
+    },
+    {
+      "id": "10",
+      "title": "Don't Start Now",
+      "artist": "Dua Lipa",
+      "artistId": "8",
+      "album": "Future Nostalgia",
+      "albumId": "8",
+      "duration": 183,
+      "artwork": "https://i.scdn.co/image/ab67616d0000b273b5f4c8e4c4d4f5d1a6b8c9d1",
+      "url": "https://www.youtube.com/watch?v=KlyXNRrsk4A",
+      "source": "youtube",
+      "quality": "high"
+    }
+  ]
+}
