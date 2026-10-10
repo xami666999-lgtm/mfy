@@ -8,9 +8,10 @@ import { PosterStatus, stateCaption } from '../components/PosterTile'
 import { genreOf, scoreOf } from '../components/PosterMarks'
 import { Achievements } from '../components/Achievements'
 import { viewingBadges } from '../lib/achievements'
+import { hideUpNext, rwindStats, upNext } from '../lib/rwind'
 import { isAnimeItem } from '../lib/trackers'
 
-type Tab = 'status' | 'watched' | 'watchlist' | 'favorites' | 'history' | 'lists' | 'badges'
+type Tab = 'status' | 'watched' | 'watchlist' | 'favorites' | 'history' | 'lists' | 'badges' | 'upnext'
 type LibFilter = 'all' | 'recent' | 'watching' | 'planned' | 'done' | 'movies' | 'shows' | 'anime'
 
 function watchedRows(rows: { completed?: boolean; seriesCompleted?: boolean; progress?: number; duration?: number; mediaId?: number | string; mediaType?: string; watchedAt?: string }[]) {
@@ -125,6 +126,7 @@ export default function Library() {
     { id: 'watchlist' as const, label: 'Saved', icon: Bookmark, count: watchRows.length },
     { id: 'favorites' as const, label: 'Favorites', icon: Heart, count: favoriteRows.length },
     { id: 'history' as const, label: 'History', icon: Star, count: historyRows.length },
+    { id: 'upnext' as const, label: 'Up Next', icon: Play, count: upNext(historyRows).length },
     { id: 'lists' as const, label: 'Collections', icon: List, count: customLists.length },
     { id: 'badges' as const, label: 'Badges', icon: Award, count: viewingBadges(historyRows).filter((b) => b.earned).length },
   ]
@@ -256,6 +258,36 @@ export default function Library() {
           <Grid items={favoriteRows} onRemove={(i) => removeFavorite(i.mediaId, i.mediaType)} />
         )}
         {tab === 'history' && <Grid items={historyRows} />}
+        {tab === 'upnext' && (
+          <div className="space-y-8">
+            <section className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {[
+                ['Hours', rwindStats(historyRows).hours],
+                ['Plays', rwindStats(historyRows).plays],
+                ['Streak', rwindStats(historyRows).streak],
+                ['Top show', rwindStats(historyRows).topShow],
+                ['Top movie', rwindStats(historyRows).topMovie],
+              ].map(([label, value]) => (
+                <div key={String(label)} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                  <p className="text-[11px] text-white/40">{label}</p>
+                  <strong className="text-white text-lg">{value}</strong>
+                </div>
+              ))}
+            </section>
+            <section>
+              <h3 className="text-white text-lg font-semibold mb-3">Up Next</h3>
+              <div className="lib-grid">
+                {upNext(historyRows).map((item) => (
+                  <button key={item.id} type="button" className="poster-card text-left" onClick={() => openItem(item.mediaId, item.mediaType, { ...item, episode: item.nextEpisode })}>
+                    {posterUrl(item.posterPath) ? <img src={posterUrl(item.posterPath)} alt="" /> : <div className="poster-fallback">{item.title}</div>}
+                    <span className="block text-xs text-white/70 mt-2">{item.title} · E{item.nextEpisode}</span>
+                    <span className="text-[11px] text-white/35" onClick={(e) => { e.stopPropagation(); hideUpNext(String(item.mediaId)); setTab('status'); setTab('upnext') }}>Hide</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          </div>
+        )}
         {tab === 'badges' && <Achievements history={watchHistory} />}
         {tab === 'lists' && (
           <div className="space-y-6">
