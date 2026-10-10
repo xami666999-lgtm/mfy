@@ -126,7 +126,7 @@ export default function Library() {
     { id: 'watchlist' as const, label: 'Saved', icon: Bookmark, count: watchRows.length },
     { id: 'favorites' as const, label: 'Favorites', icon: Heart, count: favoriteRows.length },
     { id: 'history' as const, label: 'History', icon: Star, count: historyRows.length },
-    { id: 'upnext' as const, label: 'Up Next', icon: Play, count: upNext(historyRows).length },
+    { id: 'upnext' as const, label: 'Rwind', icon: Play, count: upNext(historyRows).length },
     { id: 'lists' as const, label: 'Collections', icon: List, count: customLists.length },
     { id: 'badges' as const, label: 'Badges', icon: Award, count: viewingBadges(historyRows).filter((b) => b.earned).length },
   ]
@@ -264,7 +264,7 @@ export default function Library() {
               {[
                 ['Hours', rwindStats(historyRows).hours],
                 ['Plays', rwindStats(historyRows).plays],
-                ['Streak', rwindStats(historyRows).streak],
+                ['Streak', `${rwindStats(historyRows).streak} days`],
                 ['Top show', rwindStats(historyRows).topShow],
                 ['Top movie', rwindStats(historyRows).topMovie],
               ].map(([label, value]) => (
@@ -278,11 +278,31 @@ export default function Library() {
               <h3 className="text-white text-lg font-semibold mb-3">Up Next</h3>
               <div className="lib-grid">
                 {upNext(historyRows).map((item) => (
-                  <button key={item.id} type="button" className="poster-card text-left" onClick={() => openItem(item.mediaId, item.mediaType, { ...item, episode: item.nextEpisode })}>
-                    {posterUrl(item.posterPath) ? <img src={posterUrl(item.posterPath)} alt="" /> : <div className="poster-fallback">{item.title}</div>}
+                  <div key={item.id} className="text-left">
+                    <button type="button" className="poster-card w-full" onClick={() => openItem(item.mediaId, item.mediaType, { ...item, episode: item.nextEpisode })}>
+                      {posterUrl(item.posterPath) ? <img src={posterUrl(item.posterPath)} alt="" /> : <div className="poster-fallback">{item.title}</div>}
+                    </button>
                     <span className="block text-xs text-white/70 mt-2">{item.title} · E{item.nextEpisode}</span>
-                    <span className="text-[11px] text-white/35" onClick={(e) => { e.stopPropagation(); hideUpNext(String(item.mediaId)); setTab('status'); setTab('upnext') }}>Hide</span>
-                  </button>
+                    <button type="button" className="text-[11px] text-white/35" onClick={() => { hideUpNext(String(item.mediaId)); setTab('status'); setTab('upnext') }}>Hide</button>
+                  </div>
+                ))}
+              </div>
+            </section>
+            <section>
+              <h3 className="text-white text-lg font-semibold mb-3">Every play</h3>
+              <div className="space-y-2">
+                {historyRows.slice(0, 80).map((item) => (
+                  <div key={item.id} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                    <button type="button" className="text-left flex-1" onClick={() => openItem(item.mediaId, item.mediaType, item)}>
+                      <strong className="text-sm text-white">{item.title}</strong>
+                      <p className="text-[11px] text-white/40">{item.mediaType === 'movie' ? 'Movie' : `S${item.season || 1} E${item.episode || 1}`} · {String(item.watchedAt || '').slice(0, 10)}</p>
+                    </button>
+                    <input type="date" defaultValue={String(item.watchedAt || '').slice(0, 10)} onChange={(e) => {
+                      const next = historyRows.map((row) => row.id === item.id ? { ...row, watchedAt: new Date(e.target.value).toISOString() } : row)
+                      useStore.getState().setWatchHistory(next)
+                    }} className="bg-transparent text-xs text-white/60" />
+                    <button type="button" className="text-[11px] text-white/40" onClick={() => useStore.getState().removeHistory(item.mediaId, item.mediaType)}>Delete</button>
+                  </div>
                 ))}
               </div>
             </section>
