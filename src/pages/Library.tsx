@@ -93,7 +93,15 @@ export default function Library() {
 
   const watched = watchedRows(watchHistory)
   const lists = [watchlist, favorites, watchHistory].map((rows) => Array.isArray(rows) ? rows : [])
-  const [watchRows, favoriteRows, historyRows] = lists
+  const [watchRows, favoriteRows, rawHistory] = lists
+  const historyMap = new Map<string, any>()
+  for (const row of rawHistory) {
+    const key = `${row.mediaType || 'tv'}|${row.mediaId}`
+    const prev = historyMap.get(key)
+    if (!prev || Date.parse(row.watchedAt || '') >= Date.parse(prev.watchedAt || '')) historyMap.set(key, row)
+  }
+  const historyRows = [...historyMap.values()]
+  const watchedIds = new Set(watched.map((row) => `${row.mediaType || 'tv'}|${row.mediaId}`))
   const libraryRows = collectLibrary(lists)
   const filters: { id: LibFilter; label: string }[] = [
     { id: 'all', label: 'All' },
@@ -226,7 +234,7 @@ export default function Library() {
           <div className="space-y-8">
             <section>
               <h3 className="text-white text-lg font-semibold mb-3">Watching</h3>
-              <Grid items={historyRows.filter((h) => !h.completed && Number(h.progress) > 0)} />
+              <Grid items={historyRows.filter((h) => !h.completed && !h.seriesCompleted && Number(h.progress) > 0 && !watchedIds.has(`${h.mediaType || 'tv'}|${h.mediaId}`))} />
             </section>
             <section>
               <h3 className="text-white text-lg font-semibold mb-3">Plan to watch</h3>

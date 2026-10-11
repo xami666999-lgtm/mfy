@@ -545,12 +545,14 @@ export default function PlayerPage() {
   }, [selectedMedia?.id, selectedMedia?.episode])
 
   useEffect(() => {
-    const id = setInterval(() => { saveProgress(false).catch(() => {}) }, 4000)
+    const id = setInterval(() => { saveProgress(false).catch(() => {}) }, 2000)
+    const soon = window.setTimeout(() => { saveProgress(false).catch(() => {}) }, 2000)
     const onHide = () => { saveProgress(false).catch(() => {}) }
     window.addEventListener('beforeunload', onHide)
     document.addEventListener('visibilitychange', onHide)
     return () => {
       clearInterval(id)
+      window.clearTimeout(soon)
       window.removeEventListener('beforeunload', onHide)
       document.removeEventListener('visibilitychange', onHide)
       saveProgress(false).catch(() => {})
@@ -1110,8 +1112,7 @@ export default function PlayerPage() {
   async function saveProgress(forceDone = false) {
     if (!selectedMedia || selectedMedia.type === 'iptv') return
     const wall = Math.max(0, (Date.now() - startedAt.current) / 1000)
-    let p = Math.max(progress, bestProgress.current)
-    if (Date.now() - lastVideoAt.current > 3000) p = Math.max(p, wall)
+    let p = Math.max(progress, bestProgress.current, wall >= 2 ? wall : 0)
     let d = Math.max(Number.isFinite(dur) ? dur : 0, bestDuration.current, expectedSec || 0)
     try {
       const w = document.querySelector('webview') as any
