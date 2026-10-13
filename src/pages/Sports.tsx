@@ -42,6 +42,8 @@ export default function Sports() {
   const [busy, setBusy] = useState('')
   const [err, setErr] = useState('')
   const [multi, setMulti] = useState(false)
+  const [slots, setSlots] = useState<1 | 2 | 3 | 4 | 5>(2)
+  const [layout, setLayout] = useState<'split' | 'focus' | 'stack'>('split')
   const [picked, setPicked] = useState<SportMatch[]>([])
 
   useEffect(() => {
@@ -105,7 +107,7 @@ export default function Sports() {
 
   async function play(match: SportMatch) {
     if (multi) {
-      setPicked((rows) => rows.some((row) => row.id === match.id) ? rows.filter((row) => row.id !== match.id) : [...rows, match].slice(0, 4))
+      setPicked((rows) => rows.some((row) => row.id === match.id) ? rows.filter((row) => row.id !== match.id) : [...rows, match].slice(0, slots))
       return
     }
     setErr('')
@@ -136,7 +138,8 @@ export default function Sports() {
       }
       if (!urls.length) { setErr('None of those games have a working feed.'); return }
       setIptvMultiview(true)
-      setIptvMultiviewUrls(urls.slice(0, 4))
+      try { sessionStorage.setItem('mfy-sports-grid', JSON.stringify({ layout, slots })) } catch {}
+      setIptvMultiviewUrls(urls.slice(0, slots))
       setSelectedMedia({ id: 'sports-multi', type: 'iptv', title: 'Sports multi view', name: 'Sports multi view' } as any)
       setCurrentStreamUrl(urls[0])
       setCurrentPage('player')
@@ -151,6 +154,12 @@ export default function Sports() {
         <h1 className="text-[22px] font-semibold">Sports</h1>
         <div className="flex gap-2">
           <button type="button" className={`h-9 px-3 rounded-full text-xs ${multi ? 'bg-white text-black' : 'bg-white/10 text-white'}`} onClick={() => { setMulti((v) => !v); setPicked([]) }}>Multi view</button>
+          {multi && [1, 2, 3, 4, 5].map((n) => (
+            <button key={n} type="button" className={`h-9 w-9 rounded-full text-xs ${slots === n ? 'bg-white text-black' : 'bg-white/10 text-white'}`} onClick={() => { setSlots(n as 1 | 2 | 3 | 4 | 5); setPicked((rows) => rows.slice(0, n)) }}>{n}</button>
+          ))}
+          {multi && ['split', 'focus', 'stack'].map((name) => (
+            <button key={name} type="button" className={`h-9 px-3 rounded-full text-xs capitalize ${layout === name ? 'bg-white text-black' : 'bg-white/10 text-white'}`} onClick={() => setLayout(name as 'split' | 'focus' | 'stack')}>{name}</button>
+          ))}
           {multi && <button type="button" className="h-9 px-3 rounded-full bg-white text-black text-xs" onClick={playMulti} disabled={!picked.length}>Play {picked.length || ''}</button>}
         </div>
       </div>

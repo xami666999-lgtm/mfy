@@ -48,6 +48,9 @@ export default function PlayerPage() {
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [streamUrl, setStreamUrl] = useState('')
+  const [sportsLayout, setSportsLayout] = useState<'split' | 'focus' | 'stack'>(() => {
+    try { return JSON.parse(sessionStorage.getItem('mfy-sports-grid') || '{}').layout || 'split' } catch { return 'split' }
+  })
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const [dur, setDur] = useState(0)
@@ -1377,14 +1380,26 @@ export default function PlayerPage() {
           </div>
         )}
         {error && <div className="player-error" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'red', padding: 24, textAlign: 'center' }}>{error}</div>}
-        {loaded && !error && iptvMultiview && iptvMultiviewUrls.length > 1 && (
-          <div style={{ width: '100%', height: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: iptvMultiviewUrls.length > 2 ? '1fr 1fr' : '1fr', background: '#000' }}>
-            {iptvMultiviewUrls.slice(0, 4).map((url) => (
-              <iframe key={url} src={url} title="Sports" allow="autoplay; fullscreen; encrypted-media" allowFullScreen referrerPolicy="no-referrer" style={{ width: '100%', height: '100%', border: 0, background: '#000' }} />
-            ))}
+        {loaded && !error && iptvMultiview && iptvMultiviewUrls.length > 0 && (
+          <div style={{ width: '100%', height: '100%', position: 'relative', background: '#000' }}>
+            <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 6, display: 'flex', gap: 6 }}>
+              {(['split', 'focus', 'stack'] as const).map((name) => (
+                <button key={name} type="button" onClick={() => setSportsLayout(name)} style={{ height: 32, padding: '0 10px', borderRadius: 999, border: 0, background: sportsLayout === name ? '#fff' : 'rgba(255,255,255,0.12)', color: sportsLayout === name ? '#000' : '#fff', fontSize: 12 }}>{name}</button>
+              ))}
+            </div>
+            <div style={{
+              width: '100%', height: '100%', display: 'grid', gap: 4, padding: 4,
+              gridTemplateColumns: sportsLayout === 'stack' ? '1fr' : sportsLayout === 'focus' ? '2fr 1fr' : iptvMultiviewUrls.length === 1 ? '1fr' : iptvMultiviewUrls.length === 3 ? '1fr 1fr 1fr' : iptvMultiviewUrls.length >= 5 ? '1fr 1fr 1fr' : '1fr 1fr',
+              gridTemplateRows: sportsLayout === 'stack' ? `repeat(${iptvMultiviewUrls.length}, 1fr)` : iptvMultiviewUrls.length <= 2 ? '1fr' : '1fr 1fr',
+              background: '#000',
+            }}>
+              {iptvMultiviewUrls.slice(0, 5).map((url, index) => (
+                <iframe key={url} src={url} title="Sports" allow="autoplay; fullscreen; encrypted-media" allowFullScreen referrerPolicy="no-referrer" style={{ width: '100%', height: '100%', border: 0, background: '#000', gridColumn: sportsLayout === 'focus' && index === 0 ? '1' : undefined, gridRow: sportsLayout === 'focus' && index === 0 ? '1 / span 2' : undefined }} />
+              ))}
+            </div>
           </div>
         )}
-        {loaded && !error && !(iptvMultiview && iptvMultiviewUrls.length > 1) && (isPlayerEmbedUrl(streamUrl) || selectedMedia?.type === 'iptv') && !isRealElectron() && (
+        {loaded && !error && !(iptvMultiview && iptvMultiviewUrls.length > 0) && (isPlayerEmbedUrl(streamUrl) || selectedMedia?.type === 'iptv') && !isRealElectron() && (
           <iframe
             ref={iframeRef}
             key={streamUrl}
