@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
-import { sportsApi, badgeFallbacks, type SportMatch } from '../api/sports'
+import { sportsApi, timStreamsApi, watchfootyApi, badgeFallbacks, type SportMatch } from '../api/sports'
 import { useStore } from '../store'
 
 const ROWS = [
@@ -36,11 +36,13 @@ function dayLabel(n: number) {
 }
 
 export default function Sports() {
-  const { setCurrentStreamUrl, setCurrentPage, setSelectedMedia } = useStore()
+  const { setCurrentStreamUrl, setCurrentPage, setSelectedMedia, setIptvMultiview, setIptvMultiviewUrls } = useStore()
   const [rows, setRows] = useState<Record<string, SportMatch[]>>({})
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState('')
   const [err, setErr] = useState('')
+  const [multi, setMulti] = useState(false)
+  const [picked, setPicked] = useState<SportMatch[]>([])
 
   useEffect(() => {
     let stop = false
@@ -66,17 +68,53 @@ export default function Sports() {
     return () => { stop = true }
   }, [])
 
+  function firstUrl(value: any): string {
+    if (!value) return ''
+    if (typeof value === 'string' && /^https?:/i.test(value)) return value
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const hit = firstUrl(item)
+        if (hit) return hit
+      }
+      return ''
+    }
+    if (typeof value === 'object') {
+      for (const key of ['embedUrl', 'embed', 'url', 'stream', 'link', 'player']) {
+        const hit = firstUrl(value[key])
+        if (hit) return hit
+      }
+    }
+    return ''
+  }
+
+  async function workingUrl(match: SportMatch) {
+    for (const s of match.sources || []) {
+      const list = await sportsApi.getStreams(s.source, s.id).catch(() => [])
+      const pick = list.find((x) => x.hd && /^https?:/i.test(x.embedUrl || '')) || list.find((x) => /^https?:/i.test(x.embedUrl || ''))
+      if (pick?.embedUrl) return pick.embedUrl
+    }
+    const title = String(match.title || '').toLowerCase()
+    const wf = await watchfootyApi.matches(match.category || 'football').catch(() => [])
+    const wfHit = (wf || []).find((item: any) => title && String(item.title || item.name || item.match || '').toLowerCase().includes(title.slice(0, 12)))
+    const wfUrl = firstUrl(wfHit)
+    if (wfUrl) return wfUrl
+    const tim = await timStreamsApi.live().catch(() => ({ events: [] as any[] }))
+    const timHit = (tim.events || []).find((item: any) => title && String(item.title || item.name || '').toLowerCase().includes(title.slice(0, 12)))
+    return firstUrl(timHit)
+  }
+
   async function play(match: SportMatch) {
+    if (multi) {
+      setPicked((rows) => rows.some((row) => row.id === match.id) ? rows.filter((row) => row.id !== match.id) : [...rows, match].slice(0, 4))
+      return
+    }
     setErr('')
     setBusy(match.id)
     try {
-      let url = ''
-      for (const s of match.sources || []) {
-        const list = await sportsApi.getStreams(s.source, s.id).catch(() => [])
-        const pick = list.find((x) => x.hd && /^https?:/i.test(x.embedUrl || '')) || list.find((x) => /^https?:/i.test(x.embedUrl || ''))
-        if (pick?.embedUrl) { url = pick.embedUrl; break }
-      }
-      if (!url) { setErr('No Streamed feed for this game yet.'); return }
+      const url = await workingUrl(match)
+      if (!url) { setErr('No working feed for this game yet.'); return }
+      setIptvMultiview(false)
+      setIptvMultiviewUrls([])
       setSelectedMedia({ id: match.id, type: 'iptv', title: match.title, name: match.title } as any)
       setCurrentStreamUrl(url)
       setCurrentPage('player')
@@ -87,9 +125,35 @@ export default function Sports() {
     }
   }
 
+  async function playMulti() {
+    setErr('')
+    setBusy('multi')
+    try {
+      const urls: string[] = []
+      for (const match of picked) {
+        const url = await workingUrl(match)
+        if (url) urls.push(url)
+      }
+      if (!urls.length) { setErr('None of those games have a working feed.'); return }
+      setIptvMultiview(true)
+      setIptvMultiviewUrls(urls.slice(0, 4))
+      setSelectedMedia({ id: 'sports-multi', type: 'iptv', title: 'Sports multi view', name: 'Sports multi view' } as any)
+      setCurrentStreamUrl(urls[0])
+      setCurrentPage('player')
+    } finally {
+      setBusy('')
+    }
+  }
+
   return (
     <div className="min-h-full bg-[#0b0b0b] text-white px-6 py-6">
-      <h1 className="text-[22px] font-semibold mb-5">Sports</h1>
+      <div className="flex items-center justify-between mb-5">
+        <h1 className="text-[22px] font-semibold">Sports</h1>
+        <div className="flex gap-2">
+          <button type="button" className={`h-9 px-3 rounded-full text-xs ${multi ? 'bg-white text-black' : 'bg-white/10 text-white'}`} onClick={() => { setMulti((v) => !v); setPicked([]) }}>Multi view</button>
+          {multi && <button type="button" className="h-9 px-3 rounded-full bg-white text-black text-xs" onClick={playMulti} disabled={!picked.length}>Play {picked.length || ''}</button>}
+        </div>
+      </div>
       {err && <p className="text-sm text-red-400 mb-3">{err}</p>}
       {loading && <p className="text-white/40 text-sm flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading games…</p>}
       {ROWS.map((row) => {

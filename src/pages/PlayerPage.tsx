@@ -40,6 +40,8 @@ export default function PlayerPage() {
     upsertHistory,
     autoplayNext,
     externalPlayer,
+    iptvMultiview,
+    iptvMultiviewUrls,
   } = useStore()
   const posterAsked = useRef<Set<string>>(new Set())
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -1375,7 +1377,14 @@ export default function PlayerPage() {
           </div>
         )}
         {error && <div className="player-error" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'red', padding: 24, textAlign: 'center' }}>{error}</div>}
-        {loaded && !error && (isPlayerEmbedUrl(streamUrl) || selectedMedia?.type === 'iptv') && !isRealElectron() && (
+        {loaded && !error && iptvMultiview && iptvMultiviewUrls.length > 1 && (
+          <div style={{ width: '100%', height: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: iptvMultiviewUrls.length > 2 ? '1fr 1fr' : '1fr', background: '#000' }}>
+            {iptvMultiviewUrls.slice(0, 4).map((url) => (
+              <iframe key={url} src={url} title="Sports" allow="autoplay; fullscreen; encrypted-media" allowFullScreen referrerPolicy="no-referrer" style={{ width: '100%', height: '100%', border: 0, background: '#000' }} />
+            ))}
+          </div>
+        )}
+        {loaded && !error && !(iptvMultiview && iptvMultiviewUrls.length > 1) && (isPlayerEmbedUrl(streamUrl) || selectedMedia?.type === 'iptv') && !isRealElectron() && (
           <iframe
             ref={iframeRef}
             key={streamUrl}
