@@ -506,8 +506,8 @@ export default function NuvioHome() {
   }, [watchHistory, profiles, currentProfile, skips])
 
   useEffect(() => {
-    const rows = (watchHistory || []).slice(0, 12).filter((h: any) => h.mediaType === 'tv' && Number(h.season) > 0 && Number(h.episode) > 0)
-    const ids = [...new Set(rows.map((h: any) => String(h.mediaId)))].slice(0, 8)
+    const rows = (watchHistory || []).filter((h: any) => h.mediaType === 'tv' && Number(h.season) > 0 && Number(h.episode) > 0 && !/^(al-|nuvio-|stremio-)/i.test(String(h.id || '')))
+    const ids = [...new Set(rows.map((h: any) => String(h.mediaId)))].slice(0, 18)
     if (!ids.length) return
     let dead = false
     ids.forEach((id) => {
@@ -525,7 +525,11 @@ export default function NuvioHome() {
             if (n === Number(h.season)) left += Math.max(0, count - Number(h.episode || 0))
             else left += count
           }
-          if (left > 0) next[`${id}-${h.season}`] = left === 1 ? '1 left' : `${left} left`
+          const airing = !/ended|canceled|cancelled/i.test(String(d.status || ''))
+          const nextEp = Number(h.episode || 1) + (h.completed ? 1 : 0)
+          next[`${id}-${h.season}`] = left > 0
+            ? `${left === 1 ? '1 left' : `${left} left`} · Next E${nextEp}`
+            : airing ? 'Caught up' : 'Finished'
         }
         setLeftMap((prev) => ({ ...prev, ...next }))
       }).catch(() => {})
@@ -619,7 +623,8 @@ export default function NuvioHome() {
     const prev = cwSeen.get(key)
     if (!prev || String(h.watchedAt || '') > String(prev.watchedAt || '')) cwSeen.set(key, h)
   }
-  const cw = [...cwSeen.values()].filter((h) => watchFace(watchHistory, h.mediaId, h).state !== 'watched').sort((a, b) => Date.parse(b.watchedAt || '') - Date.parse(a.watchedAt || '')).slice(0, 18)
+  const realPlay = (h: any) => !/^(al-|nuvio-|stremio-)/i.test(String(h?.id || ''))
+  const cw = [...cwSeen.values()].filter((h) => realPlay(h) && watchFace(watchHistory, h.mediaId, h).state !== 'watched').sort((a, b) => Date.parse(b.watchedAt || '') - Date.parse(a.watchedAt || '')).slice(0, 18)
   const genreLine = (heroDetail?.genres?.length ? heroDetail.genres.slice(0, 2).map((g: any) => g.name) : (hero?.genre_ids || []).slice(0, 2).map((id: number) => genreNames[id]).filter(Boolean))
   const match = hero?.vote_average ? Math.round(hero.vote_average * 10) : 0
 
@@ -728,9 +733,7 @@ export default function NuvioHome() {
                       )}
                     </div>
                     <p>{h.title || 'Title'}</p>
-                    {[stopLine(h), leftMap[`${h.mediaId}-${h.season}`]].filter(Boolean).length > 0 && (
-                      <small>{[stopLine(h), leftMap[`${h.mediaId}-${h.season}`]].filter(Boolean).join(' · ')}</small>
-                    )}
+                    <small>{[stopLine(h), leftMap[`${h.mediaId}-${h.season}`] || 'Saving progress'].filter(Boolean).join(' · ')}</small>
                   </button>
                   <button
                     type="button"

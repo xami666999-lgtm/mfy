@@ -96,6 +96,8 @@ export function watchFace(hist: any[] | undefined, mediaId: any, item?: any): Wa
     || hitFinale
     || (!movie && total > 0 && doneRows.some((h) => (Number(h.episode) || 0) >= total))
 
+  if (caughtUp && /ended|canceled|cancelled/i.test(String(item?.status || ''))) return { state: 'watched', pct: 100, label: 'Finished' }
+  if (caughtUp && item?.status) return { state: 'started', pct: 100, label: 'Caught up' }
   if (caughtUp) return { state: 'watched', pct: 100, label: 'Finished' }
 
   const watchedThrough = episodeDone ? ep : Math.max(0, ep - 1)
