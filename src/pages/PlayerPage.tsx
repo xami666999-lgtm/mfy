@@ -316,7 +316,6 @@ export default function PlayerPage() {
       if (e.key === 'ArrowRight') { e.preventDefault(); seekBy(loadPlaybackPrefs().seekFwd) }
       if (e.key === 'ArrowLeft') { e.preventDefault(); seekBy(-loadPlaybackPrefs().seekBack) }
       if (e.key === 'f' || e.key === 'F') toggleFullscreen()
-      if (e.key === 'n' || e.key === 'N') setShowRate(true)
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); goBack() }
     }
     window.addEventListener('keydown', onKey, true)
@@ -925,10 +924,6 @@ export default function PlayerPage() {
         isAnime: isAnimeItem(selectedMedia),
       })
     }
-    if (!ratedRef.current) {
-      setShowRate(true)
-      return
-    }
     if (nextUp) { playNextEpisode(); return }
     if (autoplayNext && selectedMedia?.type === 'tv' && !autoNextBusy) {
       autoNextCount.current += 1
@@ -951,7 +946,6 @@ export default function PlayerPage() {
           setAutoNextBusy(false)
           return
         }
-        setShowRate(true)
       } catch {
         const s = selectedMedia.season || 1
         const e = (selectedMedia.episode || 1) + 1
@@ -961,7 +955,6 @@ export default function PlayerPage() {
       }
       setAutoNextBusy(false)
     } else if (selectedMedia?.type === 'tv' || selectedMedia?.type === 'movie') {
-      setShowRate(true)
     }
   }
 
@@ -1315,9 +1308,6 @@ export default function PlayerPage() {
         </div>
       </div>
     )}
-    {showRate && (
-        <RateModal title={title} kind={isAnimeItem(selectedMedia) ? 'anime' : (selectedMedia?.type === 'movie' ? 'movie' : 'tv')} onSubmit={(s, n) => finishRate(s, n)} onSkip={() => finishRate()} />
-      )}
         <div className="mfy-player" onMouseMove={onMouseMove} style={{ background: '#000', height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div className="player-exit">
         <button type="button" onClick={goBack}>← Exit</button>
