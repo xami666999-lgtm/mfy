@@ -221,3 +221,24 @@ export async function importAnilistPublic(username: string) {
   } catch {}
   return added
 }
+
+export async function importAnilistAuthed() {
+  const token = (() => { try { return localStorage.getItem('mfy-anilist-token') || '' } catch { return '' } })()
+  if (!token) return 0
+  const res = await fetch('https://graphql.anilist.co', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ query: `query { Viewer { name mediaListOptions { scoreFormat } } MediaListCollection(userName: "", type: ANIME) { lists { entries { status progress score media { id title { english romaji } episodes } } } } }` }),
+  })
+  const me = await fetch('https://graphql.anilist.co', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ query: `query { Viewer { name } }` }),
+  }).then((r) => r.json()).catch(() => null)
+  const name = me?.data?.Viewer?.name || ''
+  if (name) {
+    try { localStorage.setItem('mfy-anilist-keep', name) } catch {}
+    return importAnilistPublic(name)
+  }
+  return 0
+}

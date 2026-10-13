@@ -469,6 +469,9 @@ export default function MetaDetails() {
               <TitleLogo id={preview.id} type={preview.type === 'movie' ? 'movie' : 'tv'} title={previewTitle} />
               <div className="nv-hero-actions">
                 <button type="button" className="nv-play" onClick={() => void handlePlay()}><Play size={18} fill="currentColor" /> Play</button>
+                {selectedMedia?.type !== 'movie' && (
+                  <a className="nv-play" href={`https://seriesgraph.com/search?q=${encodeURIComponent(String((detail as any)?.name || (detail as any)?.title || ''))}`} target="_blank" rel="noreferrer">Series Graph</a>
+                )}
               </div>
             </div>
           </div>

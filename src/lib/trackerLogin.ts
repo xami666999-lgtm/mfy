@@ -41,6 +41,7 @@ export async function consumeTrackerReturn() {
   if (access) {
     try { localStorage.setItem('mfy-anilist-token', access) } catch {}
     history.replaceState(null, '', location.pathname + location.search)
+    void import('../lib/importLists').then((m) => m.importAnilistAuthed?.()).catch(() => {})
     return 'anilist'
   }
   const q = new URLSearchParams(location.search)
