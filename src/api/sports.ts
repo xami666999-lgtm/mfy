@@ -57,9 +57,24 @@ export function badgeFallbacks(badge?: string) {
   const id = raw.replace(/^https?:\/\/[^/]+\//, '').replace(/^\/+/, '').replace(/\.(webp|png|jpe?g|svg)$/i, '')
   return [
     badgeUrl(badge),
+    raw.startsWith('http') ? raw : '',
     `${BASE}/api/images/proxy/${encodeURIComponent(id)}.webp`,
     `${BASE}/api/images/badge/${encodeURIComponent(id)}.png`,
+    `${BASE}/api/images/badge/${encodeURIComponent(id)}.jpg`,
+    `https://streamed.pk/api/images/badge/${encodeURIComponent(id)}.webp`,
   ].filter((u, i, a) => u && a.indexOf(u) === i)
+}
+
+export async function teamBadge(name: string) {
+  const q = String(name || '').trim()
+  if (!q) return ''
+  try {
+    const res = await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(q)}`)
+    const data = await res.json()
+    return String(data?.teams?.[0]?.strBadge || data?.teams?.[0]?.strLogo || '')
+  } catch {
+    return ''
+  }
 }
 
 export function posterUrl(poster?: string) {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
-import { sportsApi, timStreamsApi, watchfootyApi, badgeFallbacks, type SportMatch } from '../api/sports'
+import { sportsApi, timStreamsApi, watchfootyApi, badgeFallbacks, teamBadge, type SportMatch } from '../api/sports'
 import { useStore } from '../store'
 
 const ROWS = [
@@ -45,6 +45,7 @@ export default function Sports() {
   const [slots, setSlots] = useState<1 | 2 | 3 | 4 | 5>(2)
   const [layout, setLayout] = useState<'split' | 'focus' | 'stack'>('split')
   const [picked, setPicked] = useState<SportMatch[]>([])
+  const [query, setQuery] = useState('')
 
   useEffect(() => {
     let stop = false
@@ -136,23 +137,27 @@ export default function Sports() {
         const url = await workingUrl(match)
         if (url) urls.push(url)
       }
-      if (!urls.length) { setErr('None of those games have a working feed.'); return }
+      if (!urls.length) { setErr('Pick a game, then Play. None of those have a working feed yet.'); return }
       setIptvMultiview(true)
       try { sessionStorage.setItem('mfy-sports-grid', JSON.stringify({ layout, slots })) } catch {}
       setIptvMultiviewUrls(urls.slice(0, slots))
       setSelectedMedia({ id: 'sports-multi', type: 'iptv', title: 'Sports multi view', name: 'Sports multi view' } as any)
       setCurrentStreamUrl(urls[0])
       setCurrentPage('player')
+    } catch {
+      setErr('Multi view could not start.')
     } finally {
       setBusy('')
     }
   }
 
+  const q = query.trim().toLowerCase()
   return (
     <div className="min-h-full bg-[#0b0b0b] text-white px-6 py-6">
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h1 className="text-[22px] font-semibold">Sports</h1>
-        <div className="flex gap-2">
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search team or game" className="h-9 w-full max-w-xs px-4 rounded-full bg-white/10 text-sm text-white" />
+        <div className="flex flex-wrap gap-2">
           <button type="button" className={`h-9 px-3 rounded-full text-xs ${multi ? 'bg-white text-black' : 'bg-white/10 text-white'}`} onClick={() => { setMulti((v) => !v); setPicked([]) }}>Multi view</button>
           {multi && [1, 2, 3, 4, 5].map((n) => (
             <button key={n} type="button" className={`h-9 w-9 rounded-full text-xs ${slots === n ? 'bg-white text-black' : 'bg-white/10 text-white'}`} onClick={() => { setSlots(n as 1 | 2 | 3 | 4 | 5); setPicked((rows) => rows.slice(0, n)) }}>{n}</button>
@@ -160,20 +165,20 @@ export default function Sports() {
           {multi && ['split', 'focus', 'stack'].map((name) => (
             <button key={name} type="button" className={`h-9 px-3 rounded-full text-xs capitalize ${layout === name ? 'bg-white text-black' : 'bg-white/10 text-white'}`} onClick={() => setLayout(name as 'split' | 'focus' | 'stack')}>{name}</button>
           ))}
-          {multi && <button type="button" className="h-9 px-3 rounded-full bg-white text-black text-xs" onClick={playMulti} disabled={!picked.length}>Play {picked.length || ''}</button>}
+          {multi && <button type="button" className="h-9 px-3 rounded-full bg-white text-black text-xs" onClick={playMulti}>{busy === 'multi' ? 'Starting…' : `Play ${picked.length || 0}`}</button>}
         </div>
       </div>
       {err && <p className="text-sm text-red-400 mb-3">{err}</p>}
       {loading && <p className="text-white/40 text-sm flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading games…</p>}
       {ROWS.map((row) => {
-        const list = rows[row.id] || []
-        if (!list.length && !loading) return null
+        const list = (rows[row.id] || []).filter((m) => !q || `${m.title} ${m.teams?.home?.name || ''} ${m.teams?.away?.name || ''}`.toLowerCase().includes(q))
+        if (!list.length) return null
         return (
           <section key={row.id} className="mb-7">
             <h2 className="text-[15px] font-semibold mb-3">{row.label}</h2>
             <div className="flex gap-3 overflow-x-auto pb-2">
               {list.map((m, i) => (
-                <GameCard key={m.id} match={m} wash={WASH[i % WASH.length]} busy={busy === m.id} onPlay={() => play(m)} />
+                <GameCard key={m.id} match={m} wash={WASH[i % WASH.length]} busy={busy === m.id} selected={picked.some((row) => row.id === m.id)} onPlay={() => play(m)} />
               ))}
             </div>
           </section>
@@ -183,7 +188,7 @@ export default function Sports() {
   )
 }
 
-function GameCard({ match, wash, busy, onPlay }: { match: SportMatch; wash: string; busy: boolean; onPlay: () => void }) {
+function GameCard({ match, wash, busy, selected, onPlay }: { match: SportMatch; wash: string; busy: boolean; selected?: boolean; onPlay: () => void }) {
   const homeName = match.teams?.home?.name || match.title.split(/\s+vs\s+/i)[0] || match.title
   const awayName = match.teams?.away?.name || match.title.split(/\s+vs\s+/i)[1] || ''
   const when = stamp(match.date)
@@ -192,7 +197,7 @@ function GameCard({ match, wash, busy, onPlay }: { match: SportMatch; wash: stri
   const league = (match.category || '').replace(/-/g, ' ')
   return (
     <button type="button" onClick={onPlay} className="shrink-0 w-[248px] text-left">
-      <div className="relative h-[148px] rounded-xl overflow-hidden" style={{ background: wash }}>
+      <div className={`relative h-[148px] rounded-xl overflow-hidden ${selected ? 'ring-2 ring-white' : ''}`} style={{ background: wash }}>
         <div className="flex items-center justify-between px-3 pt-2 text-[9px] tracking-wide text-white/70 uppercase">
           <span className="truncate">{league}</span>
           <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${live ? 'bg-red-600 text-white' : 'bg-white/15 text-white'}`}>{live ? 'LIVE' : upcoming ? 'UPCOMING' : 'TODAY'}</span>
@@ -224,9 +229,12 @@ function Side({ name, badge }: { name: string; badge?: string }) {
 }
 
 function Crest({ sources, name }: { sources: string[]; name: string }) {
+  const [extra, setExtra] = useState('')
   const [i, setI] = useState(0)
-  const src = sources[i]
+  const all = extra ? [...sources, extra] : sources
+  const src = all[i]
   if (!src) {
+    if (!extra && name) teamBadge(name).then((url) => { if (url) setExtra(url) })
     return <span className="mx-auto grid place-items-center w-11 h-11 rounded-full bg-white text-[11px] font-bold text-black">{(name || '?').replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase() || '?'}</span>
   }
   return (
@@ -235,7 +243,7 @@ function Crest({ sources, name }: { sources: string[]; name: string }) {
       alt=""
       className="mx-auto w-11 h-11 rounded-full bg-white object-contain p-1"
       referrerPolicy="no-referrer"
-      onError={() => setI((n) => n + 1)}
+      onError={() => { if (i + 1 >= all.length && !extra && name) teamBadge(name).then((url) => { if (url) setExtra(url) }); setI((n) => n + 1) }}
     />
   )
 }
