@@ -88,11 +88,11 @@ export default function LoginGate() {
 
   function create() {
     setErr('')
-    if (!username.trim()) return setErr('Username required.')
-    if (!validEmail(email)) return setErr('Enter a Gmail / email.')
-    if (password.length < 6) return setErr('Password min 6 characters.')
-    if (password !== confirm) return setErr('Passwords do not match.')
-    void deliver(email.trim().toLowerCase(), 'create')
+    if (!username.trim()) return setErr('Enter a name.')
+    if (password.length < 4) return setErr('Password needs 4 characters.')
+    const id = addProfile(username.trim(), avatar)
+    setProfilePin(id, password)
+    enter(id)
   }
 
   async function deliver(to: string, purpose: 'create' | 'reset') {
@@ -146,9 +146,9 @@ export default function LoginGate() {
 
   function signin() {
     setErr('')
-    const q = email.trim().toLowerCase()
-    const p = useStore.getState().profiles.find((x) => (x.email || '').toLowerCase() === q || x.name.toLowerCase() === q || x.name.toLowerCase() === username.trim().toLowerCase())
-    if (!p) return setErr('No account for that Gmail / username.')
+    const q = username.trim().toLowerCase()
+    const p = useStore.getState().profiles.find((x) => x.name.toLowerCase() === q)
+    if (!p) return setErr('No profile with that name.')
     if (p.pin && p.pin !== password) return setErr('Wrong password.')
     setPassword('')
     enter(p.id)
