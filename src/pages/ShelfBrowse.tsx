@@ -61,6 +61,10 @@ export default function ShelfBrowse() {
       <button type="button" className="shelf-back" onClick={() => setCurrentPage('home')}>
         <ArrowLeft size={16} /> Home
       </button>
+      <div className="px-6 pt-4">
+        <p className="text-[11px] tracking-[0.16em] text-white/40 mb-2">WATCH ORDER</p>
+        <p className="text-sm text-white/75 max-w-2xl mb-4">{query?.mode === 'studio' ? `Everything from ${query.title}, oldest first. Pick movies or shows.` : query?.title}</p>
+      </div>
       <h1>{query?.title || 'Browse'}</h1>
       {query?.mode === 'studio' && (
         <div className="flex gap-2 mb-4">

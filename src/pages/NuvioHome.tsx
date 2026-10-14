@@ -881,7 +881,6 @@ export default function NuvioHome() {
               logo={s.logo}
               delay={i * 0.4}
               onClick={() => {
-                if (s.franchise) { setSelectedFranchiseId(s.franchise); setCurrentPage('franchise'); return }
                 openShelf(s.name, 'movie', { with_companies: s.company || '', sort_by: 'primary_release_date.asc' }, 'studio')
               }}
             />
