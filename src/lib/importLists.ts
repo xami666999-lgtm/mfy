@@ -202,12 +202,11 @@ export async function importAnilistPublic(username: string) {
           completed: done,
         seriesCompleted: done,
         })
-      } else {
-        const key = `${match.mediaType}:${match.mediaId}`
-        if (!seen.has(key)) {
-          seen.add(key)
-          planned.push({ ...match, addedAt: new Date().toISOString(), isAnime: true })
-        }
+      }
+      const key = `${match.mediaType}:${match.mediaId}`
+      if (!seen.has(key)) {
+        seen.add(key)
+        planned.push({ ...match, addedAt: new Date().toISOString(), isAnime: true })
       }
       added += 1
     }

@@ -110,7 +110,7 @@ export default function App() {
       if (name) void importAnilistPublic(name).catch(() => {})
       void syncNuvioLibrary().catch(() => {})
     }
-    const timer = window.setInterval(copyNew, 120000)
+    const timer = window.setInterval(copyNew, 30000)
     window.addEventListener('focus', copyNew)
     return () => {
       window.clearInterval(timer)

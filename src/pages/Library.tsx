@@ -92,6 +92,12 @@ export default function Library() {
   }
 
   const watched = watchedRows(watchHistory)
+  useEffect(() => {
+    let name = ''
+    try { name = localStorage.getItem('mfy-anilist-keep') || localStorage.getItem('mfy-anilist-username') || '' } catch {}
+    if (name) void importAnilistPublic(name).catch(() => {})
+  }, [])
+
   const lists = [watchlist, favorites, watchHistory].map((rows) => Array.isArray(rows) ? rows : [])
   const [watchRows, favoriteRows, rawHistory] = lists
   const historyMap = new Map<string, any>()
