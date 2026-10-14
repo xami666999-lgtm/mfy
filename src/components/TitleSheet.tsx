@@ -88,26 +88,19 @@ export default function TitleSheet({ item, onClose }: { item: any; onClose: () =
       <div className="nf-sheet" role="dialog" aria-label={titleOf(item)} onClick={(e) => e.stopPropagation()}>
         <button type="button" className="nf-x" onClick={onClose} aria-label="Close">×</button>
         <div className="nf-sheet-hero" style={{ backgroundImage: backdrop ? `url(${backdrop})` : undefined }}>
-          {playBg && trailer && (
-            <iframe title="Trailer" className="bg-trailer" src={trailerEmbed(trailer, true)} allow="autoplay; encrypted-media" />
-          )}
           <div>
             <TitleLogo id={item.id} type={kind} title={titleOf(item)} />
-            <div className="nv-hero-actions">
-              <button type="button" className="nv-play" onClick={() => play()}><Play size={16} fill="currentColor" /> Play</button>
-              <button type="button" className="nv-more" onClick={more}>More Info</button>
+            <div className="flex items-center gap-3 text-sm text-white/80 mt-3">
+              {kind === 'movie' && extra?.runtime ? <span>{extra.runtime} min</span> : null}
+              <span>{yearOf(extra || item)}{kind !== 'movie' ? '-' : ''}</span>
+              {score > 0 && <span className="inline-flex items-center gap-1"><b>{score.toFixed(1)}</b><span className="bg-[#f5c518] text-black text-[10px] font-black px-1 rounded">IMDb</span></span>}
             </div>
+            {!!extra?.genres?.length && <div className="mt-4"><p className="text-[10px] tracking-[0.16em] text-white/35 mb-2">GENRES</p><div className="flex gap-2">{extra.genres.slice(0, 3).map((g: any) => <span key={g.id} className="px-3 py-1 rounded-full border border-white/15 text-xs">{g.name}</span>)}</div></div>}
+            <div className="mt-4"><p className="text-[10px] tracking-[0.16em] text-white/35 mb-2">SUMMARY</p><p className="text-sm text-white/75 max-w-lg">{extra?.overview || item.overview || ''}</p></div>
+            <button type="button" className="nv-play mt-4" onClick={() => play()}><Play size={16} fill="currentColor" /> Play</button>
           </div>
         </div>
         <div className="nf-sheet-body">
-          <div className="nf-match">
-            {match > 0 && <b>{match}% Match</b>}
-            <span>{yearOf(extra || item)}</span>
-            {extra?.number_of_seasons ? <span>{extra.number_of_seasons} Season{extra.number_of_seasons === 1 ? '' : 's'}</span> : null}
-            {kind === 'movie' && extra?.runtime ? <span>{extra.runtime}m</span> : null}
-            {(extra?.genres || []).slice(0, 3).map((g: any) => <span key={g.id}>{g.name}</span>)}
-          </div>
-          <p>{extra?.overview || item.overview || ''}</p>
           {eps.length > 0 && (
             <>
               <h3>Episodes</h3>

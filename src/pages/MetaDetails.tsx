@@ -474,7 +474,7 @@ export default function MetaDetails() {
     const backdrop = preview.backdrop_path
     return (
       <div className="page-fade-enter">
-        <div className="src-hero relative min-h-[640px] h-[680px] max-h-[86vh] overflow-hidden">
+        <div className="src-hero relative min-h-screen overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: backdrop ? `url(${BACKDROP_URL}${backdrop})` : undefined, backgroundColor: '#0a0a10' }}
@@ -539,11 +539,7 @@ export default function MetaDetails() {
         <div
           className="absolute inset-0 z-[1]"
           style={{
-            background: `
-              linear-gradient(90deg, rgba(6,5,10,0.92) 0%, rgba(6,5,10,0.55) 38%, rgba(6,5,10,0.15) 62%, transparent 78%),
-              linear-gradient(0deg, rgba(6,5,10,1) 0%, rgba(6,5,10,0.75) 22%, rgba(6,5,10,0.2) 55%, transparent 72%),
-              linear-gradient(180deg, rgba(6,5,10,0.45) 0%, transparent 28%)
-            `,
+            background: 'linear-gradient(90deg, rgba(8,6,4,0.72) 0%, rgba(8,6,4,0.28) 42%, rgba(8,6,4,0.08) 100%)',
           }}
         />
 
@@ -638,7 +634,7 @@ export default function MetaDetails() {
       )}
 
       {/* Tabs */}
-      <div className="px-8 mt-6">
+      <div className="px-8 mt-6 hidden">
         <div className="flex gap-4 border-b border-white/[0.05] mb-5">
           {(['details', 'streams'] as const).map((t) => (
             <button key={t} onClick={() => setActiveTab(t)} className={cn('pb-3 text-xs font-medium border-b-2 transition-all capitalize', activeTab === t ? 'text-white border-[#e50914]' : 'text-white/30 border-transparent hover:text-white/50')}>
