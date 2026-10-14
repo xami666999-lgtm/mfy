@@ -484,12 +484,6 @@ export default function MetaDetails() {
           <div className="relative z-10 h-full flex items-end px-8 md:px-12 pb-14">
             <div className="src-copy max-w-xl">
               <TitleLogo id={preview.id} type={preview.type === 'movie' ? 'movie' : 'tv'} title={previewTitle} />
-              <div className="nv-hero-actions">
-                <button type="button" className="nv-play" onClick={() => void handlePlay()}><Play size={18} fill="currentColor" /> Play</button>
-                {selectedMedia?.type !== 'movie' && (
-                  <a className="nv-play" href={`https://seriesgraph.com/search?q=${encodeURIComponent(String((detail as any)?.name || (detail as any)?.title || ''))}`} target="_blank" rel="noreferrer">Series Graph</a>
-                )}
-              </div>
             </div>
           </div>
         </div>
@@ -562,10 +556,6 @@ export default function MetaDetails() {
                 <p className="text-[14px] text-white/80 leading-relaxed max-w-lg">{detail.overview}</p>
               </div>
             )}
-            <div className="flex items-center gap-3 mt-auto">
-              <button type="button" onClick={() => handlePlay()} className="h-10 px-4 rounded-full bg-white text-black text-sm font-semibold inline-flex items-center gap-2"><Play className="w-4 h-4" fill="black" /> Play</button>
-              {trailerKey && <button type="button" onClick={() => window.open(`https://www.youtube.com/watch?v=${trailerKey}`, '_blank')} className="h-10 px-3 rounded-full bg-black/35 border border-white/15 text-sm text-white inline-flex items-center gap-2">Trailer</button>}
-            </div>
           </div>
           {selectedMedia?.type !== 'movie' && (
             <aside className="bg-black/55 border-l border-white/10 min-h-screen p-4 overflow-y-auto">

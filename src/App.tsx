@@ -29,7 +29,6 @@ const Guide = lazy(() => import('./pages/Guide'))
 const ProviderBrowse = lazy(() => import('./pages/ProviderBrowse'))
 const Franchise = lazy(() => import('./pages/Franchise'))
 const People = lazy(() => import('./pages/People'))
-import DetailExtras from './components/DetailExtras'
 import EpisodePanel from './components/EpisodePanel'
 import { youtubeEmbedUrl } from './api/youtubio'
 import { consumeTrackerReturn } from './lib/trackerLogin'
@@ -273,13 +272,7 @@ export default function App() {
         {currentPage === 'detail' && (
           <>
             <MetaDetails />
-            <DetailExtras
-              title={String((selectedMedia as any)?.title || (selectedMedia as any)?.name || '')}
-              type={selectedMedia?.type}
-              item={selectedMedia}
-              releaseDate={(selectedMedia as any)?.release_date || (selectedMedia as any)?.first_air_date}
-            />
-          </>
+</>
         )}
         {currentPage === 'player' && (ytId ? (
           <div className="h-full bg-black flex flex-col">
