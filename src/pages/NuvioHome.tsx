@@ -870,20 +870,19 @@ export default function NuvioHome() {
 
       <section className="nv-row">
         <h2 className="nv-kicker">Studios</h2>
-        <div className="studio-row">
-          {STUDIOS.map((s) => (
-            <button
+        <div className="svc-row">
+          {STUDIOS.map((s, i) => (
+            <Plate
               key={s.id}
-              type="button"
-              className="studio"
-              style={{ background: s.color, color: s.accent }}
+              name={s.name}
+              color={s.color}
+              logo={s.logo}
+              delay={i * 0.4}
               onClick={() => {
                 if (s.franchise) { setSelectedFranchiseId(s.franchise); setCurrentPage('franchise'); return }
                 openShelf(s.name, 'movie', { with_companies: s.company || '', sort_by: 'primary_release_date.asc' }, 'studio')
               }}
-            >
-              {s.logo ? <img src={s.logo} alt={s.name} /> : <b>{s.name}</b>}
-            </button>
+            />
           ))}
         </div>
       </section>

@@ -1,3 +1,12 @@
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault()
+  const key = 'mfy-chunk-reload'
+  if (!sessionStorage.getItem(key)) {
+    sessionStorage.setItem(key, '1')
+    window.location.reload()
+  }
+})
+
 import './preview-mock'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
