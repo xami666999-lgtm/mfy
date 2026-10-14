@@ -35,7 +35,7 @@ import { youtubeEmbedUrl } from './api/youtubio'
 import { consumeTrackerReturn } from './lib/trackerLogin'
 import { pullProgress } from './lib/githubProgress'
 import { importAnilistPublic } from './lib/importLists'
-import { syncNuvioLibrary } from './lib/nuvioLibrary'
+import { restoreNuvioLibrary, syncNuvioLibrary } from './lib/nuvioLibrary'
 import { importStremioLibrary, savedStremioKey } from './lib/stremioLibrary'
 import { isPhoneShell } from './lib/device'
 import { useSeriesTotals } from './lib/watchProgress'
@@ -108,7 +108,8 @@ export default function App() {
       let name = ''
       try { name = localStorage.getItem('mfy-anilist-keep') || localStorage.getItem('mfy-anilist-username') || '' } catch {}
       if (name) void importAnilistPublic(name).catch(() => {})
-      void syncNuvioLibrary().catch(() => {})
+      restoreNuvioLibrary()
+      void syncNuvioLibrary().catch(() => restoreNuvioLibrary())
     }
     const timer = window.setInterval(copyNew, 30000)
     window.addEventListener('focus', copyNew)

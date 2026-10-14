@@ -81,8 +81,34 @@ export async function importNuvioLibrary(email: string, password: string) {
   return added
 }
 
+function rememberNuvio(items: WatchlistItem[]) {
+  try {
+    const prev = JSON.parse(localStorage.getItem('mfy-nuvio-keep') || '[]')
+    const map = new Map<string, WatchlistItem>()
+    for (const item of [...(Array.isArray(prev) ? prev : []), ...items]) {
+      map.set(`${item.mediaType}:${item.mediaId}`, item)
+    }
+    localStorage.setItem('mfy-nuvio-keep', JSON.stringify([...map.values()]))
+  } catch {}
+}
+
+export function restoreNuvioLibrary() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('mfy-nuvio-keep') || '[]')
+    if (!Array.isArray(saved) || !saved.length) return 0
+    const store = useStore.getState()
+    const have = new Set(store.watchlist.map((item) => `${item.mediaType}:${item.mediaId}`))
+    const missing = saved.filter((item) => item?.mediaId && !have.has(`${item.mediaType}:${item.mediaId}`))
+    if (missing.length) store.setWatchlist([...missing, ...store.watchlist])
+    return missing.length
+  } catch {
+    return 0
+  }
+}
+
 async function addNuvioItems(items: any[]) {
   const store = useStore.getState()
+  const kept: WatchlistItem[] = []
   let added = 0
   for (const item of items.slice(0, 400)) {
     const series = String(item?.content_type || '') === 'series'
@@ -98,6 +124,7 @@ async function addNuvioItems(items: any[]) {
     }
     if (!id) continue
     const entry: WatchlistItem = { mediaId: id, mediaType: series ? 'tv' : 'movie', title, posterPath: poster, addedAt: new Date().toISOString() }
+    kept.push(entry)
     store.addToWatchlist(entry)
     const watched = Boolean(item?.watched) || Number(item?.progress || 0) > 0
     if (watched) {
@@ -117,5 +144,6 @@ async function addNuvioItems(items: any[]) {
     }
     added += 1
   }
+  if (kept.length) rememberNuvio(kept)
   return added
 }

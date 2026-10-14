@@ -1,6 +1,7 @@
 import { Bookmark, Heart, Star, Plus, Trash2, Play, List, Pencil, Check, X, Award } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { importAnilistPublic } from '../lib/importLists'
+import { restoreNuvioLibrary, syncNuvioLibrary } from '../lib/nuvioLibrary'
 import { useStore } from '../store'
 import { POSTER_URL } from '../api/tmdb'
 import { cn } from '../lib/utils'
@@ -97,6 +98,8 @@ export default function Library() {
     let name = ''
     try { name = localStorage.getItem('mfy-anilist-keep') || localStorage.getItem('mfy-anilist-username') || '' } catch {}
     if (name) void importAnilistPublic(name).catch(() => {})
+    restoreNuvioLibrary()
+    void syncNuvioLibrary().catch(() => restoreNuvioLibrary())
   }, [])
 
   const lists = [watchlist, favorites, watchHistory].map((rows) => Array.isArray(rows) ? rows : [])
