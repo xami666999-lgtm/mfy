@@ -552,7 +552,7 @@ export default function NuvioHome() {
     setCurrentPage('player')
   }
 
-  function openShelf(title: string, media: 'movie' | 'tv', params?: Record<string, string>, mode?: 'trending') {
+  function openShelf(title: string, media: 'movie' | 'tv', params?: Record<string, string>, mode?: 'trending' | 'studio') {
     try { sessionStorage.setItem('mfy-shelf', JSON.stringify({ title, media, params, mode: mode || 'discover' })) } catch {}
     setCurrentPage('shelf')
   }
@@ -885,7 +885,7 @@ export default function NuvioHome() {
               style={{ background: s.color, color: s.accent }}
               onClick={() => {
                 if (s.franchise) { setSelectedFranchiseId(s.franchise); setCurrentPage('franchise'); return }
-                openShelf(s.name, 'movie', { with_companies: s.company || '', sort_by: 'popularity.desc', 'vote_count.gte': '80' })
+                openShelf(s.name, 'movie', { with_companies: s.company || '', sort_by: 'primary_release_date.asc' }, 'studio')
               }}
             >
               {s.logo ? <img src={s.logo} alt={s.name} /> : <b>{s.name}</b>}
@@ -1144,7 +1144,7 @@ export default function NuvioHome() {
         <div className="house-row">
           {ANIME_STUDIOS.map((s) => (
             <div className="house" key={s.id}>
-              <button type="button" onClick={() => openShelf(s.name, 'tv', { with_companies: s.company, with_genres: '16', sort_by: 'popularity.desc' })}>
+              <button type="button" onClick={() => openShelf(s.name, 'tv', { with_companies: s.company, with_genres: '16', sort_by: 'first_air_date.asc' }, 'studio')}>
                 <img src={s.logo} alt={s.name} />
               </button>
               <span>{s.name}</span>
