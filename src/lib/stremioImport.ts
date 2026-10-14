@@ -24,7 +24,10 @@ export function addonTransport(input: string) {
 }
 
 function read(): InstalledAddon[] {
-  try { return JSON.parse(localStorage.getItem(KEY) || '[]') } catch { return [] }
+  try {
+    const rows = JSON.parse(localStorage.getItem(KEY) || '[]')
+    return Array.isArray(rows) ? rows.filter((row) => row && row.id) : []
+  } catch { return [] }
 }
 
 function write(rows: InstalledAddon[]) {

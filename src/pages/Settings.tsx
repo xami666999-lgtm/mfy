@@ -33,7 +33,7 @@ export default function Settings() {
   const [aniNote, setAniNote] = useState('')
   const [aniBusy, setAniBusy] = useState(false)
   const [addonUrl, setAddonUrl] = useState('')
-  const [addons, setAddons] = useState<InstalledAddon[]>(() => installedAddons())
+  const [addons, setAddons] = useState<InstalledAddon[]>(() => { const rows = installedAddons(); return Array.isArray(rows) ? rows : [] })
   const [addonNote, setAddonNote] = useState('')
   const [addonBusy, setAddonBusy] = useState(false)
   const [stremioEmail, setStremioEmail] = useState('')
@@ -113,7 +113,7 @@ export default function Settings() {
         </label>
         <button type="button" className="set-btn" disabled={addonBusy || !addonUrl.trim()} onClick={addAddon}>{addonBusy ? 'Checking…' : 'Install addon'}</button>
         {addonNote && <p className="set-note">{addonNote}</p>}
-        {addons.map((row) => (
+        {(Array.isArray(addons) ? addons : []).map((row) => (
           <div className="set-toggle" key={row.id}>
             <div>
               <strong>{row.name}</strong>
