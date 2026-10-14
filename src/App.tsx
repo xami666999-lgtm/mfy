@@ -276,7 +276,7 @@ export default function App() {
         )}
         {currentPage === 'player' && (ytId ? (
           <div className="h-full bg-black flex flex-col">
-            <iframe title="yt" src={youtubeEmbedUrl(String(ytId))} className="flex-1 w-full" allow="autoplay; fullscreen; encrypted-media" allowFullScreen />
+            <iframe title="yt" src={youtubeEmbedUrl(String(ytId))} className="flex-1 w-full" allow="autoplay; fullscreen; encrypted-media" sandbox="allow-scripts allow-same-origin allow-presentation" allowFullScreen />
           </div>
         ) : (
           <PlayerPage />
