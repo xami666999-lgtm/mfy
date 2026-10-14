@@ -70,7 +70,7 @@ function stopLine(h: any) {
 }
 
 const STUDIOS = [
-  { id: 'marvel', name: 'MARVEL', color: '#141414', accent: '#fff', logo: './logos/marvel.svg', franchise: 'marvel' },
+  { id: 'marvel', name: 'MARVEL', color: '#141414', accent: '#fff', logo: './logos/marvel-word.svg', franchise: 'marvel' },
   { id: 'dc', name: 'DC', color: '#0476c0', accent: '#fff', logo: './logos/dc-white.svg', franchise: 'dc' },
   { id: 'a24', name: 'A24', color: '#111111', accent: '#fff', logo: './logos/a24.svg', company: '41077' },
   { id: 'pixar', name: 'PIXAR', color: '#222222', accent: '#f5c518', logo: './logos/pixar.svg', company: '3' },
@@ -265,13 +265,15 @@ export default function NuvioHome() {
   const hero = heroPool[idx]
 
   useEffect(() => {
-    tmdb.getTrending('all', 'week').then((d) => setHeroPool((d?.results || []).filter((x: any) => x.backdrop_path).slice(0, 8)))
-    tmdb.getPopular('movie').then((d) => setPopularM((d?.results || []).filter((x: any) => x.poster_path)))
-    tmdb.getTrending('tv', 'week').then((d) => setTrendTv((d?.results || []).filter((x: any) => x.poster_path)))
+    tmdb.getTrending('all', 'week').then((d) => setHeroPool((d?.results || []).filter((x: any) => x.backdrop_path).slice(0, 5)))
+    tmdb.getPopular('movie').then((d) => setPopularM((d?.results || []).filter((x: any) => x.poster_path).slice(0, 12)))
+    tmdb.getTrending('tv', 'week').then((d) => setTrendTv((d?.results || []).filter((x: any) => x.poster_path).slice(0, 12)))
     tmdb.getTrending('all', 'day').then((d) => setTop((d?.results || []).filter((x: any) => x.poster_path).slice(0, 10)))
     tmdb.getPopular('tv').then((d) => setSpots((d?.results || []).filter((x: any) => x.backdrop_path).slice(0, 3)))
-    tmdb.discoverMovies({ with_genres: '28', sort_by: 'popularity.desc' }).then((d) => setAction((d?.results || []).filter((x: any) => x.poster_path))).catch(() => {})
-    tmdb.discoverMovies({ with_genres: '35', sort_by: 'popularity.desc' }).then((d) => setComedy((d?.results || []).filter((x: any) => x.poster_path))).catch(() => {})
+    window.setTimeout(() => {
+      tmdb.discoverMovies({ with_genres: '28', sort_by: 'popularity.desc' }).then((d) => setAction((d?.results || []).filter((x: any) => x.poster_path).slice(0, 12))).catch(() => {})
+      tmdb.discoverMovies({ with_genres: '35', sort_by: 'popularity.desc' }).then((d) => setComedy((d?.results || []).filter((x: any) => x.poster_path).slice(0, 12))).catch(() => {})
+    }, 900)
     Promise.all([tmdb.getMovieGenres(), tmdb.getTVGenres()]).then(([m, t]) => {
       const map: Record<number, string> = {}
       for (const g of [...(m?.genres || []), ...(t?.genres || [])]) map[g.id] = g.name
@@ -373,7 +375,7 @@ export default function NuvioHome() {
         if (!dead && p?.profile_path) setActorArt((prev) => ({ ...prev, [a.id]: p.profile_path }))
       }).catch(() => {})
     })
-        }, 700)
+        }, 1600)
     return () => { dead = true; window.clearTimeout(start) }
   }, [])
 
