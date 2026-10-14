@@ -133,7 +133,7 @@ export default function PlayerPage() {
     }
     const anime = isAnimeItem(selectedMedia)
     const title = String((selectedMedia as any).title || (selectedMedia as any).name || '')
-    if (currentStreamUrl && /^https?:/i.test(currentStreamUrl) && !isDeadEmbed(currentStreamUrl)) {
+    if (currentStreamUrl && /^https?:/i.test(currentStreamUrl) && !isDeadEmbed(currentStreamUrl) && !isOnePiece(title)) {
       setStreamUrl(currentStreamUrl)
       setLoaded(true)
       setLoading(false)

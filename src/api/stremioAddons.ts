@@ -118,6 +118,34 @@ export function multiboxdUser(username: string) {
   return `https://multiboxd.affogo.fyi/${encodeURIComponent(username.trim())}/manifest.json`
 }
 
+export async function onePaceCatalog() {
+  const d = await getJson(`${ADDONS.onepace.base}/meta/series/pp_onepace.json`)
+  const videos = d?.meta?.videos || []
+  const bySeason = new Map<number, any[]>()
+  for (const video of videos) {
+    const season = Number(video.season || 1)
+    const list = bySeason.get(season) || []
+    list.push(video)
+    bySeason.set(season, list)
+  }
+  const seasons = [...bySeason.entries()].sort((a, b) => a[0] - b[0]).map(([season, list]) => ({
+    id: `onepace-${season}`,
+    season_number: season,
+    episode_count: list.length,
+    name: `Arc ${season}`,
+  }))
+  const seasonEpisodes = (season: number) => ({
+    episodes: (bySeason.get(Number(season)) || []).sort((a, b) => Number(a.episode) - Number(b.episode)).map((video) => ({
+      id: video.id,
+      episode_number: Number(video.episode),
+      name: video.title || `Episode ${video.episode}`,
+      overview: 'One Pace',
+      still_path: null,
+    })),
+  })
+  return { seasons, seasonEpisodes, total: videos.length, arcs: seasons.length }
+}
+
 export async function onePaceStreams(season = 1, episode = 1) {
   const d = await getJson(`${ADDONS.onepace.base}/meta/series/pp_onepace.json`)
   const videos = d?.meta?.videos || []

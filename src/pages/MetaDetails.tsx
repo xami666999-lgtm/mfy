@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Play, Star, Clock, Calendar, Heart, Plus, Share2, List, Check, Cast } from 'lucide-react'
 import { tmdb, POSTER_URL, BACKDROP_URL, PROFILE_URL, STILL_URL, pickTrailer } from '../api/tmdb'
 import { fetchOmdbByImdbId } from '../api/omdb'
@@ -10,7 +10,7 @@ import { vidyUrl, getPlayerUrl } from '../api/vidy'
 import { isAnimeItem } from '../lib/trackers'
 import { isEpisodeWatched } from '../lib/watchProgress'
 import { useStore } from '../store'
-import { trailerUrl, isOnePiece, pearioWatchUrl, pearioUserUrl } from '../api/stremioAddons'
+import { trailerUrl, isOnePiece, pearioWatchUrl, pearioUserUrl, onePaceCatalog } from '../api/stremioAddons'
 import { markLike, markDislike, isLiked, isDisliked } from '../lib/taste'
 import { sourceDot, reportBroken } from '../lib/playerStatus'
 import { cn, formatDate, formatRuntime, getRatingColor } from '../lib/utils'
@@ -74,6 +74,7 @@ export default function MetaDetails() {
   const [fillerOn, setFillerOn] = useState(false)
   const [fillerAsk, setFillerAsk] = useState(false)
   const [fillerCount, setFillerCount] = useState(0)
+  const paceRef = useRef<{ seasonEpisodes: (season: number) => { episodes: any[] } } | null>(null)
 
   useEffect(() => {
     const title = String(detail?.name || detail?.title || '')
@@ -201,7 +202,18 @@ export default function MetaDetails() {
           }
           setWatchLogos(logos.slice(0, 6))
         }).catch(() => setWatchLogos([]))
-        if (d.seasons?.length) {
+        if (isOnePiece(d.name || d.title || '')) {
+          const pace = await onePaceCatalog().catch(() => null)
+          if (pace) {
+            paceRef.current = pace
+            d.seasons = pace.seasons
+            d.number_of_seasons = pace.arcs
+            d.number_of_episodes = pace.total
+            setDetail({ ...d })
+            setActiveSeason(pace.seasons[0]?.season_number || 1)
+            setSeasonData(pace.seasonEpisodes(pace.seasons[0]?.season_number || 1))
+          }
+        } else if (d.seasons?.length) {
           const sNum = d.seasons.find((s: any) => s.season_number > 0)?.season_number || 0
           setActiveSeason(sNum)
           tmdb.getSeasonDetail(d.id, sNum).then(setSeasonData).catch(() => {})
@@ -305,6 +317,10 @@ export default function MetaDetails() {
   async function changeSeason(num: number) {
     if (!selectedMedia || selectedMedia.type !== 'tv') return
     setActiveSeason(num)
+    if (paceRef.current) {
+      setSeasonData(paceRef.current.seasonEpisodes(num))
+      return
+    }
     const d = await tmdb.getSeasonDetail(selectedMedia.id as number, num)
     setSeasonData(d)
   }
@@ -550,7 +566,13 @@ export default function MetaDetails() {
               {detail.genres?.[0]?.name && <span>{detail.genres[0].name}</span>}
               {detail.genres?.[0] && year && <span className="text-white/25">·</span>}
               {year && <span>{year}</span>}
-              {selectedMedia?.type === 'tv' && detail.number_of_seasons != null && (
+              {selectedMedia?.type === 'tv' && detail.number_of_episodes != null && isOnePiece(title) && (
+                <>
+                  <span className="text-white/25">·</span>
+                  <span>One Pace · {detail.number_of_episodes} episodes</span>
+                </>
+              )}
+              {selectedMedia?.type === 'tv' && detail.number_of_seasons != null && !isOnePiece(title) && (
                 <>
                   <span className="text-white/25">·</span>
                   <span>{detail.number_of_seasons} Season{detail.number_of_seasons === 1 ? '' : 's'}</span>
@@ -851,7 +873,7 @@ className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/8 bord
                           poster_path: (detail as any)?.poster_path,
                           name: ep.name,
                         } as any)
-                        setCurrentStreamUrl(getPlayerUrl('playtorrio', kind, Number(selectedMedia?.id), activeSeason, ep.episode_number, anime))
+                        setCurrentStreamUrl(getPlayerUrl(isOnePiece(title) ? 'onepace' : 'playtorrio', kind, Number(selectedMedia?.id), activeSeason, ep.episode_number, anime))
                         setCurrentPage('player')
                       }}>
                         <div className="w-28 h-16 rounded-md overflow-hidden flex-shrink-0 bg-white/[0.03]">
