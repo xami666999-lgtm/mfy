@@ -114,7 +114,7 @@ export default function YouTubePage() {
       {watch && (
         <div className="px-12 pt-4">
           <div className="aspect-video max-h-[56vh] rounded-xl overflow-hidden bg-black">
-            <iframe title="yt" src={embed || youtubeEmbedUrl(watch)} className="w-full h-full" allow="autoplay; fullscreen; encrypted-media" sandbox="allow-scripts allow-same-origin allow-presentation" allowFullScreen />
+            <iframe title="yt" src={embed || youtubeEmbedUrl(watch)} className="w-full h-full" allow="autoplay; fullscreen; encrypted-media" allowFullScreen />
           </div>
           <div className="flex items-center justify-between py-3 gap-3">
             <p className="font-semibold truncate">{title}</p>

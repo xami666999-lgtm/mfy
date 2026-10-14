@@ -1407,7 +1407,7 @@ export default function PlayerPage() {
               background: '#000',
             }}>
               {iptvMultiviewUrls.slice(0, 5).map((url, index) => (
-                <iframe key={url} src={url} title="Sports" allow="autoplay; fullscreen; encrypted-media" sandbox="allow-scripts allow-same-origin allow-presentation" allowFullScreen referrerPolicy="no-referrer" style={{ width: '100%', height: '100%', border: 0, background: '#000', gridColumn: sportsLayout === 'focus' && index === 0 ? '1' : undefined, gridRow: sportsLayout === 'focus' && index === 0 ? '1 / span 2' : undefined }} />
+                <iframe key={url} src={url} title="Sports" allow="autoplay; fullscreen; encrypted-media" allowFullScreen referrerPolicy="no-referrer" style={{ width: '100%', height: '100%', border: 0, background: '#000', gridColumn: sportsLayout === 'focus' && index === 0 ? '1' : undefined, gridRow: sportsLayout === 'focus' && index === 0 ? '1 / span 2' : undefined }} />
               ))}
             </div>
           </div>
@@ -1419,7 +1419,7 @@ export default function PlayerPage() {
             src={streamUrl}
             title={title || 'Player'}
             allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-            sandbox="allow-scripts allow-same-origin allow-presentation"
+           
             allowFullScreen
             referrerPolicy="no-referrer"
             onError={() => tryNextSource()}
