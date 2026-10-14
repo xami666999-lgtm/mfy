@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 96">
+  <g font-family="Arial Black, Impact, sans-serif">
+    <circle cx="100" cy="28" r="14" fill="#f9a8d4"/><circle cx="100" cy="28" r="5" fill="#db2777"/>
+    <text x="100" y="78" text-anchor="middle" fill="#db2777" font-size="18" letter-spacing="0.4">Clover</text>
+  </g>
+</svg>

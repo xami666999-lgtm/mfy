@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="8 45 504 61">
+  <defs>
+    <filter id="s" x="-15%" y="-40%" width="130%" height="180%">
+      <feDropShadow dx="0" dy="2" stdDeviation="1.6" flood-color="#000" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+  <text x="260" y="86" text-anchor="middle" fill="#ff2a2a" font-family="Impact, Arial Black, sans-serif" font-size="46" letter-spacing="1" font-weight="700" filter="url(#s)" stroke="#fff" stroke-width="3" paint-order="stroke">SPIDER-MAN</text>
+</svg>

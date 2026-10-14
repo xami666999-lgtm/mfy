@@ -1,0 +1,6 @@
+import{b as o}from"./index-J_W6-_L0.js";/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const a=[["path",{d:"M5 12h14",key:"1ays0h"}],["path",{d:"M12 5v14",key:"s699le"}]],t=o("plus",a),c={28:"Action",12:"Adventure",16:"Animation",35:"Comedy",80:"Crime",99:"Documentary",18:"Drama",10751:"Family",14:"Fantasy",36:"History",27:"Horror",10402:"Music",9648:"Mystery",10749:"Romance",878:"Sci-Fi",10770:"Movie",53:"Thriller",10752:"War",37:"Western",10759:"Action",10762:"Kids",10763:"News",10764:"Reality",10765:"Sci-Fi",10766:"Soap",10767:"Talk",10768:"War"};function u(r){const s=Number(r.vote_average);if(Number.isFinite(s)&&s>0)return s>10?s/10:s;const n=Number(r.score);if(Number.isFinite(n)&&n>0)return n>10?n/10:n;const e=Number(r.averageScore??r.meanScore);return Number.isFinite(e)&&e>0?e>10?e/10:e:0}function y(r){var n;if(Array.isArray(r==null?void 0:r.genres)&&r.genres.length){const e=r.genres[0];if(typeof e=="string")return e;if(e!=null&&e.name)return String(e.name)}if(typeof(r==null?void 0:r.genre)=="string")return r.genre;const s=Number((n=r==null?void 0:r.genre_ids)==null?void 0:n[0]);return c[s]||""}export{t as P,y as g,u as s};

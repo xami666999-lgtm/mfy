@@ -1,0 +1,184 @@
+{
+  "channels": [
+    {
+      "id": "1",
+      "name": "ESPN",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/espn.png",
+      "group": "Sports",
+      "tvgId": "ESPN.us",
+      "tvgCountry": "US"
+    },
+    {
+      "id": "2",
+      "name": "ESPN2",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/espn2.png",
+      "group": "Sports",
+      "tvgId": "ESPN2.us",
+      "tvgCountry": "US"
+    },
+    {
+      "id": "3",
+      "name": "Fox Sports 1",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/foxsports1.png",
+      "group": "Sports",
+      "tvgId": "FoxSports1.us",
+      "tvgCountry": "US"
+    },
+    {
+      "id": "4",
+      "name": "Fox Sports 2",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/foxsports2.png",
+      "group": "Sports",
+      "tvgId": "FoxSports2.us",
+      "tvgCountry": "US"
+    },
+    {
+      "id": "5",
+      "name": "NBC Sports",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/nbcsports.png",
+      "group": "Sports",
+      "tvgId": "NBCSports.us",
+      "tvgCountry": "US"
+    },
+    {
+      "id": "6",
+      "name": "CBS Sports Network",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/cbssportsnetwork.png",
+      "group": "Sports",
+      "tvgId": "CBSSportsNetwork.us",
+      "tvgCountry": "US"
+    },
+    {
+      "id": "7",
+      "name": "NFL Network",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/nflnetwork.png",
+      "group": "Sports",
+      "tvgId": "NFLNetwork.us",
+      "tvgCountry": "US"
+    },
+    {
+      "id": "8",
+      "name": "NBA TV",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/nbatv.png",
+      "group": "Sports",
+      "tvgId": "NBATV.us",
+      "tvgCountry": "US"
+    },
+    {
+      "id": "9",
+      "name": "MLB Network",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/mlbnetwork.png",
+      "group": "Sports",
+      "tvgId": "MLBNetwork.us",
+      "tvgCountry": "US"
+    },
+    {
+      "id": "10",
+      "name": "NHL Network",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/nhlnetwork.png",
+      "group": "Sports",
+      "tvgId": "NHLNetwork.us",
+      "tvgCountry": "US"
+    },
+    {
+      "id": "11",
+      "name": "ESPN Deportes",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/espndeportes.png",
+      "group": "Sports",
+      "tvgId": "ESPNDeportes.us",
+      "tvgCountry": "US"
+    },
+    {
+      "id": "12",
+      "name": "GOL TV",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/goltv.png",
+      "group": "Sports",
+      "tvgId": "GOLTV.us",
+      "tvgCountry": "US"
+    },
+    {
+      "id": "13",
+      "name": "beIN Sports",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/beinsports.png",
+      "group": "Sports",
+      "tvgId": "beINSports.us",
+      "tvgCountry": "US"
+    },
+    {
+      "id": "14",
+      "name": "Tennis Channel",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/tennischannel.png",
+      "group": "Sports",
+      "tvgId": "TennisChannel.us",
+      "tvgCountry": "US"
+    },
+    {
+      "id": "15",
+      "name": "Golf Channel",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/golfchannel.png",
+      "group": "Sports",
+      "tvgId": "GolfChannel.us",
+      "tvgCountry": "US"
+    },
+    {
+      "id": "16",
+      "name": "Outdoor Channel",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/outdoorchannel.png",
+      "group": "Sports",
+      "tvgId": "OutdoorChannel.us",
+      "tvgCountry": "US"
+    },
+    {
+      "id": "17",
+      "name": "Sportsman Channel",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/sportsmanchannel.png",
+      "group": "Sports",
+      "tvgId": "SportsmanChannel.us",
+      "tvgCountry": "US"
+    },
+    {
+      "id": "18",
+      "name": "ESPN News",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/espnnews.png",
+      "group": "Sports",
+      "tvgId": "ESPNNews.us",
+      "tvgCountry": "US"
+    },
+    {
+      "id": "19",
+      "name": "SEC Network",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/secnetwork.png",
+      "group": "Sports",
+      "tvgId": "SECNetwork.us",
+      "tvgCountry": "US"
+    },
+    {
+      "id": "20",
+      "name": "ACC Network",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/assets/logo/tv/accnetwork.png",
+      "group": "Sports",
+      "tvgId": "ACCNetwork.us",
+      "tvgCountry": "US"
+    }
+  ]
+}
