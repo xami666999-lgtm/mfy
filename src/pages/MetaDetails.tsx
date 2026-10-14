@@ -619,7 +619,8 @@ export default function MetaDetails() {
             </div>
           )}
         </div>
-      {/* Compact poster strip under hero (optional identity) */}
+      </div>
+
       <div id="mfy-detail-body" />
 
       {fillerAsk && (
