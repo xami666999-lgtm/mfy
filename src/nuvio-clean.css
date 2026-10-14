@@ -117,3 +117,11 @@ h1, h2, h3,
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255,255,255,0.28) !important;
 }
+
+.prov-hero{display:flex;align-items:center;justify-content:space-between;gap:16px;height:92px;padding:0 18px;border-radius:14px;overflow:hidden;margin-bottom:18px}
+.prov-hero img{height:42px;width:auto;max-width:180px;object-fit:contain}
+.bill-top{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.bill-rank{position:relative;background:none;border:0;padding:0;text-align:left;min-width:0}
+.bill-rank img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:10px;display:block}
+.bill-rank b{position:absolute;left:8px;bottom:8px;color:#fff;font-size:22px;text-shadow:0 2px 8px #000}
+@media(max-width:900px){.bill-top{grid-template-columns:repeat(3,minmax(0,1fr))}}

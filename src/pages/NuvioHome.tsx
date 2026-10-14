@@ -281,6 +281,7 @@ export default function NuvioHome() {
 
   useEffect(() => {
     let dead = false
+    const start = window.setTimeout(() => {
     Promise.all(GENRES.map((g) => tmdb.discoverMovies({ with_genres: g.id, sort_by: 'popularity.desc' }).then((d) => [g.id, d?.results?.find((x: any) => x.backdrop_path)?.backdrop_path || '']).catch(() => [g.id, '']))).then((rows) => {
       if (dead) return
       const map: Record<string, string> = {}
@@ -372,7 +373,8 @@ export default function NuvioHome() {
         if (!dead && p?.profile_path) setActorArt((prev) => ({ ...prev, [a.id]: p.profile_path }))
       }).catch(() => {})
     })
-    return () => { dead = true }
+        }, 700)
+    return () => { dead = true; window.clearTimeout(start) }
   }, [])
 
   useEffect(() => {
