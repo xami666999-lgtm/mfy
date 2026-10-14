@@ -48,6 +48,7 @@ export default function MetaDetails() {
   const [detail, setDetail] = useState<any>(null)
   const [seasonData, setSeasonData] = useState<any>(null)
   const [activeSeason, setActiveSeason] = useState(0)
+  const [epQuery, setEpQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [trailerKey, setTrailerKey] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'details' | 'streams'>('details')
@@ -526,93 +527,68 @@ export default function MetaDetails() {
 
   return (
     <div className="page-fade-enter">
-      {/* Cinematic full-bleed hero */}
-      <div className="src-hero relative min-h-[640px] h-[680px] max-h-[86vh] overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: detail.backdrop_path ? `url(${BACKDROP_URL}${detail.backdrop_path})` : undefined,
-            backgroundColor: '#0a0a10',
-          }}
-        />
-        {/* Soft vignette — readable text, keep face/scene visible */}
-        <div
-          className="absolute inset-0 z-[1]"
-          style={{
-            background: 'linear-gradient(90deg, rgba(8,6,4,0.72) 0%, rgba(8,6,4,0.28) 42%, rgba(8,6,4,0.08) 100%)',
-          }}
-        />
-
-        <div className="absolute top-20 left-6 z-20">
-          <button
-            type="button"
-            onClick={goBack}
-            className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-black/45 backdrop-blur-md text-xs text-white/70 hover:text-white border border-white/10 transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" /> Back
-          </button>
-        </div>
-
-        <div className="relative z-10 h-full grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-8 items-end px-8 md:px-12 pb-8">
-          <div className="src-copy max-w-xl pb-6">
+      <div className="relative min-h-screen overflow-hidden bg-black">
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: detail.backdrop_path ? `url(${BACKDROP_URL}${detail.backdrop_path})` : undefined }} />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(12,8,6,0.78) 0%, rgba(12,8,6,0.35) 46%, rgba(12,8,6,0.12) 100%)' }} />
+        <button type="button" onClick={goBack} className="absolute top-5 left-5 z-20 text-white/70 hover:text-white"><ArrowLeft className="w-5 h-5" /></button>
+        <div className="relative z-10 min-h-screen grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="flex flex-col justify-center px-8 md:px-14 py-16 max-w-2xl">
             <TitleLogo id={detail.id} type={selectedMedia?.type === 'movie' ? 'movie' : 'tv'} title={title} />
-            <div className="flex flex-wrap items-center gap-3 text-[13px] text-white/80 mb-6">
-              {runtime > 0 && <span>{formatRuntime(runtime)}</span>}
-              {year && <span>{year}{selectedMedia?.type === 'tv' ? '-' : ''}</span>}
+            <div className="flex items-center gap-4 text-[15px] text-white/85 mt-4 mb-7">
+              {runtime > 0 && <span>{runtime} min</span>}
+              {year && <span>{year}{selectedMedia?.type !== 'movie' ? '-' : ''}</span>}
               {(omdb?.imdbRating || detail.vote_average > 0) && (
                 <span className="inline-flex items-center gap-1.5">
                   <b>{omdb?.imdbRating || Number(detail.vote_average).toFixed(1)}</b>
-                  <span className="bg-[#f5c518] text-black text-[10px] font-black px-1 rounded">IMDb</span>
+                  <span className="bg-[#f5c518] text-black text-[11px] font-black px-1 leading-4 rounded-sm">IMDb</span>
                 </span>
               )}
-              {isOnePiece(title) && detail.number_of_episodes ? <span>One Pace · {detail.number_of_episodes}</span> : null}
             </div>
             {!!detail.genres?.length && (
               <div className="mb-5">
-                <p className="text-[10px] tracking-[0.16em] text-white/35 mb-2">GENRES</p>
-                <div className="flex flex-wrap gap-2">{detail.genres.slice(0, 4).map((g: any) => <span key={g.id} className="px-3 py-1 rounded-full border border-white/15 text-xs text-white/80">{g.name}</span>)}</div>
+                <p className="text-[11px] tracking-[0.14em] text-white/40 mb-2">GENRES</p>
+                <div className="flex flex-wrap gap-2">{detail.genres.slice(0, 4).map((g: any) => <span key={g.id} className="px-3 py-1 rounded-full border border-white/20 text-[13px] text-white/85">{g.name}</span>)}</div>
               </div>
             )}
             {!!detail.credits?.cast?.length && (
               <div className="mb-5">
-                <p className="text-[10px] tracking-[0.16em] text-white/35 mb-2">CAST</p>
-                <div className="flex flex-wrap gap-2">{detail.credits.cast.slice(0, 6).map((p: any) => <span key={p.id} className="px-3 py-1 rounded-full border border-white/15 text-xs text-white/80">{p.name}</span>)}</div>
+                <p className="text-[11px] tracking-[0.14em] text-white/40 mb-2">CAST</p>
+                <div className="flex flex-wrap gap-2">{detail.credits.cast.slice(0, 5).map((person: any) => <span key={person.id} className="px-3 py-1 rounded-full border border-white/20 text-[13px] text-white/85">{person.name}</span>)}</div>
               </div>
             )}
             {detail.overview && (
-              <div className="mb-6">
-                <p className="text-[10px] tracking-[0.16em] text-white/35 mb-2">SUMMARY</p>
-                <p className="text-sm text-white/75 leading-relaxed max-w-lg line-clamp-3">{detail.overview}</p>
+              <div className="mb-8">
+                <p className="text-[11px] tracking-[0.14em] text-white/40 mb-2">SUMMARY</p>
+                <p className="text-[14px] text-white/80 leading-relaxed max-w-lg">{detail.overview}</p>
               </div>
             )}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 mt-auto">
               <button type="button" onClick={() => handlePlay()} className="h-10 px-4 rounded-full bg-white text-black text-sm font-semibold inline-flex items-center gap-2"><Play className="w-4 h-4" fill="black" /> Play</button>
-              {trailerKey && <button type="button" onClick={() => window.open(`https://www.youtube.com/watch?v=${trailerKey}`, '_blank')} className="h-10 px-3 rounded-full bg-white/10 text-white text-sm">Trailer</button>}
-              <button type="button" onClick={() => {
-                if (!selectedMedia || !detail || selectedMedia.type === 'iptv') return
-                const mediaId = selectedMedia.id as number
-                const item = { mediaId, mediaType: selectedMedia.type, title, posterPath: detail.poster_path || null, addedAt: new Date().toISOString(), isAnime: isAnimeItem(selectedMedia) || isAnimeItem(detail) }
-                if (isInWatchlist(mediaId, selectedMedia.type)) removeFromWatchlist(mediaId, selectedMedia.type)
-                else addToWatchlist(item)
-              }} className="h-10 px-3 rounded-full bg-white/10 text-white text-sm">{selectedMedia && isInWatchlist(selectedMedia.id as number, selectedMedia.type) ? 'In Library' : '+ Library'}</button>
+              {trailerKey && <button type="button" onClick={() => window.open(`https://www.youtube.com/watch?v=${trailerKey}`, '_blank')} className="h-10 px-3 rounded-full bg-black/35 border border-white/15 text-sm text-white inline-flex items-center gap-2">Trailer</button>}
             </div>
           </div>
-          {selectedMedia?.type === 'tv' && seasonData?.episodes && (
-            <div className="hidden lg:block max-h-[520px] overflow-y-auto pr-1">
-              <p className="text-xs text-white/45 mb-2">Season {activeSeason || 1}</p>
+          {selectedMedia?.type !== 'movie' && (
+            <aside className="bg-black/55 border-l border-white/10 min-h-screen p-4 overflow-y-auto">
+              <div className="flex items-center justify-between mb-3">
+                <select value={activeSeason} onChange={(e) => changeSeason(Number(e.target.value))} className="bg-transparent text-white text-sm border border-white/15 rounded px-2 h-8">
+                  {(detail.seasons || []).filter((s: any) => s.season_number > 0).map((s: any) => <option key={s.id} value={s.season_number} className="text-black">Season {s.season_number}</option>)}
+                </select>
+                <span className="text-xs text-white/40">{seasonData?.episodes?.length || 0} episodes</span>
+              </div>
+              <input value={epQuery} onChange={(e) => setEpQuery(e.target.value)} placeholder="Search videos" className="w-full h-8 mb-3 px-3 rounded bg-white/8 text-sm text-white" />
               <div className="space-y-1">
-                {seasonData.episodes.slice(0, 40).map((ep: any) => (
-                  <button key={ep.id} type="button" className="w-full flex gap-2 text-left p-1.5 rounded hover:bg-white/8" onClick={() => {
+                {(seasonData?.episodes || []).filter((ep: any) => !epQuery || `${ep.episode_number} ${ep.name}`.toLowerCase().includes(epQuery.toLowerCase())).map((ep: any) => (
+                  <button key={ep.id} type="button" className="w-full flex gap-2 text-left p-1.5 rounded hover:bg-white/10" onClick={() => {
                     setSelectedMedia({ id: selectedMedia?.id, type: 'tv', season: activeSeason, episode: ep.episode_number, title, poster_path: detail.poster_path, name: ep.name } as any)
                     setCurrentStreamUrl(getPlayerUrl(isOnePiece(title) ? 'onepace' : 'playtorrio', 'tv', Number(selectedMedia?.id), activeSeason, ep.episode_number, true))
                     setCurrentPage('player')
                   }}>
-                    <span className="w-16 h-10 rounded bg-white/10 overflow-hidden flex-shrink-0">{ep.still_path && <img src={`${STILL_URL}${ep.still_path}`} alt="" className="w-full h-full object-cover" />}</span>
-                    <span className="min-w-0"><b className="block text-xs text-white truncate">{ep.episode_number}. {ep.name}</b><small className="text-[10px] text-white/35">{ep.air_date || ''}</small></span>
+                    <span className="w-[72px] h-11 rounded bg-white/10 overflow-hidden flex-shrink-0">{ep.still_path && <img src={`${STILL_URL}${ep.still_path}`} alt="" className="w-full h-full object-cover" />}</span>
+                    <span className="min-w-0"><b className="block text-[13px] text-white truncate">{ep.episode_number}. {ep.name}</b><small className="text-[11px] text-white/40">{ep.air_date || ''}</small></span>
                   </button>
                 ))}
               </div>
-            </div>
+            </aside>
           )}
         </div>
       </div>
