@@ -321,9 +321,7 @@ export default function PlayerPage() {
     const blockOpen = () => null
     const oldOpen = window.open
     window.open = blockOpen as any
-    const onBefore = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
-    window.addEventListener('beforeunload', onBefore)
-    return () => { window.open = oldOpen; window.removeEventListener('beforeunload', onBefore); void stop }
+    return () => { window.open = oldOpen; void stop }
   }, [])
 
   useEffect(() => {
@@ -563,17 +561,18 @@ export default function PlayerPage() {
   }, [selectedMedia?.id, selectedMedia?.episode])
 
   useEffect(() => {
-    const id = setInterval(() => { saveProgress(false).catch(() => {}) }, 2000)
-    const soon = window.setTimeout(() => { saveProgress(false).catch(() => {}) }, 2000)
-    const onHide = () => { saveProgress(false).catch(() => {}) }
-    window.addEventListener('beforeunload', onHide)
+    const flush = () => { try { saveProgress(false) } catch {} }
+    const id = setInterval(flush, 2000)
+    const soon = window.setTimeout(flush, 800)
+    const onHide = () => flush()
+    window.addEventListener('pagehide', onHide)
     document.addEventListener('visibilitychange', onHide)
     return () => {
       clearInterval(id)
       window.clearTimeout(soon)
-      window.removeEventListener('beforeunload', onHide)
+      window.removeEventListener('pagehide', onHide)
       document.removeEventListener('visibilitychange', onHide)
-      saveProgress(false).catch(() => {})
+      flush()
     }
   }, [selectedMedia?.id, selectedMedia?.episode, playerSource])
 
@@ -1124,7 +1123,7 @@ export default function PlayerPage() {
   async function saveProgress(forceDone = false) {
     if (!selectedMedia || selectedMedia.type === 'iptv') return
     const wall = Math.max(0, (Date.now() - startedAt.current) / 1000)
-    let p = Math.max(progress, bestProgress.current, wall >= 2 ? wall : 0)
+    let p = Math.max(progress, bestProgress.current, wall >= 1 ? wall : 0)
     let d = Math.max(Number.isFinite(dur) ? dur : 0, bestDuration.current, expectedSec || 0)
     try {
       const w = document.querySelector('webview') as any
