@@ -1,5 +1,6 @@
 import { Bookmark, Heart, Star, Plus, Trash2, Play, List, Pencil, Check, X, Award } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { importAnilistPublic } from '../lib/importLists'
 import { useStore } from '../store'
 import { POSTER_URL } from '../api/tmdb'
 import { cn } from '../lib/utils'
