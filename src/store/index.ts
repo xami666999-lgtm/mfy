@@ -191,7 +191,7 @@ function uid() {
 }
 
 /** Bump to wipe every saved profile once. Old accounts cannot sign back in. */
-const ACCOUNT_EPOCH = '20261005-accounts-2'
+const ACCOUNT_EPOCH = '20261014-accounts-3'
 
 function resetSavedAccounts() {
   try {
@@ -211,10 +211,6 @@ function resetSavedAccounts() {
       if (key && (key.startsWith('mfy-profile') || key.startsWith('mfy-serializd') || key.startsWith('mfy-ep-'))) drop.push(key)
     }
     drop.forEach((key) => localStorage.removeItem(key))
-  } catch { /* ignore */ }
-  try {
-    const req = indexedDB.deleteDatabase('mfy')
-    req.onerror = () => {}
   } catch { /* ignore */ }
   try {
     const api = (window as any).electronAPI
