@@ -41,7 +41,7 @@
 .nv-cw p{margin:8px 0 0;font-size:13px;font-weight:600}
 .nv-poster{position:relative;display:block;border-radius:6px;overflow:hidden}
 .nv-poster img,.nv-poster .ph{width:156px;height:234px;object-fit:cover;border-radius:6px;background:#1b2838;display:block}
-.nv-card{flex:none;width:156px;background:none;border:0;padding:0;text-align:left;color:#fff;cursor:pointer;overflow:hidden}
+.nv-card{flex:none;width:156px;background:none;border:0;padding:0;text-align:left;color:#fff;cursor:pointer;overflow:hidden;content-visibility:auto;contain-intrinsic-size:156px 280px}
 .nv-card strong{display:block;margin-top:8px;font-size:13px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nv-card small{display:block;color:#9aa4b2;font-size:12px;margin-top:2px}
 .nv-foot{display:none}
@@ -102,7 +102,7 @@
   .brand span{display:none}
 }
 .nv-prog{position:absolute;left:0;bottom:0;height:4px;background:#e50914;z-index:3;display:block}
-.nv-badge{position:absolute;top:8px;left:8px;height:16px;width:auto;max-width:48px;object-fit:contain;z-index:3;pointer-events:none}
+.nv-badge{position:absolute;top:8px;left:8px;height:16px!important;width:auto!important;max-width:42px!important;object-fit:contain;z-index:3;pointer-events:none;background:#0008;border-radius:3px;padding:2px}
 .nv-left{position:absolute;top:8px;right:8px;z-index:2;background:#000c;color:#fff;font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px}
 .title-logo{display:block;height:auto!important;width:auto!important;max-width:min(440px,70vw)!important;max-height:104px!important;object-fit:contain;object-position:left bottom;filter:drop-shadow(0 8px 18px rgba(0,0,0,.65));animation:logoIn .7s cubic-bezier(.16,.84,.32,1) both}
 .src-copy .title-logo.fallback{font-size:40px;line-height:1.05;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:640px}

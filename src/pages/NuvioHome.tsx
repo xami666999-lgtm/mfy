@@ -394,15 +394,9 @@ export default function NuvioHome() {
         }).catch(() => {})
       }).catch(() => {})
     }
-    if (last?.mediaId) {
-      load(last.mediaType, Number(last.mediaId), last.title || '')
-      return () => { dead = true }
+    if (last?.mediaId && last.title) {
+      load(last.mediaType, Number(last.mediaId), last.title)
     }
-    tmdb.getTrending('tv', 'week').then((d) => {
-      const item = (d?.results || []).find((x: any) => x.poster_path)
-      if (!item || dead) return
-      load('tv', item.id, titleOf(item))
-    }).catch(() => {})
     return () => { dead = true }
   }, [watchHistory])
 
@@ -1153,9 +1147,9 @@ export default function NuvioHome() {
         </div>
       </section>
 
-      <PosterRow title="Trending TV" items={trendTv} genres={genreNames} pctOf={pctOf} badges={sources} onOpen={setSheet} />
-      <PosterRow title="Action & Adventure" items={action} genres={genreNames} pctOf={pctOf} badges={sources} onOpen={setSheet} />
-      <PosterRow title="Laugh Out Loud" items={comedy} genres={genreNames} pctOf={pctOf} badges={sources} onOpen={setSheet} />
+      <PosterRow title="Trending TV" items={trendTv} genres={genreNames} pctOf={pctOf} badges={{}} onOpen={setSheet} />
+      <PosterRow title="Action & Adventure" items={action} genres={genreNames} pctOf={pctOf} badges={{}} onOpen={setSheet} />
+      <PosterRow title="Laugh Out Loud" items={comedy} genres={genreNames} pctOf={pctOf} badges={{}} onOpen={setSheet} />
 
       {sheet && <TitleSheet item={sheet} onClose={() => setSheet(null)} />}
     </div>
@@ -1189,7 +1183,7 @@ function PosterRow({ title, items, genres, pctOf, badges, onOpen }: { title: str
             item={m}
             pct={pctOf(m.id)}
             rank={/trend|today|top/i.test(title) ? i + 1 : 0}
-            badge={badges[String(m.id)]}
+            badge="" 
             onClick={() => onOpen(m)}
           />
         ))}
