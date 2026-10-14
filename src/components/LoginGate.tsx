@@ -337,10 +337,8 @@ export default function LoginGate() {
           </div>
         )}
         <div className="space-y-3">
-          {mode === 'create' && <input className={field} placeholder="Name" value={username} onChange={(e) => setUsername(e.target.value)} />}
-          <input className={field} placeholder="Gmail" value={email} onChange={(e) => setEmail(e.target.value)} />
-          {mode !== 'reset' && <input className={field} type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />}
-          {mode === 'create' && <input className={field} type="password" placeholder="Confirm password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />}
+          <input className={field} placeholder="Name" value={username} onChange={(e) => setUsername(e.target.value)} />
+          <input className={field} type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
           {mode === 'reset' && !sent && <button type="button" className="w-full h-12 rounded bg-[#333] text-white" disabled={busy} onClick={sendReset}>{busy ? 'Sending…' : 'Email me a code'}</button>}
           {mode === 'reset' && sent === 'ok' && (
             <>
@@ -350,12 +348,12 @@ export default function LoginGate() {
             </>
           )}
           {err && <p className="text-red-400 text-xs">{err}</p>}
-          {mode === 'create' && <button type="button" className="w-full h-12 rounded bg-[#e50914] text-white font-semibold" disabled={busy} onClick={create}>{busy ? 'Sending email…' : 'Continue'}</button>}
+          {mode === 'create' && <button type="button" className="w-full h-12 rounded bg-[#e50914] text-white font-semibold" onClick={create}>Continue</button>}
           {mode === 'signin' && <button type="button" className="w-full h-12 rounded bg-[#e50914] text-white font-semibold" onClick={signin}>Sign in</button>}
           <button type="button" className="w-full h-12 rounded border border-white/50 text-white font-semibold" onClick={watchWithoutAccount}>Watch without logging in</button>
         </div>
         <div className="mt-5 text-center text-[14px] text-[#b3b3b3] space-y-2">
-          {mode === 'signin' && <div><button type="button" onClick={() => { setMode('reset'); setSent(''); setErr(''); setPassword(''); setConfirm('') }}>Reset password</button></div>}
+          
           {mode !== 'signin' && <button type="button" onClick={() => setMode('signin')}>Sign in</button>}
           {mode !== 'create' && <div><button type="button" onClick={() => setMode('create')}>Create profile</button></div>}
         </div>
