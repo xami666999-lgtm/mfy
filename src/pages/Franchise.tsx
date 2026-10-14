@@ -116,20 +116,8 @@ export default function Franchise() {
                 ) : (
                   <div className="poster-fallback">{item.title}</div>
                 )}
-                <div className="poster-play"><Play size={18} fill="#fff" /></div>
-                <div className="poster-overlay">
-                  <div className="poster-meta-title">{item.title}</div>
-                  <div className="poster-meta-sub">
-                    {(item.releaseDate || '').slice(0, 4)}
-                    {item.voteAverage > 0 ? ` · ★ ${item.voteAverage.toFixed(1)}` : ''}
-                  </div>
-                </div>
-                {item.voteAverage > 0 && (
-                  <div className="imdb-badge" title="Rating">
-                    <span className="imdb-badge-label">IMDb</span>
-                    <span className="imdb-badge-score">{Number(item.voteAverage).toFixed(1)}</span>
-                  </div>
-                )}
+                <p className="mt-1.5 text-[12px] text-white/75 truncate">{item.title}</p>
+                <p className="text-[10px] text-white/35">{(item.releaseDate || '').slice(0, 4)}{item.voteAverage > 0 ? ` · ${item.voteAverage.toFixed(1)}` : ''}</p>
               </div>
             ))}
             {!filtered.length && (

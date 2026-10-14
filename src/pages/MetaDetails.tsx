@@ -557,152 +557,70 @@ export default function MetaDetails() {
           </button>
         </div>
 
-        <div className="relative z-10 h-full flex items-end px-8 md:px-12 pb-10 md:pb-14">
-          <div className="src-copy max-w-xl">
-            {/* Title as logo-style wordmark */}
+        <div className="relative z-10 h-full grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-8 items-end px-8 md:px-12 pb-8">
+          <div className="src-copy max-w-xl pb-6">
             <TitleLogo id={detail.id} type={selectedMedia?.type === 'movie' ? 'movie' : 'tv'} title={title} />
-
-            <div className="flex flex-wrap items-center gap-2 text-[12px] text-white/55 mb-3">
-              {detail.genres?.[0]?.name && <span>{detail.genres[0].name}</span>}
-              {detail.genres?.[0] && year && <span className="text-white/25">·</span>}
-              {year && <span>{year}</span>}
-              {selectedMedia?.type === 'tv' && detail.number_of_episodes != null && isOnePiece(title) && (
-                <>
-                  <span className="text-white/25">·</span>
-                  <span>One Pace · {detail.number_of_episodes} episodes</span>
-                </>
+            <div className="flex flex-wrap items-center gap-3 text-[13px] text-white/80 mb-6">
+              {runtime > 0 && <span>{formatRuntime(runtime)}</span>}
+              {year && <span>{year}{selectedMedia?.type === 'tv' ? '-' : ''}</span>}
+              {(omdb?.imdbRating || detail.vote_average > 0) && (
+                <span className="inline-flex items-center gap-1.5">
+                  <b>{omdb?.imdbRating || Number(detail.vote_average).toFixed(1)}</b>
+                  <span className="bg-[#f5c518] text-black text-[10px] font-black px-1 rounded">IMDb</span>
+                </span>
               )}
-              {selectedMedia?.type === 'tv' && detail.number_of_seasons != null && !isOnePiece(title) && (
-                <>
-                  <span className="text-white/25">·</span>
-                  <span>{detail.number_of_seasons} Season{detail.number_of_seasons === 1 ? '' : 's'}</span>
-                </>
-              )}
-              {runtime > 0 && selectedMedia?.type === 'movie' && (
-                <>
-                  <span className="text-white/25">·</span>
-                  <span>{formatRuntime(runtime)}</span>
-                </>
-              )}
-              {bingeMinutes > 0 && selectedMedia?.type === 'tv' && (
-                <>
-                  <span className="text-white/25">·</span>
-                  <span title="Total time to watch every episode">Binge {formatBinge(bingeMinutes)}</span>
-                </>
-              )}
+              {isOnePiece(title) && detail.number_of_episodes ? <span>One Pace · {detail.number_of_episodes}</span> : null}
             </div>
-
-            <div className="flex flex-wrap items-center gap-2 mb-4">
-              {omdb?.imdbRating && (
-                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
-                  <span className="bg-[#f5c518] text-black text-[9px] font-black px-1 rounded">IMDb</span>
-                  {omdb.imdbRating}
-                </span>
-              )}
-              {(rtExtra?.critics || rtExtra?.audience) && (
-                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
-                  <span className="bg-[#fa320a] text-white text-[9px] font-black px-1 rounded">RT</span>
-                  {rtExtra.critics || rtExtra.audience}
-                </span>
-              )}
-              {selectedMedia?.type === 'movie' && lbScore && (
-                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
-                  <span className="bg-[#00e054] text-black text-[9px] font-black px-1 rounded">LB</span>
-                  {lbScore}
-                </span>
-              )}
-              {selectedMedia?.type === 'tv' && !isAnimeItem(selectedMedia) && serScore && (
-                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
-                  <span className="bg-[#fff] text-black text-[9px] font-black px-1 rounded">Serializd</span>
-                  {serScore}
-                </span>
-              )}
-              {isAnimeItem(selectedMedia) && aniScore && (
-                <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
-                  <span className="bg-[#02a9ff] text-white text-[9px] font-black px-1 rounded">AniList</span>
-                  {aniScore}
-                </span>
-              )}
-              <span className="inline-flex items-center h-7 px-2.5 rounded-md bg-black/40 border border-white/10 text-[11px] font-bold text-white">
-                {/2160|4K/i.test(badgeHay || '') ? '4K' : /1080/i.test(badgeHay || '') ? '1080p' : 'HD'}
-              </span>
-            </div>
-
+            {!!detail.genres?.length && (
+              <div className="mb-5">
+                <p className="text-[10px] tracking-[0.16em] text-white/35 mb-2">GENRES</p>
+                <div className="flex flex-wrap gap-2">{detail.genres.slice(0, 4).map((g: any) => <span key={g.id} className="px-3 py-1 rounded-full border border-white/15 text-xs text-white/80">{g.name}</span>)}</div>
+              </div>
+            )}
+            {!!detail.credits?.cast?.length && (
+              <div className="mb-5">
+                <p className="text-[10px] tracking-[0.16em] text-white/35 mb-2">CAST</p>
+                <div className="flex flex-wrap gap-2">{detail.credits.cast.slice(0, 6).map((p: any) => <span key={p.id} className="px-3 py-1 rounded-full border border-white/15 text-xs text-white/80">{p.name}</span>)}</div>
+              </div>
+            )}
             {detail.overview && (
-              <p className="text-[15px] text-white/80 leading-relaxed line-clamp-3 max-w-lg mb-5">
-                {detail.overview}
-              </p>
+              <div className="mb-6">
+                <p className="text-[10px] tracking-[0.16em] text-white/35 mb-2">SUMMARY</p>
+                <p className="text-sm text-white/75 leading-relaxed max-w-lg line-clamp-3">{detail.overview}</p>
+              </div>
             )}
-
-            <div className="flex flex-wrap items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => handlePlay()}
-                disabled={resolving}
-                className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all disabled:opacity-60 shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
-              >
-                <Play className="w-4 h-4" fill="black" />
-                Play
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const el = document.getElementById('mfy-detail-body')
-                  el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                  setActiveTab('details')
-                }}
-                className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-sm font-medium text-white/90 hover:bg-white/15 transition-all"
-              >
-                More Info
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!selectedMedia || !detail || selectedMedia.type === 'iptv') return
-                  const mediaId = selectedMedia.id as number
-                  const item = {
-                    mediaId,
-                    mediaType: selectedMedia.type,
-                    title,
-                    posterPath: detail.poster_path || null,
-                    addedAt: new Date().toISOString(),
-                    isAnime: isAnimeItem(selectedMedia) || isAnimeItem(detail),
-                  }
-                  if (isInWatchlist(mediaId, selectedMedia.type)) {
-                    removeFromWatchlist(mediaId, selectedMedia.type)
-                  } else {
-                    addToWatchlist(item)
-                  }
-                }}
-className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/8 border border-white/12 text-sm text-white/70 hover:text-white transition-all"
-                >
-                <Plus className="w-4 h-4" />
-                {selectedMedia && selectedMedia.type !== 'iptv' && isInWatchlist(selectedMedia.id as number, selectedMedia.type) ? 'In Library' : 'Library'}
-              </button>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => handlePlay()} className="h-10 px-4 rounded-full bg-white text-black text-sm font-semibold inline-flex items-center gap-2"><Play className="w-4 h-4" fill="black" /> Play</button>
+              {trailerKey && <button type="button" onClick={() => window.open(`https://www.youtube.com/watch?v=${trailerKey}`, '_blank')} className="h-10 px-3 rounded-full bg-white/10 text-white text-sm">Trailer</button>}
+              <button type="button" onClick={() => {
+                if (!selectedMedia || !detail || selectedMedia.type === 'iptv') return
+                const mediaId = selectedMedia.id as number
+                const item = { mediaId, mediaType: selectedMedia.type, title, posterPath: detail.poster_path || null, addedAt: new Date().toISOString(), isAnime: isAnimeItem(selectedMedia) || isAnimeItem(detail) }
+                if (isInWatchlist(mediaId, selectedMedia.type)) removeFromWatchlist(mediaId, selectedMedia.type)
+                else addToWatchlist(item)
+              }} className="h-10 px-3 rounded-full bg-white/10 text-white text-sm">{selectedMedia && isInWatchlist(selectedMedia.id as number, selectedMedia.type) ? 'In Library' : '+ Library'}</button>
             </div>
           </div>
+          {selectedMedia?.type === 'tv' && seasonData?.episodes && (
+            <div className="hidden lg:block max-h-[520px] overflow-y-auto pr-1">
+              <p className="text-xs text-white/45 mb-2">Season {activeSeason || 1}</p>
+              <div className="space-y-1">
+                {seasonData.episodes.slice(0, 40).map((ep: any) => (
+                  <button key={ep.id} type="button" className="w-full flex gap-2 text-left p-1.5 rounded hover:bg-white/8" onClick={() => {
+                    setSelectedMedia({ id: selectedMedia?.id, type: 'tv', season: activeSeason, episode: ep.episode_number, title, poster_path: detail.poster_path, name: ep.name } as any)
+                    setCurrentStreamUrl(getPlayerUrl(isOnePiece(title) ? 'onepace' : 'playtorrio', 'tv', Number(selectedMedia?.id), activeSeason, ep.episode_number, true))
+                    setCurrentPage('player')
+                  }}>
+                    <span className="w-16 h-10 rounded bg-white/10 overflow-hidden flex-shrink-0">{ep.still_path && <img src={`${STILL_URL}${ep.still_path}`} alt="" className="w-full h-full object-cover" />}</span>
+                    <span className="min-w-0"><b className="block text-xs text-white truncate">{ep.episode_number}. {ep.name}</b><small className="text-[10px] text-white/35">{ep.air_date || ''}</small></span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      </div>
-
       {/* Compact poster strip under hero (optional identity) */}
-      <div id="mfy-detail-body" className="px-8 -mt-6 relative z-10 mb-2">
-        <div className="flex gap-4 items-end">
-          <div className="w-[110px] flex-shrink-0 rounded-xl overflow-hidden shadow-2xl border border-white/10 ring-1 ring-black/40">
-            {detail.poster_path ? (
-              <img src={`${POSTER_URL}${detail.poster_path}`} alt={title} className="w-full block" />
-            ) : (
-              <div className="aspect-[2/3] bg-white/[0.04]" />
-            )}
-          </div>
-          <div className="pb-1 flex flex-wrap gap-1.5">
-            {(detail.genres || []).slice(0, 6).map((g: any) => (
-              <span key={g.id} className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-white/[0.06] text-white/50 border border-white/[0.06]">
-                {g.name}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
+      <div id="mfy-detail-body" />
 
       {fillerAsk && (
         <div className="fixed inset-0 z-[80] grid place-items-center bg-black/80 px-5">
