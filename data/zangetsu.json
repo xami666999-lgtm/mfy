@@ -1,0 +1,103 @@
+{
+  "anime": [
+    {
+      "id": "1",
+      "title": "One Piece",
+      "coverImage": "https://cdn.myanimelist.net/images/anime/6/73245.jpg",
+      "status": "Airing",
+      "episodes": 1100,
+      "averageScore": 8.7,
+      "genres": ["Action", "Adventure", "Fantasy"]
+    },
+    {
+      "id": "2",
+      "title": "Attack on Titan",
+      "coverImage": "https://cdn.myanimelist.net/images/anime/10/47347.jpg",
+      "status": "Finished",
+      "episodes": 94,
+      "averageScore": 9.0,
+      "genres": ["Action", "Drama", "Fantasy"]
+    },
+    {
+      "id": "3",
+      "title": "Jujutsu Kaisen",
+      "coverImage": "https://cdn.myanimelist.net/images/anime/1173/109222.jpg",
+      "status": "Airing",
+      "episodes": 47,
+      "averageScore": 8.7,
+      "genres": ["Action", "Supernatural", "School"]
+    },
+    {
+      "id": "4",
+      "title": "Demon Slayer",
+      "coverImage": "https://cdn.myanimelist.net/images/anime/1286/99889.jpg",
+      "status": "Finished",
+      "episodes": 44,
+      "averageScore": 8.6,
+      "genres": ["Action", "Historical", "Supernatural"]
+    },
+    {
+      "id": "5",
+      "title": "Chainsaw Man",
+      "coverImage": "https://cdn.myanimelist.net/images/anime/1772/125781.jpg",
+      "status": "Airing",
+      "episodes": 12,
+      "averageScore": 8.8,
+      "genres": ["Action", "Horror", "Supernatural"]
+    },
+    {
+      "id": "6",
+      "title": "Spy × Family",
+      "coverImage": "https://cdn.myanimelist.net/images/anime/1804/122761.jpg",
+      "status": "Airing",
+      "episodes": 37,
+      "averageScore": 8.5,
+      "genres": ["Action", "Comedy", "Spy"]
+    },
+    {
+      "id": "7",
+      "title": "Oshi no Ko",
+      "coverImage": "https://cdn.myanimelist.net/images/anime/1743/127822.jpg",
+      "status": "Airing",
+      "episodes": 23,
+      "averageScore": 8.6,
+      "genres": ["Drama", "Mystery", "Supernatural"]
+    },
+    {
+      "id": "9",
+      "title": "Frieren: Beyond Journey's End",
+      "coverImage": "https://cdn.myanimelist.net/images/anime/1965/133022.jpg",
+      "status": "Finished",
+      "episodes": 28,
+      "averageScore": 9.1,
+      "genres": ["Adventure", "Fantasy", "Drama"]
+    },
+    {
+      "id": "10",
+      "title": "Solo Leveling",
+      "coverImage": "https://cdn.myanimelist.net/images/anime/1954/132554.jpg",
+      "status": "Airing",
+      "episodes": 12,
+      "averageScore": 8.7,
+      "genres": ["Action", "Fantasy", "Adventure"]
+    },
+    {
+      "id": "11",
+      "title": "Mushoku Tensei",
+      "coverImage": "https://cdn.myanimelist.net/images/anime/1714/114764.jpg",
+      "status": "Airing",
+      "episodes": 24,
+      "averageScore": 8.9,
+      "genres": ["Adventure", "Fantasy", "Isekai"]
+    },
+    {
+      "id": "12",
+      "title": "Bleach: Thousand-Year Blood War",
+      "coverImage": "https://cdn.myanimelist.net/images/anime/1965/133022.jpg",
+      "status": "Airing",
+      "episodes": 26,
+      "averageScore": 8.9,
+      "genres": ["Action", "Adventure", "Supernatural"]
+    }
+  ]
+}

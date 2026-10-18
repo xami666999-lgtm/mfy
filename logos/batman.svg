@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="70 18 380 108">
+  <defs>
+    <filter id="s" x="-15%" y="-40%" width="130%" height="180%">
+      <feDropShadow dx="0" dy="2" stdDeviation="1.6" flood-color="#000" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+  <ellipse cx="260" cy="70" rx="168" ry="48" fill="#f5c518" filter="url(#s)"/>
+  <text x="260" y="84" text-anchor="middle" fill="#111" font-family="Impact, Arial Black, sans-serif" font-size="46" letter-spacing="4">BATMAN</text>
+</svg>

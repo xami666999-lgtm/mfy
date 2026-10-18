@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mxsify</title>
+  <style>
+    body { margin: 0; background: #121212; color: #fff; font-family: Inter, system-ui, sans-serif; }
+    header, main { max-width: 860px; margin: 0 auto; padding: 20px; }
+    input, button { font: inherit; }
+    input { background: #262626; border: 0; color: #fff; padding: 12px; width: min(420px, 100%); box-sizing: border-box; }
+    button { background: #fff; color: #111; border: 0; border-radius: 999px; padding: 10px 16px; font-weight: 700; cursor: pointer; }
+    button.copper { background: #c4845a; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    article { display: grid; grid-template-columns: 56px 1fr auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid #2a2a2a; }
+    img { width: 56px; height: 56px; object-fit: cover; background: #222; }
+    small, .muted { color: #9a9a9a; }
+    #gate { position: fixed; inset: 0; background: #121212; display: grid; place-items: center; z-index: 5; }
+    form { width: min(420px, 92vw); background: #1b1b1b; border: 1px solid #2a2a2a; padding: 24px; }
+    h1 { margin: 8px 0 0; }
+  </style>
+</head>
+<body>
+  <div id="gate">
+    <form id="form">
+      <p style="color:#e8b07a;font-size:12px;font-weight:700">MXSIFY</p>
+      <h1>Sign in</h1>
+      <p class="muted">Continue with Google, then save the login. Next open skips this screen.</p>
+      <button id="google" type="button" style="margin-top:16px;width:100%">Continue with Google</button>
+      <input id="name" placeholder="Name" style="margin-top:14px" />
+      <input id="email" type="email" required placeholder="Google email" style="margin-top:8px" />
+      <button class="copper" type="submit" style="margin-top:12px;width:100%">Save login</button>
+    </form>
+  </div>
+  <header id="app" hidden>
+    <p id="who"></p>
+    <h1>YouTube music</h1>
+    <div class="row">
+      <input id="q" placeholder="Search songs" />
+      <button id="go" type="button">Search</button>
+      <button id="out" type="button">Sign out</button>
+    </div>
+    <p id="now">Ads blocked</p>
+    <audio id="player" controls style="width:100%;margin-top:8px"></audio>
+  </header>
+  <main id="list"></main>
+  <script>
+    var KEY = "mxsify-login";
+    var PIPED = ["https://pipedapi.kavin.rocks", "https://pipedapi.adminforge.de", "https://api.piped.private.coffee"];
+    var AD = ["doubleclick.net", "googlesyndication.com", "googleadservices.com", "ads.youtube.com", "adservice.google.com", "youtube.com/pagead"];
+    var audio = document.getElementById("player");
+    var skips = [];
+    function read() { try { return JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) { return null; } }
+    function showApp(row) {
+      document.getElementById("gate").hidden = true;
+      document.getElementById("gate").style.display = "none";
+      document.getElementById("app").hidden = false;
+      document.getElementById("who").textContent = row.name + " · " + row.email;
+    }
+    document.getElementById("google").onclick = function () {
+      window.open("https://accounts.google.com/ServiceLogin?service=youtube&continue=https%3A%2F%2Fwww.youtube.com%2F", "mxsify-google", "width=480,height=720");
+    };
+    document.getElementById("form").onsubmit = function (e) {
+      e.preventDefault();
+      var email = document.getElementById("email").value.trim().toLowerCase();
+      var name = document.getElementById("name").value.trim() || email.split("@")[0];
+      if (email.indexOf("@") < 1) return;
+      var row = { email: email, name: name, at: Date.now() };
+      localStorage.setItem(KEY, JSON.stringify(row));
+      showApp(row);
+    };
+    document.getElementById("out").onclick = function () {
+      localStorage.removeItem(KEY);
+      location.reload();
+    };
+    function blocked(url) { var u = String(url || "").toLowerCase(); return AD.some(function (h) { return u.indexOf(h) >= 0; }); }
+    async function piped(path) {
+      var last = "YouTube did not answer";
+      for (var i = 0; i < PIPED.length; i++) {
+        try {
+          var res = await fetch(PIPED[i] + path);
+          if (!res.ok) { last = "YouTube " + res.status; continue; }
+          return await res.json();
+        } catch (err) { last = err.message || last; }
+      }
+      throw new Error(last);
+    }
+    async function search() {
+      var q = document.getElementById("q").value.trim();
+      if (!q) return;
+      document.getElementById("now").textContent = "Searching YouTube…";
+      var data = await piped("/search?q=" + encodeURIComponent(q) + "&filter=music_songs");
+      var items = (Array.isArray(data) ? data : data.items || []).filter(function (row) { return row && row.url; });
+      var list = document.getElementById("list");
+      list.innerHTML = "";
+      document.getElementById("now").textContent = items.length ? "Pick a song" : "No songs";
+      items.slice(0, 24).forEach(function (row) {
+        var id = String(row.url).split("v=")[1];
+        id = id ? id.slice(0, 11) : "";
+        if (id.length !== 11) return;
+        var art = document.createElement("article");
+        var img = document.createElement("img");
+        img.alt = "";
+        img.src = row.thumbnail || "";
+        var meta = document.createElement("div");
+        var title = document.createElement("b");
+        title.textContent = row.title || "Untitled";
+        var by = document.createElement("small");
+        by.textContent = row.uploaderName || "YouTube";
+        meta.appendChild(title);
+        meta.appendChild(document.createElement("br"));
+        meta.appendChild(by);
+        var btn = document.createElement("button");
+        btn.textContent = "Play";
+        btn.onclick = function () { play(id, row.title, row.uploaderName); };
+        art.appendChild(img);
+        art.appendChild(meta);
+        art.appendChild(btn);
+        list.appendChild(art);
+      });
+    }
+    async function play(id, title, artist) {
+      document.getElementById("now").textContent = "Loading " + title;
+      var data = await piped("/streams/" + id);
+      var streams = [].concat(data.audioStreams || [], data.videoStreams || []).filter(function (row) { return row.url && !blocked(row.url); });
+      var audioOnly = streams.filter(function (row) { return String(row.mimeType || "").indexOf("audio") >= 0; });
+      var pick = audioOnly[0] || streams[0];
+      if (!pick) { document.getElementById("now").textContent = "No clean stream"; return; }
+      skips = [];
+      try {
+        var res = await fetch("https://sponsor.ajay.app/api/skipSegments?videoID=" + id + "&categories=%5B%22sponsor%22,%22intro%22,%22outro%22%5D");
+        if (res.ok) skips = (await res.json()).map(function (row) { return { start: row.segment[0], end: row.segment[1] }; });
+      } catch (e) {}
+      audio.src = pick.url;
+      audio.play().catch(function () {});
+      document.getElementById("now").textContent = (artist || "YouTube") + " — " + title + " · ads blocked";
+    }
+    audio.ontimeupdate = function () {
+      var t = audio.currentTime;
+      var hit = skips.find(function (seg) { return t >= seg.start && t < seg.end - 0.3; });
+      if (hit) audio.currentTime = hit.end;
+    };
+    document.getElementById("go").onclick = function () { search().catch(function (err) { document.getElementById("now").textContent = err.message; }); };
+    document.getElementById("q").onkeydown = function (e) { if (e.key === "Enter") search().catch(function (err) { document.getElementById("now").textContent = err.message; }); };
+    var existing = read();
+    if (existing && existing.email) showApp(existing);
+  </script>
+</body>
+</html>
