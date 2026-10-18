@@ -628,3 +628,7 @@ html[data-pack] .nv-page{background:radial-gradient(1200px 680px at 82% -8%, #1c
   .nf-next{left:12px;right:12px;width:auto;bottom:92px}
   .set-pair{grid-template-columns:1fr}
 }
+
+.mfy-skip-row{position:absolute;right:18px;bottom:92px;z-index:50;display:flex;gap:8px}
+.mfy-skip-row .intro-skip{position:static;bottom:auto;right:auto}
+.nf-next{position:fixed;right:18px;bottom:150px;z-index:60;width:min(380px,calc(100% - 36px));box-shadow:0 10px 30px rgba(0,0,0,.45)}

@@ -685,6 +685,7 @@ export default function PlayerPage() {
       const hit = await nextCanonEpisode(id, season, ep, title).catch(() => null)
       finale.current = !hit
       if (hit) setNextUp({ season: hit.season, episode: hit.episode, name: hit.name, still: hit.still, overview: hit.overview || '' })
+      else setNextUp({ season, episode: ep + 1, name: `Episode ${ep + 1}`, overview: '' })
     })()
   }, [selectedMedia?.id, selectedMedia?.season, selectedMedia?.episode])
 
@@ -870,6 +871,12 @@ export default function PlayerPage() {
       } catch {}
     })()
   }, [selectedMedia?.id, selectedMedia?.type, selectedMedia?.season, selectedMedia?.episode])
+
+  useEffect(() => {
+    const onSkip = () => setShowNext(true)
+    window.addEventListener('mfy-skip-credits', onSkip)
+    return () => window.removeEventListener('mfy-skip-credits', onSkip)
+  }, [])
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -1444,7 +1451,7 @@ export default function PlayerPage() {
         <IntroSkip />
         </div>
 
-        {showNext && nextUp && (
+        {nextUp && selectedMedia && selectedMedia.type !== 'movie' && selectedMedia.type !== 'iptv' && (
           <div className="nf-next">
             {nextUp.still
               ? <img src={`${STILL_URL || POSTER_URL}${nextUp.still}`} alt="" />
